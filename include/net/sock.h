@@ -2157,6 +2157,26 @@ static inline kuid_t sock_net_uid(const struct net *net, const struct sock *sk)
 	return sk ? sk_uid(sk) : make_kuid(net->user_ns, 0);
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern bool pkm_kacs_reuseport_owner_matches(const struct sock *sk, kuid_t uid,
+					     const struct sock *sk2);
+#endif
+
+/*
+ * Whether a socket @sk (owned by @uid) may share a port with an already
+ * bound @sk2 under SO_REUSEADDR / SO_REUSEPORT: the same owner, or, under
+ * Peios, a binder that holds SeTcbPrivilege (the KACS rebind rule).
+ */
+static inline bool sk_reuseport_owner_matches(const struct sock *sk, kuid_t uid,
+					      const struct sock *sk2)
+{
+#ifdef CONFIG_SECURITY_PKM
+	return pkm_kacs_reuseport_owner_matches(sk, uid, sk2);
+#else
+	return uid_eq(uid, sk_uid(sk2));
+#endif
+}
+
 static inline u32 net_tx_rndhash(void)
 {
 	u32 v = get_random_u32();

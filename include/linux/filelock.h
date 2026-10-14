@@ -225,6 +225,8 @@ struct file_lease *locks_alloc_lease(void);
 int __break_lease(struct inode *inode, unsigned int flags);
 void lease_get_mtime(struct inode *, struct timespec64 *time);
 int generic_setlease(struct file *, int, struct file_lease **, void **priv);
+int kernel_getlease(struct file *file, struct file *lease_file,
+		    unsigned int flavor);
 int kernel_setlease(struct file *, int, struct file_lease **, void **);
 int vfs_setlease(struct file *, int, struct file_lease **, void **);
 int lease_modify(struct file_lease *, int, struct list_head *);
@@ -409,6 +411,12 @@ static inline int generic_setlease(struct file *filp, int arg,
 				    struct file_lease **flp, void **priv)
 {
 	return -EINVAL;
+}
+
+static inline int kernel_getlease(struct file *filp, struct file *lease_file,
+				  unsigned int flavor)
+{
+	return F_UNLCK;
 }
 
 static inline int kernel_setlease(struct file *filp, int arg,

@@ -28,4 +28,9 @@ struct kern_ipc_perm {
 	refcount_t refcount;
 } ____cacheline_aligned_in_smp __randomize_layout;
 
+#ifdef CONFIG_SECURITY_PKM
+int ipc_lsm_with_object(int kind, int id,
+			int (*fn)(struct kern_ipc_perm *ipcp, void *arg), void *arg);
+#endif
+
 #endif /* _LINUX_IPC_H */

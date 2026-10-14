@@ -18,6 +18,9 @@ struct unix_skb_parms {
 #ifdef CONFIG_SECURITY_NETWORK
 	u32			secid;		/* Security ID		*/
 #endif
+#ifdef CONFIG_SECURITY_PKM
+	const void		*kacs_token;	/* KACS identity (counted ref) */
+#endif
 	u32			consumed;
 } __randomize_layout;
 

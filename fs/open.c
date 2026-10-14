@@ -36,6 +36,10 @@
 
 #include "internal.h"
 
+#ifdef CONFIG_SECURITY_PKM
+extern void pkm_kacs_file_end_metadata(struct file *file);
+#endif
+
 int do_truncate(struct mnt_idmap *idmap, struct dentry *dentry,
 		loff_t length, unsigned int time_attrs, struct file *filp)
 {
@@ -189,12 +193,20 @@ int do_ftruncate(struct file *file, loff_t length, int small)
 		return error;
 
 	error = fsnotify_truncate_perm(&file->f_path, length);
-	if (error)
+	if (error) {
+#ifdef CONFIG_SECURITY_PKM
+		pkm_kacs_file_end_metadata(file);
+#endif
 		return error;
+	}
 
 	scoped_guard(super_write, inode->i_sb)
-		return do_truncate(file_mnt_idmap(file), dentry, length,
-				   ATTR_MTIME | ATTR_CTIME, file);
+		error = do_truncate(file_mnt_idmap(file), dentry, length,
+				    ATTR_MTIME | ATTR_CTIME, file);
+#ifdef CONFIG_SECURITY_PKM
+	pkm_kacs_file_end_metadata(file);
+#endif
+	return error;
 }
 
 int do_sys_ftruncate(unsigned int fd, loff_t length, int small)
@@ -248,6 +260,11 @@ COMPAT_SYSCALL_DEFINE3(ftruncate64, unsigned int, fd,
 	return ksys_ftruncate(fd, compat_arg_u64_glue(length));
 }
 #endif
+
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_file_fallocate(struct file *file, int mode);
+#endif
+
 
 int vfs_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
 {
@@ -309,7 +326,12 @@ int vfs_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
 	 * Revalidate the write permissions, in case security policy has
 	 * changed since the files were opened.
 	 */
+#ifdef CONFIG_SECURITY_PKM
+	ret = pkm_kacs_file_fallocate(file, mode);
+#else
 	ret = security_file_permission(file, MAY_WRITE);
+#endif
+
 	if (ret)
 		return ret;
 
@@ -386,6 +408,12 @@ COMPAT_SYSCALL_DEFINE6(fallocate, int, fd, int, mode, compat_arg_u64_dual(offset
  * Creating new credentials is expensive, so we try to skip doing it,
  * which we can if the result would match what we already got.
  */
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_path_access(const struct path *path, int mode);
+#endif
+
+
+#ifndef CONFIG_SECURITY_PKM
 static bool access_need_override_creds(int flags)
 {
 	const struct cred *cred;
@@ -461,6 +489,7 @@ static const struct cred *access_override_creds(void)
 	override_cred->non_rcu = 1;
 	return override_creds(override_cred);
 }
+#endif
 
 static int do_faccessat(int dfd, const char __user *filename, int mode, int flags)
 {
@@ -479,11 +508,13 @@ static int do_faccessat(int dfd, const char __user *filename, int mode, int flag
 	if (flags & AT_SYMLINK_NOFOLLOW)
 		lookup_flags &= ~LOOKUP_FOLLOW;
 
+#ifndef CONFIG_SECURITY_PKM
 	if (access_need_override_creds(flags)) {
 		old_cred = access_override_creds();
 		if (!old_cred)
 			return -ENOMEM;
 	}
+#endif
 
 	CLASS(filename_uflags, name)(filename, flags);
 retry:
@@ -503,6 +534,11 @@ retry:
 			goto out_path_release;
 	}
 
+#ifdef CONFIG_SECURITY_PKM
+	res = pkm_kacs_path_access(&path, mode);
+	if (res)
+		goto out_path_release;
+#endif
 	res = inode_permission(mnt_idmap(path.mnt), inode, mode | MAY_ACCESS);
 	/* SuS v2 requires we report a read only fs too */
 	if (res || !(mode & S_IWOTH) || special_file(inode->i_mode))
@@ -581,7 +617,16 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
 	if (!d_can_lookup(fd_file(f)->f_path.dentry))
 		return -ENOTDIR;
 
+#ifdef CONFIG_SECURITY_PKM
+	if (fd_file(f)->f_mode & FMODE_PATH)
+		error = file_permission(fd_file(f), MAY_EXEC | MAY_CHDIR);
+	else
+		error = security_file_permission(fd_file(f),
+						 MAY_EXEC | MAY_CHDIR);
+#else
 	error = file_permission(fd_file(f), MAY_EXEC | MAY_CHDIR);
+#endif
+
 	if (!error)
 		set_fs_pwd(current->fs, &fd_file(f)->f_path);
 	return error;
@@ -650,10 +695,29 @@ out_mnt_unlock:
 	return error;
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_file_chmod(struct file *file);
+extern int pkm_kacs_file_chown(struct file *file);
+#endif
+
+
 int vfs_fchmod(struct file *file, umode_t mode)
 {
+#ifdef CONFIG_SECURITY_PKM
+	{
+		int ret = pkm_kacs_file_chmod(file);
+		if (ret)
+			return ret;
+		audit_file(file);
+		ret = chmod_common(&file->f_path, mode);
+		pkm_kacs_file_end_metadata(file);
+		return ret;
+	}
+#else
 	audit_file(file);
 	return chmod_common(&file->f_path, mode);
+#endif
+
 }
 
 SYSCALL_DEFINE2(fchmod, unsigned int, fd, umode_t, mode)
@@ -839,8 +903,18 @@ int vfs_fchown(struct file *file, uid_t user, gid_t group)
 	error = mnt_want_write_file(file);
 	if (error)
 		return error;
+#ifdef CONFIG_SECURITY_PKM
+	error = pkm_kacs_file_chown(file);
+	if (error) {
+		mnt_drop_write_file(file);
+		return error;
+	}
+#endif
 	audit_file(file);
 	error = chown_common(&file->f_path, user, group);
+#ifdef CONFIG_SECURITY_PKM
+	pkm_kacs_file_end_metadata(file);
+#endif
 	mnt_drop_write_file(file);
 	return error;
 }

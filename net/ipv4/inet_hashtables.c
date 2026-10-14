@@ -769,7 +769,7 @@ static int inet_reuseport_add_sock(struct sock *sk,
 		    ipv6_only_sock(sk2) == ipv6_only_sock(sk) &&
 		    sk2->sk_bound_dev_if == sk->sk_bound_dev_if &&
 		    inet_csk(sk2)->icsk_bind_hash == tb &&
-		    sk2->sk_reuseport && uid_eq(uid, sk_uid(sk2)) &&
+		    sk2->sk_reuseport && sk_reuseport_owner_matches(sk, uid, sk2) &&
 		    inet_rcv_saddr_equal(sk, sk2, false))
 			return reuseport_add_sock(sk, sk2,
 						  inet_rcv_saddr_any(sk));

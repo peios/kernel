@@ -1,0 +1,203 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+#ifndef _SECURITY_PKM_KMES_H
+#define _SECURITY_PKM_KMES_H
+
+#include <linux/uaccess.h>
+#include <linux/types.h>
+
+#include <pkm/kmes.h>
+
+/*
+ * Every kernel emitter asks pkm_kmes_event_enabled() before it builds a
+ * payload, and names its type with the generated PKM_KMES_EV_*_TYPE string.
+ */
+#include "event_policy.h"
+
+int pkm_kmes_init(void);
+void pkm_kmes_emit_kernel(u8 origin_class, const void *event_type,
+			  size_t event_type_len, const void *payload,
+			  size_t payload_len);
+struct pkm_kmes_kernel_event {
+	const void *event_type;
+	size_t event_type_len;
+	const void *payload;
+	size_t payload_len;
+};
+void pkm_kmes_emit_kernel_batch(u8 origin_class,
+				const struct pkm_kmes_kernel_event *events,
+				u32 count);
+struct pkm_kmes_runtime_config {
+	u64 buffer_capacity;
+	u32 max_event_size;
+	u32 max_nesting_depth;
+	u32 max_emit_rate_per_process;
+};
+
+enum pkm_kmes_self_config_received_kind {
+	PKM_KMES_SELF_CONFIG_RECEIVED_MISSING = 0,
+	PKM_KMES_SELF_CONFIG_RECEIVED_WRONG_TYPE = 1,
+	PKM_KMES_SELF_CONFIG_RECEIVED_U32_OUT_OF_RANGE = 2,
+	PKM_KMES_SELF_CONFIG_RECEIVED_U64_OUT_OF_RANGE = 3,
+};
+
+enum pkm_kmes_self_config_value_kind {
+	PKM_KMES_SELF_CONFIG_VALUE_DWORD = 1,
+	PKM_KMES_SELF_CONFIG_VALUE_QWORD = 2,
+	PKM_KMES_SELF_CONFIG_VALUE_WRONG_TYPE = 3,
+};
+
+#define PKM_KMES_SELF_CONFIG_MAX_AUDITS 4U
+#define PKM_KMES_SELF_CONFIG_MAX_PARAMETER_NAME_LEN 64U
+
+struct pkm_kmes_self_config_entry {
+	const char *name;
+	u32 name_len;
+	u32 value_kind;
+	u32 value_type;
+	u32 value_u32;
+	u32 _pad;
+	u64 value_u64;
+};
+
+struct pkm_kmes_self_config_audit_intent {
+	char configuration_name[PKM_KMES_SELF_CONFIG_MAX_PARAMETER_NAME_LEN];
+	u32 configuration_name_len;
+	u32 received_kind;
+	u32 received_type;
+	u32 received_u32;
+	u64 received_u64;
+	u64 retained_value;
+};
+
+struct pkm_kmes_self_config_apply_plan {
+	struct pkm_kmes_runtime_config config;
+	u32 applied_count;
+	u32 retained_missing_count;
+	u32 retained_invalid_count;
+	u32 ignored_unknown_count;
+	u32 audit_count;
+	u32 _pad;
+	struct pkm_kmes_self_config_audit_intent
+		audits[PKM_KMES_SELF_CONFIG_MAX_AUDITS];
+};
+
+u32 pkm_kmes_runtime_max_emit_rate_per_process(void);
+int pkm_kmes_runtime_config_snapshot(struct pkm_kmes_runtime_config *out);
+long pkm_kmes_runtime_config_apply(
+	const struct pkm_kmes_runtime_config *config);
+long pkm_kmes_runtime_config_apply_self_config(
+	const struct pkm_kmes_self_config_entry *entries, u32 entry_count,
+	struct pkm_kmes_self_config_apply_plan *result_out);
+long pkm_kmes_runtime_config_refresh_from_key(
+	u32 source_id, const u8 kmes_guid[16],
+	struct pkm_kmes_self_config_apply_plan *result_out);
+/*
+ * The refresh the internal watch runs when Machine\System\KMES changes. A
+ * read that fails is reported as kmes.config.refresh.failed; a failed
+ * capacity swap is not, because it has its own record and the rest of the
+ * read committed.
+ */
+long pkm_kmes_runtime_config_refresh_on_change(u32 source_id,
+					       const u8 kmes_guid[16]);
+/*
+ * Record kmes.config.refresh.failed for the configuration key @key_path,
+ * whose read failed with @error (a negative errno). Best effort.
+ */
+void pkm_kmes_emit_config_refresh_failed(const char *key_path,
+					 size_t key_path_len, long error);
+long pkm_kmes_config_root_discover_from_machine_hive(
+	u32 source_id, const u8 machine_root_guid[16], bool *present_out,
+	u8 kmes_guid_out[16]);
+long pkm_kmes_runtime_config_refresh_from_machine_hive(
+	u32 source_id, const u8 machine_root_guid[16],
+	struct pkm_kmes_self_config_apply_plan *result_out);
+int pkm_kmes_current_process_info(u64 *pid_out, u8 *name_out,
+				  size_t name_out_len, size_t *name_len_out,
+				  u8 *path_out, size_t path_out_len,
+				  size_t *path_len_out);
+long pkm_kmes_emit_user_for_token(const void *token, const void __user *event_type,
+				  u16 event_type_len,
+				  const void __user *payload, u32 payload_len);
+long pkm_kmes_attach_user_for_token(const void *token, u32 cpu_id,
+				    u64 __user *capacity);
+long pkm_kmes_emit_batch_user_for_token(
+	const void *token, const struct kmes_emit_entry __user *entries,
+	u32 count, u32 __user *emitted_out);
+
+#ifdef CONFIG_SECURITY_PKM_KUNIT
+struct pkm_kmes_kunit_snapshot {
+	u16 cpu_id;
+	u16 _reserved;
+	u64 capacity;
+	u64 write_pos;
+	u64 tail_pos;
+	u64 last_sequence;
+	u64 dropped_events;
+	u32 futex_counter;
+	u8 shared_page_present;
+	u8 _padding[3];
+};
+
+struct pkm_kmes_kunit_fd_snapshot {
+	u16 cpu_id;
+	u16 _reserved;
+	u64 capacity;
+	u64 generation;
+	u64 write_pos;
+	u64 tail_pos;
+	u32 futex_counter;
+	u8 need_wake;
+	u8 _padding[3];
+	u64 mapping_size;
+};
+
+void pkm_kmes_kunit_reset_all(void);
+int pkm_kmes_kunit_snapshot_single_active(struct pkm_kmes_kunit_snapshot *out);
+int pkm_kmes_kunit_copy_single_buffer(u8 *out, size_t out_len,
+				      size_t *written_out,
+				      struct pkm_kmes_kunit_snapshot *out_snapshot);
+int pkm_kmes_kunit_copy_latest_matching_event(
+	u8 origin_class, const void *event_type, size_t event_type_len,
+	u8 *out, size_t out_len, size_t *written_out,
+	struct pkm_kmes_kunit_snapshot *out_snapshot);
+u16 pkm_kmes_kunit_current_cpu_id(void);
+int pkm_kmes_kunit_swap_capacity(u64 new_capacity);
+void pkm_kmes_kunit_fail_next_swap_alloc(void);
+long pkm_kmes_kunit_attach_for_token(const void *token, u32 cpu_id,
+				     int *fd_out, u64 *capacity);
+long pkm_kmes_kunit_attach_user_for_token(const void *token, u32 cpu_id,
+					  u64 __user *capacity);
+int pkm_kmes_kunit_fd_snapshot(int fd,
+			       struct pkm_kmes_kunit_fd_snapshot *out);
+int pkm_kmes_kunit_copy_fd_view(int fd, u64 offset, u8 *out, size_t out_len);
+int pkm_kmes_kunit_set_fd_need_wake(int fd, u8 value);
+int pkm_kmes_kunit_set_process_override(u64 pid, const char *name,
+					const char *path);
+void pkm_kmes_kunit_clear_process_override(void);
+long pkm_kmes_kunit_emit_for_token(const void *token, const void *event_type,
+				   u16 event_type_len, const void *payload,
+				   u32 payload_len);
+long pkm_kmes_kunit_emit_batch_for_token(const void *token,
+					 const struct kmes_emit_entry *entries,
+					 u32 count, u32 *emitted_out);
+bool pkm_kmes_kunit_consumer_range(unsigned long pgoff,
+				  unsigned long start, unsigned long end);
+int pkm_kmes_kunit_runtime_config_snapshot(
+	struct pkm_kmes_runtime_config *out);
+long pkm_kmes_kunit_runtime_config_apply(
+	const struct pkm_kmes_runtime_config *config);
+long pkm_kmes_kunit_publish_self_config_plan(
+	const struct pkm_kmes_self_config_apply_plan *plan,
+	struct pkm_kmes_self_config_apply_plan *result_out);
+int pkm_kmes_kunit_poke_single_ring(u64 pos, const void *bytes, size_t len);
+int pkm_kmes_kunit_poke_ring(u32 cpu_id, u64 pos, const void *bytes, size_t len);
+bool pkm_kmes_kunit_set_ready(bool ready);
+u64 pkm_kmes_kunit_pre_init_drops(void);
+void pkm_kmes_kunit_set_ring_cpu_id_skew(bool skew);
+int pkm_kmes_kunit_set_all_need_wake(u8 value);
+void pkm_kmes_kunit_flush_deferred_wakes(void);
+u64 pkm_kmes_kunit_irq_context_drops(void);
+int pkm_kmes_kunit_set_slot_hole(u32 cpu_id, bool hole);
+#endif
+
+#endif /* _SECURITY_PKM_KMES_H */

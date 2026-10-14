@@ -29,6 +29,15 @@ struct mnt_namespace {
 	unsigned int		pending_mounts;
 	refcount_t		passive; /* number references not pinning @mounts */
 	bool			is_anon;
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * KACS: the namespace's security descriptor object, minted from the
+	 * creator's token in copy_mnt_ns(). NULL for the initial namespace and
+	 * for anonymous ones, which are then reachable only through the mount
+	 * privilege. See <linux/kacs_mntns.h>.
+	 */
+	struct pkm_kacs_mntns_security *security;
+#endif
 } __randomize_layout;
 
 struct mnt_pcp {

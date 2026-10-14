@@ -9,6 +9,7 @@
  */
 #include <linux/mnt_namespace.h>
 #include <linux/nsproxy.h>
+#include <linux/ptrace.h>
 #include <linux/security.h>
 #include <linux/fs_struct.h>
 #include <linux/sched/task.h>
@@ -244,6 +245,17 @@ static int mounts_open_common(struct inode *inode, struct file *file,
 
 	if (!task)
 		goto err;
+
+#ifdef CONFIG_SECURITY_PKM
+	/* PKM: gate /proc/<pid>/mount namespace read metadata. */
+	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS |
+			       PTRACE_MODE_PROC_QUERY_INFORMATION)) {
+		put_task_struct(task);
+		ret = -EACCES;
+		goto err;
+	}
+#endif
+
 
 	task_lock(task);
 	nsp = task->nsproxy;

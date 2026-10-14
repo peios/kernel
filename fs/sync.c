@@ -201,12 +201,24 @@ int vfs_fsync(struct file *file, int datasync)
 }
 EXPORT_SYMBOL(vfs_fsync);
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_file_fsync(struct file *file);
+#endif
+
 static int do_fsync(unsigned int fd, int datasync)
 {
 	CLASS(fd, f)(fd);
+#ifdef CONFIG_SECURITY_PKM
+	int ret;
+#endif
 
 	if (fd_empty(f))
 		return -EBADF;
+#ifdef CONFIG_SECURITY_PKM
+	ret = pkm_kacs_file_fsync(fd_file(f));
+	if (ret)
+		return ret;
+#endif
 
 	return vfs_fsync(fd_file(f), datasync);
 }

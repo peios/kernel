@@ -46,6 +46,10 @@
 #include "internal.h"
 #include "mount.h"
 
+#ifdef CONFIG_SECURITY_PKM
+extern void pkm_kacs_file_end_metadata(struct file *file);
+#endif
+
 /* [Feb-1997 T. Schoebel-Theuer]
  * Fundamental changes in the pathname lookup mechanisms (namei)
  * were necessary because of omirr.  The reason is that omirr needs
@@ -4286,6 +4290,9 @@ static int handle_truncate(struct mnt_idmap *idmap, struct file *filp)
 				    ATTR_MTIME|ATTR_CTIME|ATTR_OPEN,
 				    filp);
 	}
+#ifdef CONFIG_SECURITY_PKM
+	pkm_kacs_file_end_metadata(filp);
+#endif
 	put_write_access(inode);
 	return error;
 }

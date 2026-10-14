@@ -1030,6 +1030,9 @@ struct sk_buff {
 	__u8			csum_not_inet:1;
 #endif
 	__u8			unreadable:1;
+#if IS_ENABLED(CONFIG_PEIOS_NTFE)
+	__u8			ntfe_refusal:1;	/* a refusal NTFE itself emitted */
+#endif
 #if defined(CONFIG_NET_SCHED) || defined(CONFIG_NET_XGRESS)
 	__u16			tc_index;	/* traffic control index */
 #endif

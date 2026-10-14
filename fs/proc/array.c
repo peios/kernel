@@ -307,6 +307,15 @@ static void render_cap_t(struct seq_file *m, const char *header,
 	seq_putc(m, '\n');
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern long pkm_kacs_proc_status_cap_fixup(kernel_cap_t *inheritable,
+					   kernel_cap_t *permitted,
+					   kernel_cap_t *effective,
+					   kernel_cap_t *bset,
+					   kernel_cap_t *ambient);
+#endif
+
+
 static inline void task_cap(struct seq_file *m, struct task_struct *p)
 {
 	const struct cred *cred;
@@ -321,6 +330,13 @@ static inline void task_cap(struct seq_file *m, struct task_struct *p)
 	cap_bset	= cred->cap_bset;
 	cap_ambient	= cred->cap_ambient;
 	rcu_read_unlock();
+
+#ifdef CONFIG_SECURITY_PKM
+	pkm_kacs_proc_status_cap_fixup(&cap_inheritable, &cap_permitted,
+				       &cap_effective, &cap_bset,
+				       &cap_ambient);
+#endif
+
 
 	render_cap_t(m, "CapInh:\t", &cap_inheritable);
 	render_cap_t(m, "CapPrm:\t", &cap_permitted);
@@ -485,7 +501,7 @@ static int do_task_stat(struct seq_file *m, struct pid_namespace *ns,
 
 	state = *get_task_state(task);
 	vsize = eip = esp = 0;
-	permitted = ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS | PTRACE_MODE_NOAUDIT);
+	permitted = ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS | PTRACE_MODE_PROC_QUERY_LIMITED | PTRACE_MODE_NOAUDIT);
 	mm = get_task_mm(task);
 	if (mm) {
 		vsize = task_vsize(mm);

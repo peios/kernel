@@ -34,6 +34,7 @@
 #include <linux/mnt_idmapping.h>
 #include <linux/pidfs.h>
 #include <linux/nstree.h>
+#include <linux/kacs_mntns.h>
 
 #include "pnode.h"
 #include "internal.h"
@@ -132,6 +133,9 @@ static void mnt_ns_release(struct mnt_namespace *ns)
 	if (ns && refcount_dec_and_test(&ns->passive)) {
 		fsnotify_mntns_delete(ns);
 		put_user_ns(ns->user_ns);
+#ifdef CONFIG_SECURITY_PKM
+		pkm_kacs_mntns_security_free(ns->security);
+#endif
 		kfree(ns);
 	}
 }
@@ -1998,10 +2002,54 @@ void __detach_mounts(struct dentry *dentry)
 
 /*
  * Is the caller allowed to modify his namespace?
+ *
+ * @op says what kind of modification, as one of the PKM_KACS_MNTNS_OP_*
+ * codes, and @fstype names the filesystem type for NEW_FS; callers that
+ * cannot be admitted by a namespace descriptor pass OTHER through
+ * may_mount().
  */
+static bool may_mount_op(unsigned int op, const char *fstype)
+{
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * PKM: the mount table is a KACS object. Mounting is an administrative
+	 * act, not a TCB one -- SeManageVolumePrivilege satisfies it, and
+	 * SeTcbPrivilege does too -- and in a namespace the caller created for
+	 * itself, a bind mount, an unmount or a pivot_root is admitted by the
+	 * namespace's own descriptor instead. The CAP_SYS_ADMIN fallback below
+	 * stays for the non-PKM build and costs nothing here, since a TCB
+	 * token is granted CAP_SYS_ADMIN anyway.
+	 *
+	 * Asked here rather than through security_sb_mount() because that hook
+	 * runs only after this function has already allowed the operation --
+	 * an LSM cannot widen a decision it is never consulted about.
+	 */
+	if (pkm_kacs_may_mount_op(current->nsproxy->mnt_ns->security, op,
+				  fstype))
+		return true;
+#endif
+	return ns_capable(current->nsproxy->mnt_ns->user_ns, CAP_SYS_ADMIN);
+}
+
 bool may_mount(void)
 {
-	return ns_capable(current->nsproxy->mnt_ns->user_ns, CAP_SYS_ADMIN);
+	return may_mount_op(PKM_KACS_MNTNS_OP_OTHER, NULL);
+}
+
+/*
+ * The mount(2) shapes a namespace descriptor can admit: a bind, with or
+ * without MS_REC, and a new filesystem of an allowlisted type.
+ * MS_REMOUNT|MS_BIND is a per-mount reconfigure, and the dispatch below
+ * sends it elsewhere.
+ */
+static unsigned int mount_op_for_flags(unsigned long flags)
+{
+	if ((flags & MS_BIND) && !(flags & MS_REMOUNT))
+		return PKM_KACS_MNTNS_OP_BIND;
+	if (!(flags & (MS_REMOUNT | MS_BIND | MS_SHARED | MS_PRIVATE |
+		       MS_SLAVE | MS_UNBINDABLE | MS_MOVE)))
+		return PKM_KACS_MNTNS_OP_NEW_FS;
+	return PKM_KACS_MNTNS_OP_OTHER;
 }
 
 static void warn_mandlock(void)
@@ -2018,7 +2066,7 @@ static int can_umount(const struct path *path, int flags)
 	struct mount *mnt = real_mount(path->mnt);
 	struct super_block *sb = path->dentry->d_sb;
 
-	if (!may_mount())
+	if (!may_mount_op(PKM_KACS_MNTNS_OP_UMOUNT, NULL))
 		return -EPERM;
 	if (!path_mounted(path))
 		return -EINVAL;
@@ -3010,6 +3058,13 @@ static int do_loopback(const struct path *path, const char *old_name,
 	if (mnt_ns_loop(old_path.dentry))
 		return -EINVAL;
 
+	if (old_path.mnt->mnt_sb->s_op->validate_mountpoint) {
+		err = old_path.mnt->mnt_sb->s_op->validate_mountpoint(
+			old_path.mnt->mnt_sb, path);
+		if (err)
+			return err;
+	}
+
 	LOCK_MOUNT(mp, path);
 	if (IS_ERR(mp.parent))
 		return PTR_ERR(mp.parent);
@@ -3641,6 +3696,13 @@ static int do_move_mount(const struct path *old_path,
 	if (d_is_dir(new_path->dentry) != d_is_dir(old_path->dentry))
 		return -EINVAL;
 
+	if (old_path->mnt->mnt_sb->s_op->validate_mountpoint) {
+		err = old_path->mnt->mnt_sb->s_op->validate_mountpoint(
+			old_path->mnt->mnt_sb, new_path);
+		if (err)
+			return err;
+	}
+
 	LOCK_MOUNT_MAYBE_BENEATH(mp, new_path, beneath);
 	if (IS_ERR(mp.parent))
 		return PTR_ERR(mp.parent);
@@ -3767,6 +3829,11 @@ static int do_new_mount_fc(struct fs_context *fc, const struct path *mountpoint,
 		return PTR_ERR(mnt);
 
 	sb = fc->root->d_sb;
+	if (sb->s_op->validate_mountpoint) {
+		error = sb->s_op->validate_mountpoint(sb, mountpoint);
+		if (error)
+			return error;
+	}
 	error = security_sb_kern_mount(sb);
 	if (unlikely(error))
 		return error;
@@ -4101,7 +4168,7 @@ int path_mount(const char *dev_name, const struct path *path,
 	ret = security_sb_mount(dev_name, path, type_page, flags, data_page);
 	if (ret)
 		return ret;
-	if (!may_mount())
+	if (!may_mount_op(mount_op_for_flags(flags), type_page))
 		return -EPERM;
 	if (flags & SB_MANDLOCK)
 		warn_mandlock();
@@ -4252,9 +4319,26 @@ struct mnt_namespace *copy_mnt_ns(u64 flags, struct mnt_namespace *ns,
 		return new_ns;
 
 	guard(namespace_excl)();
+#ifdef CONFIG_SECURITY_PKM
+	/* KACS: the new table is an object, and its creator owns it. */
+	new_ns->security = pkm_kacs_mntns_security_create();
+	if (IS_ERR(new_ns->security)) {
+		int err = PTR_ERR(new_ns->security);
+
+		new_ns->security = NULL;
+		emptied_ns = new_ns;
+		return ERR_PTR(err);
+	}
+#endif
 	/* First pass: copy the tree topology */
 	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
-	if (user_ns != ns->user_ns)
+	/*
+	 * A table created without the mount privilege receives its mounts as
+	 * slaves of the parent's, exactly as a user-namespace-owned copy does:
+	 * propagation runs parent to child only, so whatever the creator
+	 * mounts in its own table never appears in the one it copied.
+	 */
+	if (user_ns != ns->user_ns || !pkm_kacs_mntns_creator_privileged())
 		copy_flags |= CL_SLAVE;
 	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
 	if (IS_ERR(new)) {
@@ -4633,7 +4717,7 @@ int path_pivot_root(struct path *new, struct path *old)
 	struct mount *new_mnt, *root_mnt, *old_mnt, *root_parent, *ex_parent;
 	int error;
 
-	if (!may_mount())
+	if (!may_mount_op(PKM_KACS_MNTNS_OP_PIVOT_ROOT, NULL))
 		return -EPERM;
 
 	error = security_sb_pivotroot(old, new);
@@ -6157,6 +6241,55 @@ static void __init init_mount_tree(void)
 	mnt = vfs_kern_mount(&rootfs_fs_type, 0, "rootfs", initramfs_options);
 	if (IS_ERR(mnt))
 		panic("Can't create rootfs");
+
+#ifdef CONFIG_SECURITY_PKM
+	{
+		/*
+		 * Self-relative SD, 72 bytes:
+		 *   header (20) | Owner=SYSTEM (12) | Group=SYSTEM (12) |
+		 *   DACL header (8) | ACE Allow SYSTEM GenericAll OI|CI (20)
+		 */
+		static const u8 pkm_rootfs_root_sd[72] = {
+			0x01, 0x00, 0x04, 0x80,
+			0x14, 0x00, 0x00, 0x00,
+			0x20, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00,
+			0x2c, 0x00, 0x00, 0x00,
+			0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+			0x12, 0x00, 0x00, 0x00,
+			0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+			0x12, 0x00, 0x00, 0x00,
+			0x02, 0x00, 0x1c, 0x00, 0x01, 0x00, 0x00, 0x00,
+			0x00, 0x03, 0x14, 0x00,
+			0x00, 0x00, 0x00, 0x10,
+			0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+			0x12, 0x00, 0x00, 0x00,
+		};
+		extern int __vfs_setxattr_noperm(struct mnt_idmap *,
+						 struct dentry *,
+						 const char *,
+						 const void *, size_t, int);
+		struct inode *pkm_root_inode = mnt->mnt_root->d_inode;
+		int pkm_xerr;
+
+		inode_lock(pkm_root_inode);
+		pkm_xerr = __vfs_setxattr_noperm(&nop_mnt_idmap,
+						 mnt->mnt_root,
+						 "security.peios.sd",
+						 pkm_rootfs_root_sd,
+						 sizeof(pkm_rootfs_root_sd),
+						 0);
+		inode_unlock(pkm_root_inode);
+		/*
+		 * Fatal: without it nothing the initramfs puts on the rootfs
+		 * can be reached through a StrataFS view, and the boot fails
+		 * later, in a hook, far from the cause.
+		 */
+		if (pkm_xerr)
+			panic("pkm: cannot seed the rootfs root's security descriptor: %d\n",
+			      pkm_xerr);
+	}
+#endif
 
 	VFS_WARN_ON_ONCE(real_mount(nullfs_mnt)->mnt_id != 1);
 	VFS_WARN_ON_ONCE(real_mount(mnt)->mnt_id != 2);

@@ -46,6 +46,7 @@
 #include <net/netfilter/nf_conntrack_timestamp.h>
 #include <net/netfilter/nf_conntrack_timeout.h>
 #include <net/netfilter/nf_conntrack_labels.h>
+#include <linux/peios_ntfe.h>
 #include <net/netfilter/nf_conntrack_synproxy.h>
 #include <net/netfilter/nf_nat.h>
 #include <net/netfilter/nf_nat_helper.h>
@@ -1743,6 +1744,7 @@ void nf_conntrack_free(struct nf_conn *ct)
 		rcu_read_unlock();
 	}
 
+	peios_ntfe_ct_destroy(ct);
 	kfree(ct->ext);
 	kmem_cache_free(nf_conntrack_cachep, ct);
 	cnet = nf_ct_pernet(net);
@@ -1796,6 +1798,7 @@ init_conntrack(struct net *net, struct nf_conn *tmpl,
 	nf_ct_acct_ext_add(ct, GFP_ATOMIC);
 	nf_ct_tstamp_ext_add(ct, GFP_ATOMIC);
 	nf_ct_labels_ext_add(ct);
+	peios_ntfe_ct_ext_add(ct);
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	ecache = tmpl ? nf_ct_ecache_find(tmpl) : NULL;

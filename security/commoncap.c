@@ -121,11 +121,23 @@ static inline int cap_capable_helper(const struct cred *cred,
  * has_ns_capability_noaudit(), and has_capability_noaudit() return a
  * bool true (1) for this case.
  */
+#ifdef CONFIG_SECURITY_PKM
+extern long pkm_kacs_capable_in_cred_ns(const struct cred *cred,
+					struct user_namespace *target_ns,
+					int cap, unsigned int opts);
+#endif
+
+
 int cap_capable(const struct cred *cred, struct user_namespace *target_ns,
 		int cap, unsigned int opts)
 {
 	const struct user_namespace *cred_ns = cred->user_ns;
+#ifdef CONFIG_SECURITY_PKM
+	int ret = pkm_kacs_capable_in_cred_ns(cred, target_ns, cap, opts);
+#else
 	int ret = cap_capable_helper(cred, target_ns, cred_ns, cap);
+#endif
+
 
 	trace_cap_capable(cred, target_ns, cred_ns, cap, ret);
 	return ret;
@@ -167,6 +179,11 @@ int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
 	const struct cred *cred, *child_cred;
 	const kernel_cap_t *caller_caps;
 
+#ifdef CONFIG_SECURITY_PKM
+	return 0;
+#endif
+
+
 	rcu_read_lock();
 	cred = current_cred();
 	child_cred = __task_cred(child);
@@ -203,6 +220,11 @@ int cap_ptrace_traceme(struct task_struct *parent)
 	int ret = 0;
 	const struct cred *cred, *child_cred;
 
+#ifdef CONFIG_SECURITY_PKM
+	return 0;
+#endif
+
+
 	rcu_read_lock();
 	cred = __task_cred(parent);
 	child_cred = current_cred();
@@ -227,6 +249,14 @@ out:
  * This function retrieves the capabilities of the nominated task and returns
  * them to the caller.
  */
+#ifdef CONFIG_SECURITY_PKM
+extern long pkm_kacs_capget_for_task(const struct task_struct *target,
+				     kernel_cap_t *effective,
+				     kernel_cap_t *inheritable,
+				     kernel_cap_t *permitted);
+#endif
+
+
 int cap_capget(const struct task_struct *target, kernel_cap_t *effective,
 	       kernel_cap_t *inheritable, kernel_cap_t *permitted)
 {
@@ -239,7 +269,13 @@ int cap_capget(const struct task_struct *target, kernel_cap_t *effective,
 	*inheritable = cred->cap_inheritable;
 	*permitted   = cred->cap_permitted;
 	rcu_read_unlock();
+#ifdef CONFIG_SECURITY_PKM
+	return pkm_kacs_capget_for_task(target, effective, inheritable,
+					permitted);
+#else
 	return 0;
+#endif
+
 }
 
 /*
@@ -1208,6 +1244,11 @@ int cap_task_fix_setuid(struct cred *new, const struct cred *old, int flags)
 static int cap_safe_nice(struct task_struct *p)
 {
 	int is_subset, ret = 0;
+
+#ifdef CONFIG_SECURITY_PKM
+	return 0;
+#endif
+
 
 	rcu_read_lock();
 	is_subset = cap_issubset(__task_cred(p)->cap_permitted,

@@ -156,7 +156,7 @@ static int udp_lib_lport_inuse(struct net *net, __u16 num,
 		    inet_rcv_saddr_equal(sk, sk2, true)) {
 			if (sk2->sk_reuseport && sk->sk_reuseport &&
 			    !rcu_access_pointer(sk->sk_reuseport_cb) &&
-			    uid_eq(uid, sk_uid(sk2))) {
+			    sk_reuseport_owner_matches(sk, uid, sk2)) {
 				if (!bitmap)
 					return 0;
 			} else {
@@ -193,7 +193,7 @@ static int udp_lib_lport_inuse2(struct net *net, __u16 num,
 		    inet_rcv_saddr_equal(sk, sk2, true)) {
 			if (sk2->sk_reuseport && sk->sk_reuseport &&
 			    !rcu_access_pointer(sk->sk_reuseport_cb) &&
-			    uid_eq(uid, sk_uid(sk2))) {
+			    sk_reuseport_owner_matches(sk, uid, sk2)) {
 				res = 0;
 			} else {
 				res = 1;
@@ -218,7 +218,7 @@ static int udp_reuseport_add_sock(struct sock *sk, struct udp_hslot *hslot)
 		    ipv6_only_sock(sk2) == ipv6_only_sock(sk) &&
 		    (udp_sk(sk2)->udp_port_hash == udp_sk(sk)->udp_port_hash) &&
 		    (sk2->sk_bound_dev_if == sk->sk_bound_dev_if) &&
-		    sk2->sk_reuseport && uid_eq(uid, sk_uid(sk2)) &&
+		    sk2->sk_reuseport && sk_reuseport_owner_matches(sk, uid, sk2) &&
 		    inet_rcv_saddr_equal(sk, sk2, false)) {
 			return reuseport_add_sock(sk, sk2,
 						  inet_rcv_saddr_any(sk));

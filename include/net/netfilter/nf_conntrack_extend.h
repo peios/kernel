@@ -31,13 +31,16 @@ enum nf_ct_ext_id {
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 	NF_CT_EXT_ACT_CT,
 #endif
+#if IS_ENABLED(CONFIG_PEIOS_NTFE)
+	NF_CT_EXT_NTFE,
+#endif
 	NF_CT_EXT_NUM,
 };
 
 /* Extensions: optional stuff which isn't permanently in struct. */
 struct nf_ct_ext {
-	u8 offset[NF_CT_EXT_NUM];
-	u8 len;
+	u16 offset[NF_CT_EXT_NUM];
+	u16 len;
 	unsigned int gen_id;
 	char data[] __aligned(8);
 };

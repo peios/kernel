@@ -172,12 +172,12 @@ static bool inet_bind_conflict(const struct sock *sk, struct sock *sk2,
 			if (!relax || (!reuseport_ok && sk->sk_reuseport &&
 				       sk2->sk_reuseport && reuseport_cb_ok &&
 				       (sk2->sk_state == TCP_TIME_WAIT ||
-					uid_eq(uid, sk_uid(sk2)))))
+					sk_reuseport_owner_matches(sk, uid, sk2))))
 				return true;
 		} else if (!reuseport_ok || !sk->sk_reuseport ||
 			   !sk2->sk_reuseport || !reuseport_cb_ok ||
 			   (sk2->sk_state != TCP_TIME_WAIT &&
-			    !uid_eq(uid, sk_uid(sk2)))) {
+			    !sk_reuseport_owner_matches(sk, uid, sk2))) {
 			return true;
 		}
 	}

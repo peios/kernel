@@ -103,6 +103,7 @@ obj-$(CONFIG_AUTOFS_FS)		+= autofs/
 obj-$(CONFIG_ADFS_FS)		+= adfs/
 obj-$(CONFIG_FUSE_FS)		+= fuse/
 obj-$(CONFIG_OVERLAY_FS)	+= overlayfs/
+obj-$(CONFIG_STRATAFS_FS)	+= stratafs/
 obj-$(CONFIG_ORANGEFS_FS)       += orangefs/
 obj-$(CONFIG_UDF_FS)		+= udf/
 obj-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs/

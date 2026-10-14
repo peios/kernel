@@ -259,10 +259,28 @@ static int vfs_cmd_reconfigure(struct fs_context *fc)
 	fc->phase = FS_CONTEXT_RECONFIGURING;
 
 	sb = fc->root->d_sb;
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * PKM: reconfiguring a live superblock is volume management, the same
+	 * as creating one, so SeManageVolumePrivilege satisfies it too.
+	 * Without this an administrator could mount a filesystem and then be
+	 * refused a remount of the very thing they just mounted.
+	 */
+	{
+		extern bool pkm_kacs_may_manage_volumes(void);
+
+		if (!pkm_kacs_may_manage_volumes() &&
+		    !ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
+			fc->phase = FS_CONTEXT_FAILED;
+			return -EPERM;
+		}
+	}
+#else
 	if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
 		fc->phase = FS_CONTEXT_FAILED;
 		return -EPERM;
 	}
+#endif
 
 	down_write(&sb->s_umount);
 	ret = reconfigure_super(fc);

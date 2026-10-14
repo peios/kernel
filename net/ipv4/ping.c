@@ -260,6 +260,13 @@ int ping_init_sock(struct sock *sk)
 	if (sk->sk_family == AF_INET6)
 		sk->sk_ipv6only = 1;
 
+	/* Peios: echo datagrams are ordinary user traffic, governed by PNP.
+	 * This removes only the legacy GID gate. Raw sockets still require
+	 * their existing authority; no packet is exempted from an NTFE seat.
+	 */
+	if (IS_ENABLED(CONFIG_SECURITY_PKM))
+		return 0;
+
 	inet_get_ping_group_range_net(net, &low, &high);
 	if (gid_lte(low, group) && gid_lte(group, high))
 		return 0;

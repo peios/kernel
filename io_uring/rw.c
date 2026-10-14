@@ -1123,6 +1123,13 @@ static bool io_kiocb_start_write(struct io_kiocb *req, struct kiocb *kiocb)
 	return ret;
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_file_begin_write_intent(struct file *file, u32 rwf_flags,
+					    bool positioned);
+extern void pkm_kacs_file_end_write_intent(struct file *file);
+#endif
+
+
 int io_write(struct io_kiocb *req, unsigned int issue_flags)
 {
 	bool force_nonblock = issue_flags & IO_URING_F_NONBLOCK;
@@ -1162,7 +1169,17 @@ int io_write(struct io_kiocb *req, unsigned int issue_flags)
 
 	ppos = io_kiocb_update_pos(req);
 
+#ifdef CONFIG_SECURITY_PKM
+	ret = pkm_kacs_file_begin_write_intent(
+		req->file, (u32)rw->flags,
+		ppos && !(req->flags & REQ_F_CUR_POS));
+	if (unlikely(ret))
+		return ret;
 	ret = rw_verify_area(WRITE, req->file, ppos, req->cqe.res);
+	pkm_kacs_file_end_write_intent(req->file);
+#else
+	ret = rw_verify_area(WRITE, req->file, ppos, req->cqe.res);
+#endif
 	if (unlikely(ret))
 		return ret;
 

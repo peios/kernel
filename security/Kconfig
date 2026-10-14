@@ -303,5 +303,6 @@ config SECURITY_COMMONCAP_KUNIT_TEST
 
 source "security/Kconfig.hardening"
 
+source "security/pkm/Kconfig"
 endmenu
 

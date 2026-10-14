@@ -812,6 +812,10 @@ static int check_kill_permission(int sig, struct kernel_siginfo *info,
 	if (error)
 		return error;
 
+#ifdef CONFIG_SECURITY_PKM
+	return security_task_kill(t, info, sig, NULL);
+#endif
+
 	if (!same_thread_group(current, t) &&
 	    !kill_ok_by_cred(t)) {
 		switch (sig) {

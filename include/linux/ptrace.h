@@ -64,6 +64,10 @@ extern void exit_ptrace(struct task_struct *tracer, struct list_head *dead);
 #define PTRACE_MODE_NOAUDIT	0x04
 #define PTRACE_MODE_FSCREDS	0x08
 #define PTRACE_MODE_REALCREDS	0x10
+#define PTRACE_MODE_GETFD	0x20
+#define PTRACE_MODE_PIDFD_OPEN	0x40
+#define PTRACE_MODE_PROC_QUERY_LIMITED	0x80
+#define PTRACE_MODE_PROC_QUERY_INFORMATION	0x100
 
 /* shorthands for READ/ATTACH and FSCREDS/REALCREDS combinations */
 #define PTRACE_MODE_READ_FSCREDS (PTRACE_MODE_READ | PTRACE_MODE_FSCREDS)

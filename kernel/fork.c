@@ -1386,8 +1386,15 @@ static bool may_access_mm(struct mm_struct *mm, struct task_struct *task, unsign
 		return true;
 	if (ptrace_may_access(task, mode))
 		return true;
+#ifndef CONFIG_SECURITY_PKM
+	/*
+	 * Under Peios the ptrace answer is KACS's process-descriptor and PIP
+	 * decision, and it is final: a profiling privilege must not reopen
+	 * a target's memory, maps or environment past a denial.
+	 */
 	if ((mode & PTRACE_MODE_READ) && perfmon_capable())
 		return true;
+#endif
 	return false;
 }
 
@@ -2475,6 +2482,14 @@ __latent_entropy struct task_struct *copy_process(
 
 	copy_oom_score_adj(clone_flags, p);
 
+#ifdef CONFIG_SECURITY_PKM
+	if (clone_flags & CLONE_THREAD) {
+		extern void pkm_kacs_primary_thread_enroll(struct task_struct *task);
+
+		/* Published and fully initialized, but not runnable yet. */
+		pkm_kacs_primary_thread_enroll(p);
+	}
+#endif
 	return p;
 
 bad_fork_core_free:

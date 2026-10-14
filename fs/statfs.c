@@ -113,12 +113,24 @@ retry:
 	return error;
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_file_statfs(struct file *file);
+#endif
+
+
 int fd_statfs(int fd, struct kstatfs *st)
 {
 	CLASS(fd_raw, f)(fd);
 
 	if (fd_empty(f))
 		return -EBADF;
+#ifdef CONFIG_SECURITY_PKM
+	{
+		int ret = pkm_kacs_file_statfs(fd_file(f));
+		if (ret)
+			return ret;
+	}
+#endif
 	return vfs_statfs(&fd_file(f)->f_path, st);
 }
 

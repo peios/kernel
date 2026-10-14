@@ -390,6 +390,90 @@ static ssize_t get_task_cmdline(struct task_struct *tsk, char __user *buf,
 	return ret;
 }
 
+static unsigned int proc_pkm_metadata_ptrace_mode(const struct file *file)
+{
+	const char *name;
+
+	if (!file)
+		return 0;
+
+	name = file_dentry(file)->d_name.name;
+	if (strcmp(name, "stat") == 0 || strcmp(name, "statm") == 0 ||
+	    strcmp(name, "comm") == 0 || strcmp(name, "wchan") == 0 ||
+	    strcmp(name, "schedstat") == 0 || strcmp(name, "cpuset") == 0 ||
+	    strcmp(name, "cgroup") == 0 ||
+	    strcmp(name, "cpu_resctrl_groups") == 0 ||
+	    strcmp(name, "oom_score") == 0 ||
+	    strcmp(name, "sessionid") == 0 ||
+	    strcmp(name, "patch_state") == 0 ||
+	    strcmp(name, "stack_depth") == 0 ||
+	    strcmp(name, "arch_status") == 0)
+		return PTRACE_MODE_READ_FSCREDS |
+		       PTRACE_MODE_PROC_QUERY_LIMITED;
+	if (strcmp(name, "cmdline") == 0 || strcmp(name, "status") == 0 ||
+	    strcmp(name, "io") == 0 || strcmp(name, "limits") == 0 ||
+	    strcmp(name, "sched") == 0 ||
+	    strcmp(name, "autogroup") == 0 ||
+	    strcmp(name, "timens_offsets") == 0 ||
+	    strcmp(name, "personality") == 0 ||
+	    strcmp(name, "syscall") == 0 ||
+	    strcmp(name, "latency") == 0 ||
+	    strcmp(name, "timers") == 0 ||
+	    strcmp(name, "timerslack_ns") == 0 ||
+	    strcmp(name, "mounts") == 0 ||
+	    strcmp(name, "mountinfo") == 0 ||
+	    strcmp(name, "mountstats") == 0 ||
+	    strcmp(name, "coredump_filter") == 0 ||
+	    strcmp(name, "oom_adj") == 0 ||
+	    strcmp(name, "oom_score_adj") == 0 ||
+	    strcmp(name, "loginuid") == 0 ||
+	    strcmp(name, "make-it-fail") == 0 ||
+	    strcmp(name, "fail-nth") == 0 ||
+	    strcmp(name, "uid_map") == 0 ||
+	    strcmp(name, "gid_map") == 0 ||
+	    strcmp(name, "projid_map") == 0 ||
+	    strcmp(name, "setgroups") == 0 ||
+	    strcmp(name, "seccomp_cache") == 0 ||
+	    strcmp(name, "ksm_merging_pages") == 0 ||
+	    strcmp(name, "ksm_stat") == 0)
+		return PTRACE_MODE_READ_FSCREDS |
+		       PTRACE_MODE_PROC_QUERY_INFORMATION;
+
+	return 0;
+}
+
+static int proc_pkm_check_task_metadata_access(struct task_struct *task,
+					       const struct file *file)
+{
+	unsigned int mode;
+
+	mode = proc_pkm_metadata_ptrace_mode(file);
+	if (mode == 0)
+		return 0;
+	if (!ptrace_may_access(task, mode))
+		return -EACCES;
+
+	return 0;
+}
+
+#ifdef CONFIG_SECURITY_PKM
+extern long pkm_kacs_proc_process_setinfo(struct task_struct *task);
+#endif
+
+static int proc_pkm_check_task_setinfo_access(struct task_struct *task)
+{
+#ifdef CONFIG_SECURITY_PKM
+	long ret;
+
+	ret = pkm_kacs_proc_process_setinfo(task);
+	if (ret)
+		return (int)ret;
+#endif
+
+	return 0;
+}
+
+
 static ssize_t proc_pid_cmdline_read(struct file *file, char __user *buf,
 				     size_t count, loff_t *pos)
 {
@@ -401,6 +485,12 @@ static ssize_t proc_pid_cmdline_read(struct file *file, char __user *buf,
 	tsk = get_proc_task(file_inode(file));
 	if (!tsk)
 		return -ESRCH;
+	ret = proc_pkm_check_task_metadata_access(tsk, file);
+	if (ret) {
+		put_task_struct(tsk);
+		return ret;
+	}
+
 	ret = get_task_cmdline(tsk, buf, count, pos);
 	put_task_struct(tsk);
 	if (ret > 0)
@@ -532,6 +622,16 @@ static int lstats_show_proc(struct seq_file *m, void *v)
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/latency read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, m->file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
+
 	seq_puts(m, "Latency Top version : v0.1\n");
 	for (i = 0; i < LT_SAVECOUNT; i++) {
 		struct latency_record *lr = &task->latency_record[i];
@@ -566,6 +666,15 @@ static ssize_t lstats_write(struct file *file, const char __user *buf,
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/latency writes. */
+	{
+		int ret = proc_pkm_check_task_setinfo_access(task);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
 	clear_tsk_latency_tracing(task);
 	put_task_struct(task);
 
@@ -809,6 +918,12 @@ static int proc_single_show(struct seq_file *m, void *v)
 	if (!task)
 		return -ESRCH;
 
+	ret = proc_pkm_check_task_metadata_access(task, m->file);
+	if (ret) {
+		put_task_struct(task);
+		return ret;
+	}
+
 	ret = PROC_I(inode)->op.proc_show(m, ns, pid, task);
 
 	put_task_struct(task);
@@ -871,7 +986,9 @@ static int mem_open(struct inode *inode, struct file *file)
 {
 	if (WARN_ON_ONCE(!(file->f_op->fop_flags & FOP_UNSIGNED_OFFSET)))
 		return -EINVAL;
-	return __mem_open(inode, file, PTRACE_MODE_ATTACH);
+	return __mem_open(inode, file,
+			  (file->f_mode & FMODE_WRITE) ? PTRACE_MODE_ATTACH :
+						 PTRACE_MODE_READ);
 }
 
 static bool proc_mem_foll_force(struct file *file, struct mm_struct *mm)
@@ -1110,6 +1227,16 @@ static ssize_t oom_adj_read(struct file *file, char __user *buf, size_t count,
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/oom_adj read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
+
 	if (task->signal->oom_score_adj == OOM_SCORE_ADJ_MAX)
 		oom_adj = OOM_ADJUST_MAX;
 	else
@@ -1131,6 +1258,16 @@ static int __set_oom_adj(struct file *file, int oom_adj, bool legacy)
 	task = get_proc_task(file_inode(file));
 	if (!task)
 		return -ESRCH;
+
+#ifdef CONFIG_SECURITY_PKM
+	/* PKM: gate /proc/<pid>/oom adjustment writes. */
+	err = proc_pkm_check_task_setinfo_access(task);
+	if (err) {
+		put_task_struct(task);
+		return err;
+	}
+#endif
+
 
 	mutex_lock(&oom_adj_mutex);
 	if (legacy) {
@@ -1170,6 +1307,17 @@ static int __set_oom_adj(struct file *file, int oom_adj, bool legacy)
 			task_unlock(p);
 		}
 	}
+
+#ifdef CONFIG_SECURITY_PKM
+	/* PKM: fail closed on multiprocess mm OOM fan-out. */
+	if (mm) {
+		mmdrop(mm);
+		mm = NULL;
+		err = -EACCES;
+		goto err_unlock;
+	}
+#endif
+
 
 	task->signal->oom_score_adj = oom_adj;
 	if (!legacy && has_capability_noaudit(current, CAP_SYS_RESOURCE))
@@ -1268,6 +1416,16 @@ static ssize_t oom_score_adj_read(struct file *file, char __user *buf,
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/oom_score_adj read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
+
 	oom_score_adj = task->signal->oom_score_adj;
 	put_task_struct(task);
 	len = snprintf(buffer, sizeof(buffer), "%hd\n", oom_score_adj);
@@ -1320,6 +1478,15 @@ static ssize_t proc_loginuid_read(struct file * file, char __user * buf,
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/loginuid read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
 	length = scnprintf(tmpbuf, TMPBUFLEN, "%u",
 			   from_kuid(file->f_cred->user_ns,
 				     audit_get_loginuid(task)));
@@ -1386,6 +1553,15 @@ static ssize_t proc_sessionid_read(struct file * file, char __user * buf,
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/sessionid read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
 	length = scnprintf(tmpbuf, TMPBUFLEN, "%u",
 				audit_get_sessionid(task));
 	put_task_struct(task);
@@ -1409,6 +1585,16 @@ static ssize_t proc_fault_inject_read(struct file * file, char __user * buf,
 
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/make-it-fail read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
+
 	make_it_fail = task->make_it_fail;
 	put_task_struct(task);
 
@@ -1441,6 +1627,13 @@ static ssize_t proc_fault_inject_write(struct file * file,
 	task = get_proc_task(file_inode(file));
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/make-it-fail writes. */
+	rv = proc_pkm_check_task_setinfo_access(task);
+	if (rv) {
+		put_task_struct(task);
+		return rv;
+	}
+
 	task->make_it_fail = make_it_fail;
 	put_task_struct(task);
 
@@ -1467,6 +1660,13 @@ static ssize_t proc_fail_nth_write(struct file *file, const char __user *buf,
 	task = get_proc_task(file_inode(file));
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/fail-nth writes. */
+	err = proc_pkm_check_task_setinfo_access(task);
+	if (err) {
+		put_task_struct(task);
+		return err;
+	}
+
 	task->fail_nth = n;
 	put_task_struct(task);
 
@@ -1483,7 +1683,17 @@ static ssize_t proc_fail_nth_read(struct file *file, char __user *buf,
 	task = get_proc_task(file_inode(file));
 	if (!task)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/fail-nth read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(task, file);
+
+		if (ret) {
+			put_task_struct(task);
+			return ret;
+		}
+	}
 	len = snprintf(numbuf, sizeof(numbuf), "%u\n", task->fail_nth);
+
 	put_task_struct(task);
 	return simple_read_from_buffer(buf, count, ppos, numbuf, len);
 }
@@ -1507,6 +1717,16 @@ static int sched_show(struct seq_file *m, void *v)
 	p = get_proc_task(inode);
 	if (!p)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/sched read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(p, m->file);
+
+		if (ret) {
+			put_task_struct(p);
+			return ret;
+		}
+	}
+
 	proc_sched_show_task(p, ns, m);
 
 	put_task_struct(p);
@@ -1524,6 +1744,16 @@ sched_write(struct file *file, const char __user *buf,
 	p = get_proc_task(inode);
 	if (!p)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/sched writes. */
+	{
+		int ret = proc_pkm_check_task_setinfo_access(p);
+
+		if (ret) {
+			put_task_struct(p);
+			return ret;
+		}
+	}
+
 	proc_sched_set_task(p);
 
 	put_task_struct(p);
@@ -1556,6 +1786,16 @@ static int sched_autogroup_show(struct seq_file *m, void *v)
 	p = get_proc_task(inode);
 	if (!p)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/autogroup read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(p, m->file);
+
+		if (ret) {
+			put_task_struct(p);
+			return ret;
+		}
+	}
+
 	proc_sched_autogroup_show_task(p, m);
 
 	put_task_struct(p);
@@ -1585,6 +1825,13 @@ sched_autogroup_write(struct file *file, const char __user *buf,
 	p = get_proc_task(inode);
 	if (!p)
 		return -ESRCH;
+
+	/* PKM: gate /proc/<pid>/autogroup writes. */
+	err = proc_pkm_check_task_setinfo_access(p);
+	if (err) {
+		put_task_struct(p);
+		return err;
+	}
 
 	err = proc_sched_autogroup_set_nice(p, nice);
 	if (err)
@@ -1626,6 +1873,16 @@ static int timens_offsets_show(struct seq_file *m, void *v)
 	p = get_proc_task(file_inode(m->file));
 	if (!p)
 		return -ESRCH;
+	/* PKM: gate /proc/<pid>/timens_offsets read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(p, m->file);
+
+		if (ret) {
+			put_task_struct(p);
+			return ret;
+		}
+	}
+
 	proc_timens_show_offsets(p, m);
 
 	put_task_struct(p);
@@ -1695,6 +1952,13 @@ static ssize_t timens_offsets_write(struct file *file, const char __user *buf,
 	p = get_proc_task(inode);
 	if (!p)
 		goto out;
+	/* PKM: gate /proc/<pid>/timens_offsets writes. */
+	ret = proc_pkm_check_task_setinfo_access(p);
+	if (ret) {
+		put_task_struct(p);
+		goto out;
+	}
+
 	ret = proc_timens_set_offset(file, p, offsets, noffsets);
 	put_task_struct(p);
 	if (ret)
@@ -1755,6 +2019,16 @@ static int comm_show(struct seq_file *m, void *v)
 	p = get_proc_task(inode);
 	if (!p)
 		return -ESRCH;
+
+	/* PKM: gate /proc/<pid>/comm read metadata. */
+	{
+		int ret = proc_pkm_check_task_metadata_access(p, m->file);
+
+		if (ret) {
+			put_task_struct(p);
+			return ret;
+		}
+	}
 
 	proc_task_name(m, p, false);
 	seq_putc(m, '\n');
@@ -2576,6 +2850,23 @@ static int proc_timers_open(struct inode *inode, struct file *file)
 {
 	struct timers_private *tp;
 
+#ifdef CONFIG_SECURITY_PKM
+	{
+		struct task_struct *task;
+		int ret;
+
+		/* PKM: gate /proc/<pid>/timers read metadata. */
+		task = get_proc_task(inode);
+		if (!task)
+			return -ESRCH;
+		ret = proc_pkm_check_task_metadata_access(task, file);
+		put_task_struct(task);
+		if (ret)
+			return ret;
+	}
+#endif
+
+
 	tp = __seq_open_private(file, &proc_timers_seq_ops,
 			sizeof(struct timers_private));
 	if (!tp)
@@ -2611,6 +2902,7 @@ static ssize_t timerslack_ns_write(struct file *file, const char __user *buf,
 		return -ESRCH;
 
 	if (p != current) {
+#ifndef CONFIG_SECURITY_PKM
 		rcu_read_lock();
 		if (!ns_capable(__task_cred(p)->user_ns, CAP_SYS_NICE)) {
 			rcu_read_unlock();
@@ -2618,6 +2910,7 @@ static ssize_t timerslack_ns_write(struct file *file, const char __user *buf,
 			goto out;
 		}
 		rcu_read_unlock();
+#endif
 
 		err = security_task_setscheduler(p);
 		if (err) {
@@ -2651,6 +2944,7 @@ static int timerslack_ns_show(struct seq_file *m, void *v)
 		return -ESRCH;
 
 	if (p != current) {
+#ifndef CONFIG_SECURITY_PKM
 		rcu_read_lock();
 		if (!ns_capable(__task_cred(p)->user_ns, CAP_SYS_NICE)) {
 			rcu_read_unlock();
@@ -2658,6 +2952,7 @@ static int timerslack_ns_show(struct seq_file *m, void *v)
 			goto out;
 		}
 		rcu_read_unlock();
+#endif
 
 		err = security_task_getscheduler(p);
 		if (err)
@@ -2962,6 +3257,12 @@ static ssize_t proc_coredump_filter_read(struct file *file, char __user *buf,
 	if (!task)
 		return -ESRCH;
 
+	/* PKM: gate /proc/<pid>/coredump_filter read metadata. */
+	ret = proc_pkm_check_task_metadata_access(task, file);
+	if (ret) {
+		put_task_struct(task);
+		return ret;
+	}
 	ret = 0;
 	mm = get_task_mm(task);
 	if (mm) {
@@ -3000,7 +3301,12 @@ static ssize_t proc_coredump_filter_write(struct file *file,
 	if (!task)
 		goto out_no_task;
 
+	/* PKM: gate /proc/<pid>/coredump_filter writes. */
+	ret = proc_pkm_check_task_setinfo_access(task);
+	if (ret)
+		goto out_no_mm;
 	mm = get_task_mm(task);
+
 	if (!mm)
 		goto out_no_mm;
 	ret = 0;
@@ -3038,7 +3344,7 @@ static int do_io_accounting(struct task_struct *task, struct seq_file *m, int wh
 	if (result)
 		return result;
 
-	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS)) {
+	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS | PTRACE_MODE_PROC_QUERY_INFORMATION)) {
 		result = -EACCES;
 		goto out_unlock;
 	}
@@ -3104,6 +3410,21 @@ static int proc_id_map_open(struct inode *inode, struct file *file,
 
 	task = get_proc_task(inode);
 	if (task) {
+		/* PKM: gate /proc/<pid> id-map open intent. */
+		if (file->f_mode & FMODE_READ) {
+			ret = proc_pkm_check_task_metadata_access(task, file);
+			if (ret) {
+				put_task_struct(task);
+				goto err;
+			}
+		}
+		if (file->f_mode & FMODE_WRITE) {
+			ret = proc_pkm_check_task_setinfo_access(task);
+			if (ret) {
+				put_task_struct(task);
+				goto err;
+			}
+		}
 		rcu_read_lock();
 		ns = get_user_ns(task_cred_xxx(task, user_ns));
 		rcu_read_unlock();
@@ -3182,6 +3503,21 @@ static int proc_setgroups_open(struct inode *inode, struct file *file)
 	ret = -ESRCH;
 	task = get_proc_task(inode);
 	if (task) {
+		/* PKM: gate /proc/<pid>/setgroups open intent. */
+		if (file->f_mode & FMODE_READ) {
+			ret = proc_pkm_check_task_metadata_access(task, file);
+			if (ret) {
+				put_task_struct(task);
+				goto err;
+			}
+		}
+		if (file->f_mode & FMODE_WRITE) {
+			ret = proc_pkm_check_task_setinfo_access(task);
+			if (ret) {
+				put_task_struct(task);
+				goto err;
+			}
+		}
 		rcu_read_lock();
 		ns = get_user_ns(task_cred_xxx(task, user_ns));
 		rcu_read_unlock();
@@ -3309,6 +3645,62 @@ static int proc_stack_depth(struct seq_file *m, struct pid_namespace *ns,
 static const struct file_operations proc_task_operations;
 static const struct inode_operations proc_task_inode_operations;
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_proc_open_process_token_file(struct file *file,
+						 struct task_struct *task);
+extern int pkm_kacs_proc_open_thread_token_file(struct file *file,
+						struct task_struct *task);
+
+static int proc_pid_token_open(struct inode *inode, struct file *file)
+{
+	struct task_struct *task;
+	int ret;
+
+	task = get_proc_task(inode);
+	if (!task)
+		return -ESRCH;
+
+	ret = pkm_kacs_proc_open_process_token_file(file, task);
+	put_task_struct(task);
+	return ret;
+}
+
+static int proc_tid_token_open(struct inode *inode, struct file *file)
+{
+	struct task_struct *task;
+	int ret;
+
+	task = get_proc_task(inode);
+	if (!task)
+		return -ESRCH;
+
+	ret = pkm_kacs_proc_open_thread_token_file(file, task);
+	put_task_struct(task);
+	return ret;
+}
+
+static const struct file_operations proc_pid_token_operations = {
+	.open		= proc_pid_token_open,
+	.llseek		= noop_llseek,
+};
+
+static const struct file_operations proc_tid_token_operations = {
+	.open		= proc_tid_token_open,
+	.llseek		= noop_llseek,
+};
+
+/* The process's PIP and mitigations. KACS decides who may read them. */
+extern int pkm_kacs_proc_pid_psb_show(struct seq_file *m,
+				      struct task_struct *task);
+
+static int proc_pid_psb(struct seq_file *m, struct pid_namespace *ns,
+			struct pid *pid, struct task_struct *task)
+{
+	return pkm_kacs_proc_pid_psb_show(m, task);
+}
+#endif
+
+
 static const struct pid_entry tgid_base_stuff[] = {
 	DIR("task",       S_IRUGO|S_IXUGO, proc_task_inode_operations, proc_task_operations),
 	DIR("fd",         S_IRUSR|S_IXUSR, proc_fd_inode_operations, proc_fd_operations),
@@ -3319,6 +3711,11 @@ static const struct pid_entry tgid_base_stuff[] = {
 	DIR("net",        S_IRUGO|S_IXUGO, proc_net_inode_operations, proc_net_operations),
 #endif
 	REG("environ",    S_IRUSR, proc_environ_operations),
+#ifdef CONFIG_SECURITY_PKM
+	REG("token",      S_IRUGO, proc_pid_token_operations),
+	ONE("psb",        S_IRUGO, proc_pid_psb),
+#endif
+
 	REG("auxv",       S_IRUSR, proc_auxv_operations),
 	ONE("status",     S_IRUGO, proc_pid_status),
 	ONE("personality", S_IRUSR, proc_pid_personality),
@@ -3665,6 +4062,10 @@ static const struct pid_entry tid_base_stuff[] = {
 	DIR("net",        S_IRUGO|S_IXUGO, proc_net_inode_operations, proc_net_operations),
 #endif
 	REG("environ",   S_IRUSR, proc_environ_operations),
+#ifdef CONFIG_SECURITY_PKM
+	REG("token",     S_IRUGO, proc_tid_token_operations),
+#endif
+
 	REG("auxv",      S_IRUSR, proc_auxv_operations),
 	ONE("status",    S_IRUGO, proc_pid_status),
 	ONE("personality", S_IRUSR, proc_pid_personality),

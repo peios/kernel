@@ -1763,7 +1763,8 @@ EXPORT_SYMBOL(lease_get_mtime);
  *	XXX: sfr & willy disagree over whether F_INPROGRESS
  *	should be returned to userspace.
  */
-static int __fcntl_getlease(struct file *filp, unsigned int flavor)
+static int generic_getlease(struct file *filp, struct file *lease_file,
+			    unsigned int flavor)
 {
 	struct file_lease *fl;
 	struct inode *inode = file_inode(filp);
@@ -1777,7 +1778,7 @@ static int __fcntl_getlease(struct file *filp, unsigned int flavor)
 		spin_lock(&ctx->flc_lock);
 		time_out_leases(inode, &dispose);
 		list_for_each_entry(fl, &ctx->flc_lease, c.flc_list) {
-			if (fl->c.flc_file != filp)
+			if (fl->c.flc_file != lease_file)
 				continue;
 			if (fl->c.flc_flags & flavor)
 				type = target_leasetype(fl);
@@ -1791,16 +1792,31 @@ static int __fcntl_getlease(struct file *filp, unsigned int flavor)
 	return type;
 }
 
+int kernel_getlease(struct file *filp, struct file *lease_file,
+		    unsigned int flavor)
+{
+	lease_file = lease_file ?: filp;
+	if (filp->f_op->getlease)
+		return filp->f_op->getlease(filp, lease_file, flavor);
+	return generic_getlease(filp, lease_file, flavor);
+}
+EXPORT_SYMBOL_GPL(kernel_getlease);
+
 int fcntl_getlease(struct file *filp)
 {
-	return __fcntl_getlease(filp, FL_LEASE);
+	return kernel_getlease(filp, filp, FL_LEASE);
 }
 
 int fcntl_getdeleg(struct file *filp, struct delegation *deleg)
 {
+	int type;
+
 	if (deleg->d_flags != 0 || deleg->__pad != 0)
 		return -EINVAL;
-	deleg->d_type = __fcntl_getlease(filp, FL_DELEG);
+	type = kernel_getlease(filp, filp, FL_DELEG);
+	if (type < 0)
+		return type;
+	deleg->d_type = type;
 	return 0;
 }
 
@@ -1811,15 +1827,22 @@ generic_add_lease(struct file *filp, int arg, struct file_lease **flp, void **pr
 	struct inode *inode = file_inode(filp);
 	struct file_lock_context *ctx;
 	bool is_deleg = (*flp)->c.flc_flags & FL_DELEG;
+	struct file *lease_file;
 	int error;
 	LIST_HEAD(dispose);
 
 	lease = *flp;
+	lease_file = lease->c.flc_file ?: filp;
 	trace_generic_add_lease(inode, lease);
 
 	error = file_f_owner_allocate(filp);
 	if (error)
 		return error;
+	if (lease_file != filp) {
+		error = file_f_owner_allocate(lease_file);
+		if (error)
+			return error;
+	}
 
 	/* Note that arg is never F_UNLCK here */
 	ctx = locks_get_lock_context(inode, arg);
@@ -1854,7 +1877,7 @@ generic_add_lease(struct file *filp, int arg, struct file_lease **flp, void **pr
 	 */
 	error = -EAGAIN;
 	list_for_each_entry(fl, &ctx->flc_lease, c.flc_list) {
-		if (fl->c.flc_file == filp &&
+		if (fl->c.flc_file == lease_file &&
 		    fl->c.flc_owner == lease->c.flc_owner) {
 			my_fl = fl;
 			continue;
@@ -1934,7 +1957,8 @@ static int generic_delete_lease(struct file *filp, void *owner)
 	percpu_down_read(&file_rwsem);
 	spin_lock(&ctx->flc_lock);
 	list_for_each_entry(fl, &ctx->flc_lease, c.flc_list) {
-		if (fl->c.flc_file == filp &&
+		if ((fl->c.flc_file == filp ||
+		     fl->c.flc_file == owner) &&
 		    fl->c.flc_owner == owner) {
 			victim = fl;
 			break;
@@ -2025,8 +2049,13 @@ EXPORT_SYMBOL_GPL(lease_unregister_notifier);
 int
 kernel_setlease(struct file *filp, int arg, struct file_lease **lease, void **priv)
 {
-	if (lease)
+	if (lease) {
+		struct file *lease_file = (*lease)->c.flc_file;
+
+		(*lease)->c.flc_file = filp;
 		setlease_notifier(arg, *lease);
+		(*lease)->c.flc_file = lease_file;
+	}
 	if (filp->f_op->setlease)
 		return filp->f_op->setlease(filp, arg, lease, priv);
 	return -EINVAL;

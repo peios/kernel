@@ -1767,6 +1767,15 @@ int security_inode_mknod(struct inode *dir, struct dentry *dentry,
  *
  * Return: Returns 0 if permission is granted.
  */
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_inode_rename_flags(struct inode *old_dir,
+				       struct dentry *old_dentry,
+				       struct inode *new_dir,
+				       struct dentry *new_dentry,
+				       unsigned int flags);
+#endif
+
+
 int security_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 			  struct inode *new_dir, struct dentry *new_dentry,
 			  unsigned int flags)
@@ -1775,6 +1784,15 @@ int security_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 		     (d_is_positive(new_dentry) &&
 		      IS_PRIVATE(d_backing_inode(new_dentry)))))
 		return 0;
+
+#ifdef CONFIG_SECURITY_PKM
+	{
+		int pkm_ret = pkm_kacs_inode_rename_flags(
+			old_dir, old_dentry, new_dir, new_dentry, flags);
+		if (pkm_ret)
+			return pkm_ret;
+	}
+#endif
 
 	if (flags & RENAME_EXCHANGE) {
 		int err = call_int_hook(inode_rename, new_dir, new_dentry,

@@ -335,14 +335,34 @@ int proc_fd_permission(struct mnt_idmap *idmap,
 	int rv;
 
 	rv = generic_permission(&nop_mnt_idmap, inode, mask);
+#ifndef CONFIG_SECURITY_PKM
 	if (rv == 0)
 		return rv;
+#endif
 
 	rcu_read_lock();
 	p = pid_task(proc_pid(inode), PIDTYPE_PID);
 	if (p && same_thread_group(p, current))
 		rv = 0;
 	rcu_read_unlock();
+
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * Under Peios the directory's owner is a projected uid shared by
+	 * every process of one principal, so the mode check above is not
+	 * a security decision. The entries are PTRACE_MODE_READ material
+	 * (PROCESS_VM_READ), and so is the directory that lists them.
+	 */
+	if (rv == 0) {
+		p = get_proc_task(inode);
+		if (!p)
+			return -ENOENT;
+		if (!same_thread_group(p, current) &&
+		    !ptrace_may_access(p, PTRACE_MODE_READ_FSCREDS))
+			rv = -EACCES;
+		put_task_struct(p);
+	}
+#endif
 
 	return rv;
 }

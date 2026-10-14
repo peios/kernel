@@ -2564,10 +2564,12 @@ static struct mm_struct *find_mm_struct(pid_t pid, nodemask_t *mem_nodes)
 	 * Check if this process has the right to modify the specified
 	 * process. Use the regular "ptrace_may_access()" checks.
 	 */
+#ifndef CONFIG_SECURITY_PKM
 	if (!ptrace_may_access(task, PTRACE_MODE_READ_REALCREDS)) {
 		mm = ERR_PTR(-EPERM);
 		goto out;
 	}
+#endif
 
 	mm = ERR_PTR(security_task_movememory(task));
 	if (IS_ERR(mm))

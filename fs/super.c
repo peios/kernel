@@ -37,8 +37,11 @@
 #include <linux/user_namespace.h>
 #include <linux/fs_context.h>
 #include <linux/fserror.h>
+#include <linux/nsproxy.h>
+#include <linux/kacs_mntns.h>
 #include <uapi/linux/mount.h>
 #include "internal.h"
+#include "mount.h"
 
 static int thaw_super_locked(struct super_block *sb, enum freeze_holder who,
 			     const void *freeze_owner);
@@ -693,6 +696,23 @@ EXPORT_SYMBOL(generic_shutdown_super);
 
 bool mount_capable(struct fs_context *fc)
 {
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * PKM: the second of the two gates a mount passes. may_mount() asks
+	 * whether the caller may reshape its namespace; this asks whether this
+	 * context may bring a superblock into being. Both are volume
+	 * management, so SeManageVolumePrivilege satisfies both -- gating only
+	 * the first would let an administrator reach fsconfig() and fail there
+	 * instead, which is a worse outcome than a clean refusal. Both are
+	 * also answered by the caller's own mount namespace descriptor for a
+	 * filesystem type on KACS's unprivileged allowlist (see
+	 * <linux/kacs_mntns.h>); the type is fixed by the time this is asked.
+	 */
+	if (pkm_kacs_may_mount_op(current->nsproxy->mnt_ns->security,
+				  PKM_KACS_MNTNS_OP_NEW_FS,
+				  fc->fs_type->name))
+		return true;
+#endif
 	if (!(fc->fs_type->fs_flags & FS_USERNS_MOUNT))
 		return capable(CAP_SYS_ADMIN);
 	else

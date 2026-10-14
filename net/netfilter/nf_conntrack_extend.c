@@ -23,13 +23,14 @@
 #include <net/netfilter/nf_conntrack_labels.h>
 #include <net/netfilter/nf_conntrack_synproxy.h>
 #include <net/netfilter/nf_conntrack_act_ct.h>
+#include <linux/peios_ntfe.h>
 #include <net/netfilter/nf_nat.h>
 
 #define NF_CT_EXT_PREALLOC	128u /* conntrack events are on by default */
 
 atomic_t nf_conntrack_ext_genid __read_mostly = ATOMIC_INIT(1);
 
-static const u8 nf_ct_ext_type_len[NF_CT_EXT_NUM] = {
+static const u16 nf_ct_ext_type_len[NF_CT_EXT_NUM] = {
 	[NF_CT_EXT_HELPER] = sizeof(struct nf_conn_help),
 #if IS_ENABLED(CONFIG_NF_NAT)
 	[NF_CT_EXT_NAT] = sizeof(struct nf_conn_nat),
@@ -54,14 +55,19 @@ static const u8 nf_ct_ext_type_len[NF_CT_EXT_NUM] = {
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 	[NF_CT_EXT_ACT_CT] = sizeof(struct nf_conn_act_ct_ext),
 #endif
+#if IS_ENABLED(CONFIG_PEIOS_NTFE)
+	[NF_CT_EXT_NTFE] = sizeof(struct peios_ntfe_ct),
+#endif
 };
 
 static __always_inline unsigned int total_extension_size(void)
 {
 	/* remember to add new extensions below */
-	BUILD_BUG_ON(NF_CT_EXT_NUM > 10);
+	BUILD_BUG_ON(NF_CT_EXT_NUM > 11);
 
+	/* Bound padding for every allocation order, not just payload bytes. */
 	return sizeof(struct nf_ct_ext) +
+	       NF_CT_EXT_NUM * (__alignof__(struct nf_ct_ext) - 1) +
 	       sizeof(struct nf_conn_help)
 #if IS_ENABLED(CONFIG_NF_NAT)
 		+ sizeof(struct nf_conn_nat)
@@ -86,6 +92,9 @@ static __always_inline unsigned int total_extension_size(void)
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 		+ sizeof(struct nf_conn_act_ct_ext)
 #endif
+#if IS_ENABLED(CONFIG_PEIOS_NTFE)
+		+ sizeof(struct peios_ntfe_ct)
+#endif
 	;
 }
 
@@ -97,8 +106,8 @@ void *nf_ct_ext_add(struct nf_conn *ct, enum nf_ct_ext_id id, gfp_t gfp)
 	/* Conntrack must not be confirmed to avoid races on reallocation. */
 	WARN_ON(nf_ct_is_confirmed(ct));
 
-	/* struct nf_ct_ext uses u8 to store offsets/size */
-	BUILD_BUG_ON(total_extension_size() > 255u);
+	/* struct nf_ct_ext uses u16 to store offsets/size */
+	BUILD_BUG_ON(total_extension_size() > 65535u);
 
 	if (ct->ext) {
 		const struct nf_ct_ext *old = ct->ext;

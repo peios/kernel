@@ -200,7 +200,8 @@ static ssize_t process_vm_rw_core(pid_t pid, struct iov_iter *iter,
 		goto free_proc_pages;
 	}
 
-	mm = mm_access(task, PTRACE_MODE_ATTACH_REALCREDS);
+	mm = mm_access(task, vm_write ? PTRACE_MODE_ATTACH_REALCREDS :
+				      PTRACE_MODE_READ_REALCREDS);
 	if (IS_ERR(mm)) {
 		rc = PTR_ERR(mm);
 		/*

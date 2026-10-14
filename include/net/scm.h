@@ -48,7 +48,16 @@ struct scm_cookie {
 #ifdef CONFIG_SECURITY_NETWORK
 	u32			secid;		/* Passed security ID 	*/
 #endif
+#ifdef CONFIG_SECURITY_PKM
+	const void		*kacs_token;	/* KACS identity (counted ref) */
+	u8			kacs_deliver;	/* deliver it as KACS_SCM_TOKEN */
+#endif
 };
+
+#ifdef CONFIG_SECURITY_PKM
+int pkm_kacs_scm_send(struct socket *sock, struct scm_cookie *scm);
+void pkm_kacs_scm_token_drop(struct scm_cookie *scm);
+#endif
 
 void scm_detach_fds(struct msghdr *msg, struct scm_cookie *scm);
 void scm_detach_fds_compat(struct msghdr *msg, struct scm_cookie *scm);
@@ -83,6 +92,10 @@ static __inline__ void scm_destroy_cred(struct scm_cookie *scm)
 
 static __inline__ void scm_destroy(struct scm_cookie *scm)
 {
+#ifdef CONFIG_SECURITY_PKM
+	if (scm->kacs_token)
+		pkm_kacs_scm_token_drop(scm);
+#endif
 	scm_destroy_cred(scm);
 	if (scm->fp)
 		__scm_destroy(scm);
@@ -97,9 +110,24 @@ static __inline__ int scm_send(struct socket *sock, struct msghdr *msg,
 	if (forcecreds)
 		scm_set_cred(scm, task_tgid(current), current_uid(), current_gid());
 	unix_get_peersec_dgram(sock, scm);
+#ifdef CONFIG_SECURITY_PKM
+	{
+		int err = 0;
+
+		if (msg->msg_controllen > 0)
+			err = __scm_send(sock, msg, scm);
+		if (!err) {
+			err = pkm_kacs_scm_send(sock, scm);
+			if (err)
+				scm_destroy(scm);
+		}
+		return err;
+	}
+#else
 	if (msg->msg_controllen <= 0)
 		return 0;
 	return __scm_send(sock, msg, scm);
+#endif
 }
 
 void scm_recv(struct socket *sock, struct msghdr *msg,

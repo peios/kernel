@@ -1,0 +1,1650 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include <crypto/sha2.h>
+#include <crypto/sig.h>
+
+#include <linux/byteorder/generic.h>
+#include <linux/elf.h>
+#include <linux/err.h>
+#include <linux/errno.h>
+#include <linux/fs.h>
+#include <linux/kernel.h>
+#include <linux/limits.h>
+#include <linux/slab.h>
+#include <linux/string.h>
+#include <linux/types.h>
+#include <linux/init.h>
+#include <linux/xattr.h>
+
+#include "../kmes/kmes.h"
+#include "builtin_signing_keys.h"
+#ifdef CONFIG_SECURITY_PKM_KUNIT
+#include "kunit_mldsa_vectors.h"
+#endif
+#include "signing.h"
+#include "token_runtime.h"
+
+#include <trace/events/kacs.h>
+
+static void pkm_kacs_signing_material_clear(
+	struct pkm_kacs_signing_material *out)
+{
+	memset(out, 0, sizeof(*out));
+}
+
+static bool pkm_kacs_signing_range_valid(size_t offset, size_t len,
+					 size_t file_len)
+{
+	return offset <= file_len && len <= file_len - offset;
+}
+
+static bool pkm_kacs_signing_elf_range_valid(u64 offset, u64 len,
+					     size_t file_len,
+					     size_t *offset_out,
+					     size_t *len_out)
+{
+	size_t offset_size;
+	size_t len_size;
+
+	if (offset > SIZE_MAX || len > SIZE_MAX)
+		return false;
+
+	offset_size = (size_t)offset;
+	len_size = (size_t)len;
+	if (!pkm_kacs_signing_range_valid(offset_size, len_size, file_len))
+		return false;
+
+	*offset_out = offset_size;
+	*len_out = len_size;
+	return true;
+}
+
+static bool pkm_kacs_signing_section_name_eq(const u8 *strtab,
+					     size_t strtab_len, u32 name_offset,
+					     const char *expected)
+{
+	size_t expected_len = strlen(expected);
+	size_t remaining;
+
+	if (name_offset >= strtab_len)
+		return false;
+
+	remaining = strtab_len - name_offset;
+	if (remaining < expected_len + 1)
+		return false;
+	if (memcmp(strtab + name_offset, expected, expected_len) != 0)
+		return false;
+
+	return strtab[name_offset + expected_len] == '\0';
+}
+
+static void pkm_kacs_signing_hash_buffer(const u8 *file_bytes,
+					 size_t file_len, size_t zero_offset,
+					 size_t zero_len,
+					 u8 hash[SHA256_DIGEST_SIZE])
+{
+	static const u8 zeros[SHA256_BLOCK_SIZE];
+	struct sha256_ctx ctx;
+	size_t zero_end;
+
+	sha256_init(&ctx);
+	if (zero_len == 0) {
+		if (file_len != 0)
+			sha256_update(&ctx, file_bytes, file_len);
+		sha256_final(&ctx, hash);
+		return;
+	}
+
+	zero_end = zero_offset + zero_len;
+	if (zero_offset != 0)
+		sha256_update(&ctx, file_bytes, zero_offset);
+	while (zero_len != 0) {
+		size_t chunk = min_t(size_t, zero_len, sizeof(zeros));
+
+		sha256_update(&ctx, zeros, chunk);
+		zero_len -= chunk;
+	}
+	if (zero_end < file_len)
+		sha256_update(&ctx, file_bytes + zero_end,
+			      file_len - zero_end);
+	sha256_final(&ctx, hash);
+}
+
+static bool pkm_kacs_signing_blob_valid(const u8 *blob, size_t blob_len)
+{
+	return blob && blob_len == PKM_KACS_SIGNING_BLOB_LEN &&
+	       blob[0] == PKM_KACS_SIGNING_VERSION;
+}
+
+void pkm_kacs_signing_material_release(
+	struct pkm_kacs_signing_material *material)
+{
+	if (!material)
+		return;
+	kfree(material->blob);
+	material->blob = NULL;
+}
+
+/*
+ * Take a copy of a validated blob into the material. Used by the buffer
+ * probes, where the blob lives in caller memory whose lifetime we do not
+ * control; the reader probes read straight into the material's own buffer
+ * instead and avoid the copy.
+ */
+static int pkm_kacs_signing_material_copy_blob(
+	struct pkm_kacs_signing_material *out, const u8 *blob)
+{
+	out->blob = kmemdup(blob, PKM_KACS_SIGNING_BLOB_LEN, GFP_KERNEL);
+	return out->blob ? 0 : -ENOMEM;
+}
+
+static int pkm_kacs_signing_probe_xattr_buffer(
+	const u8 *file_bytes, size_t file_len, const u8 *xattr_sig,
+	size_t xattr_sig_len, struct pkm_kacs_signing_material *out)
+{
+	if (xattr_sig_len == 0)
+		return 0;
+	if (!xattr_sig)
+		return -EINVAL;
+	if (!pkm_kacs_signing_blob_valid(xattr_sig, xattr_sig_len))
+		return 0;
+
+	if (pkm_kacs_signing_material_copy_blob(out, xattr_sig))
+		return 0;
+	out->source = PKM_KACS_SIGNING_SOURCE_XATTR;
+	pkm_kacs_signing_hash_buffer(file_bytes, file_len, 0, 0, out->hash);
+	return 0;
+}
+
+static bool pkm_kacs_signing_buffer_is_elf(const u8 *file_bytes,
+					   size_t file_len)
+{
+	return file_len >= SELFMAG &&
+	       memcmp(file_bytes, ELFMAG, SELFMAG) == 0;
+}
+
+static int pkm_kacs_signing_probe_elf_buffer(
+	const u8 *file_bytes, size_t file_len,
+	struct pkm_kacs_signing_material *out, bool *committed_out)
+{
+	const u8 *strtab;
+	Elf64_Shdr shstr = {};
+	Elf64_Ehdr ehdr = {};
+	size_t shdrs_offset;
+	size_t shdrs_len;
+	size_t strtab_offset;
+	size_t strtab_len;
+	u16 shnum;
+	u16 shentsize;
+	u16 shstrndx;
+	u16 i;
+
+	*committed_out = false;
+	if (!pkm_kacs_signing_buffer_is_elf(file_bytes, file_len))
+		return 0;
+	if (file_len < sizeof(ehdr)) {
+		*committed_out = true;
+		return 0;
+	}
+
+	memcpy(&ehdr, file_bytes, sizeof(ehdr));
+	if (ehdr.e_ident[EI_CLASS] != ELFCLASS64 ||
+	    ehdr.e_ident[EI_DATA] != ELFDATA2LSB ||
+	    ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
+		*committed_out = true;
+		return 0;
+	}
+
+	shnum = ehdr.e_shnum;
+	shentsize = ehdr.e_shentsize;
+	shstrndx = ehdr.e_shstrndx;
+	if (shnum == 0)
+		return 0;
+	if (shentsize != sizeof(Elf64_Shdr) ||
+	    shstrndx == SHN_UNDEF || shstrndx >= shnum) {
+		*committed_out = true;
+		return 0;
+	}
+
+	if (ehdr.e_shoff > SIZE_MAX) {
+		*committed_out = true;
+		return 0;
+	}
+	shdrs_offset = (size_t)ehdr.e_shoff;
+	if (shnum > (SIZE_MAX / sizeof(Elf64_Shdr))) {
+		*committed_out = true;
+		return 0;
+	}
+	shdrs_len = (size_t)shnum * sizeof(Elf64_Shdr);
+	if (!pkm_kacs_signing_range_valid(shdrs_offset, shdrs_len, file_len)) {
+		*committed_out = true;
+		return 0;
+	}
+
+	memcpy(&shstr,
+	       file_bytes + shdrs_offset +
+		       ((size_t)shstrndx * sizeof(Elf64_Shdr)),
+	       sizeof(shstr));
+	if (!pkm_kacs_signing_elf_range_valid(shstr.sh_offset, shstr.sh_size,
+					      file_len, &strtab_offset,
+					      &strtab_len)) {
+		*committed_out = true;
+		return 0;
+	}
+	strtab = file_bytes + strtab_offset;
+
+	for (i = 0; i < shnum; i++) {
+		Elf64_Shdr shdr = {};
+		size_t sig_offset;
+		size_t sig_len;
+
+		memcpy(&shdr,
+		       file_bytes + shdrs_offset +
+			       ((size_t)i * sizeof(Elf64_Shdr)),
+		       sizeof(shdr));
+		if (!pkm_kacs_signing_section_name_eq(
+			    strtab, strtab_len, shdr.sh_name,
+			    PKM_KACS_SIGNING_ELF_SECTION))
+			continue;
+
+		*committed_out = true;
+		if (shdr.sh_type != SHT_PROGBITS ||
+		    shdr.sh_size != PKM_KACS_SIGNING_BLOB_LEN ||
+		    !pkm_kacs_signing_elf_range_valid(shdr.sh_offset,
+						      shdr.sh_size, file_len,
+						      &sig_offset,
+						      &sig_len) ||
+		    !pkm_kacs_signing_blob_valid(file_bytes + sig_offset,
+						 sig_len))
+			return 0;
+
+		if (pkm_kacs_signing_material_copy_blob(out,
+						       file_bytes + sig_offset))
+			return 0;
+		out->source = PKM_KACS_SIGNING_SOURCE_ELF;
+		pkm_kacs_signing_hash_buffer(file_bytes, file_len, sig_offset,
+					     sig_len, out->hash);
+		return 0;
+	}
+
+	return 0;
+}
+
+static int pkm_kacs_signing_probe_buffer(
+	const u8 *file_bytes, size_t file_len, const u8 *xattr_sig,
+	size_t xattr_sig_len, struct pkm_kacs_signing_material *out)
+{
+	bool committed = false;
+	int ret;
+
+	if (!out)
+		return -EINVAL;
+	if (file_len != 0 && !file_bytes)
+		return -EINVAL;
+	if (xattr_sig_len != 0 && !xattr_sig)
+		return -EINVAL;
+
+	pkm_kacs_signing_material_clear(out);
+	ret = pkm_kacs_signing_probe_elf_buffer(file_bytes, file_len, out,
+						&committed);
+	if (ret || committed)
+		return ret;
+
+	return pkm_kacs_signing_probe_xattr_buffer(file_bytes, file_len,
+						   xattr_sig, xattr_sig_len,
+						   out);
+}
+
+struct pkm_kacs_signing_reader {
+	void *ctx;
+	int (*size)(void *ctx, size_t *size_out);
+	int (*read)(void *ctx, size_t offset, u8 *dst, size_t len);
+	int (*xattr)(void *ctx, u8 *dst, size_t dst_len, size_t *actual_len);
+};
+
+static bool pkm_kacs_signing_reader_valid(
+	const struct pkm_kacs_signing_reader *reader)
+{
+	return reader && reader->size && reader->read && reader->xattr;
+}
+
+static int pkm_kacs_signing_reader_exact(
+	const struct pkm_kacs_signing_reader *reader, size_t offset, u8 *dst,
+	size_t len)
+{
+	if (len == 0)
+		return 0;
+	if (!reader || !reader->read || !dst)
+		return -EINVAL;
+
+	return reader->read(reader->ctx, offset, dst, len);
+}
+
+static int pkm_kacs_signing_hash_reader(
+	const struct pkm_kacs_signing_reader *reader, size_t file_len,
+	size_t zero_offset, size_t zero_len, u8 hash[SHA256_DIGEST_SIZE])
+{
+	static const u8 zeros[SHA256_BLOCK_SIZE];
+	struct sha256_ctx ctx;
+	size_t zero_end;
+	size_t pos = 0;
+	u8 *buf;
+	int ret = 0;
+
+	if (!hash || !pkm_kacs_signing_reader_valid(reader))
+		return -EINVAL;
+	if (zero_len != 0 &&
+	    !pkm_kacs_signing_range_valid(zero_offset, zero_len, file_len))
+		return -EINVAL;
+
+	buf = kmalloc(PKM_KACS_SIGNING_HASH_CHUNK, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	sha256_init(&ctx);
+	zero_end = zero_offset + zero_len;
+	while (pos < file_len) {
+		size_t chunk;
+
+		if (zero_len != 0 && pos >= zero_offset && pos < zero_end) {
+			chunk = min_t(size_t, zero_end - pos, file_len - pos);
+			while (chunk != 0) {
+				size_t zero_chunk =
+					min_t(size_t, chunk, sizeof(zeros));
+
+				sha256_update(&ctx, zeros, zero_chunk);
+				pos += zero_chunk;
+				chunk -= zero_chunk;
+			}
+			continue;
+		}
+
+		chunk = min_t(size_t, PKM_KACS_SIGNING_HASH_CHUNK,
+			      file_len - pos);
+		if (zero_len != 0 && pos < zero_offset &&
+		    chunk > zero_offset - pos)
+			chunk = zero_offset - pos;
+
+		ret = pkm_kacs_signing_reader_exact(reader, pos, buf, chunk);
+		if (ret)
+			goto out_free;
+
+		sha256_update(&ctx, buf, chunk);
+		pos += chunk;
+	}
+
+	sha256_final(&ctx, hash);
+
+out_free:
+	kfree(buf);
+	return ret;
+}
+
+static int pkm_kacs_signing_reader_section_name_eq(
+	const struct pkm_kacs_signing_reader *reader, size_t file_len,
+	size_t strtab_offset, size_t strtab_len, u32 name_offset,
+	bool *match_out)
+{
+	char name[sizeof(PKM_KACS_SIGNING_ELF_SECTION)];
+	size_t name_pos;
+	int ret;
+
+	if (!match_out)
+		return -EINVAL;
+
+	*match_out = false;
+	if (!pkm_kacs_signing_range_valid(name_offset, sizeof(name),
+					  strtab_len))
+		return 0;
+	if (strtab_offset > SIZE_MAX - name_offset)
+		return -EOVERFLOW;
+
+	name_pos = strtab_offset + name_offset;
+	if (!pkm_kacs_signing_range_valid(name_pos, sizeof(name), file_len))
+		return -EOVERFLOW;
+
+	ret = pkm_kacs_signing_reader_exact(reader, name_pos, (u8 *)name,
+					    sizeof(name));
+	if (ret)
+		return ret;
+
+	*match_out = memcmp(name, PKM_KACS_SIGNING_ELF_SECTION,
+			    sizeof(name)) == 0;
+	return 0;
+}
+
+static bool pkm_kacs_signing_reader_is_elf(
+	const struct pkm_kacs_signing_reader *reader, size_t file_len,
+	bool *invalid_out)
+{
+	u8 magic[SELFMAG];
+	int ret;
+
+	*invalid_out = false;
+	if (file_len < SELFMAG)
+		return false;
+
+	ret = pkm_kacs_signing_reader_exact(reader, 0, magic, sizeof(magic));
+	if (ret) {
+		*invalid_out = true;
+		return false;
+	}
+
+	return memcmp(magic, ELFMAG, SELFMAG) == 0;
+}
+
+static int pkm_kacs_signing_probe_elf_reader(
+	const struct pkm_kacs_signing_reader *reader, size_t file_len,
+	struct pkm_kacs_signing_material *out, bool *committed_out)
+{
+	Elf64_Shdr shstr = {};
+	Elf64_Ehdr ehdr = {};
+	size_t shdrs_offset;
+	size_t shdrs_len;
+	size_t strtab_offset;
+	size_t strtab_len;
+	bool invalid = false;
+	u16 shnum;
+	u16 shentsize;
+	u16 shstrndx;
+	u16 i;
+	int ret;
+
+	*committed_out = false;
+	if (!pkm_kacs_signing_reader_is_elf(reader, file_len, &invalid)) {
+		*committed_out = invalid;
+		if (invalid)
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_MAGIC_READ, 0);
+		return 0;
+	}
+	if (file_len < sizeof(ehdr)) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_SHORT_EHDR, 0);
+		return 0;
+	}
+
+	ret = pkm_kacs_signing_reader_exact(reader, 0, (u8 *)&ehdr,
+					    sizeof(ehdr));
+	if (ret) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_EHDR_READ, ret);
+		return 0;
+	}
+
+	if (ehdr.e_ident[EI_CLASS] != ELFCLASS64 ||
+	    ehdr.e_ident[EI_DATA] != ELFDATA2LSB ||
+	    ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_BAD_IDENT, 0);
+		return 0;
+	}
+
+	shnum = ehdr.e_shnum;
+	shentsize = ehdr.e_shentsize;
+	shstrndx = ehdr.e_shstrndx;
+	if (shnum == 0)
+		return 0;
+	if (shentsize != sizeof(Elf64_Shdr) ||
+	    shstrndx == SHN_UNDEF || shstrndx >= shnum) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_BAD_SHTABLE, 0);
+		return 0;
+	}
+
+	if (ehdr.e_shoff > SIZE_MAX) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_SHDRS_RANGE, 0);
+		return 0;
+	}
+	shdrs_offset = (size_t)ehdr.e_shoff;
+	if (shnum > (SIZE_MAX / sizeof(Elf64_Shdr))) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_SHDRS_RANGE, 0);
+		return 0;
+	}
+	shdrs_len = (size_t)shnum * sizeof(Elf64_Shdr);
+	if (!pkm_kacs_signing_range_valid(shdrs_offset, shdrs_len, file_len)) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_SHDRS_RANGE, 0);
+		return 0;
+	}
+
+	ret = pkm_kacs_signing_reader_exact(
+		reader,
+		shdrs_offset + ((size_t)shstrndx * sizeof(Elf64_Shdr)),
+		(u8 *)&shstr, sizeof(shstr));
+	if (ret) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_SHSTR_READ, ret);
+		return 0;
+	}
+
+	if (!pkm_kacs_signing_elf_range_valid(shstr.sh_offset, shstr.sh_size,
+					      file_len, &strtab_offset,
+					      &strtab_len)) {
+		*committed_out = true;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_ELF_STRTAB_RANGE, 0);
+		return 0;
+	}
+
+	for (i = 0; i < shnum; i++) {
+		Elf64_Shdr shdr = {};
+		size_t sig_offset;
+		size_t sig_len;
+		bool name_match = false;
+		u8 *blob;
+
+		ret = pkm_kacs_signing_reader_exact(
+			reader, shdrs_offset + ((size_t)i * sizeof(Elf64_Shdr)),
+			(u8 *)&shdr, sizeof(shdr));
+		if (ret) {
+			*committed_out = true;
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_SHDR_READ, ret);
+			return 0;
+		}
+
+		ret = pkm_kacs_signing_reader_section_name_eq(
+			reader, file_len, strtab_offset, strtab_len,
+			shdr.sh_name, &name_match);
+		if (ret) {
+			*committed_out = true;
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_NAME_READ, ret);
+			return 0;
+		}
+		if (!name_match)
+			continue;
+
+		*committed_out = true;
+		if (shdr.sh_type != SHT_PROGBITS ||
+		    shdr.sh_size != PKM_KACS_SIGNING_BLOB_LEN ||
+		    !pkm_kacs_signing_elf_range_valid(shdr.sh_offset,
+						      shdr.sh_size, file_len,
+						      &sig_offset,
+						      &sig_len)) {
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_BAD_SIG_SECTION, 0);
+			return 0;
+		}
+
+		blob = kmalloc(PKM_KACS_SIGNING_BLOB_LEN, GFP_KERNEL);
+		if (!blob) {
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_BAD_BLOB, -ENOMEM);
+			return 0;
+		}
+
+		ret = pkm_kacs_signing_reader_exact(reader, sig_offset, blob,
+						    PKM_KACS_SIGNING_BLOB_LEN);
+		if (ret || !pkm_kacs_signing_blob_valid(blob, sig_len)) {
+			kfree(blob);
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_BAD_BLOB, ret);
+			return 0;
+		}
+
+		ret = pkm_kacs_signing_hash_reader(reader, file_len, sig_offset,
+						   sig_len, out->hash);
+		if (ret) {
+			kfree(blob);
+			trace_kacs_signing_probe(out->source, (u64)file_len,
+						 KACS_SIG_ELF_HASH_FAIL, ret);
+			return 0;
+		}
+
+		out->source = PKM_KACS_SIGNING_SOURCE_ELF;
+		out->blob = blob;
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_PROBE_FOUND, 0);
+		return 0;
+	}
+
+	return 0;
+}
+
+static int pkm_kacs_signing_probe_xattr_reader(
+	const struct pkm_kacs_signing_reader *reader, size_t file_len,
+	struct pkm_kacs_signing_material *out)
+{
+	u8 *blob;
+	size_t actual_len = 0;
+	int ret;
+
+	blob = kmalloc(PKM_KACS_SIGNING_BLOB_LEN, GFP_KERNEL);
+	if (!blob)
+		return 0;
+
+	ret = reader->xattr(reader->ctx, blob, PKM_KACS_SIGNING_BLOB_LEN,
+			    &actual_len);
+	if (ret || actual_len == 0) {
+		kfree(blob);
+		return 0;
+	}
+	if (!pkm_kacs_signing_blob_valid(blob, actual_len)) {
+		kfree(blob);
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_XATTR_BAD_BLOB, 0);
+		return 0;
+	}
+
+	ret = pkm_kacs_signing_hash_reader(reader, file_len, 0, 0, out->hash);
+	if (ret) {
+		kfree(blob);
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_XATTR_HASH_FAIL, ret);
+		return 0;
+	}
+
+	out->source = PKM_KACS_SIGNING_SOURCE_XATTR;
+	out->blob = blob;
+	trace_kacs_signing_probe(out->source, (u64)file_len,
+				 KACS_SIG_PROBE_FOUND, 0);
+	return 0;
+}
+
+static int pkm_kacs_signing_probe_reader(
+	const struct pkm_kacs_signing_reader *reader,
+	struct pkm_kacs_signing_material *out)
+{
+	size_t file_len = 0;
+	size_t final_len = 0;
+	bool committed = false;
+	int ret;
+
+	if (!out || !pkm_kacs_signing_reader_valid(reader))
+		return -EINVAL;
+
+	pkm_kacs_signing_material_clear(out);
+	ret = reader->size(reader->ctx, &file_len);
+	if (ret)
+		return 0;
+
+	ret = pkm_kacs_signing_probe_elf_reader(reader, file_len, out,
+						&committed);
+	if (ret)
+		return ret;
+	if (!committed && out->source == PKM_KACS_SIGNING_SOURCE_NONE) {
+		ret = pkm_kacs_signing_probe_xattr_reader(reader, file_len,
+							  out);
+		if (ret)
+			return ret;
+	}
+
+	ret = reader->size(reader->ctx, &final_len);
+	if (ret || final_len != file_len) {
+		trace_kacs_signing_probe(out->source, (u64)file_len,
+					 KACS_SIG_SIZE_CHANGED, ret);
+		pkm_kacs_signing_material_release(out);
+		pkm_kacs_signing_material_clear(out);
+	}
+
+	return 0;
+}
+
+static int pkm_kacs_signing_file_size(void *ctx, size_t *size_out)
+{
+	struct file *file = ctx;
+	loff_t size;
+
+	if (!file || !file_inode(file) || !size_out)
+		return -EINVAL;
+
+	size = i_size_read(file_inode(file));
+	if (size < 0 || (u64)size > (u64)SIZE_MAX)
+		return -EOVERFLOW;
+
+	*size_out = (size_t)size;
+	return 0;
+}
+
+static int pkm_kacs_signing_file_read(void *ctx, size_t offset, u8 *dst,
+				      size_t len)
+{
+	struct file *file = ctx;
+	ssize_t read_len;
+	loff_t pos;
+
+	if (!file || !dst)
+		return -EINVAL;
+	if ((u64)offset > (u64)LLONG_MAX)
+		return -EOVERFLOW;
+
+	pos = (loff_t)offset;
+	read_len = kernel_read(file, dst, len, &pos);
+	if (read_len < 0)
+		return (int)read_len;
+	if ((size_t)read_len != len)
+		return -EIO;
+
+	return 0;
+}
+
+static int pkm_kacs_signing_file_xattr(void *ctx, u8 *dst, size_t dst_len,
+				       size_t *actual_len)
+{
+	struct file *file = ctx;
+	struct dentry *dentry;
+	struct inode *inode;
+	ssize_t ret;
+
+	if (!file || !dst || !actual_len)
+		return -EINVAL;
+
+	*actual_len = 0;
+	dentry = file_dentry(file);
+	inode = file_inode(file);
+	if (!dentry || !inode)
+		return -EINVAL;
+
+	ret = __vfs_getxattr(dentry, inode, PKM_KACS_SIGNING_XATTR_NAME, NULL,
+			     0);
+	if (ret == -ENODATA || ret == -EOPNOTSUPP)
+		return 0;
+	if (ret < 0)
+		return (int)ret;
+	if ((u64)ret > (u64)SIZE_MAX)
+		return -EOVERFLOW;
+
+	*actual_len = (size_t)ret;
+	if ((size_t)ret != PKM_KACS_SIGNING_BLOB_LEN)
+		return 0;
+	if (dst_len < PKM_KACS_SIGNING_BLOB_LEN)
+		return -ERANGE;
+
+	ret = __vfs_getxattr(dentry, inode, PKM_KACS_SIGNING_XATTR_NAME, dst,
+			     PKM_KACS_SIGNING_BLOB_LEN);
+	if (ret < 0)
+		return (int)ret;
+	if (ret != PKM_KACS_SIGNING_BLOB_LEN)
+		return -EIO;
+
+	return 0;
+}
+
+int pkm_kacs_signing_probe_file(
+	struct file *file, struct pkm_kacs_signing_material *out)
+{
+	struct pkm_kacs_signing_reader reader = {
+		.ctx = file,
+		.size = pkm_kacs_signing_file_size,
+		.read = pkm_kacs_signing_file_read,
+		.xattr = pkm_kacs_signing_file_xattr,
+	};
+
+	return pkm_kacs_signing_probe_reader(&reader, out);
+}
+
+int pkm_kacs_signing_probe_file_buffer(struct file *file, const u8 *buf,
+				       size_t len,
+				       struct pkm_kacs_signing_material *out)
+{
+	u8 *xattr;
+	size_t actual_len = 0;
+	int ret;
+
+	if (!file || !out || (len != 0 && !buf))
+		return -EINVAL;
+
+	xattr = kmalloc(PKM_KACS_SIGNING_BLOB_LEN, GFP_KERNEL);
+	if (!xattr)
+		return -ENOMEM;
+
+	/*
+	 * A present-but-wrong-sized xattr is reported as "no xattr" here,
+	 * exactly as the reader probe treats it: the buffer probe validates
+	 * the blob it is given, and an unreadable attribute is a probe
+	 * failure rather than an unsigned file.
+	 */
+	ret = pkm_kacs_signing_file_xattr(file, xattr,
+					  PKM_KACS_SIGNING_BLOB_LEN,
+					  &actual_len);
+	if (ret) {
+		kfree(xattr);
+		return ret;
+	}
+	if (actual_len != PKM_KACS_SIGNING_BLOB_LEN)
+		actual_len = 0;
+
+	ret = pkm_kacs_signing_probe_buffer(buf, len,
+					    actual_len ? xattr : NULL,
+					    actual_len, out);
+	kfree(xattr);
+	return ret;
+}
+
+struct pkm_kacs_signing_key_entry {
+	u8 public_key[PKM_KACS_SIGNING_PUBLIC_KEY_LEN];
+	__le32 pip_type;
+	__le32 pip_trust;
+} __packed;
+
+#ifdef CONFIG_SECURITY_PKM_KUNIT
+static const struct pkm_kacs_signing_key_entry pkm_kacs_builtin_signing_keys[]
+	__used __section(".pkm_kacs_builtin_signing_keys") = {
+	{
+		.public_key = { PKM_KUNIT_MLDSA65_PUBKEY_INIT },
+		.pip_type = cpu_to_le32(PKM_KACS_PIP_TYPE_PROTECTED),
+		.pip_trust = cpu_to_le32(PKM_KACS_PIP_TRUST_PEIOS_TCB),
+	},
+	{ { 0 }, 0, 0 },
+};
+#else
+static const struct pkm_kacs_signing_key_entry pkm_kacs_builtin_signing_keys[]
+	__used __section(".pkm_kacs_builtin_signing_keys") = {
+	PKM_KACS_BUILTIN_SIGNING_KEY_TABLE
+};
+#endif
+
+/*
+ * Verify one signature against one key.
+ *
+ * Tri-state on purpose: 1 verified, 0 did not verify, negative errno could
+ * not be verified. Folding the third into the second is what made a missing
+ * crypto transform indistinguishable from a bad signature -- and since an
+ * unverified binary simply runs with no integrity label, that turned a
+ * crypto-availability problem into a silent, system-wide loss of PIP.
+ */
+typedef int (*pkm_kacs_signing_verify_fn)(
+	const u8 public_key[PKM_KACS_SIGNING_PUBLIC_KEY_LEN],
+	const u8 hash[SHA256_DIGEST_SIZE],
+	const u8 signature[PKM_KACS_SIGNING_SIGNATURE_LEN], void *ctx);
+
+static void pkm_kacs_signing_trust_clear(
+	struct pkm_kacs_signing_trust_result *out)
+{
+	memset(out, 0, sizeof(*out));
+}
+
+static bool pkm_kacs_signing_key_entry_zero(
+	const struct pkm_kacs_signing_key_entry *entry)
+{
+	return memchr_inv(entry, 0, sizeof(*entry)) == NULL;
+}
+
+static bool pkm_kacs_signing_key_tier_valid(u32 pip_type, u32 pip_trust)
+{
+	return pip_type == PKM_KACS_PIP_TYPE_PROTECTED &&
+	       pip_trust == PKM_KACS_PIP_TRUST_PEIOS_TCB;
+}
+
+/*
+ * The built-in key table as kacs/signing_keys shows it: one line per key
+ * before the terminator, naming the key by the SHA-256 of its raw public
+ * key, with the tier it confers.
+ *
+ * The keys are public -- each is the half of a pair whose other half never
+ * leaves the build infrastructure -- so the listing carries no secret and
+ * needs no access check beyond being able to open the file. Entries are
+ * listed as they are, valid tier or not: the listing reports the table,
+ * and the validator is what refuses one.
+ *
+ * `buf` may be NULL to ask only for the length. *required is always the
+ * whole listing's length; a buffer too small for it is -ENOSPC.
+ */
+int pkm_kacs_signing_key_listing(char *buf, size_t size, size_t *required)
+{
+	size_t used = 0;
+	size_t i;
+
+	if (!required)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(pkm_kacs_builtin_signing_keys); i++) {
+		const struct pkm_kacs_signing_key_entry *entry =
+			&pkm_kacs_builtin_signing_keys[i];
+		u8 digest[SHA256_DIGEST_SIZE];
+		char line[PKM_KACS_SIGNING_KEY_LINE_MAX];
+		int len;
+
+		if (pkm_kacs_signing_key_entry_zero(entry))
+			break;
+
+		sha256(entry->public_key, sizeof(entry->public_key), digest);
+		len = scnprintf(line, sizeof(line),
+				"key_sha256=%*phN pip_type=%u pip_trust=%u\n",
+				SHA256_DIGEST_SIZE, digest,
+				le32_to_cpu(entry->pip_type),
+				le32_to_cpu(entry->pip_trust));
+		if (buf && used + len <= size)
+			memcpy(buf + used, line, len);
+		used += len;
+	}
+
+	*required = used;
+	if (buf && used > size)
+		return -ENOSPC;
+	return 0;
+}
+
+#ifdef CONFIG_SECURITY_PKM_KUNIT
+int pkm_kacs_kunit_builtin_signing_key_table_shape(u32 *usable_count_out,
+						   u32 *terminated_out)
+{
+	size_t usable_count = 0;
+	bool terminated = false;
+	size_t i;
+
+	if (!usable_count_out || !terminated_out)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(pkm_kacs_builtin_signing_keys); i++) {
+		u32 pip_type;
+		u32 pip_trust;
+
+		if (pkm_kacs_signing_key_entry_zero(
+			    &pkm_kacs_builtin_signing_keys[i])) {
+			terminated = true;
+			break;
+		}
+
+		pip_type = le32_to_cpu(pkm_kacs_builtin_signing_keys[i].pip_type);
+		pip_trust =
+			le32_to_cpu(pkm_kacs_builtin_signing_keys[i].pip_trust);
+		if (!pkm_kacs_signing_key_tier_valid(pip_type, pip_trust))
+			return -EINVAL;
+
+		usable_count++;
+	}
+
+	*usable_count_out = usable_count;
+	*terminated_out = terminated ? 1U : 0U;
+	return 0;
+}
+#endif
+static int __maybe_unused pkm_kacs_signing_verify_with_keys(
+	const struct pkm_kacs_signing_material *material,
+	const struct pkm_kacs_signing_key_entry *keys, size_t key_count,
+	pkm_kacs_signing_verify_fn verify, void *verify_ctx,
+	struct pkm_kacs_signing_trust_result *out)
+{
+	size_t usable_count = 0;
+	bool terminated = false;
+	size_t i;
+
+	if (!material || !out)
+		return -EINVAL;
+
+	pkm_kacs_signing_trust_clear(out);
+	if (material->source == PKM_KACS_SIGNING_SOURCE_NONE) {
+		trace_kacs_signing_verify(material->source, 0, 0, 0,
+					  KACS_SIG_UNSIGNED, 0);
+		return 0;
+	}
+	if (!keys || key_count == 0 || !verify) {
+		trace_kacs_signing_verify(material->source, 0, 0, 0,
+					  KACS_SIG_BAD_KEY_TABLE, -EINVAL);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < key_count; i++) {
+		u32 pip_type;
+		u32 pip_trust;
+
+		if (pkm_kacs_signing_key_entry_zero(&keys[i])) {
+			terminated = true;
+			break;
+		}
+
+		pip_type = le32_to_cpu(keys[i].pip_type);
+		pip_trust = le32_to_cpu(keys[i].pip_trust);
+		if (!pkm_kacs_signing_key_tier_valid(pip_type, pip_trust)) {
+			trace_kacs_signing_verify(material->source, 0, pip_type,
+						  pip_trust,
+						  KACS_SIG_BAD_KEY_TABLE,
+						  -EINVAL);
+			return -EINVAL;
+		}
+
+		usable_count++;
+	}
+	if (!terminated) {
+		trace_kacs_signing_verify(material->source, 0, 0, 0,
+					  KACS_SIG_BAD_KEY_TABLE, -EINVAL);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < usable_count; i++) {
+		u32 pip_type;
+		u32 pip_trust;
+		int verified;
+
+		verified = verify(keys[i].public_key, material->hash,
+				  pkm_kacs_signing_material_sig(material),
+				  verify_ctx);
+		/*
+		 * Could not verify. Not "did not verify": stopping here rather
+		 * than trying the remaining keys is deliberate, because the
+		 * failure is in the machinery and every remaining key would
+		 * meet the same one.
+		 */
+		if (verified < 0) {
+			trace_kacs_signing_verify(material->source, 0, 0, 0,
+						  KACS_SIG_CRYPTO_UNAVAILABLE,
+						  verified);
+			return verified;
+		}
+		if (!verified)
+			continue;
+
+		pip_type = le32_to_cpu(keys[i].pip_type);
+		pip_trust = le32_to_cpu(keys[i].pip_trust);
+		out->verified = 1;
+		out->pip_type = pip_type;
+		out->pip_trust = pip_trust;
+		trace_kacs_signing_verify(material->source, 1, pip_type,
+					  pip_trust, KACS_SIG_VERIFIED, 0);
+		return 0;
+	}
+
+	trace_kacs_signing_verify(material->source, 0, 0, 0,
+				  KACS_SIG_NO_KEY_MATCH, 0);
+	return 0;
+}
+
+static int __maybe_unused pkm_kacs_signing_crypto_verify(
+	const u8 public_key[PKM_KACS_SIGNING_PUBLIC_KEY_LEN],
+	const u8 hash[SHA256_DIGEST_SIZE],
+	const u8 signature[PKM_KACS_SIGNING_SIGNATURE_LEN], void *ctx)
+{
+	struct crypto_sig *tfm;
+	int ret;
+
+	(void)ctx;
+
+	tfm = crypto_alloc_sig("mldsa65", 0, 0);
+	if (IS_ERR(tfm)) {
+		trace_kacs_signing_crypto(0, 0, 0, 0,
+					  KACS_SIG_CRYPTO_UNAVAILABLE,
+					  PTR_ERR(tfm));
+		return PTR_ERR(tfm);
+	}
+
+	/*
+	 * A key the transform will not accept is a fault in the key table, not
+	 * a non-matching signature, so it is reported as such. The table is
+	 * validated wholesale above, which makes this narrow -- but "this key
+	 * is malformed" and "this key did not sign it" are different facts and
+	 * only one of them means try the next key.
+	 */
+	ret = crypto_sig_set_pubkey(tfm, public_key,
+				    PKM_KACS_SIGNING_PUBLIC_KEY_LEN);
+	if (ret) {
+		crypto_free_sig(tfm);
+		trace_kacs_signing_crypto(0, 0, 0, 0,
+					  KACS_SIG_CRYPTO_UNAVAILABLE, ret);
+		return ret;
+	}
+
+	ret = crypto_sig_verify(tfm, signature,
+				PKM_KACS_SIGNING_SIGNATURE_LEN, hash,
+				SHA256_DIGEST_SIZE);
+	crypto_free_sig(tfm);
+	if (ret) {
+		trace_kacs_signing_crypto(0, 0, 0, 0, KACS_SIG_CRYPTO_MISMATCH,
+					  ret);
+		return 0;
+	}
+	return 1;
+}
+
+/*
+ * Probe the ML-DSA transform, once, after the crypto subsystem is up.
+ *
+ * A real crypto_alloc_sig call rather than an IS_ENABLED test:
+ * CONFIG_CRYPTO_MLDSA is an unconditional `select` under SECURITY_PKM, which
+ * is a bool, so a config check would be dead code. There is no Kconfig path to
+ * a PKM kernel without it. What can still go wrong is ordering -- the
+ * algorithm not registered when KACS needs it -- and only calling the
+ * allocator sees that.
+ */
+int pkm_kacs_signing_crypto_probe(void)
+{
+	struct crypto_sig *tfm;
+
+	tfm = crypto_alloc_sig("mldsa65", 0, 0);
+	if (IS_ERR(tfm)) {
+		trace_kacs_signing_crypto(0, 0, 0, 0,
+					  KACS_SIG_CRYPTO_UNAVAILABLE,
+					  PTR_ERR(tfm));
+		return PTR_ERR(tfm);
+	}
+	crypto_free_sig(tfm);
+	return 0;
+}
+
+/*
+ * Announce an unusable signature transform at boot.
+ *
+ * This runs as a late_initcall, not from pkm_init(), for two reasons found by
+ * trying the other way:
+ *
+ *   - At LSM init the algorithm is not yet registered. crypto_alloc_sig
+ *     returns -ENOENT on every boot, so a probe there fires always.
+ *   - A non-zero return from an LSM's init is only WARN'd
+ *     (security/lsm_init.c, lsm_init_single). The hooks are simply never
+ *     added, so "refuse to initialise" means booting with no KACS at all --
+ *     strictly worse than the failure it was meant to prevent.
+ *
+ * So this cannot refuse; it reports. The enforcement is at exec, where a
+ * signature that cannot be verified fails the exec rather than passing as
+ * unsigned. What this adds is that the condition is visible at boot instead of
+ * being inferred from every process running without an integrity label.
+ */
+static int __init pkm_kacs_signing_crypto_announce(void)
+{
+	/*
+	 * {signature: {crypto-stage: "boot-probe"}, outcome: {errno: int32}}.
+	 * The errno is the probe's own return, already negative.
+	 */
+	static const u8 head[] = {
+		0x82, /* map(2) */
+		0xa9, 's', 'i', 'g', 'n', 'a', 't', 'u', 'r', 'e',
+		0x81, /* map(1) */
+		0xac, 'c', 'r', 'y', 'p', 't', 'o', '-', 's', 't', 'a', 'g', 'e',
+		0xaa, 'b', 'o', 'o', 't', '-', 'p', 'r', 'o', 'b', 'e',
+		0xa7, 'o', 'u', 't', 'c', 'o', 'm', 'e',
+		0x81, /* map(1) */
+		0xa5, 'e', 'r', 'r', 'n', 'o',
+	};
+	u8 payload[sizeof(head) + 5];
+	int ret;
+	u8 *out;
+
+	ret = pkm_kacs_signing_crypto_probe();
+	if (!ret)
+		return 0;
+
+	pr_err("pkm: ML-DSA signature transform unavailable (%d); every signed exec will be refused\n",
+	       ret);
+
+	/*
+	 * The probe and the console line are not the record's, so they stay
+	 * ahead of the policy; the payload is built only for a record.
+	 */
+	if (!pkm_kmes_event_enabled(PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED))
+		return 0;
+	memcpy(payload, head, sizeof(head));
+	out = payload + sizeof(head);
+	*out++ = 0xd2;
+	*out++ = (u32)ret >> 24;
+	*out++ = (u32)ret >> 16;
+	*out++ = (u32)ret >> 8;
+	*out++ = (u32)ret;
+	pkm_kmes_emit_kernel(KMES_ORIGIN_KACS,
+			     PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED_TYPE,
+			     sizeof(PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED_TYPE) - 1,
+			     payload, out - payload);
+	return 0;
+}
+late_initcall(pkm_kacs_signing_crypto_announce);
+
+int pkm_kacs_signing_verify_builtin(
+	const struct pkm_kacs_signing_material *material,
+	struct pkm_kacs_signing_trust_result *result)
+{
+	return pkm_kacs_signing_verify_with_keys(
+		material, pkm_kacs_builtin_signing_keys,
+		ARRAY_SIZE(pkm_kacs_builtin_signing_keys),
+		pkm_kacs_signing_crypto_verify, NULL, result);
+}
+
+/*
+ * Returns 0 whether or not the binary verified -- an unsigned binary is an
+ * ordinary outcome and simply gets no integrity label. A negative return means
+ * verification could not be performed at all, which the caller must not treat
+ * as "unsigned": that is precisely the conflation that let a missing crypto
+ * transform strip PIP from every process on the system without a trace.
+ */
+int pkm_kacs_exec_pip_from_material(
+	const struct pkm_kacs_signing_material *material, u32 *pip_type_out,
+	u32 *pip_trust_out)
+{
+	struct pkm_kacs_signing_trust_result result;
+	int ret;
+
+	if (!pip_type_out || !pip_trust_out)
+		return -EINVAL;
+
+	*pip_type_out = 0;
+	*pip_trust_out = 0;
+	if (!material)
+		return 0;
+
+	ret = pkm_kacs_signing_verify_with_keys(
+		material, pkm_kacs_builtin_signing_keys,
+		ARRAY_SIZE(pkm_kacs_builtin_signing_keys),
+		pkm_kacs_signing_crypto_verify, NULL, &result);
+	if (ret)
+		return ret;
+	if (!result.verified)
+		return 0;
+
+	*pip_type_out = result.pip_type;
+	*pip_trust_out = result.pip_trust;
+	return 0;
+}
+
+#ifdef CONFIG_SECURITY_PKM_KUNIT
+struct pkm_kacs_kunit_signing_reader_ctx {
+	const struct pkm_kacs_kunit_signing_reader_args *args;
+	u32 size_calls;
+};
+
+struct pkm_kacs_kunit_signing_verify_ctx {
+	const struct pkm_kacs_signing_key_entry *keys;
+	size_t key_count;
+	u32 match_key_index;
+	u32 match_enabled;
+	/* Non-zero simulates "verification could not be performed". */
+	int unavailable_errno;
+};
+
+static int pkm_kacs_kunit_signing_reader_size(void *ctx, size_t *size_out)
+{
+	struct pkm_kacs_kunit_signing_reader_ctx *reader_ctx = ctx;
+	const struct pkm_kacs_kunit_signing_reader_args *args;
+
+	if (!reader_ctx || !reader_ctx->args || !size_out)
+		return -EINVAL;
+
+	args = reader_ctx->args;
+	reader_ctx->size_calls++;
+	if (args->use_final_file_len && reader_ctx->size_calls > 1)
+		*size_out = args->final_file_len;
+	else
+		*size_out = args->file_len;
+	return 0;
+}
+
+static int pkm_kacs_kunit_signing_reader_read(void *ctx, size_t offset,
+					      u8 *dst, size_t len)
+{
+	struct pkm_kacs_kunit_signing_reader_ctx *reader_ctx = ctx;
+	const struct pkm_kacs_kunit_signing_reader_args *args;
+
+	if (!reader_ctx || !reader_ctx->args || !dst)
+		return -EINVAL;
+
+	args = reader_ctx->args;
+	if (args->fail_reads)
+		return -EIO;
+	if (len == 0)
+		return 0;
+	if (len != 0 && !args->file_bytes)
+		return -EINVAL;
+	if (!pkm_kacs_signing_range_valid(offset, len, args->file_len))
+		return -EIO;
+
+	memcpy(dst, args->file_bytes + offset, len);
+	return 0;
+}
+
+static int pkm_kacs_kunit_signing_reader_xattr(void *ctx, u8 *dst,
+					       size_t dst_len,
+					       size_t *actual_len)
+{
+	struct pkm_kacs_kunit_signing_reader_ctx *reader_ctx = ctx;
+	const struct pkm_kacs_kunit_signing_reader_args *args;
+
+	if (!reader_ctx || !reader_ctx->args || !dst || !actual_len)
+		return -EINVAL;
+
+	args = reader_ctx->args;
+	*actual_len = args->xattr_sig_len;
+	if (args->fail_xattr)
+		return -EIO;
+	if (args->xattr_sig_len == 0)
+		return 0;
+	if (args->xattr_sig_len != PKM_KACS_SIGNING_BLOB_LEN)
+		return 0;
+	if (!args->xattr_sig || dst_len < PKM_KACS_SIGNING_BLOB_LEN)
+		return -EINVAL;
+
+	memcpy(dst, args->xattr_sig, PKM_KACS_SIGNING_BLOB_LEN);
+	return 0;
+}
+
+static int pkm_kacs_kunit_signing_fake_verify(
+	const u8 public_key[PKM_KACS_SIGNING_PUBLIC_KEY_LEN],
+	const u8 hash[SHA256_DIGEST_SIZE],
+	const u8 signature[PKM_KACS_SIGNING_SIGNATURE_LEN], void *ctx)
+{
+	struct pkm_kacs_kunit_signing_verify_ctx *verify_ctx = ctx;
+
+	(void)hash;
+	(void)signature;
+
+	if (!verify_ctx)
+		return 0;
+	/*
+	 * Checked before the match gate: unavailability is a property of the
+	 * machinery, so it must fire whether or not this key would have
+	 * matched.
+	 */
+	if (verify_ctx->unavailable_errno)
+		return verify_ctx->unavailable_errno;
+	if (!verify_ctx->match_enabled ||
+	    verify_ctx->match_key_index >= verify_ctx->key_count)
+		return 0;
+
+	return memcmp(public_key,
+		      verify_ctx->keys[verify_ctx->match_key_index].public_key,
+		      PKM_KACS_SIGNING_PUBLIC_KEY_LEN) == 0 ? 1 : 0;
+}
+
+static int pkm_kacs_kunit_copy_signing_keys(
+	const struct pkm_kacs_kunit_signing_key_entry *keys, size_t key_count,
+	struct pkm_kacs_signing_key_entry **key_table_out)
+{
+	struct pkm_kacs_signing_key_entry *key_table = NULL;
+	size_t i;
+
+	if (!key_table_out)
+		return -EINVAL;
+	*key_table_out = NULL;
+	if (key_count != 0 && !keys)
+		return -EINVAL;
+
+	if (key_count != 0) {
+		key_table = kcalloc(key_count, sizeof(*key_table), GFP_KERNEL);
+		if (!key_table)
+			return -ENOMEM;
+	}
+
+	for (i = 0; i < key_count; i++) {
+		memcpy(key_table[i].public_key, keys[i].public_key,
+		       sizeof(key_table[i].public_key));
+		key_table[i].pip_type = cpu_to_le32(keys[i].pip_type);
+		key_table[i].pip_trust = cpu_to_le32(keys[i].pip_trust);
+	}
+
+	*key_table_out = key_table;
+	return 0;
+}
+
+/*
+ * Build a material blob from a bare signature, synthesising the version byte
+ * the on-disk encoding carries. The KUnit fixtures hold the signature alone.
+ */
+static int pkm_kacs_signing_material_set_sig(
+	struct pkm_kacs_signing_material *out, const u8 *signature)
+{
+	out->blob = kmalloc(PKM_KACS_SIGNING_BLOB_LEN, GFP_KERNEL);
+	if (!out->blob)
+		return -ENOMEM;
+	out->blob[0] = PKM_KACS_SIGNING_VERSION;
+	memcpy(out->blob + 1, signature, PKM_KACS_SIGNING_SIGNATURE_LEN);
+	return 0;
+}
+
+/*
+ * Copy a material's signature back out to a KUnit fixture. Zero-fills when
+ * the material carries none.
+ */
+static void pkm_kacs_signing_material_get_sig(
+	const struct pkm_kacs_signing_material *material, u8 *signature_out)
+{
+	const u8 *sig = pkm_kacs_signing_material_sig(material);
+
+	if (sig)
+		memcpy(signature_out, sig, PKM_KACS_SIGNING_SIGNATURE_LEN);
+	else
+		memset(signature_out, 0, PKM_KACS_SIGNING_SIGNATURE_LEN);
+}
+
+int pkm_kacs_signing_material_from_kunit_probe(
+	const struct pkm_kacs_kunit_signing_probe *material,
+	struct pkm_kacs_signing_material *material_out)
+{
+	if (!material || !material_out)
+		return -EINVAL;
+	if (material->source != PKM_KACS_SIGNING_SOURCE_NONE &&
+	    material->source != PKM_KACS_SIGNING_SOURCE_ELF &&
+	    material->source != PKM_KACS_SIGNING_SOURCE_XATTR)
+		return -EINVAL;
+
+	memset(material_out, 0, sizeof(*material_out));
+	material_out->source = material->source;
+	if (pkm_kacs_signing_material_set_sig(material_out, material->signature))
+		return -ENOMEM;
+	memcpy(material_out->hash, material->hash, sizeof(material_out->hash));
+	return 0;
+}
+
+int pkm_kacs_kunit_probe_signing_material(
+	const u8 *file_bytes, size_t file_len, const u8 *xattr_sig,
+	size_t xattr_sig_len, struct pkm_kacs_kunit_signing_probe *out)
+{
+	struct pkm_kacs_signing_material material;
+	int ret;
+
+	if (!out)
+		return -EINVAL;
+
+	ret = pkm_kacs_signing_probe_buffer(file_bytes, file_len, xattr_sig,
+					    xattr_sig_len, &material);
+	if (ret)
+		return ret;
+
+	memset(out, 0, sizeof(*out));
+	out->source = material.source;
+	pkm_kacs_signing_material_get_sig(&material, out->signature);
+	memcpy(out->hash, material.hash, sizeof(out->hash));
+	pkm_kacs_signing_material_release(&material);
+	return 0;
+}
+
+int pkm_kacs_kunit_verify_signing_material_unavailable(
+	const struct pkm_kacs_kunit_signing_probe *material,
+	const struct pkm_kacs_kunit_signing_key_entry *keys, size_t key_count,
+	int unavailable_errno)
+{
+	struct pkm_kacs_kunit_signing_verify_ctx verify_ctx;
+	struct pkm_kacs_signing_trust_result result;
+	struct pkm_kacs_signing_key_entry *key_table = NULL;
+	struct pkm_kacs_signing_material material_in;
+	int ret;
+
+	if (!material)
+		return -EINVAL;
+
+	memset(&material_in, 0, sizeof(material_in));
+	material_in.source = material->source;
+	if (pkm_kacs_signing_material_set_sig(&material_in, material->signature))
+		return -ENOMEM;
+	memcpy(material_in.hash, material->hash, sizeof(material_in.hash));
+
+	ret = pkm_kacs_kunit_copy_signing_keys(keys, key_count, &key_table);
+	if (ret)
+		goto out_free;
+
+	memset(&verify_ctx, 0, sizeof(verify_ctx));
+	verify_ctx.keys = key_table;
+	verify_ctx.key_count = key_count;
+	verify_ctx.unavailable_errno = unavailable_errno;
+	ret = pkm_kacs_signing_verify_with_keys(
+		&material_in, key_table, key_count,
+		pkm_kacs_kunit_signing_fake_verify, &verify_ctx, &result);
+
+out_free:
+	pkm_kacs_signing_material_release(&material_in);
+	kfree(key_table);
+	return ret;
+}
+
+int pkm_kacs_kunit_verify_signing_material(
+	const struct pkm_kacs_kunit_signing_probe *material,
+	const struct pkm_kacs_kunit_signing_key_entry *keys, size_t key_count,
+	u32 match_key_index, u32 match_enabled,
+	struct pkm_kacs_kunit_signing_verify_out *out)
+{
+	struct pkm_kacs_kunit_signing_verify_ctx verify_ctx;
+	struct pkm_kacs_signing_trust_result result;
+	struct pkm_kacs_signing_material material_in;
+	struct pkm_kacs_signing_key_entry *key_table = NULL;
+	int ret;
+
+	if (!material || !out)
+		return -EINVAL;
+
+	memset(out, 0, sizeof(*out));
+	memset(&material_in, 0, sizeof(material_in));
+	material_in.source = material->source;
+	if (pkm_kacs_signing_material_set_sig(&material_in, material->signature))
+		return -ENOMEM;
+	memcpy(material_in.hash, material->hash, sizeof(material_in.hash));
+
+	ret = pkm_kacs_kunit_copy_signing_keys(keys, key_count, &key_table);
+	if (ret)
+		goto out_free;
+
+	memset(&verify_ctx, 0, sizeof(verify_ctx));
+	verify_ctx.keys = key_table;
+	verify_ctx.key_count = key_count;
+	verify_ctx.match_key_index = match_key_index;
+	verify_ctx.match_enabled = match_enabled;
+	ret = pkm_kacs_signing_verify_with_keys(
+		&material_in, key_table, key_count,
+		pkm_kacs_kunit_signing_fake_verify, &verify_ctx, &result);
+	if (ret)
+		goto out_free;
+
+	out->verified = result.verified;
+	out->pip_type = result.pip_type;
+	out->pip_trust = result.pip_trust;
+
+out_free:
+	pkm_kacs_signing_material_release(&material_in);
+	kfree(key_table);
+	return ret;
+}
+
+int pkm_kacs_kunit_verify_signing_material_crypto(
+	const struct pkm_kacs_kunit_signing_probe *material,
+	const struct pkm_kacs_kunit_signing_key_entry *keys, size_t key_count,
+	struct pkm_kacs_kunit_signing_verify_out *out)
+{
+	struct pkm_kacs_signing_trust_result result;
+	struct pkm_kacs_signing_material material_in;
+	struct pkm_kacs_signing_key_entry *key_table = NULL;
+	int ret;
+
+	if (!material || !out)
+		return -EINVAL;
+
+	memset(out, 0, sizeof(*out));
+	memset(&material_in, 0, sizeof(material_in));
+	material_in.source = material->source;
+	if (pkm_kacs_signing_material_set_sig(&material_in, material->signature))
+		return -ENOMEM;
+	memcpy(material_in.hash, material->hash, sizeof(material_in.hash));
+
+	ret = pkm_kacs_kunit_copy_signing_keys(keys, key_count, &key_table);
+	if (ret)
+		goto out_free;
+
+	ret = pkm_kacs_signing_verify_with_keys(
+		&material_in, key_table, key_count,
+		pkm_kacs_signing_crypto_verify, NULL, &result);
+	if (ret)
+		goto out_free;
+
+	out->verified = result.verified;
+	out->pip_type = result.pip_type;
+	out->pip_trust = result.pip_trust;
+
+out_free:
+	pkm_kacs_signing_material_release(&material_in);
+	kfree(key_table);
+	return ret;
+}
+
+int pkm_kacs_kunit_determine_exec_pip_from_signing_material(
+	const struct pkm_kacs_kunit_signing_probe *material,
+	struct pkm_kacs_kunit_signing_verify_out *out)
+{
+	struct pkm_kacs_signing_material material_in;
+	u32 pip_type = 0;
+	u32 pip_trust = 0;
+	int ret;
+
+	if (!out)
+		return -EINVAL;
+
+	memset(out, 0, sizeof(*out));
+	ret = pkm_kacs_signing_material_from_kunit_probe(material, &material_in);
+	if (ret)
+		return ret;
+
+	pkm_kacs_exec_pip_from_material(&material_in, &pip_type, &pip_trust);
+	out->verified = pip_type != 0 || pip_trust != 0;
+	out->pip_type = pip_type;
+	out->pip_trust = pip_trust;
+	pkm_kacs_signing_material_release(&material_in);
+	return 0;
+}
+
+int pkm_kacs_kunit_signed_exec_pin_from_signing_material(
+	const struct pkm_kacs_kunit_signing_probe *material, u32 *pinned_out)
+{
+	struct pkm_kacs_signing_material material_in;
+	u32 pip_type = 0;
+	u32 pip_trust = 0;
+	int ret;
+
+	if (!pinned_out)
+		return -EINVAL;
+
+	*pinned_out = 0;
+	ret = pkm_kacs_signing_material_from_kunit_probe(material, &material_in);
+	if (ret)
+		return ret;
+
+	pkm_kacs_exec_pip_from_material(&material_in, &pip_type, &pip_trust);
+	*pinned_out = (pip_type != 0 || pip_trust != 0) ? 1U : 0U;
+	pkm_kacs_signing_material_release(&material_in);
+	return 0;
+}
+
+int pkm_kacs_kunit_probe_signing_reader(
+	const struct pkm_kacs_kunit_signing_reader_args *args,
+	struct pkm_kacs_kunit_signing_probe *out)
+{
+	struct pkm_kacs_kunit_signing_reader_ctx ctx = {
+		.args = args,
+	};
+	struct pkm_kacs_signing_reader reader = {
+		.ctx = &ctx,
+		.size = pkm_kacs_kunit_signing_reader_size,
+		.read = pkm_kacs_kunit_signing_reader_read,
+		.xattr = pkm_kacs_kunit_signing_reader_xattr,
+	};
+	struct pkm_kacs_signing_material material;
+	int ret;
+
+	if (!args || !out)
+		return -EINVAL;
+
+	ret = pkm_kacs_signing_probe_reader(&reader, &material);
+	if (ret)
+		return ret;
+
+	memset(out, 0, sizeof(*out));
+	out->source = material.source;
+	pkm_kacs_signing_material_get_sig(&material, out->signature);
+	memcpy(out->hash, material.hash, sizeof(out->hash));
+	pkm_kacs_signing_material_release(&material);
+	return 0;
+}
+#endif

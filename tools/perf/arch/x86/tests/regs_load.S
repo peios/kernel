@@ -1,5 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 #include <linux/linkage.h>
+/*
+ * Under -fcf-protection the object must carry the IBT/SHSTK property note, or
+ * the linked perf loses control-flow protection; <cet.h> emits it (and
+ * _CET_ENDBR) only when __CET__ is defined.
+ */
+#include <cet.h>
 
 #define AX	 0
 #define BX	 1 * 8
@@ -29,6 +35,7 @@
 .text
 #ifdef HAVE_ARCH_X86_64_SUPPORT
 SYM_FUNC_START(perf_regs_load)
+	_CET_ENDBR
 	movq %rax, AX(%rdi)
 	movq %rbx, BX(%rdi)
 	movq %rcx, CX(%rdi)

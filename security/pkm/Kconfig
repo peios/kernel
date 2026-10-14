@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config SECURITY_PKM
+	bool "PKM — Peios Kernel Module"
+	depends on SECURITY
+	depends on RUST
+	depends on 64BIT
+	depends on STRICT_DEVMEM
+	depends on MODULE_SIG_FORCE
+	depends on !SECURITY_SELINUX
+	depends on !SECURITY_APPARMOR
+	depends on !SECURITY_SMACK
+	depends on !SECURITY_TOMOYO
+	select CRYPTO_MLDSA
+	help
+	  PKM is the Peios Kernel Module used for the KACS slow track.
+	  The current slow-track tree contains the bounded slow-track
+	  scaffold plus the first narrow public token-open surface.
+	  Broader syscall, handle, and enforcement behavior is still added
+	  deliberately slice by slice rather than carried forward implicitly.
+
+	  KACS must be the sole MAC LSM. Conflicting MAC LSMs (SELinux,
+	  AppArmor, SMACK, TOMOYO) are rejected at Kconfig level.
+	  Non-MAC LSMs (landlock, lockdown, integrity) are accepted. Yama is
+	  not: its ptrace_scope would decide attach ahead of KACS (PEI-689).
+
+	  If unsure, say N.
+
+	  KACS also requires STRICT_DEVMEM and MODULE_SIG_FORCE. These are
+	  defense-in-depth prerequisites for PIP: unrestricted /dev/mem and
+	  unsigned kernel modules both bypass process-isolation guarantees by
+	  entering the kernel trust boundary directly.
+
+config SECURITY_PKM_FIRMWARE_SIG_ENFORCE
+	bool "Refuse firmware that does not carry a PeiosTcb PIP signature"
+	depends on SECURITY_PKM
+	default n
+	help
+	  KACS verifies the PIP signature (security.peios.sig) of every file
+	  the kernel reads as firmware and requires the PeiosTcb tier. With
+	  this option the load is refused (-EPERM) when that fails; without
+	  it the verdict is logged and traced (kacs:kacs_firmware_load) and
+	  the load proceeds. Either way the boot command line can override
+	  the choice for one boot with kacs_fwsig=enforce or kacs_fwsig=log.
+
+	  Leave this off until every firmware package in the release is
+	  signed; a missed blob under enforcement is a device that silently
+	  stops probing. PEI-493.
+
+config SECURITY_PKM_KUNIT
+	bool "PKM KUnit scaffold"
+	depends on SECURITY_PKM
+	depends on KUNIT
+	help
+	  Build the minimal PKM-owned KUnit scaffold.
+
+	  This option is only for kernel-resident glue that Cargo tests cannot
+	  exercise. Pure `kacs-core` semantics remain owned by the Rust
+	  userspace/Cargo test suite.
+
+	  If unsure, say N.

@@ -1027,7 +1027,11 @@ SYSCALL_DEFINE0(getppid)
 SYSCALL_DEFINE0(getuid)
 {
 	/* Only we change this so SMP safe */
+#ifdef CONFIG_SECURITY_PKM
+	return from_kuid_munged(current_user_ns(), current_real_cred()->uid);
+#else
 	return from_kuid_munged(current_user_ns(), current_uid());
+#endif
 }
 
 SYSCALL_DEFINE0(geteuid)
@@ -1039,7 +1043,11 @@ SYSCALL_DEFINE0(geteuid)
 SYSCALL_DEFINE0(getgid)
 {
 	/* Only we change this so SMP safe */
-	return from_kgid_munged(current_user_ns(), current_gid());
+#ifdef CONFIG_SECURITY_PKM
+return from_kgid_munged(current_user_ns(), current_real_cred()->gid);
+#else
+return from_kgid_munged(current_user_ns(), current_gid());
+#endif
 }
 
 SYSCALL_DEFINE0(getegid)
@@ -2531,6 +2539,14 @@ static int prctl_set_thp_disable(bool thp_disable, unsigned long flags,
 	return 0;
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern long pkm_kacs_prctl_capability_guard(int option, unsigned long arg2,
+					    unsigned long arg3,
+					    unsigned long arg4,
+					    unsigned long arg5);
+#endif
+
+
 SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		unsigned long, arg4, unsigned long, arg5)
 {
@@ -2538,6 +2554,12 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 	unsigned char comm[sizeof(me->comm)];
 	long error;
 
+#ifdef CONFIG_SECURITY_PKM
+	error = pkm_kacs_prctl_capability_guard(option, arg2, arg3, arg4,
+						 arg5);
+	if (error)
+		return error;
+#endif
 	error = security_task_prctl(option, arg2, arg3, arg4, arg5);
 	if (error != -ENOSYS)
 		return error;

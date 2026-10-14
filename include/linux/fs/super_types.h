@@ -127,6 +127,8 @@ struct super_operations {
 
 	/* Report a filesystem error */
 	void (*report_error)(const struct fserror_event *event);
+	int (*validate_mountpoint)(struct super_block *sb,
+				   const struct path *mountpoint);
 };
 
 struct super_block {

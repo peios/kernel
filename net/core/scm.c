@@ -40,6 +40,14 @@
 #include <net/cls_cgroup.h>
 #include <net/af_unix.h>
 
+#ifdef CONFIG_SECURITY_PKM
+#include <pkm/socket.h>
+int pkm_kacs_scm_cmsg(struct socket *sock, struct cmsghdr *cmsg,
+		      struct scm_cookie *scm);
+void pkm_kacs_scm_recv(struct socket *sock, struct msghdr *msg,
+		       struct scm_cookie *scm);
+#endif
+
 
 /*
  *	Only allow a user to send credentials, that they could set with
@@ -183,6 +191,14 @@ int __scm_send(struct socket *sock, struct msghdr *msg, struct scm_cookie *p)
 		if (!CMSG_OK(msg, cmsg))
 			goto error;
 
+#ifdef CONFIG_SECURITY_PKM
+		if (cmsg->cmsg_level == SOL_KACS) {
+			err = pkm_kacs_scm_cmsg(sock, cmsg, p);
+			if (err)
+				goto error;
+			continue;
+		}
+#endif
 		if (cmsg->cmsg_level != SOL_SOCKET)
 			continue;
 
@@ -544,5 +560,8 @@ void scm_recv_unix(struct socket *sock, struct msghdr *msg,
 	if (sock->sk->sk_scm_pidfd)
 		scm_pidfd_recv(msg, scm);
 
+#ifdef CONFIG_SECURITY_PKM
+	pkm_kacs_scm_recv(sock, msg, scm);
+#endif
 	scm_destroy_cred(scm);
 }
