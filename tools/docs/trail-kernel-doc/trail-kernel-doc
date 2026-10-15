@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""
+trail-kernel-doc: a Trail plugin that expands kernel-doc blocks.
+
+A page writes, in place of reStructuredText's ``.. kernel-doc::``,
+
+    ```{kernel-doc} drivers/base/core.c
+    :export:
+    ```
+
+with the Sphinx directive's options (:export:, :internal:, :doc:,
+:identifiers:, :functions:, :no-identifiers:) and their meanings. The
+kernel's own kernel-doc parser (tools/lib/python/kdoc) extracts the
+comments; kdoc_markdown renders them as Markdown.
+
+Configure it in the site's root trail.toml, with --srctree naming the
+kernel source tree relative to the site root:
+
+    [plugins.kernel-doc]
+    command = ["python3", "../path/to/trail-kernel-doc", "--srctree", ".."]
+
+Trail runs it once per build with every kernel-doc block on the site, so
+a function named in one block's prose links to wherever another block
+documents it.
+"""
+
+import argparse
+import glob
+import hashlib
+import logging
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+
+from trail_plugin import AnchorIndex, BlockError, block_options, fail, read_request, respond  # noqa: E402
+
+PLUGIN = "trail-kernel-doc"
+
+OPTIONS = ("export", "internal", "doc", "identifiers", "functions", "no-identifiers")
+
+#: Mermaid drawings of the Graphviz figures that kernel-doc comments embed
+#: with ``.. kernel-figure::``, at the figure's path with ``.mmd`` for its
+#: extension. Each starts with a line naming the DOT file it was drawn from.
+FIGURES = os.path.join(HERE, "figures")
+
+FIGURE_SOURCE = re.compile(r"%% source: (\S+) sha256:([0-9a-f]{64})\n")
+
+
+def split(value):
+    """A whitespace-separated option value, continuation backslashes dropped."""
+    return [word for word in (w.rstrip("\\").strip() for w in value.split()) if word]
+
+
+def filters(srctree, block):
+    """
+    The source file and the KernelFiles.msg() arguments for a block,
+    following Documentation/sphinx/kerneldoc.py: :export:, :internal:,
+    :doc: and :identifiers: select what is output, in that priority.
+    """
+    argument = block["argument"]
+    if not argument or len(argument.split()) != 1:
+        raise BlockError("expects exactly one source file, relative to the kernel tree")
+    # docutils matches option names case-insensitively (mm/ksm.rst: ":DOC:").
+    options = block_options(block, OPTIONS)
+    if block["body"].strip():
+        raise BlockError("takes no body, only options")
+    filename = os.path.join(srctree, argument)
+    if not os.path.isfile(filename):
+        raise BlockError(f"{argument} does not exist in the kernel tree")
+
+    if "functions" in options:
+        if "identifiers" in options:
+            raise BlockError(":functions: is an alias of :identifiers:; give one")
+        options["identifiers"] = options.pop("functions")
+    selectors = [o for o in ("export", "internal", "doc", "identifiers") if o in options]
+    if len(selectors) > 1:
+        # Sphinx takes the first and ignores the rest; so do we, aloud
+        # (driver-api/usb/dwc3.rst pairs :doc: with :internal:).
+        ignored = ", ".join(f":{o}:" for o in selectors[1:])
+        print(
+            f"trail-kernel-doc: {block['file']}:{block['line']}: :{selectors[0]}: "
+            f"takes precedence; ignoring {ignored}",
+            file=sys.stderr,
+        )
+
+    msg = {
+        "export": False,
+        "internal": False,
+        "symbol": [],
+        "nosymbol": split(options.get("no-identifiers", "")),
+        "no_doc_sections": False,
+    }
+    patterns = []
+    if "export" in options:
+        msg["export"] = True
+        patterns = split(options["export"])
+    elif "internal" in options:
+        msg["internal"] = True
+        patterns = split(options["internal"])
+    elif "doc" in options:
+        if not options["doc"].strip():
+            raise BlockError(":doc: needs the title of a DOC: section")
+        msg["symbol"].append(options["doc"].strip())
+    elif "identifiers" in options:
+        identifiers = split(options["identifiers"])
+        if identifiers:
+            msg["symbol"].extend(identifiers)
+        else:
+            msg["no_doc_sections"] = True
+
+    export_files = []
+    for pattern in patterns:
+        matches = sorted(glob.glob(os.path.join(srctree, pattern)))
+        if not matches:
+            raise BlockError(f"export file pattern '{pattern}' matches nothing in the kernel tree")
+        export_files.extend(matches)
+    return filename, export_files, msg
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--srctree",
+        required=True,
+        help="the kernel source tree, relative to the Trail site root",
+    )
+    args = parser.parse_args()
+
+    srctree = os.path.abspath(args.srctree)
+    library = os.path.join(srctree, "tools", "lib", "python")
+    if not os.path.isdir(os.path.join(library, "kdoc")):
+        fail(PLUGIN, f"{srctree} has no tools/lib/python/kdoc; is --srctree the kernel tree?")
+    sys.path.insert(0, library)
+
+    from kdoc.kdoc_files import KernelFiles
+    import kdoc_markdown
+
+    request = read_request(PLUGIN)
+
+    logging.basicConfig(format="kernel-doc: %(message)s", level=logging.WARNING, stream=sys.stderr)
+    logger = logging.getLogger("kernel-doc")
+    style = kdoc_markdown.MarkdownFormat()
+    kfiles = KernelFiles(out_style=style, logger=logger)
+    #: Files parsed by nested directives, for depends_on.
+    nested_files = set()
+    from figures import Figures
+    figures = Figures(srctree)
+    style.expand_kernel_figure = figures.render
+
+    def render(files, block):
+        filename, export_files, msg = filters(srctree, block)
+        files.parse([filename], export_files)
+        return "".join(
+            text
+            for _, text in files.msg(**msg, filenames=[filename], export_file=export_files or None)
+        )
+
+    def expander(parent, block, depth):
+        """
+        Expand a kernel-doc directive written inside a kernel-doc comment
+        (security/landlock/syscalls.c pulls in uapi flag docs this way), as
+        Sphinx's nested parse does. It renders through a child format: the
+        parent is mid-way through its own output.
+        """
+
+        def expand(argument, options):
+            if depth > 4:
+                raise BlockError("kernel-doc directives nest more than 4 deep")
+            child = kdoc_markdown.MarkdownFormat(parent=parent)
+            child.expand_kernel_figure = figures.render
+            child.expand_kernel_doc = expander(child, block, depth + 1)
+            child_files = KernelFiles(out_style=child, logger=logger)
+            nested = dict(block, argument=argument, options=options, body="")
+            try:
+                markdown = render(child_files, nested)
+            except BlockError as error:
+                raise BlockError(f"in a nested '.. kernel-doc:: {argument}': {error}") from None
+            nested_files.update(child_files.files | child_files.export_files)
+            return markdown.strip("\n")
+
+        return expand
+
+    rendered = []
+    for block in request["blocks"]:
+        where = f"{block['file']}:{block['line']}"
+        try:
+            style.begin(block["reference"])
+            style.expand_kernel_doc = expander(style, block, 1)
+            markdown = render(kfiles, block)
+            if not markdown.strip():
+                print(f"{PLUGIN}: {where}: produced no documentation", file=sys.stderr)
+            rendered.append((block, markdown))
+        except BlockError as error:
+            rendered.append((block, error))
+        except Exception as error:  # a kdoc failure on one file
+            rendered.append((block, BlockError(f"kernel-doc failed: {error!r}")))
+
+    # Cross-references resolve once every block has registered its symbols.
+    # A symbol no block documents may still have an authored page, which
+    # the site's anchors (sent with `anchors = true`) can find.
+    anchors = AnchorIndex(request.get("anchors"))
+
+    def resolve(block, markdown):
+        def authored(kind, name):
+            return anchors.find(kdoc_markdown.authored_anchors(kind, name), block["reference"])
+
+        return kdoc_markdown.resolve_refs(markdown, style.symbols, block["reference"], authored)
+
+    blocks = [
+        (block, result if isinstance(result, Exception) else resolve(block, result))
+        for block, result in rendered
+    ]
+    depends_on = kfiles.files | kfiles.export_files | nested_files | figures.dependencies
+    depends_on |= {os.path.realpath(__file__)}
+    depends_on |= {os.path.join(HERE, name) for name in ("kdoc_markdown.py", "trail_plugin.py")}
+    depends_on |= set(glob.glob(os.path.join(library, "kdoc", "*.py")))
+    respond(blocks, depends_on)
+
+
+if __name__ == "__main__":
+    main()

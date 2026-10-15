@@ -1,0 +1,23 @@
+---
+title: "MOXA ART real-time clock"
+type: reference
+description: "Device-tree binding reference for MOXA ART real-time clock."
+---
+
+## Required properties:
+
+- compatible : Should be "moxa,moxart-rtc"
+- rtc-sclk-gpios : RTC sclk gpio, with zero flags
+- rtc-data-gpios : RTC data gpio, with zero flags
+- rtc-reset-gpios : RTC reset gpio, with zero flags
+
+## Example:
+
+```dts
+	rtc: rtc {
+		compatible = "moxa,moxart-rtc";
+		rtc-sclk-gpios = <&gpio 5 0>;
+		rtc-data-gpios = <&gpio 6 0>;
+		rtc-reset-gpios = <&gpio 7 0>;
+	};
+```

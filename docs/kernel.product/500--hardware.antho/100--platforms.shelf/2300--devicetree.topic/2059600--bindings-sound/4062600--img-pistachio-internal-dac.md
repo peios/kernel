@@ -1,0 +1,24 @@
+---
+title: "Pistachio internal DAC DT bindings"
+type: reference
+description: "Device-tree binding reference for Pistachio internal DAC DT bindings."
+---
+
+## Required properties:
+
+- compatible: "img,pistachio-internal-dac"
+
+- img,cr-top : Must contain a phandle to the top level control syscon
+  node which contains the internal dac control registers
+
+- VDD-supply : Digital power supply regulator (+1.8V or +3.3V)
+
+## Examples:
+
+```dts
+internal_dac: internal-dac {
+	compatible = "img,pistachio-internal-dac";
+	img,cr-top = <&cr_top>;
+	VDD-supply = <&supply3v3>;
+};
+```

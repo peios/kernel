@@ -1,0 +1,22 @@
+---
+title: "EZchip NPS Management Ethernet port driver"
+type: reference
+description: "Device-tree binding reference for EZchip NPS Management Ethernet port driver."
+---
+
+## Required properties:
+
+- compatible: Should be "ezchip,nps-mgt-enet"
+- reg: Address and length of the register set for the device
+- interrupts: Should contain the ENET interrupt
+
+## Examples:
+
+```dts
+	ethernet@f0003000 {
+		compatible = "ezchip,nps-mgt-enet";
+		reg = <0xf0003000 0x44>;
+		interrupts = <7>;
+		mac-address = [ 00 11 22 33 44 55 ];
+	};
+```

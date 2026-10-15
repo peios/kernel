@@ -1,0 +1,10 @@
+---
+title: "Intel Keem Bay DWC3 USB controller"
+type: reference
+description: "Device-tree binding reference for Intel Keem Bay DWC3 USB controller."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/usb/intel,keembay-dwc3.yaml
+```

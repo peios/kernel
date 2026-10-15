@@ -6,6 +6,49 @@
 
 use warnings;
 use strict;
+use JSON::PP qw(decode_json);
+
+my %migrated;
+if (open(my $map, "<", "peios/docs-migration/source-map.json")) {
+    local $/;
+    my $mapping = decode_json(<$map>);
+    close($map);
+    for my $page (@{$mapping->{pages}}) {
+        $migrated{$page->{source}} = 1 if -f $page->{destination};
+        if (-f $page->{destination}) {
+            for my $field (qw(source_dependencies assets diagrams)) {
+                for my $input (@{$page->{$field} // []}) {
+                    $migrated{$input->{path}} = 1 if defined($input->{path});
+                }
+            }
+        }
+    }
+    for my $source (keys %{$mapping->{source_storage} // {}}) {
+        my $path = $mapping->{source_storage}{$source}{path};
+        $migrated{$source} = 1 if defined($path) && -f $path;
+    }
+    if ($mapping->{source_index} && -f $mapping->{index_destination}) {
+        $migrated{$mapping->{source_index}} = 1;
+    }
+    for my $alias (qw(Changes CodingStyle SubmittingPatches)) {
+        my %targets = (Changes => 'changes', CodingStyle => 'coding-style', SubmittingPatches => 'submitting-patches');
+        $migrated{"Documentation/$alias"} = 1 if $migrated{"Documentation/process/$targets{$alias}.rst"};
+    }
+}
+
+sub migrated_reference {
+    my ($path) = @_;
+    $path =~ s/^file://;
+    return 1 if $migrated{$path};
+    # Match the same glob forms accepted for on-disk MAINTAINERS patterns.
+    return 0 if $path !~ /[*?\[]/;
+    my $pattern = quotemeta($path);
+    $pattern =~ s/\\\*/.*/g;
+    $pattern =~ s/\\\?/./g;
+    $pattern =~ s/\\\[([A-Za-z0-9]+)\\\]/[$1]/g;
+    return scalar grep { /^$pattern$/ } keys %migrated;
+}
+
 use Getopt::Long qw(:config no_auto_abbrev);
 
 # NOTE: only add things here when the file was gone, but the text wants
@@ -70,6 +113,7 @@ while (<IN>) {
 	}
 
 	next if (grep -e, glob("$f"));
+	next if migrated_reference($f);
 
 	if ($fix && !$doc_fix) {
 		print STDERR "\nWARNING: Currently, can't fix broken :doc:`` fields\n";
@@ -142,6 +186,7 @@ while (<IN>) {
 
 		# Check if exists, evaluating wildcards
 		next if (grep -e, glob("$ref $fulref"));
+		next if migrated_reference($ref) || migrated_reference($fulref);
 
 		# Accept relative Documentation patches for tools/
 		if ($f =~ m/tools/) {

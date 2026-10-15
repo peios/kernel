@@ -1,0 +1,2 @@
+title = "Internals"
+description = "How the Peios kernel coordinates execution, manages resources, and implements its core subsystems."

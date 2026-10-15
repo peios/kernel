@@ -1,0 +1,108 @@
+{
+  "validation_complete": true,
+  "scope": "Live Netlink YAML plugin, 30 protocol wrappers, final queued RST translation and two index updates.",
+  "mapped_articles": 3411,
+  "mapped_rst_articles": 3381,
+  "netlink_yaml_wrappers": 30,
+  "pending_rst_sources": 0,
+  "new_articles": 31,
+  "plugin": "kernel-netlink",
+  "upstream_generator": "tools/net/ynl/pyynl/lib/doc_generator.py",
+  "runtime_dependencies": {
+    "docutils": "0.22.2",
+    "PyYAML": "6.0.3",
+    "installation": "tools/docs/trail-kernel-doc/.deps (ignored, isolated)"
+  },
+  "netlink": {
+    "rendered": {
+      "counts": {
+        "source_anchors": 5308,
+        "generated_text_nodes": 14291,
+        "literal_blocks": 1,
+        "generated_reference_links": 1040,
+        "netlink_yaml_wrappers": 30
+      },
+      "errors": []
+    },
+    "plugin": {
+      "kernel-netlink": {
+        "blocks": 30,
+        "pages": 30,
+        "dependencies": 36,
+        "directory_dependencies": [
+          "Documentation/netlink/specs"
+        ],
+        "warnings": "",
+        "errors": 0
+      }
+    },
+    "complete_specification_inventory": 30
+  },
+  "final_rst_rendered": {
+    "counts": {
+      "equations": 0,
+      "prose_nodes": 22,
+      "literal_blocks": 8,
+      "articles": 1
+    },
+    "errors": []
+  },
+  "existing_content": {
+    "existing_articles_compared": 3380,
+    "changed": [
+      "docs/kernel.product/200--internals.antho/4900--netlink.topic/1019200--specs/1--index.md",
+      "docs/kernel.product/600--userspace.antho/7100--userspace-api.topic/1038000--netlink/1--index.md"
+    ],
+    "only_expected_index_updates": true,
+    "excluded": "Previous/next navigation"
+  },
+  "originals": {
+    "Documentation_unchanged": 11072,
+    "source_queue_unchanged": true,
+    "mapped_article_hashes_checked": 3411
+  },
+  "upstream_mapping": {
+    "simulated_diff_checks": [
+      {
+        "simulated_change": "tools/net/ynl/pyynl/lib/doc_generator.py",
+        "status": "M",
+        "netlink_pages_flagged": 30,
+        "all_affected_pages": 30
+      },
+      {
+        "simulated_change": "Documentation/netlink/specs/new-family.yaml",
+        "status": "A",
+        "netlink_pages_flagged": 30,
+        "all_affected_pages": 30
+      },
+      {
+        "simulated_change": "Documentation/netlink/specs/rt-link.yaml",
+        "status": "M",
+        "netlink_pages_flagged": 30,
+        "all_affected_pages": 30
+      }
+    ],
+    "missing_wrapper_rejected": true
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 3494,
+    "warnings": "Inherited kernel-doc diagnostics; no Netlink plugin warnings."
+  },
+  "site_links": {
+    "html_pages": 3494,
+    "local_links_and_assets": 1242420,
+    "errors": []
+  },
+  "unit_tests": {
+    "plugin_package": 54,
+    "migration": 62
+  },
+  "source_preservation_method": "Retain earlier source preservation baselines; compare all 3380 existing article HTML bodies excluding previous/next navigation, allowing only two intended index updates. Check every generated Netlink text node, literal block, anchor and reference against actual HTML, and final RST prose/code separately.",
+  "limitations": [
+    "Generated reference follows upstream documentation view, not every YAML schema key.",
+    "No new Trail core capability required.",
+    "Non-RST migration, final organization and editorial review remain.",
+    "No kernel build or visual browser review performed."
+  ]
+}

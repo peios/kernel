@@ -1,0 +1,281 @@
+{
+  "new_articles": 9615,
+  "mapped_articles_including_locking": 9632,
+  "remaining_rst_sources": 0,
+  "source_queue_retained": true,
+  "editorial_review": "pending for mechanical batch",
+  "source_preservation": {
+    "accounted_non_articles": 38,
+    "paragraphs": 182842,
+    "headings_and_terms": 35857,
+    "literal_blocks": 15302,
+    "tables": 2722,
+    "articles": 9632,
+    "paragraphs_with_expanded_refs_reviewed_separately": 5,
+    "generated_blocks": 35,
+    "display_equations": 71,
+    "inline_equations": 1,
+    "images": 86,
+    "diagrams": 40,
+    "live_includes": 44,
+    "csv_cells": 1159,
+    "adapted_articles": 9,
+    "automodules_accounted": 15,
+    "adaptation_dependencies": 42,
+    "netlink_yaml_wrappers": 30,
+    "legacy_text_articles": 748,
+    "source_lines": 48842,
+    "prose_blocks": 2196,
+    "headings": 2495,
+    "sequence_diagrams": 1,
+    "sequence_events": 65,
+    "device_tree_binding_wrappers": 5431,
+    "supplementary_articles": 42,
+    "mermaid": 1,
+    "live-source": 40,
+    "image": 1
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 9816,
+    "trail": {
+      "commit": "d16453cf2514bf24f7504c020ceaa075c46dd1a8",
+      "local_fix": "src/plugins.rs preserves whitespace-only lines",
+      "binary_sha256": "2cc02b091919566358692bc9ebcd0561c24bf09039dedfe186f25385d752e69e",
+      "source": "isolated checkout of the recorded commit plus the existing whitespace fix; unrelated concurrent titlecase changes excluded"
+    }
+  },
+  "site_links": {
+    "html_pages": 9816,
+    "local_links_and_assets": 3632886,
+    "errors": []
+  },
+  "kernel_doc": {
+    "pages_checked": 320,
+    "errors": 0,
+    "pages_with_inherited_warnings": 14
+  },
+  "mermaid": {
+    "rendered": 43,
+    "errors": 0,
+    "node_and_edge_counts_match_source_inventory": true,
+    "visual_review": "Representative diagrams across the original batches and the DRM current/free-standing state diagram."
+  },
+  "unit_tests": {
+    "migration": 85,
+    "kernel_doc_plugin": 22,
+    "kernel_doc_plugin_validation": "previously validated, unchanged in this follow-up",
+    "include_plugin": 10,
+    "trail_plugins": 16,
+    "plugin_package": 66,
+    "trail": 185,
+    "binding_plugin": 12
+  },
+  "upstream_mapping_rehearsals": [
+    {
+      "input": "Documentation/tools/rtla/common_options.txt",
+      "old": "ed1b409137bb9f49090362d34360ab80f88b9a5e",
+      "new": "5779de8d36ac5a0c929f276096a499b03ae0afa7",
+      "mapped_pages": 5,
+      "examples": [
+        "docs/kernel.product/400--administration.antho/6800--tools.topic/1027300--rtla/271200--rtla-hwnoise.md",
+        "docs/kernel.product/400--administration.antho/6800--tools.topic/1027300--rtla/271300--rtla-osnoise-hist.md",
+        "docs/kernel.product/400--administration.antho/6800--tools.topic/1027300--rtla/271400--rtla-osnoise-top.md"
+      ]
+    },
+    {
+      "input": "Documentation/gpu/dp-mst/topology-figure-1.dot",
+      "old": "d0757afd00d71dca98268d09884dc6248743d8ce",
+      "new": "ebcc0e6b509108b4a67daa4c55809a05ab7f4b77",
+      "mapped_pages": 1,
+      "examples": [
+        "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154100--drm-kms-helpers.md"
+      ]
+    },
+    {
+      "input": "tools/lib/python/kdoc/enrich_formatter.py",
+      "old": "e68c84b9f3ba138878581a9f36a02c67d2ae20d4",
+      "new": "7ef684c9fdb336b1e102c014da2424c0240196c2",
+      "mapped_pages": 308,
+      "examples": [
+        "docs/kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/800--seqlock.md",
+        "docs/kernel.product/200--internals.antho/1600--block.topic/69200--blk-mq.md",
+        "docs/kernel.product/200--internals.antho/1700--bpf.topic/71400--cpumasks.md"
+      ]
+    },
+    {
+      "input": "Documentation/gpu/kms-properties.csv",
+      "old": "10af38d9e7d2537aa08a4d04ca3a903b16a300c3",
+      "new": "ab52af4ba7c7dc2e226ede5935a0587743b747d3",
+      "mapped_pages": 1,
+      "examples": [
+        "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154200--drm-kms.md"
+      ]
+    },
+    {
+      "input": "Documentation/features/core/mseal_sys_mappings/arch-support.txt",
+      "old": "24e3f9fbbd5d93afb41af495c008e76a9005dd06",
+      "new": "e20706d5385b10a6f6a2fe5ad6b1333dad2d1416",
+      "mapped_pages": 17,
+      "added_file": true
+    },
+    {
+      "input": "Documentation/devicetree/bindings/leds/leds-gpio.yaml",
+      "new": "fe469e83eb5b383c8abbf1d1cab7a038e3d6778b",
+      "mapped_pages": 1,
+      "matched": true
+    },
+    {
+      "input": "Documentation/devicetree/bindings/leds/common.yaml",
+      "new": "2a7ee990196ff7ccf3de3e152ecc67215b22c318",
+      "mapped_pages": 210,
+      "matched": true
+    }
+  ],
+  "original_documentation": {
+    "entries": 11072,
+    "unchanged": true
+  },
+  "recovery": "Validated artifacts recovered from ~/tmp-saved; all article and source dependency hashes rechecked before installation.",
+  "latest_pass": "residual-integration-report.json",
+  "accounted_non_article_sources": 3,
+  "english_rst_sources": 3385,
+  "converter_follow_up_report": "converter-follow-up-report.json",
+  "authored_c_anchors": 571,
+  "live_includes": {
+    "pages": 34,
+    "blocks": 44
+  },
+  "live_includes_report": "live-includes-report.json",
+  "generators": {
+    "kernel-abi": {
+      "blocks": 9,
+      "pages": 9,
+      "dependencies": 690,
+      "directory_dependencies": [
+        "Documentation/ABI"
+      ],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-feat": {
+      "blocks": 17,
+      "pages": 17,
+      "dependencies": 58,
+      "directory_dependencies": [
+        "Documentation/features"
+      ],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-maintainers": {
+      "blocks": 1,
+      "pages": 1,
+      "dependencies": 15,
+      "directory_dependencies": [],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-include": {
+      "blocks": 8,
+      "pages": 5,
+      "dependencies": 22,
+      "directory_dependencies": [],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-binding": {
+      "blocks": 5431,
+      "pages": 5431,
+      "dependencies": 5489,
+      "directory_dependencies": [
+        "Documentation/devicetree/bindings",
+        "tools/docs/trail-kernel-doc/schema-library/dtschema-2026.9/schemas"
+      ],
+      "warnings": "",
+      "errors": 0
+    }
+  },
+  "generator_integration_report": "generator-integration-report.json",
+  "source_preservation_method": "Every imported source line is accounted for. Source prose is compared in order with rendered text after removing only known Trail chrome; literal blocks are exact, including whitespace. Mermaid events and rendered messages are checked. All prior article bodies are compared allowing only the recorded link replacements and previous/next navigation.",
+  "peios_python_adaptation": {
+    "report": "python-adaptation-report.json",
+    "new_articles": 6,
+    "authored_text_blocks": 219,
+    "literal_blocks": 6,
+    "dependency_page_pairs": 28
+  },
+  "optional_python_adaptation": {
+    "report": "optional-python-adaptation-report.json",
+    "new_articles": 3,
+    "rendered_checks": {
+      "counts": {
+        "authored_text_blocks": 100,
+        "literal_blocks": 3,
+        "articles": 3
+      },
+      "errors": []
+    },
+    "dependency_page_pairs": 14
+  },
+  "mapped_rst_articles": 3381,
+  "netlink_integration": {
+    "report": "netlink-integration-report.json",
+    "new_articles": 31,
+    "netlink_yaml_wrappers": 30,
+    "pending_rst_sources": 0
+  },
+  "legacy_text_articles": 748,
+  "legacy_text_integration": {
+    "report": "legacy-text-integration-report.json",
+    "new_articles": 741,
+    "inventory": "legacy-text-inventory.json"
+  },
+  "binding_integration": {
+    "report": "binding-integration-report.json",
+    "kernel_bindings": 5415,
+    "shared_definitions": 16,
+    "authored_catalogue_guides": 1,
+    "rendered_preservation": {
+      "schema_nodes": 376397,
+      "scalar_values": 208630,
+      "references": 10383,
+      "comments": 12129,
+      "articles": 5431,
+      "examples": 5627
+    },
+    "installed_verification_passed": true
+  },
+  "whole_tree_inventory": {
+    "files": 11072,
+    "dispositions": {
+      "retained tooling": 29,
+      "retained metadata": 1,
+      "supporting input": 871,
+      "redirect": 3,
+      "translated article": 9616,
+      "retained artwork": 2,
+      "sphinx-navigation-template": 1,
+      "excluded translation": 549
+    },
+    "errors": []
+  },
+  "supplementary_source_articles": 42,
+  "residual_integration": {
+    "report": "residual-integration-report.json",
+    "new_articles": 49,
+    "prose_articles": 7,
+    "live_source_references": 40,
+    "standalone_figures": 2,
+    "commented_readmes_extracted": 1,
+    "unclassified_files": 0
+  },
+  "source_pruning": {
+    "report": "pruning-report.json",
+    "retained_tooling_inputs": 6210,
+    "relocated_inputs": 75,
+    "removed_originals": 4787,
+    "authored_workflow_articles": 1,
+    "validation_complete": true
+  }
+}

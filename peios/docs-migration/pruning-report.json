@@ -1,0 +1,155 @@
+{
+  "task": "PEI-1505",
+  "authorization": "Jack approved pruning Documentation to tooling inputs and making docs authoritative for everything else.",
+  "original_files": 11072,
+  "retained_tooling_inputs": 6210,
+  "relocated_inputs": 75,
+  "removed_replaced_or_excluded_sources": 4787,
+  "additional_relocated_figure_files": 4,
+  "live_input_directory": "docs/sources",
+  "source_queue": "unchanged",
+  "source_recovery": {
+    "revision": "b6e6b8c9229e702e41f373722459a58e1609487c",
+    "all_original_git_blobs_verified": true,
+    "archive": "/home/jack/projects/peios/.tmp/pei-1505-prune/Documentation-before.tar.gz",
+    "archive_sha256": "315986d4a124bb7b1381cf4d050cfb4e1f777523b2408f7af64bf93cfacf2b63"
+  },
+  "checks": {
+    "authority": {
+      "mapped_articles": 9632,
+      "authored_articles": 1,
+      "runtime_dependencies": 7651,
+      "assets": 87,
+      "errors": 0
+    },
+    "site": {
+      "html_pages": 9817,
+      "local_links_and_assets": 3632938,
+      "errors": []
+    },
+    "article_preservation": {
+      "unchanged_article_bodies": 9631,
+      "changed_articles": [
+        "Documentation/doc-guide/index.rst"
+      ],
+      "git_rehearsals": 4,
+      "relocated_bytes_preserved": true
+    },
+    "migration_tests": 89,
+    "plugin_tests": 66,
+    "rtla_rv_man_pages": 14,
+    "netlink_generated_header_bytes": 18615,
+    "checkpatch": [
+      {
+        "root": "/home/jack/projects/peios-newtree/kernel",
+        "compatible": "al,alpine-smp",
+        "undocumented": false,
+        "verbose_docs_read": true
+      },
+      {
+        "root": "/home/jack/projects/peios/.tmp/pei-1505-prune/kernel",
+        "compatible": "al,alpine-smp",
+        "undocumented": false,
+        "verbose_docs_read": true
+      },
+      {
+        "root": "/home/jack/projects/peios-newtree/kernel",
+        "compatible": "notavendor,prune-check-unknown",
+        "undocumented": true,
+        "verbose_docs_read": true
+      },
+      {
+        "root": "/home/jack/projects/peios/.tmp/pei-1505-prune/kernel",
+        "compatible": "notavendor,prune-check-unknown",
+        "undocumented": true,
+        "verbose_docs_read": true
+      }
+    ],
+    "legacy_rst_redirects": {
+      "redirects": 3380
+    },
+    "source_downloads_published": false,
+    "installed_authority": {
+      "mapped_articles": 9632,
+      "authored_articles": 1,
+      "runtime_dependencies": 7651,
+      "assets": 87,
+      "errors": 0
+    },
+    "preview_http": [
+      {
+        "page": "kernel/development/doc-guide/maintaining-peios-documentation",
+        "status": 200,
+        "bytes": 27697
+      },
+      {
+        "page": "kernel/administration/admin-guide/kernel-parameters",
+        "status": 200,
+        "bytes": 541149
+      },
+      {
+        "page": "kernel/hardware/sound/cards/multisound-sh",
+        "status": 200,
+        "bytes": 302525
+      }
+    ],
+    "translation_queue": {
+      "files": 10505,
+      "unchanged": true
+    }
+  },
+  "reference_check": {
+    "before": [
+      "Warning: Documentation/devicetree/bindings/mfd/motorola-cpcap.txt references a file that doesn't exist: Documentation/devicetree/bindings/rtc/cpcap-rtc.txt",
+      "Warning: Documentation/devicetree/bindings/regulator/siliconmitus,sm5703-regulator.yaml references a file that doesn't exist: Documentation/devicetree/bindings/mfd/siliconmitus,sm5703.yaml",
+      "Warning: Documentation/devicetree/bindings/rtc/motorola,cpcap-rtc.yaml references a file that doesn't exist: Documentation/devicetree/bindings/mfd/motorola,cpcap.yaml",
+      "Warning: Documentation/doc-guide/parse-headers.rst references a file that doesn't exist: Documentation/userspace-api/media/Makefile",
+      "Warning: Documentation/leds/leds-lp5812.rst references a file that doesn't exist: Documentation/ABI/testing/sysfs-class-led-multicolor.rst",
+      "Warning: Documentation/translations/it_IT/doc-guide/parse-headers.rst references a file that doesn't exist: Documentation/userspace-api/media/Makefile",
+      "Warning: Documentation/translations/ja_JP/SubmittingPatches references a file that doesn't exist: linux-2.6.12-vanilla/Documentation/dontdiff",
+      "Warning: Documentation/translations/ja_JP/process/submit-checklist.rst references a file that doesn't exist: Documentation/translations/ja_JP/SubmitChecklist",
+      "Warning: Documentation/translations/zh_CN/doc-guide/parse-headers.rst references a file that doesn't exist: Documentation/userspace-api/media/Makefile",
+      "Warning: Documentation/translations/zh_CN/filesystems/gfs2-glocks.rst references a file that doesn't exist: Documentation/filesystems/gfs2-glocks.rst",
+      "Warning: Documentation/translations/zh_CN/filesystems/gfs2-uevents.rst references a file that doesn't exist: Documentation/filesystems/gfs2-uevents.rst",
+      "Warning: Documentation/translations/zh_CN/filesystems/gfs2.rst references a file that doesn't exist: Documentation/filesystems/gfs2.rst",
+      "Warning: Documentation/translations/zh_CN/how-to.rst references a file that doesn't exist: Documentation/xxx/xxx.rst",
+      "Warning: Documentation/translations/zh_CN/networking/xfrm_proc.rst references a file that doesn't exist: Documentation/networking/xfrm_proc.rst",
+      "Warning: Documentation/translations/zh_CN/scsi/scsi_mid_low_api.rst references a file that doesn't exist: Documentation/Configure.help",
+      "Warning: MAINTAINERS references a file that doesn't exist: Documentation/ABI/testing/sysfs-platform-ayaneo",
+      "Warning: MAINTAINERS references a file that doesn't exist: Documentation/devicetree/bindings/display/bridge/megachips-stdpxxxx-ge-b850v3-fw.txt",
+      "Warning: arch/powerpc/sysdev/mpic.c references a file that doesn't exist: Documentation/devicetree/bindings/powerpc/fsl/mpic.txt",
+      "Warning: rust/kernel/sync/atomic/ordering.rs references a file that doesn't exist: srctree/tools/memory-model/Documentation/explanation.txt"
+    ],
+    "after": [
+      "Warning: Documentation/devicetree/bindings/regulator/siliconmitus,sm5703-regulator.yaml references a file that doesn't exist: Documentation/devicetree/bindings/mfd/siliconmitus,sm5703.yaml",
+      "Warning: Documentation/devicetree/bindings/rtc/motorola,cpcap-rtc.yaml references a file that doesn't exist: Documentation/devicetree/bindings/mfd/motorola,cpcap.yaml",
+      "Warning: MAINTAINERS references a file that doesn't exist: Documentation/ABI/testing/sysfs-platform-ayaneo",
+      "Warning: MAINTAINERS references a file that doesn't exist: Documentation/devicetree/bindings/display/bridge/megachips-stdpxxxx-ge-b850v3-fw.txt",
+      "Warning: MAINTAINERS references a file that doesn't exist: Documentation/translations/zh_CN/core-api/union_find.rst",
+      "Warning: arch/powerpc/sysdev/mpic.c references a file that doesn't exist: Documentation/devicetree/bindings/powerpc/fsl/mpic.txt",
+      "Warning: rust/kernel/sync/atomic/ordering.rs references a file that doesn't exist: srctree/tools/memory-model/Documentation/explanation.txt",
+      "Warning: tools/docs/sphinx-pre-install references a file that doesn't exist: Documentation/conf.py",
+      "Warning: tools/docs/sphinx-pre-install references a file that doesn't exist: Documentation/sphinx/requirements.txt"
+    ],
+    "note": "Remaining newly missing references are the intentionally excluded Chinese translation and two references inside the retired Sphinx pre-install helper. Active mapped source references and MAINTAINERS globs resolve through the migration map."
+  },
+  "limitations": [
+    "Inherited technical correctness and final organization are not audited by this pass.",
+    "Sphinx output targets are explicitly retired; htmldocs uses Trail and mandocs retains RTLA/RV.",
+    "Source paths in inherited comments may remain as upstream lookup keys.",
+    "Original conversion checks require historical source, mapping and output snapshots; current checks validate maintained authority and runtime dependencies."
+  ],
+  "committed": false,
+  "pushed": false,
+  "installation": {
+    "files": {
+      "added": 85,
+      "removed": 4866,
+      "changed": 77
+    },
+    "original_backup": "/home/jack/projects/peios/.tmp/pei-1505-prune/Documentation-before.tar.gz",
+    "changed_file_backup": "/home/jack/projects/peios/.tmp/pei-1505-prune/before-install",
+    "preview_pid": 1851090,
+    "post_install_hashes_match": true
+  }
+}

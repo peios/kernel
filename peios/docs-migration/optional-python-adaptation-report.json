@@ -1,0 +1,293 @@
+{
+  "validation_complete": true,
+  "scope": "Three authored Peios references for retained optional tools; no build or audit enabled.",
+  "new_articles": 3,
+  "mapped_articles": 3380,
+  "pending_rst_sources": 1,
+  "new_pages": [
+    {
+      "source": "Documentation/tools/jobserver.rst",
+      "source_sha256": "198eb2ef04bc10136dbf28a746c570194fd95e64f40bb2bdb7ae641179d55c82",
+      "source_title": "Job server module",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270000--jobserver.md",
+      "reference": "kernel/administration/tools/jobserver",
+      "initial_output_sha256": "f4442292578ff8c70a4b367d7e99094182bd9d7c880254570a991ead20d42eba",
+      "current_output_sha256": "f4442292578ff8c70a4b367d7e99094182bd9d7c880254570a991ead20d42eba",
+      "sections": [],
+      "labels": {
+        "job server module": "#rst-job-server-module"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "peios/config/config.x86_64.base",
+          "sha256": "85a3fc56a492937c341f1b55d636f3c038251b51ff934f2db651f3c821096d78"
+        },
+        {
+          "path": "scripts/Makefile.vmlinux_o",
+          "sha256": "518d5c8b461dad56af9f1508a45b17c329c9c28a6ab7cf5bae6523bad676b6fd"
+        },
+        {
+          "path": "scripts/jobserver-exec",
+          "sha256": "28add3cbcbb7b4c0c50fc653660555a42c2b09f18df1447a42bb15be69c81901"
+        },
+        {
+          "path": "tools/lib/python/jobserver.py",
+          "sha256": "5e1825fa9ef827d07cacf2dabe5f384af882df01c9ebad7eebb81927baab7dcb"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Authored reference for retained conditional build tooling; explicitly inactive in the current Peios base configuration and unused by Trail. Public lifecycle, command interface, state and fallback behaviour covered."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.jobserver",
+            "disposition": "adapted-optional-interface",
+            "reason": "Authored reference for retained conditional build tooling; explicitly inactive in the current Peios base configuration and unused by Trail. Public lifecycle, command interface, state and fallback behaviour covered."
+          }
+        ]
+      },
+      "status": "adapted optional-tooling reference for Peios; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kabi_regex.rst",
+      "source_sha256": "78482c1baa60ba4b90284f4ee5ab8dc946eee8dfb600dfb78d1d1e93cf76c685",
+      "source_title": "ABI regex search symbol class",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270400--kabi-regex.md",
+      "reference": "kernel/administration/tools/kabi-regex",
+      "initial_output_sha256": "17d6529de83edff0b774a272599c1373928c980a4c78cd123f7e416a82477a95",
+      "current_output_sha256": "17d6529de83edff0b774a272599c1373928c980a4c78cd123f7e416a82477a95",
+      "sections": [],
+      "labels": {
+        "abi regex search symbol class": "#rst-abi-regex-search-symbol-class"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/get_abi.py",
+          "sha256": "3442873a223f7e63728d6b1f467e83e07a4a2471318f2e34be526b55e466bb55"
+        },
+        {
+          "path": "tools/lib/python/abi/abi_parser.py",
+          "sha256": "1e560068a4c2f2f9779ebf620457a4d1e9c4ad029e0d5f1ff07c5bd15adeb760"
+        },
+        {
+          "path": "tools/lib/python/abi/abi_regex.py",
+          "sha256": "8a9fa694aa4407d34d4003f8287f80b129a057e1e3b17e58ba473b1f063bfaec"
+        },
+        {
+          "path": "tools/lib/python/abi/helpers.py",
+          "sha256": "88f14be494549908ed776faa5c9b27f685e9765c01e9c1fc41d2843bf5d4b18d"
+        },
+        {
+          "path": "tools/lib/python/abi/system_symbols.py",
+          "sha256": "d6d2e089f8c157866d9d6e79cd1be87c0fd0886dbeed96c85c96feb28c44f436"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Authored reference for the optional undefined-ABI checker, documenting inheritance, public methods, pattern data, grouping and diagnostics. No automatic Peios audit is claimed."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.abi.abi_regex",
+            "disposition": "adapted-optional-interface",
+            "reason": "Authored reference for the optional undefined-ABI checker, documenting inheritance, public methods, pattern data, grouping and diagnostics. No automatic Peios audit is claimed."
+          }
+        ]
+      },
+      "status": "adapted optional-tooling reference for Peios; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kabi_symbols.rst",
+      "source_sha256": "a59f3d6441ff90cce71e9415e6dc78dff34810429fbd0a804bfea7a104c8f219",
+      "source_title": "System ABI documentation validation class",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270500--kabi-symbols.md",
+      "reference": "kernel/administration/tools/kabi-symbols",
+      "initial_output_sha256": "4d2f18828f0d4f937d5cb93d88709d2bf1b6d270a6d588fd7a675c368f5443eb",
+      "current_output_sha256": "4d2f18828f0d4f937d5cb93d88709d2bf1b6d270a6d588fd7a675c368f5443eb",
+      "sections": [],
+      "labels": {
+        "system abi documentation validation class": "#rst-system-abi-documentation-validation-class"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/get_abi.py",
+          "sha256": "3442873a223f7e63728d6b1f467e83e07a4a2471318f2e34be526b55e466bb55"
+        },
+        {
+          "path": "tools/lib/python/abi/abi_parser.py",
+          "sha256": "1e560068a4c2f2f9779ebf620457a4d1e9c4ad029e0d5f1ff07c5bd15adeb760"
+        },
+        {
+          "path": "tools/lib/python/abi/abi_regex.py",
+          "sha256": "8a9fa694aa4407d34d4003f8287f80b129a057e1e3b17e58ba473b1f063bfaec"
+        },
+        {
+          "path": "tools/lib/python/abi/helpers.py",
+          "sha256": "88f14be494549908ed776faa5c9b27f685e9765c01e9c1fc41d2843bf5d4b18d"
+        },
+        {
+          "path": "tools/lib/python/abi/system_symbols.py",
+          "sha256": "d6d2e089f8c157866d9d6e79cd1be87c0fd0886dbeed96c85c96feb28c44f436"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Authored reference for optional sysfs documentation coverage checks, documenting public methods, CLI options, state, scheduling and result interpretation. No automatic Peios audit is claimed."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.abi.system_symbols",
+            "disposition": "adapted-optional-interface",
+            "reason": "Authored reference for optional sysfs documentation coverage checks, documenting public methods, CLI options, state, scheduling and result interpretation. No automatic Peios audit is claimed."
+          }
+        ]
+      },
+      "status": "adapted optional-tooling reference for Peios; source and dependency baseline reviewed"
+    }
+  ],
+  "source_checks": {
+    "generated_blocks": 0,
+    "display_equations": 0,
+    "inline_equations": 0,
+    "literal_blocks": 0,
+    "tables": 0,
+    "images": 0,
+    "diagrams": 0,
+    "live_includes": 0,
+    "articles": 12,
+    "adapted_articles": 9,
+    "automodules_accounted": 15,
+    "adaptation_dependencies": 42
+  },
+  "rendered_checks": {
+    "counts": {
+      "authored_text_blocks": 100,
+      "literal_blocks": 3,
+      "articles": 3
+    },
+    "errors": []
+  },
+  "existing_content": {
+    "existing_articles_compared": 3377,
+    "only_expected_link_updates": true,
+    "changed_article_bodies": [
+      "docs/kernel.product/400--administration.antho/6800--tools.topic/270100--kabi.md",
+      "docs/kernel.product/400--administration.antho/6800--tools.topic/271000--python.md"
+    ],
+    "excluded": "Previous/next navigation"
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 3463,
+    "warnings": "Inherited kernel-doc diagnostics; runtime plugins and source code unchanged by this batch."
+  },
+  "site_links": {
+    "html_pages": 3463,
+    "local_links_and_assets": 1216441,
+    "errors": []
+  },
+  "migration_tests": 59,
+  "dependency_mapping": {
+    "method": "simulated Git name-status diffs; no repository mutation",
+    "dependency_page_pairs": 14,
+    "checks": [
+      {
+        "source": "peios/config/config.x86_64.base",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270000--jobserver.md"
+      },
+      {
+        "source": "scripts/Makefile.vmlinux_o",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270000--jobserver.md"
+      },
+      {
+        "source": "scripts/jobserver-exec",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270000--jobserver.md"
+      },
+      {
+        "source": "tools/lib/python/jobserver.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270000--jobserver.md"
+      },
+      {
+        "source": "tools/docs/get_abi.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270400--kabi-regex.md"
+      },
+      {
+        "source": "tools/lib/python/abi/abi_parser.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270400--kabi-regex.md"
+      },
+      {
+        "source": "tools/lib/python/abi/abi_regex.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270400--kabi-regex.md"
+      },
+      {
+        "source": "tools/lib/python/abi/helpers.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270400--kabi-regex.md"
+      },
+      {
+        "source": "tools/lib/python/abi/system_symbols.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270400--kabi-regex.md"
+      },
+      {
+        "source": "tools/docs/get_abi.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270500--kabi-symbols.md"
+      },
+      {
+        "source": "tools/lib/python/abi/abi_parser.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270500--kabi-symbols.md"
+      },
+      {
+        "source": "tools/lib/python/abi/abi_regex.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270500--kabi-symbols.md"
+      },
+      {
+        "source": "tools/lib/python/abi/helpers.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270500--kabi-symbols.md"
+      },
+      {
+        "source": "tools/lib/python/abi/system_symbols.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270500--kabi-symbols.md"
+      }
+    ]
+  },
+  "originals": {
+    "Documentation_unchanged": 11072,
+    "source_queue_unchanged": true
+  },
+  "remaining": [
+    "userspace-api/netlink/netlink-raw.rst"
+  ],
+  "netlink_blocker": "30 YAML protocol specifications need Trail rendering and wrapper pages. netlink-raw.rst requires generated netlink-rt-link and netlink-tc targets. Upstream uses parser_yaml.py and YnlDocGenerator; no new Trail core capability has been identified.",
+  "source_preservation_method": "Retained previous source-preservation baseline; verified all existing article HTML bodies unchanged except two index link updates, excluding previous/next navigation. Checked authored references and their dependencies separately.",
+  "command_validation": "Verified undefined --help against documented CLI options; no host sysfs audit or kernel build was run."
+}

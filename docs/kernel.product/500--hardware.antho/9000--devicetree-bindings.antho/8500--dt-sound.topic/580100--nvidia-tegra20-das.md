@@ -1,0 +1,10 @@
+---
+title: "NVIDIA Tegra 20 DAS (Digital Audio Switch) controller"
+type: reference
+description: "Device-tree binding reference for NVIDIA Tegra 20 DAS (Digital Audio Switch) controller."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/sound/nvidia,tegra20-das.yaml
+```

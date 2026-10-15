@@ -1,0 +1,558 @@
+{
+  "validation_complete": true,
+  "scope": "Six authored Peios references for active documentation-library interfaces, not full automodule exports.",
+  "new_articles": 6,
+  "mapped_articles": 3377,
+  "pending_rst_sources": 4,
+  "new_pages": [
+    {
+      "source": "Documentation/tools/feat.rst",
+      "source_sha256": "b6f0d7f09840ebad4fafd3c501738ba503397a32011616f986fa3862f4ceda75",
+      "source_title": "Documentation features parser module",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/269800--feat.md",
+      "reference": "kernel/administration/tools/feat",
+      "initial_output_sha256": "5e6fcc7ed58955495928629c5e0a685fbc189174400210ebd1bcebe71a4e8a2a",
+      "current_output_sha256": "5e6fcc7ed58955495928629c5e0a685fbc189174400210ebd1bcebe71a4e8a2a",
+      "sections": [],
+      "labels": {
+        "documentation features parser module": "#rst-documentation-features-parser-module"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/trail-kernel-doc/feat_markdown.py",
+          "sha256": "a7a8793a977f4ac8faeac55033bc23ea88e21338353787a0f7a3a6de69e3f9f9"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/trail-kernel-feat",
+          "sha256": "ee9450165625f7d381e95d1b36885427c282381c0d868148d1ae0f214c122ec4"
+        },
+        {
+          "path": "tools/lib/python/feat/parse_features.py",
+          "sha256": "9d17833480522c5ccc89a729cf032efa05019a9e98a63cda1b9222d2a821597b"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Document the parser data and Trail views; omit inherited ReST output helpers from the API reference."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.feat.parse_features",
+            "disposition": "adapted-active-interface",
+            "reason": "Document the parser data and Trail views; omit inherited ReST output helpers from the API reference."
+          }
+        ]
+      },
+      "status": "adapted to current Peios Trail consumers; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kabi_helpers.rst",
+      "source_sha256": "0e307e3275891033b583599af95b6897873852c0c7ad26e0ea2f8cd741408d1c",
+      "source_title": "Ancillary classes",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270200--kabi-helpers.md",
+      "reference": "kernel/administration/tools/kabi-helpers",
+      "initial_output_sha256": "edb6c09b7c0eed56a416acaaa3b8d2fa7f52695b4e8850f881af14475b8d72c7",
+      "current_output_sha256": "edb6c09b7c0eed56a416acaaa3b8d2fa7f52695b4e8850f881af14475b8d72c7",
+      "sections": [],
+      "labels": {
+        "ancillary classes": "#rst-ancillary-classes"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/trail-kernel-doc/abi_markdown.py",
+          "sha256": "d3850b6b4b8e2e35d0dcb04db3f43a3ef7320b7620ba965411ea45d4f4e23b40"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/trail-kernel-abi",
+          "sha256": "565e84131fec0c119a1ccf9703f735761a8f8d2536c8a7b87941da8e6f5d1a81"
+        },
+        {
+          "path": "tools/lib/python/abi/abi_parser.py",
+          "sha256": "1e560068a4c2f2f9779ebf620457a4d1e9c4ad029e0d5f1ff07c5bd15adeb760"
+        },
+        {
+          "path": "tools/lib/python/abi/helpers.py",
+          "sha256": "88f14be494549908ed776faa5c9b27f685e9765c01e9c1fc41d2843bf5d4b18d"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Document parser debug controls; mention optional checker flags and CLI help without reproducing their API."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.abi.helpers",
+            "disposition": "adapted-active-interface",
+            "reason": "Document parser debug controls; mention optional checker flags and CLI help without reproducing their API."
+          }
+        ]
+      },
+      "status": "adapted to current Peios Trail consumers; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kabi_parser.rst",
+      "source_sha256": "120c13d032b02436490b6d5d67bf84fa2c28ac1350d8e07741aebc5945295ce1",
+      "source_title": "Kernel ABI documentation parser class",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270300--kabi-parser.md",
+      "reference": "kernel/administration/tools/kabi-parser",
+      "initial_output_sha256": "96b07ba509628c4679bdfa9fcbf27fd284ce341e125457c87ee68a7938d91778",
+      "current_output_sha256": "96b07ba509628c4679bdfa9fcbf27fd284ce341e125457c87ee68a7938d91778",
+      "sections": [],
+      "labels": {
+        "kernel abi documentation parser class": "#rst-kernel-abi-documentation-parser-class"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/trail-kernel-doc/abi_markdown.py",
+          "sha256": "d3850b6b4b8e2e35d0dcb04db3f43a3ef7320b7620ba965411ea45d4f4e23b40"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/trail-kernel-abi",
+          "sha256": "565e84131fec0c119a1ccf9703f735761a8f8d2536c8a7b87941da8e6f5d1a81"
+        },
+        {
+          "path": "tools/lib/python/abi/abi_parser.py",
+          "sha256": "1e560068a4c2f2f9779ebf620457a4d1e9c4ad029e0d5f1ff07c5bd15adeb760"
+        },
+        {
+          "path": "tools/lib/python/abi/helpers.py",
+          "sha256": "88f14be494549908ed776faa5c9b27f685e9765c01e9c1fc41d2843bf5d4b18d"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Document parsing and consumed dictionaries; omit CLI search and ReST rendering implementations."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.abi.abi_parser",
+            "disposition": "adapted-active-interface",
+            "reason": "Document parsing and consumed dictionaries; omit CLI search and ReST rendering implementations."
+          }
+        ]
+      },
+      "status": "adapted to current Peios Trail consumers; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kdoc_parser.rst",
+      "source_sha256": "b0ba3bf65066162e9837c5f4f4dcaba175c1070840d0efe51176509a20aa4171",
+      "source_title": "Kernel-doc parser stage",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270900--kdoc-parser.md",
+      "reference": "kernel/administration/tools/kdoc-parser",
+      "initial_output_sha256": "8ca1b37bb8a9f5649df4e7ff02cb715e526c5768b336bce897fb5d9145fefea7",
+      "current_output_sha256": "8ca1b37bb8a9f5649df4e7ff02cb715e526c5768b336bce897fb5d9145fefea7",
+      "sections": [],
+      "labels": {
+        "kernel doc parser stage": "#rst-kernel-doc-parser-stage",
+        "file handler classes": "#rst-file-handler-classes",
+        "parsed item data class": "#rst-parsed-item-data-class",
+        "parser classes and methods": "#rst-parser-classes-and-methods"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/trail-kernel-doc/kdoc_markdown.py",
+          "sha256": "ba57b20e8e3a27e8f5267119e9f80600ddd12b53fc81ec85b79febbe62299c28"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/trail-kernel-doc",
+          "sha256": "0cbaf4a6bd8b6e7f0f03fa9c9e1ff2f41cafbb2c6be3985d794431f8ac9be2e7"
+        },
+        {
+          "path": "tools/lib/python/kdoc/kdoc_files.py",
+          "sha256": "978d951538bdcffebd32c4b7b8e3d9fad43c65c0f1ca39da1150cb7a15950fcb"
+        },
+        {
+          "path": "tools/lib/python/kdoc/kdoc_item.py",
+          "sha256": "2b63fc8d2318626852171d249cee35dfcf54947315d9b61a5f157fa53b587cc6"
+        },
+        {
+          "path": "tools/lib/python/kdoc/kdoc_parser.py",
+          "sha256": "572d781a76865e0ad5e2b9f59c2659f4ae7625577f840fc4d309ea14db826406"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Document the coordinator, records and parser entry points; describe state machinery without duplicating every internal handler."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.kdoc.kdoc_files",
+            "disposition": "adapted-active-interface",
+            "reason": "Document the coordinator, records and parser entry points; describe state machinery without duplicating every internal handler."
+          },
+          {
+            "module": "lib.python.kdoc.kdoc_item",
+            "disposition": "adapted-active-interface",
+            "reason": "Document the coordinator, records and parser entry points; describe state machinery without duplicating every internal handler."
+          },
+          {
+            "module": "lib.python.kdoc.kdoc_parser",
+            "disposition": "adapted-active-interface",
+            "reason": "Document the coordinator, records and parser entry points; describe state machinery without duplicating every internal handler."
+          }
+        ]
+      },
+      "status": "adapted to current Peios Trail consumers; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kdoc_output.rst",
+      "source_sha256": "72452bc69261edaa6fe6853fa2c524f5fbfd15ef4ac5cad5a3fa0067fbf741d2",
+      "source_title": "Kernel-doc output stage",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270800--kdoc-output.md",
+      "reference": "kernel/administration/tools/kdoc-output",
+      "initial_output_sha256": "38b1624a41bf73ece60677aa03a118dc49b29f76640eb69bb3c10ad319e725af",
+      "current_output_sha256": "38b1624a41bf73ece60677aa03a118dc49b29f76640eb69bb3c10ad319e725af",
+      "sections": [],
+      "labels": {
+        "kernel doc output stage": "#rst-kernel-doc-output-stage",
+        "output handler for man pages and rest": "#rst-output-handler-for-man-pages-and-rest"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/trail-kernel-doc/kdoc_markdown.py",
+          "sha256": "ba57b20e8e3a27e8f5267119e9f80600ddd12b53fc81ec85b79febbe62299c28"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/trail-kernel-doc",
+          "sha256": "0cbaf4a6bd8b6e7f0f03fa9c9e1ff2f41cafbb2c6be3985d794431f8ac9be2e7"
+        },
+        {
+          "path": "tools/lib/python/kdoc/kdoc_output.py",
+          "sha256": "a62e2aa3ebf04a6bdaf338e54ec9fa24178378dc4b2b00b7bdd7d1c0ec7d91bb"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Replace the man/ReST framing with shared OutputFormat and Peios MarkdownFormat; omit RestFormat and ManFormat implementations."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.kdoc.kdoc_output",
+            "disposition": "adapted-active-interface",
+            "reason": "Replace the man/ReST framing with shared OutputFormat and Peios MarkdownFormat; omit RestFormat and ManFormat implementations."
+          }
+        ]
+      },
+      "status": "adapted to current Peios Trail consumers; source and dependency baseline reviewed"
+    },
+    {
+      "source": "Documentation/tools/kdoc_ancillary.rst",
+      "source_sha256": "33d255b25032b829b6c001614c5bc34f05b8b03a9cda0621d6bd497a990531cd",
+      "source_title": "Ancillary classes",
+      "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md",
+      "reference": "kernel/administration/tools/kdoc-ancillary",
+      "initial_output_sha256": "1439a54fcc47202ec0dba7aaad345ac12a5bd06576d30ee617c810f5eb7e3bb5",
+      "current_output_sha256": "1439a54fcc47202ec0dba7aaad345ac12a5bd06576d30ee617c810f5eb7e3bb5",
+      "sections": [],
+      "labels": {
+        "ancillary classes": "#rst-ancillary-classes",
+        "regular expression class handler": "#rst-regular-expression-class-handler",
+        "kernel c file include logic": "#rst-kernel-c-file-include-logic"
+      },
+      "external_documentation": [],
+      "kernel_doc": [],
+      "source_dependencies": [
+        {
+          "path": "tools/docs/parse-headers.py",
+          "sha256": "e9aa995ef70a1364f91d4b1c0cc6d34b7ad407d5bb744404041aae99c15d7df0"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/kdoc_markdown.py",
+          "sha256": "ba57b20e8e3a27e8f5267119e9f80600ddd12b53fc81ec85b79febbe62299c28"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/trail-kernel-include",
+          "sha256": "6ac48c6f889bfdd3b863b6ddd0adcefcdb21a081b688727ca33c1081f36dfb4a"
+        },
+        {
+          "path": "tools/docs/trail-kernel-doc/uapi_markdown.py",
+          "sha256": "b217590b783212665f909a61548f140ae7f080d99d11860320b0ee67957c2585"
+        },
+        {
+          "path": "tools/lib/python/kdoc/enrich_formatter.py",
+          "sha256": "cd59fa05e18998d02794a5ecc17b174624e552162db12c679db8151497e07f1a"
+        },
+        {
+          "path": "tools/lib/python/kdoc/kdoc_re.py",
+          "sha256": "7a15459ca5361f5ce392813106588dbcc5e14edae2028b7576d41f3830a77d27"
+        },
+        {
+          "path": "tools/lib/python/kdoc/latex_fonts.py",
+          "sha256": "08545536ba218f14b812f83675b245975515909c058cba4ad0423fe011f5f651"
+        },
+        {
+          "path": "tools/lib/python/kdoc/parse_data_structs.py",
+          "sha256": "d44d5b2bca56f3db2335d3d8a9c5cae6fe7bebcfba2a0bc2e4f5b9e2a37d8893"
+        },
+        {
+          "path": "tools/lib/python/kdoc/python_version.py",
+          "sha256": "68172d3992148f2f11253e50051556c49a4e4a6c078e4b7a7c040f2878d30031"
+        }
+      ],
+      "diagrams": [],
+      "assets": [],
+      "resolved_references": [],
+      "migration_decisions": [
+        {
+          "kind": "peios-scope-adaptation",
+          "reason": "Document regex and UAPI parser interfaces. Replace unused helper API sections with an explicit contextual paragraph; omit their section anchors."
+        }
+      ],
+      "adaptation": {
+        "kind": "peios-python-integration-reference",
+        "scope": "Authored selected integration reference, not a complete automodule API export.",
+        "modules": [
+          {
+            "module": "lib.python.kdoc.enrich_formatter",
+            "disposition": "context-only",
+            "reason": "Standalone parse-headers.py CLI help; context only, outside the adopted Trail rendering interface."
+          },
+          {
+            "module": "lib.python.kdoc.kdoc_re",
+            "disposition": "adapted-active-interface",
+            "reason": "Document regex and UAPI parser interfaces. Replace unused helper API sections with an explicit contextual paragraph; omit their section anchors."
+          },
+          {
+            "module": "lib.python.kdoc.latex_fonts",
+            "disposition": "context-only",
+            "reason": "Inherited Sphinx/PDF font tooling; context only, not used by Trail."
+          },
+          {
+            "module": "lib.python.kdoc.parse_data_structs",
+            "disposition": "adapted-active-interface",
+            "reason": "Document regex and UAPI parser interfaces. Replace unused helper API sections with an explicit contextual paragraph; omit their section anchors."
+          },
+          {
+            "module": "lib.python.kdoc.python_version",
+            "disposition": "context-only",
+            "reason": "Inherited Sphinx and setup tooling; context only, not used by Trail."
+          }
+        ]
+      },
+      "status": "adapted to current Peios Trail consumers; source and dependency baseline reviewed"
+    }
+  ],
+  "source_checks": {
+    "generated_blocks": 0,
+    "display_equations": 0,
+    "inline_equations": 0,
+    "literal_blocks": 0,
+    "tables": 0,
+    "images": 0,
+    "diagrams": 0,
+    "live_includes": 0,
+    "articles": 9,
+    "adapted_articles": 6,
+    "automodules_accounted": 12,
+    "adaptation_dependencies": 28
+  },
+  "rendered_checks": {
+    "counts": {
+      "authored_text_blocks": 219,
+      "literal_blocks": 6,
+      "articles": 6
+    },
+    "errors": []
+  },
+  "existing_content": {
+    "existing_articles_compared": 3371,
+    "changed_article_bodies": [
+      "docs/kernel.product/400--administration.antho/6800--tools.topic/270100--kabi.md",
+      "docs/kernel.product/400--administration.antho/6800--tools.topic/270600--kdoc.md",
+      "docs/kernel.product/400--administration.antho/6800--tools.topic/271000--python.md"
+    ],
+    "only_expected_link_updates": true,
+    "excluded": "Previous/next navigation, which changes when adding neighbouring articles"
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 3460,
+    "warnings": "Inherited kernel-doc diagnostics; plugin and kernel source unchanged by this batch."
+  },
+  "site_links": {
+    "html_pages": 3460,
+    "local_links_and_assets": 1216139,
+    "errors": []
+  },
+  "migration_tests": 58,
+  "dependency_mapping": {
+    "method": "simulated Git name-status diff through the real reporter; no repository writes",
+    "dependency_page_pairs": 28,
+    "checks": [
+      {
+        "source": "tools/docs/trail-kernel-doc/feat_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/269800--feat.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/trail-kernel-feat",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/269800--feat.md"
+      },
+      {
+        "source": "tools/lib/python/feat/parse_features.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/269800--feat.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/abi_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270200--kabi-helpers.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/trail-kernel-abi",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270200--kabi-helpers.md"
+      },
+      {
+        "source": "tools/lib/python/abi/abi_parser.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270200--kabi-helpers.md"
+      },
+      {
+        "source": "tools/lib/python/abi/helpers.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270200--kabi-helpers.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/abi_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270300--kabi-parser.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/trail-kernel-abi",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270300--kabi-parser.md"
+      },
+      {
+        "source": "tools/lib/python/abi/abi_parser.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270300--kabi-parser.md"
+      },
+      {
+        "source": "tools/lib/python/abi/helpers.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270300--kabi-parser.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/kdoc_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270900--kdoc-parser.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/trail-kernel-doc",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270900--kdoc-parser.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/kdoc_files.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270900--kdoc-parser.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/kdoc_item.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270900--kdoc-parser.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/kdoc_parser.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270900--kdoc-parser.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/kdoc_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270800--kdoc-output.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/trail-kernel-doc",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270800--kdoc-output.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/kdoc_output.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270800--kdoc-output.md"
+      },
+      {
+        "source": "tools/docs/parse-headers.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/kdoc_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/trail-kernel-include",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/docs/trail-kernel-doc/uapi_markdown.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/enrich_formatter.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/kdoc_re.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/latex_fonts.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/parse_data_structs.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      },
+      {
+        "source": "tools/lib/python/kdoc/python_version.py",
+        "destination": "docs/kernel.product/400--administration.antho/6800--tools.topic/270700--kdoc-ancillary.md"
+      }
+    ]
+  },
+  "originals": {
+    "Documentation_unchanged": 11072,
+    "source_queue_entries": 10505
+  },
+  "remaining": [
+    "tools/jobserver.rst",
+    "tools/kabi_regex.rst",
+    "tools/kabi_symbols.rst",
+    "userspace-api/netlink/netlink-raw.rst"
+  ],
+  "original_corpus_validation": "Previous 3371-page source-preservation baseline retained. Existing article Markdown is byte-identical except exact URL substitutions in three indexes; all previous HTML article bodies are byte-identical except those same link changes.",
+  "operational_note": "An initial full build reached the temporary-filesystem quota; deleted only redundant generated HTML in /tmp/pei-1505-generators/site and reran successfully. Sources, reports, backups and the live preview were retained."
+}

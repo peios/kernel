@@ -1,0 +1,243 @@
+{
+  "validation_complete": true,
+  "new_articles": 39,
+  "mapped_articles": 3371,
+  "remaining_rst_sources": 10,
+  "source_preservation": {
+    "accounted_non_articles": 3,
+    "paragraphs": 182827,
+    "headings_and_terms": 35850,
+    "literal_blocks": 13122,
+    "tables": 2722,
+    "articles": 3371,
+    "paragraphs_with_expanded_refs_reviewed_separately": 5,
+    "generated_blocks": 35,
+    "display_equations": 71,
+    "inline_equations": 1,
+    "images": 86,
+    "diagrams": 40,
+    "live_includes": 44,
+    "csv_cells": 1159
+  },
+  "rendered_preservation": {
+    "counts": {
+      "equations": 72,
+      "articles": 39,
+      "prose_nodes": 1161,
+      "literal_blocks": 28
+    },
+    "errors": []
+  },
+  "generated_data": {
+    "counts": {
+      "abi_files": 672,
+      "abi_metadata_fields": 11469,
+      "abi_symbols": 4854,
+      "abi_readmes": 1,
+      "feature_rows": 714,
+      "maintainer_fields": 22687,
+      "maintainer_entries": 3238,
+      "uapi_symbols": 1370,
+      "uapi_headers": 8
+    },
+    "errors": []
+  },
+  "generators": {
+    "kernel-abi": {
+      "blocks": 9,
+      "pages": 9,
+      "dependencies": 690,
+      "directory_dependencies": [
+        "Documentation/ABI"
+      ],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-feat": {
+      "blocks": 17,
+      "pages": 17,
+      "dependencies": 58,
+      "directory_dependencies": [
+        "Documentation/features"
+      ],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-maintainers": {
+      "blocks": 1,
+      "pages": 1,
+      "dependencies": 15,
+      "directory_dependencies": [],
+      "warnings": "",
+      "errors": 0
+    },
+    "kernel-include": {
+      "blocks": 8,
+      "pages": 5,
+      "dependencies": 22,
+      "directory_dependencies": [],
+      "warnings": "",
+      "errors": 0
+    }
+  },
+  "live_includes": {
+    "pages": 34,
+    "blocks": 44
+  },
+  "existing_article_comparison": {
+    "articles_checked": 3332,
+    "html_changed_articles": [
+      "Documentation/PCI/msi-howto.rst",
+      "Documentation/admin-guide/pm/cpuidle.rst",
+      "Documentation/core-api/kernel-api.rst",
+      "Documentation/core-api/kho/abi.rst",
+      "Documentation/core-api/liveupdate.rst",
+      "Documentation/core-api/mm-api.rst",
+      "Documentation/devicetree/kernel-api.rst",
+      "Documentation/driver-api/80211/mac80211-advanced.rst",
+      "Documentation/driver-api/80211/mac80211.rst",
+      "Documentation/driver-api/basics.rst",
+      "Documentation/driver-api/cxl/theory-of-operation.rst",
+      "Documentation/driver-api/dma-buf.rst",
+      "Documentation/driver-api/firewire.rst",
+      "Documentation/driver-api/firmware/request_firmware.rst",
+      "Documentation/driver-api/infiniband.rst",
+      "Documentation/driver-api/infrastructure.rst",
+      "Documentation/driver-api/libata.rst",
+      "Documentation/driver-api/media/v4l2-common.rst",
+      "Documentation/driver-api/media/v4l2-controls.rst",
+      "Documentation/driver-api/media/v4l2-dv-timings.rst",
+      "Documentation/driver-api/media/v4l2-fh.rst",
+      "Documentation/driver-api/media/v4l2-mediabus.rst",
+      "Documentation/driver-api/media/v4l2-subdev.rst",
+      "Documentation/driver-api/media/v4l2-videobuf2.rst",
+      "Documentation/driver-api/pci/pci.rst",
+      "Documentation/driver-api/regulator.rst",
+      "Documentation/driver-api/serial/driver.rst",
+      "Documentation/driver-api/spi.rst",
+      "Documentation/driver-api/tty/n_tty.rst",
+      "Documentation/driver-api/tty/tty_internals.rst",
+      "Documentation/driver-api/tty/tty_port.rst",
+      "Documentation/gpu/driver-uapi.rst",
+      "Documentation/gpu/drm-kms-helpers.rst",
+      "Documentation/gpu/drm-mm.rst",
+      "Documentation/gpu/i915.rst",
+      "Documentation/gpu/xe/xe_tile.rst",
+      "Documentation/gpu/xe/xe_wa.rst",
+      "Documentation/networking/bridge.rst",
+      "Documentation/networking/kapi.rst",
+      "Documentation/networking/skbuff.rst",
+      "Documentation/userspace-api/ebpf/syscall.rst",
+      "Documentation/userspace-api/landlock.rst",
+      "Documentation/userspace-api/media/dvb/ca_data_types.rst",
+      "Documentation/userspace-api/media/dvb/dmx_types.rst",
+      "Documentation/userspace-api/media/dvb/net-types.rst",
+      "Documentation/userspace-api/media/v4l/metafmt-intel-ipu3.rst",
+      "Documentation/driver-api/media/v4l2-event.rst",
+      "Documentation/gpu/drm-kms.rst"
+    ],
+    "text_differences": [
+      {
+        "source": "Documentation/core-api/kernel-api.rst",
+        "changes": [
+          {
+            "kind": "delete",
+            "before": "2.",
+            "after": ""
+          },
+          {
+            "kind": "delete",
+            "before": "3.",
+            "after": ""
+          },
+          {
+            "kind": "delete",
+            "before": "4.",
+            "after": ""
+          }
+        ]
+      },
+      {
+        "source": "Documentation/gpu/drm-kms-helpers.rst",
+        "changes": [
+          {
+            "kind": "delete",
+            "before": "2.",
+            "after": ""
+          },
+          {
+            "kind": "delete",
+            "before": "3.",
+            "after": ""
+          }
+        ]
+      }
+    ],
+    "review": "Two changed plain-text comparisons are formerly literal list numbers, now semantic HTML ordered-list markers. Inspected the actual ordered-list items; prose is unchanged. Pager navigation excluded."
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 3454,
+    "trail": {
+      "commit": "d16453cf2514bf24f7504c020ceaa075c46dd1a8",
+      "local_fix": "src/plugins.rs preserves whitespace-only lines",
+      "binary_sha256": "2cc02b091919566358692bc9ebcd0561c24bf09039dedfe186f25385d752e69e",
+      "source": "isolated checkout of the recorded commit plus the existing whitespace fix; unrelated concurrent titlecase changes excluded"
+    }
+  },
+  "site_links": {
+    "html_pages": 3454,
+    "local_links_and_assets": 1215601,
+    "errors": []
+  },
+  "unit_tests": {
+    "migration": 54,
+    "plugin_package": 46,
+    "trail": 185
+  },
+  "upstream_directory_rehearsal": {
+    "old": "24e3f9fbbd5d93afb41af495c008e76a9005dd06",
+    "new": "e20706d5385b10a6f6a2fe5ad6b1333dad2d1416",
+    "changes": [
+      {
+        "status": "A",
+        "sources": [
+          "Documentation/features/core/mseal_sys_mappings/arch-support.txt"
+        ],
+        "destinations": [
+          "docs/kernel.product/400--administration.antho/1400--admin-guide.topic/18100--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1004000--arc/45400--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1004100--arm/45900--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1005400--arm64/52500--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1005500--loongarch/54400--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1005600--m68k/54900--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1005700--mips/55300--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1005800--nios2/55600--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1005900--openrisc/55900--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006000--parisc/56400--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006100--powerpc/57800--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006200--riscv/60400--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006300--s390/61700--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006400--sh/63000--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006500--sparc/63600--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1006700--x86/65100--features.md",
+          "docs/kernel.product/500--hardware.antho/1500--arch.topic/1007000--xtensa/68700--features.md"
+        ],
+        "disposition": "review mapped pages"
+      }
+    ]
+  },
+  "dependency_hashes_checked": 13631,
+  "original_documentation": {
+    "entries": 11072,
+    "unchanged": true
+  },
+  "source_queue_retained": true,
+  "editorial_review": "pending for mechanical articles",
+  "limitations": [
+    "Nine Python API pages and netlink-raw still queued; netlink specification generator still needed.",
+    "Source-path mentions inside runtime-generated prose remain unlinked.",
+    "Device-tree catalogue remains deferred; non-RST migration remains separate.",
+    "No new browser visual review; generated data and actual HTML checked."
+  ]
+}

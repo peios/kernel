@@ -1,0 +1,19 @@
+---
+title: "Marvell Armada CPU reset controller"
+type: reference
+description: "Device-tree binding reference for Marvell Armada CPU reset controller."
+---
+
+## Required properties:
+
+- compatible: Should be "marvell,armada-370-cpu-reset".
+
+- reg: should be register base and length as documented in the
+  datasheet for the CPU reset registers
+
+```dts
+cpurst: cpurst@20800 {
+       compatible = "marvell,armada-370-cpu-reset";
+       reg = <0x20800 0x20>;
+};
+```

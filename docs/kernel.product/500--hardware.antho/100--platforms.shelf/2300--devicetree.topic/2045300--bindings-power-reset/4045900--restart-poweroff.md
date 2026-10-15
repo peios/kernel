@@ -1,0 +1,13 @@
+---
+title: "Restart Power Off"
+type: reference
+description: "Device-tree binding reference for Restart Power Off."
+---
+
+Buffalo Linkstation LS-XHL and LS-CHLv2, and other devices power off
+by restarting and letting u-boot keep hold of the machine until the
+user presses a button.
+
+## Required Properties:
+
+- compatible: Should be "restart-poweroff"

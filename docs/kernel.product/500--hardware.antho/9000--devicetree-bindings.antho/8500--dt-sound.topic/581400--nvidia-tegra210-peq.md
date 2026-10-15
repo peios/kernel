@@ -1,0 +1,10 @@
+---
+title: "Tegra210 PEQ"
+type: reference
+description: "Device-tree binding reference for Tegra210 PEQ."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/sound/nvidia,tegra210-peq.yaml
+```

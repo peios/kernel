@@ -1,0 +1,10 @@
+---
+title: "Intel Lightning Mountain SoC pinmux & GPIO controller"
+type: reference
+description: "Device-tree binding reference for Intel Lightning Mountain SoC pinmux & GPIO controller."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/pinctrl/intel,lgm-io.yaml
+```

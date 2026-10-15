@@ -1,0 +1,132 @@
+{
+  "validation_complete": true,
+  "claude_handoff_comment": "13b17022-601e-4b82-b340-432963955e75",
+  "new_articles": 20,
+  "updated_existing_articles": 13,
+  "copied_blocks_replaced": 15,
+  "mapped_articles": 3332,
+  "remaining_rst_sources": 49,
+  "live_include_pages": 33,
+  "live_include_blocks": 43,
+  "source_preservation": {
+    "accounted_non_articles": 3,
+    "paragraphs": 181821,
+    "headings_and_terms": 35695,
+    "literal_blocks": 13094,
+    "tables": 2695,
+    "articles": 3332,
+    "paragraphs_with_expanded_refs_reviewed_separately": 5,
+    "images": 85,
+    "diagrams": 40,
+    "live_includes": 43,
+    "csv_cells": 1159
+  },
+  "rendered_preservation": {
+    "counts": {
+      "prose_nodes": 726,
+      "literal_blocks": 125,
+      "articles": 33,
+      "csv_cells": 1159
+    },
+    "errors": []
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 3415
+  },
+  "site_links": {
+    "html_pages": 3415,
+    "local_links_and_assets": 1096352,
+    "errors": []
+  },
+  "live_watch": {
+    "literal_file_change_updates_page": true,
+    "csv_file_change_updates_page": true,
+    "authored_markdown_unchanged": true
+  },
+  "upstream_mapping_rehearsal": {
+    "old": "10af38d9e7d2537aa08a4d04ca3a903b16a300c3",
+    "new": "ab52af4ba7c7dc2e226ede5935a0587743b747d3",
+    "changes": [
+      {
+        "status": "M",
+        "sources": [
+          "Documentation/gpu/kms-properties.csv"
+        ],
+        "destinations": [
+          "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154200--drm-kms.md"
+        ],
+        "disposition": "review mapped pages"
+      },
+      {
+        "status": "M",
+        "sources": [
+          "drivers/gpu/drm/display/drm_hdmi_state_helper.c"
+        ],
+        "destinations": [
+          "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154100--drm-kms-helpers.md"
+        ],
+        "disposition": "review mapped pages"
+      },
+      {
+        "status": "M",
+        "sources": [
+          "drivers/gpu/drm/drm_atomic.c"
+        ],
+        "destinations": [
+          "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154200--drm-kms.md"
+        ],
+        "disposition": "review mapped pages"
+      },
+      {
+        "status": "M",
+        "sources": [
+          "drivers/gpu/drm/drm_atomic_uapi.c"
+        ],
+        "destinations": [
+          "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154200--drm-kms.md"
+        ],
+        "disposition": "review mapped pages"
+      },
+      {
+        "status": "M",
+        "sources": [
+          "drivers/gpu/drm/drm_connector.c"
+        ],
+        "destinations": [
+          "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154200--drm-kms.md"
+        ],
+        "disposition": "review mapped pages"
+      },
+      {
+        "status": "M",
+        "sources": [
+          "include/drm/drm_connector.h"
+        ],
+        "destinations": [
+          "docs/kernel.product/500--hardware.antho/3200--gpu.topic/154200--drm-kms.md"
+        ],
+        "disposition": "review mapped pages"
+      }
+    ]
+  },
+  "unit_tests": {
+    "migration": 51,
+    "include_plugin": 10,
+    "trail_plugins": 16
+  },
+  "dependency_hashes_checked": 5851,
+  "original_documentation": {
+    "entries": 11072,
+    "unchanged": true
+  },
+  "trail": {
+    "base_commit": "b8f607bbe01db04d390319c23828fdf990d5b3b9",
+    "local_uncommitted_fix": "src/plugins.rs: preserve whitespace-only lines in plugin output",
+    "patch_sha256": "f89b711e3091bf153e24b8c3465e5ada856d90ae2f183d96b4c2de2c74baa9ba",
+    "binary_sha256": "ce42f5ed20f95f61102cc26cdae619e305678bc0977c596ddf8677b1753e5a5c"
+  },
+  "source_queue_retained": true,
+  "editorial_review": "pending for mechanical articles",
+  "remaining": "See remaining-support.md; no unshipped generators emitted."
+}

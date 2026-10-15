@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""
+trail-kernel-abi: a Trail plugin that renders the kernel's ABI documentation.
+
+A page writes, in place of reStructuredText's ``.. kernel-abi::``,
+
+    ```{kernel-abi} stable
+    :no-files:
+    ```
+
+naming an ABI level (stable, testing, obsolete or removed), or README
+for the ABI documentation's introduction. ``:no-files:`` shows only the
+symbols, ``:no-symbols:`` only the files that document them; with
+neither, both. The kernel's own parser (tools/lib/python/abi) reads
+Documentation/ABI.
+
+Configure it in the site's root trail.toml:
+
+    [plugins.kernel-abi]
+    command = ["python3", "../path/to/trail-kernel-abi", "--srctree", ".."]
+"""
+
+import argparse
+import glob
+import logging
+import os
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+
+from trail_plugin import BlockError, block_options, fail, read_request, respond  # noqa: E402
+
+PLUGIN = "trail-kernel-abi"
+
+LEVELS = ("stable", "testing", "obsolete", "removed", "README")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--srctree",
+        required=True,
+        help="the kernel source tree, relative to the Trail site root",
+    )
+    args = parser.parse_args()
+    srctree = os.path.realpath(args.srctree)
+    library = os.path.join(srctree, "tools", "lib", "python")
+    abi_dir = os.path.join(srctree, "Documentation", "ABI")
+    if not os.path.isfile(os.path.join(library, "abi", "abi_parser.py")) or not os.path.isdir(abi_dir):
+        fail(PLUGIN, f"{srctree} has no tools/lib/python/abi or Documentation/ABI; is --srctree the kernel tree?")
+    sys.path.insert(1, library)
+
+    from abi.abi_parser import AbiParser
+    import abi_markdown
+    import kdoc_markdown
+
+    request = read_request(PLUGIN)
+
+    logging.basicConfig(format="kernel-abi: %(message)s", level=logging.WARNING, stream=sys.stderr)
+    abi = AbiParser(abi_dir, logger=logging.getLogger("kernel-abi"))
+    abi.parse_abi()
+    abi.check_issues()
+    views = abi_markdown.AbiMarkdown(abi)
+
+    # Every view's entries are registered first, so that links between
+    # pages resolve whatever order the blocks come in.
+    checked = []
+    for block in request["blocks"]:
+        try:
+            level = block["argument"].strip()
+            if level not in LEVELS:
+                raise BlockError(f"expects one of {', '.join(LEVELS)}, not {level!r}")
+            if block["body"].strip():
+                raise BlockError("takes no body, only options")
+            options = block_options(block, ("no-symbols", "no-files"))
+            for name, value in options.items():
+                if value.strip():
+                    raise BlockError(f":{name}: is a flag and takes no value")
+            show_symbols, show_files = "no-symbols" not in options, "no-files" not in options
+            if not (show_symbols or show_files):
+                raise BlockError(":no-symbols: and :no-files: together leave nothing to show")
+            views.register(views.context.symbols, block["reference"], level, show_symbols, show_files)
+            checked.append((block, (level, show_symbols, show_files)))
+        except BlockError as error:
+            checked.append((block, error))
+
+    blocks = []
+    for block, view in checked:
+        if isinstance(view, Exception):
+            blocks.append((block, view))
+            continue
+        markdown = views.render(block["reference"], *view)
+        if not markdown.strip():
+            print(f"{PLUGIN}: {block['file']}:{block['line']}: produced no documentation", file=sys.stderr)
+        blocks.append((block, kdoc_markdown.resolve_refs(markdown, views.context.symbols, block["reference"])))
+
+    # The directory itself, so that a new ABI file is noticed.
+    depends_on = {abi_dir}
+    depends_on |= {os.path.join(srctree, entry["file"][0][0]) for entry in abi.data.values()}
+    depends_on |= {os.path.realpath(__file__)}
+    depends_on |= {os.path.join(library, "abi", name) for name in ("abi_parser.py", "helpers.py")}
+    depends_on |= {os.path.join(HERE, name) for name in ("abi_markdown.py", "kdoc_markdown.py", "trail_plugin.py")}
+    depends_on |= set(glob.glob(os.path.join(library, "kdoc", "*.py")))
+    respond(blocks, depends_on)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,10 @@
+---
+title: "Rockchip PX30 Video Input Processor (VIP)"
+type: reference
+description: "Device-tree binding reference for Rockchip PX30 Video Input Processor (VIP)."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/media/rockchip,px30-vip.yaml
+```

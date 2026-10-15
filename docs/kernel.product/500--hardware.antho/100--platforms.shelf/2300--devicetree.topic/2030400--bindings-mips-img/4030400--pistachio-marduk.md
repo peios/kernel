@@ -1,0 +1,13 @@
+---
+title: "Imagination Technologies' Pistachio SoC based Marduk Board"
+type: reference
+description: "Device-tree binding reference for Imagination Technologies' Pistachio SoC based Marduk Board."
+---
+
+Compatible string must be "img,pistachio-marduk", "img,pistachio"
+
+Hardware and other related documentation is available at
+https://docs.creatordev.io/ci40/
+
+It is also known as Creator Ci40. Marduk is legacy name and will
+be there for decades.

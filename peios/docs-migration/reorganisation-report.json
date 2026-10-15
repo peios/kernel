@@ -1,0 +1,116 @@
+{
+  "task": "PEI-1505",
+  "baseline_commit": "680b7136fef576d37e25d02e4e4d6ec814ac1dff",
+  "scope": "First navigation and organization pass; technical editorial review remains.",
+  "moves": 10253,
+  "changed_addresses": 5601,
+  "new_guides": 3,
+  "rewritten_imported_indexes": 4,
+  "additional_reviewed_edits": [
+    "Product introduction",
+    "Documentation maintenance workflow"
+  ],
+  "checks": {
+    "migration_tests": 91,
+    "plugin_tests": 66,
+    "strict_build_pages": 9966,
+    "authority": {
+      "mapped_articles": 9632,
+      "authored_articles": 5,
+      "runtime_dependencies": 7651,
+      "assets": 87,
+      "errors": 0
+    },
+    "preservation": {
+      "mapped_articles": 9632,
+      "source_articles_unchanged_except_links": 9628,
+      "rendered_bodies_unchanged_except_links": 9627,
+      "rendered_differences_to_review": [
+        "Documentation/process/maintainers.rst"
+      ],
+      "preserved_assets_and_live_inputs": 167,
+      "article_coverage": "all original Markdown retained exactly once; three new guides",
+      "upstream_diff_current_destinations": 9609
+    },
+    "local_links": {
+      "html_pages": 18947,
+      "local_links_and_assets": 3273646,
+      "errors": []
+    },
+    "redirects": {
+      "redirects": 8981
+    },
+    "checkpatch": [
+      {
+        "compatible": "al,alpine-smp",
+        "undocumented": false
+      },
+      {
+        "compatible": "notavendor,reorganisation-unknown",
+        "undocumented": true
+      }
+    ],
+    "preview_http": [
+      {
+        "reference": "kernel/introduction/overview",
+        "status": 200
+      },
+      {
+        "reference": "kernel/internals",
+        "status": 200
+      },
+      {
+        "reference": "kernel/development/start-here/overview",
+        "status": 200
+      },
+      {
+        "reference": "kernel/hardware",
+        "status": 200
+      },
+      {
+        "reference": "kernel/hardware/arch",
+        "status": 200
+      },
+      {
+        "reference": "kernel/hardware/driver-api",
+        "status": 200
+      },
+      {
+        "reference": "kernel/administration/admin-guide",
+        "status": 200
+      },
+      {
+        "reference": "kernel/administration/admin-guide/boot/kernel-parameters",
+        "status": 200
+      },
+      {
+        "reference": "kernel/userspace/userspace-api/overview/index",
+        "status": 200
+      },
+      {
+        "reference": "kernel/internals/locking/overview",
+        "status": 200
+      },
+      {
+        "reference": "kernel/administration/admin-guide/kernel-parameters",
+        "status": 200
+      },
+      {
+        "reference": "kernel/licences/copying-logo",
+        "status": 200
+      }
+    ]
+  },
+  "limitations": [
+    "The baseline rendered MAINTAINERS page includes an unrelated local edit. The isolated candidate uses committed MAINTAINERS; its extra rendered difference is input provenance, not lost documentation.",
+    "The introduction was checked visually. The headless browser could not complete section landing-page captures; failures also occur against the original site. No complete browser visual qualification is claimed.",
+    "Existing kernel-doc diagnostics remain; strict build succeeds. No kernel code or retained Documentation inputs are changed."
+  ],
+  "installation": {
+    "installed_files": 10542,
+    "removed_old_paths": 10253,
+    "unrelated_files_preserved": 716,
+    "retained_inputs_preserved": 6210,
+    "preview_pid": 2082689
+  }
+}

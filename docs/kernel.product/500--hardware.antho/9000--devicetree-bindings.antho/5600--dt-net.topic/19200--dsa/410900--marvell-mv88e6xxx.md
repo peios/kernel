@@ -1,0 +1,10 @@
+---
+title: "Marvell MV88E6xxx DSA switch family"
+type: reference
+description: "Device-tree binding reference for Marvell MV88E6xxx DSA switch family."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/net/dsa/marvell,mv88e6xxx.yaml
+```

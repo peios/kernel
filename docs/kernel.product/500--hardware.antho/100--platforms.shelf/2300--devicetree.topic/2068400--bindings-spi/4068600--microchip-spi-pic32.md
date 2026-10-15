@@ -1,0 +1,42 @@
+---
+title: "Microchip PIC32 SPI Master controller"
+type: reference
+description: "Device-tree binding reference for Microchip PIC32 SPI Master controller."
+---
+
+## Required properties:
+
+- compatible: Should be "microchip,pic32mzda-spi".
+- reg: Address and length of register space for the device.
+- interrupts: Should contain all three spi interrupts in sequence
+  of &lt;fault-irq&gt;, &lt;receive-irq&gt;, &lt;transmit-irq&gt;.
+- interrupt-names: Should be "fault", "rx", "tx" in order.
+- clocks: Phandle of the clock generating SPI clock on the bus.
+- clock-names: Should be "mck0".
+- cs-gpios: Specifies the gpio pins to be used for chipselects.
+  See: [Documentation/devicetree/bindings/spi/spi-bus.txt](<~kernel/hardware/devicetree/bindings-spi/spi-bus>)
+
+## Optional properties:
+
+- dmas: Two or more DMA channel specifiers following the convention outlined
+  in [Documentation/devicetree/bindings/dma/dma.txt](<~kernel/hardware/devicetree/bindings-dma/dma>)
+- dma-names: Names for the dma channels. There must be at least one channel
+  named "spi-tx" for transmit and named "spi-rx" for receive.
+
+## Example:
+
+```dts
+spi1: spi@1f821000 {
+        compatible = "microchip,pic32mzda-spi";
+        reg = <0x1f821000 0x200>;
+        interrupts = <109 IRQ_TYPE_LEVEL_HIGH>,
+                     <110 IRQ_TYPE_LEVEL_HIGH>,
+                     <111 IRQ_TYPE_LEVEL_HIGH>;
+        interrupt-names = "fault", "rx", "tx";
+        clocks = <&PBCLK2>;
+        clock-names = "mck0";
+        cs-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
+        dmas = <&dma 134>, <&dma 135>;
+        dma-names = "spi-rx", "spi-tx";
+};
+```

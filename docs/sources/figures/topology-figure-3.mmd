@@ -1,0 +1,64 @@
+flowchart TB
+  subgraph g0["#160;"]
+    n0["DRM driver"]
+    n1["Payload #35;1"]
+    n2["Payload #35;2"]
+  end
+  subgraph g1["Topology Manager"]
+    n3(["Port #35;1"])
+    n4(["Port #35;2"])
+    n5(["Port #35;3"])
+    n6(["Port #35;4"])
+    n7(["MSTB #35;1"])
+    n8(["MSTB #35;2"])
+    n9(["MSTB #35;3"])
+    n10(["MSTB #35;4"])
+  end
+  n0 --- n1
+  n0 --- n2
+  n0 --> n3
+  n0 --> n4
+  n0 --> n5
+  n0 --> n6
+  n1 --> n3
+  n2 --> n5
+  n7 --> n3
+  n7 --> n4
+  n3 --> n8
+  n4 --> n9
+  n9 --> n5
+  n9 --> n6
+  n5 --> n10
+  n3 --> n7
+  n4 --> n7
+  n8 --> n3
+  n9 --> n4
+  n5 --> n9
+  n6 --> n9
+  n10 --> n5
+  style n0 fill:lightblue,color:#111
+  style n1 fill:lightblue,color:#111
+  style n2 fill:lightblue,color:#111
+  style n6 fill:grey,color:#111
+  style n7 fill:palegreen,color:#111
+  style n8 fill:palegreen,color:#111
+  style n9 fill:palegreen,color:#111
+  style n10 fill:grey,color:#111
+  style g0 fill:grey
+  linkStyle 2 stroke-dasharray:6 4
+  linkStyle 3 stroke-dasharray:6 4
+  linkStyle 4 stroke-dasharray:6 4
+  linkStyle 5 stroke-dasharray:6 4,stroke:grey
+  linkStyle 6 stroke-dasharray:6 4
+  linkStyle 7 stroke-dasharray:6 4
+  linkStyle 11 stroke:grey
+  linkStyle 12 stroke:grey
+  linkStyle 13 stroke:grey
+  linkStyle 14 stroke:grey
+  linkStyle 15 stroke-dasharray:6 4
+  linkStyle 16 stroke-dasharray:6 4
+  linkStyle 17 stroke-dasharray:6 4
+  linkStyle 18 stroke-dasharray:6 4
+  linkStyle 19 stroke-dasharray:6 4
+  linkStyle 20 stroke-dasharray:6 4,stroke:grey
+  linkStyle 21 stroke-dasharray:6 4,stroke:grey

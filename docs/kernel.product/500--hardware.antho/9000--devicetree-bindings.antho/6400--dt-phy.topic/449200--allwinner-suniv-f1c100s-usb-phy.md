@@ -1,0 +1,10 @@
+---
+title: "Allwinner F1C100s USB PHY"
+type: reference
+description: "Device-tree binding reference for Allwinner F1C100s USB PHY."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/phy/allwinner,suniv-f1c100s-usb-phy.yaml
+```

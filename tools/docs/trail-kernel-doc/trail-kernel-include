@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""
+trail-kernel-include: a Trail plugin that includes a kernel file in a page.
+
+A page writes, where reStructuredText included a file literally,
+
+    ```{kernel-include} tools/memory-model/Documentation/simple.txt
+    ```
+
+and the file's current text appears as a code block, so the page always
+shows the file as it is in the tree, never a copy. The path is relative
+to the kernel tree. Options:
+
+    :language: LANG     highlight as LANG (default: plain text)
+    :tab-width: N       expand tabs to every N columns
+    :encoding: NAME     the file's encoding (default: UTF-8)
+    :start-line: N      docutils' include ranges, with its meanings
+    :end-line: N
+    :start-after: TEXT
+    :end-before: TEXT
+    :csv:               the file is CSV: show it as a table
+    :header-rows: N     with :csv:, how many rows are headers (default 0)
+
+A uAPI header can instead be shown as the table of its symbols, each
+linked to the authored page that documents it, as Sphinx's kernel-include
+does with these options:
+
+    :generate-cross-refs:   the header's symbols, linked (needs :toc:)
+    :toc:
+    :exception-file: PATH   the media docs' rules to ignore or redirect
+                            symbols, relative to the kernel tree
+    :warn-broken:           warn about symbols that link nowhere
+
+Configure it in the site's root trail.toml. ``anchors = true`` sends the
+site's anchors, which the symbol links are found among:
+
+    [plugins.kernel-include]
+    command = ["python3", "../path/to/trail-kernel-include", "--srctree", ".."]
+    anchors = true
+"""
+
+import argparse
+import contextlib
+import csv
+import os
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+
+import include_markdown  # noqa: E402
+from trail_plugin import AnchorIndex, BlockError, block_options, read_request, respond  # noqa: E402
+
+PLUGIN = "trail-kernel-include"
+
+TEXT_OPTIONS = ("language", "tab-width", "encoding", "start-line", "end-line", "start-after", "end-before")
+CSV_OPTIONS = ("csv", "header-rows", "encoding")
+XREF_OPTIONS = ("generate-cross-refs", "toc", "exception-file", "warn-broken")
+
+#: Sphinx options a converted page might carry over, and what to write.
+HINTS = {
+    "literal": "is the default; leave it out",
+    "code": "is spelled :language: here",
+    "number-lines": "is not supported",
+    "widths": "is not supported; columns size to their content",
+}
+
+
+def integer(options, name, minimum=None):
+    if name not in options:
+        return None
+    try:
+        value = int(options[name].strip())
+    except ValueError:
+        raise BlockError(f":{name}: needs a whole number, not {options[name]!r}") from None
+    if minimum is not None and value < minimum:
+        raise BlockError(f":{name}: must be at least {minimum}")
+    return value
+
+
+def text_value(options, name):
+    if name not in options:
+        return None
+    if not options[name].strip():
+        raise BlockError(f":{name}: needs a value")
+    return options[name].strip()
+
+
+def kernel_file(srctree, argument):
+    """The absolute path of a file named relative to the kernel tree."""
+    path = os.path.realpath(os.path.join(srctree, argument))
+    if not path.startswith(srctree + os.sep):
+        raise BlockError(f"{argument} is outside the kernel tree")
+    if not os.path.isfile(path):
+        raise BlockError(f"{argument} does not exist in the kernel tree")
+    return path
+
+
+def symbol_table(srctree, block, argument, options, anchors):
+    """
+    A uAPI header's symbols, each linked to the authored page documenting
+    it, and the files read: Sphinx's kernel-include with
+    :generate-cross-refs: and :toc:.
+    """
+    for flag in ("generate-cross-refs", "toc", "warn-broken"):
+        if options.get(flag, "").strip():
+            raise BlockError(f":{flag}: is a flag and takes no value")
+    if "toc" not in options:
+        raise BlockError(":generate-cross-refs: is supported only with :toc: (the header as linked source is not)")
+    if anchors is None:
+        raise BlockError("symbol links need the site's anchors: set anchors = true in this plugin's [plugins] table")
+    path = kernel_file(srctree, argument)
+    exceptions = None
+    if "exception-file" in options:
+        exceptions = kernel_file(srctree, text_value(options, "exception-file"))
+
+    from kdoc.parse_data_structs import ParseDataStructs
+    import uapi_markdown
+
+    parser = ParseDataStructs()
+    try:
+        # The parser reports a stale rule on stdout, which carries the response.
+        with contextlib.redirect_stdout(sys.stderr):
+            parser.parse_file(path, exceptions)
+    except SystemExit as error:  # its reaction to a malformed rule
+        raise BlockError(f"{options['exception-file']}: {error.code}") from None
+    markdown, unresolved = uapi_markdown.toc(
+        parser, argument, lambda candidates: anchors.find(candidates, block["reference"]), block["reference"]
+    )
+    if unresolved and "warn-broken" in options:
+        shown = ", ".join(unresolved[:8]) + (", …" if len(unresolved) > 8 else "")
+        print(
+            f"{PLUGIN}: {block['file']}:{block['line']}: {len(unresolved)} symbol(s) in {argument} "
+            f"link to no page: {shown}",
+            file=sys.stderr,
+        )
+    return markdown, [path] + ([exceptions] if exceptions else [])
+
+
+def render(srctree, block, anchors):
+    """A block's Markdown, and the files it read."""
+    argument = block["argument"].strip()
+    if not argument or len(argument.split()) != 1:
+        raise BlockError("expects exactly one file, relative to the kernel tree")
+    if block["body"].strip():
+        raise BlockError("takes no body, only options")
+    names = {name.lower() for name in block["options"]}
+    if "generate-cross-refs" in names or "toc" in names:
+        options = block_options(block, XREF_OPTIONS, HINTS)
+        return symbol_table(srctree, block, argument, options, anchors)
+    known = CSV_OPTIONS if "csv" in names else TEXT_OPTIONS + ("csv",)
+    options = block_options(block, known, HINTS)
+
+    path = kernel_file(srctree, argument)
+    encoding = text_value(options, "encoding") or "utf-8"
+    try:
+        with open(path, "rb") as file:
+            raw = file.read()
+        # Universal newlines, as docutils reads the file.
+        text = raw.decode(encoding).replace("\r\n", "\n").replace("\r", "\n")
+    except LookupError:
+        raise BlockError(f"unknown :encoding: {encoding!r}") from None
+    except UnicodeDecodeError as error:
+        raise BlockError(f"{argument} is not valid {encoding} ({error.reason}); give its :encoding:") from None
+
+    if "csv" in options:
+        if options["csv"].strip():
+            raise BlockError(":csv: is a flag and takes no value")
+        try:
+            return include_markdown.csv_table(text, integer(options, "header-rows", 0) or 0), [path]
+        except (ValueError, csv.Error) as error:
+            raise BlockError(f"{argument}: {error}") from None
+
+    try:
+        text = include_markdown.select(
+            text,
+            integer(options, "start-line"),
+            integer(options, "end-line"),
+            text_value(options, "start-after"),
+            text_value(options, "end-before"),
+        )
+    except include_markdown.RangeError as error:
+        raise BlockError(str(error)) from None
+    tab_width = integer(options, "tab-width", 1)
+    if tab_width:
+        text = text.expandtabs(tab_width)
+    language = text_value(options, "language") or "text"
+    if not text.strip():
+        print(f"{PLUGIN}: {block['file']}:{block['line']}: includes no text", file=sys.stderr)
+    return include_markdown.fence(language, text), [path]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--srctree",
+        required=True,
+        help="the kernel source tree, relative to the Trail site root",
+    )
+    args = parser.parse_args()
+    srctree = os.path.realpath(args.srctree)
+    library = os.path.join(srctree, "tools", "lib", "python")
+    # Symbol tables use the kernel's header parser.
+    sys.path.insert(1, library)
+    request = read_request(PLUGIN)
+    anchors = AnchorIndex(request["anchors"]) if "anchors" in request else None
+
+    results = []
+    depends_on = [os.path.realpath(__file__), os.path.join(library, "kdoc", "parse_data_structs.py")]
+    depends_on += [
+        os.path.join(HERE, name)
+        for name in ("include_markdown.py", "uapi_markdown.py", "kdoc_markdown.py", "trail_plugin.py")
+    ]
+    for block in request["blocks"]:
+        try:
+            markdown, paths = render(srctree, block, anchors)
+            results.append((block, markdown))
+            depends_on += paths
+        except BlockError as error:
+            results.append((block, error))
+    respond(results, depends_on)
+
+
+if __name__ == "__main__":
+    main()

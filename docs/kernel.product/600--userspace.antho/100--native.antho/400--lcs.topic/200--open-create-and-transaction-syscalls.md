@@ -1,0 +1,148 @@
+---
+title: "Open, create and transaction syscalls"
+description: "The three LCS syscalls — reg_open_key, reg_create_key and reg_begin_transaction — with their arguments and failure conditions."
+type: reference
+---
+
+<a id="trm-5-5-2"></a>
+
+<a id="trm-5-5-2-1"></a>
+
+## `reg_open_key` (1100)
+
+```c
+int reg_open_key(int parent_fd, const char __user *path,
+                 u32 desired_access, u32 flags);
+```
+
+Opens an existing key. Fails if it does not exist after layer
+resolution.
+
+| Parameter | Description |
+|---|---|
+| `parent_fd` | An open key fd to resolve relative to, or -1 for an absolute path. No AccessCheck is performed on the parent. <a id="cite-reg-syscall.open-key.parent-fd-or-minus-one"></a> |
+| `path` | A null-terminated registry path — absolute with a hive prefix when `parent_fd` is -1, relative to the parent key otherwise. <a id="cite-reg-syscall.open-key.path-is-absolute-or-parent-relative"></a> |
+| `desired_access` | Requested rights, raw generic bits, `MAXIMUM_ALLOWED`, or a combination ([Access Rights](<~kernel/internals/lcs/security/access-rights#trm-5-4-2>)). Zero and unknown bits are `EINVAL`. |
+| `flags` | `REG_OPEN_LINK` (`0x01`) opens a symlink key rather than following it. Every other bit is reserved and must be zero. <a id="cite-reg-syscall.open-key.flags-only-reg-open-link"></a> |
+
+The open proceeds as follows. <a id="cite-reg-syscall.open-key.step-order"></a>
+
+1. Parse and canonicalise the path: normalise separators, reject empty
+   components and a trailing separator, check the total length and each
+   component length.
+2. Rewrite a leading `CurrentUser\` to `Users\<caller SID>\` — only for
+   an absolute path, and only the first component ([Hives and Routing](<~kernel/internals/lcs/data-model/hives-and-routing#trm-5-2-1>)).
+3. Route. For an absolute path, look the hive name up, private hives
+   before global ones. For a relative one, use the parent key's source
+   and resolve from the parent's GUID.
+4. Walk the path component by component through `RSI_LOOKUP`, resolving
+   each through the layer stack and following symlinks — except a final
+   component when `REG_OPEN_LINK` is set. Collect the ancestor chain as
+   you go. <a id="cite-reg-syscall.open-key.walks-each-component-through-rsi-lookup"></a>
+5. Run AccessCheck against the final key's descriptor.
+6. Publish an fd holding the key GUID, the granted mask, the resolved
+   path and the ancestor chain. <a id="cite-reg-syscall.open-key.fd-holds-guid-mask-path-and-chain"></a>
+
+If the path traversed a symlink, the fd stores the *resolved* path and
+ancestor chain. It refers to the target object.
+
+| Errno | Condition |
+|---|---|
+| `ENOENT` | The key does not exist after layer resolution. <a id="cite-reg-syscall.open-key.enoent-key-missing"></a> |
+| `EACCES` | AccessCheck did not grant everything requested. |
+| `EINVAL` | Malformed path; zero or unknown `desired_access` bits; a symlink whose effective default value is not `REG_LINK`; maximum depth exceeded. |
+| `ELOOP` | Symlink depth limit exceeded. |
+| `ENAMETOOLONG` | A component or the total path is too long. <a id="cite-reg-syscall.open-key.enametoolong"></a> |
+| `ETIMEDOUT` | The source did not answer within `RequestTimeoutMs`. |
+| `EIO` | The source failed or is unavailable. |
+| `ENOMEM` | Kernel allocation failure. |
+
+<a id="trm-5-5-2-2"></a>
+
+## `reg_create_key` (1101)
+
+```c
+int reg_create_key(const struct reg_create_key_args __user *args);
+```
+
+Opens the key if it exists after layer resolution, creates it with an
+inherited descriptor if not, and reports which happened. <a id="cite-reg-syscall.create-key.opens-or-creates"></a>
+
+| Field | Description |
+|---|---|
+| `parent_fd` | As `reg_open_key`. |
+| `path_ptr` | Pointer to a null-terminated path. |
+| `desired_access` | As `reg_open_key`. |
+| `flags` | `REG_OPTION_VOLATILE` (`0x01`), `REG_OPTION_CREATE_LINK` (`0x02`). Other bits reserved. <a id="cite-reg-syscall.create-key.flags"></a> |
+| `layer_ptr` | Pointer to a null-terminated layer name for creation, or null for the base layer. Names the layer whose entry is created; what "exists" means depends on it (below). <a id="cite-reg-syscall.create-key.null-layer-means-base"></a> |
+| `txn_fd` | A transaction fd, or -1. A non-negative value makes creation a mutating operation that binds or reuses that transaction. <a id="cite-reg-syscall.create-key.txn-fd-makes-creation-transactional"></a> |
+| `disposition_ptr` | Receives `REG_CREATED_NEW` (1) or `REG_OPENED_EXISTING` (2). May be null. <a id="cite-reg-syscall.create-key.disposition-values"></a> |
+| `_pad0`, `_pad1` | Reserved; must be zero. |
+
+**If the key exists**, this behaves as `reg_open_key` and the
+disposition is `REG_OPENED_EXISTING`. <a id="cite-reg-syscall.create-key.existing-key-is-opened"></a>
+What "exists" means depends on the layer named. For the base layer (a
+null `layer_ptr`) it is the path resolving through any enabled layer.
+For a named layer it is that layer holding an entry at the path:
+presence is per layer ([Path Entries](<~kernel/internals/lcs/data-model/path-entries#trm-5-2-5>)), so another layer's key at the same path
+does not count, and the create makes the named layer's own entry, with
+its own GUID and `REG_CREATED_NEW` — which is how hide-and-replace is
+authored. <a id="cite-reg-syscall.create-key.named-layer-creates-its-own-entry"></a>
+
+The named-layer presence check is read-only and compares layer names without
+case sensitivity. If that layer already names a key, LCS opens the effective
+key using normal layer resolution and checks the requested rights on that
+key. It does not require `KEY_CREATE_SUB_KEY` on the parent, perform layer
+write authorization, or send `CREATE_ENTRY`/`CREATE_KEY` for an existing key.
+An unbound transaction remains unbound by this open; a bound transaction
+uses its own view, including entries it has created but not yet committed.
+The checks below still apply when the named layer has no key entry there.
+
+**If it does not:**
+
+1. Resolve the parent, which must exist. Check that the parent's depth
+   plus one is within `MaxKeyDepth`. <a id="cite-reg-syscall.create-key.parent-must-exist-and-depth-checked"></a>
+2. AccessCheck the parent for `KEY_CREATE_SUB_KEY`.
+3. Perform layer write authorization against the target layer's
+   metadata key ([Writing Into a Layer](<~kernel/internals/lcs/layers/writing-into-a-layer#trm-5-3-4>)).
+4. Mint a fresh UUIDv4 GUID.
+5. Compute the new key's descriptor from the parent's, through KACS.
+6. Create the path entry with a new sequence number, then the key
+   record ([Path Entries](<~kernel/internals/lcs/data-model/path-entries#trm-5-2-5>)).
+7. AccessCheck the *new* key's inherited descriptor against
+   `desired_access` — an inherited descriptor may not grant everything
+   the creator asked for. <a id="cite-reg-syscall.create-key.inherited-descriptor-rechecked"></a>
+8. Publish the fd with the granted mask and disposition
+   `REG_CREATED_NEW`. <a id="cite-reg-syscall.create-key.new-key-reports-created-new"></a>
+
+Intermediate path components are not auto-created. Only the final one
+is. <a id="cite-reg-syscall.create-key.no-intermediate-creation"></a>
+
+**Races.** If two callers race, one creates and the other observes the
+key as existing. `RSI_ALREADY_EXISTS` on the path entry is retried as
+an open, reporting `REG_OPENED_EXISTING`, and `EEXIST` never reaches
+userspace from this syscall. `RSI_ALREADY_EXISTS` on the *key record*,
+for a GUID LCS has just minted, is not a race — the source and the
+kernel disagree about what exists — and fails closed with `EIO`
+([Keys](<~kernel/internals/lcs/data-model/keys#trm-5-2-3>)).
+
+| Errno | Condition, in addition to `reg_open_key`'s |
+|---|---|
+| `ENOENT` | The parent does not exist, or the named layer is not in the layer table. <a id="cite-reg-syscall.create-key.enoent-parent-missing"></a> |
+| `EACCES` | The parent denied `KEY_CREATE_SUB_KEY`, the inherited descriptor denied the requested access, or layer write authorization failed. |
+| `EPERM` | `REG_OPTION_CREATE_LINK` without `KEY_CREATE_LINK` on the parent, or without `SeTcbPrivilege` or Administrators. |
+| `ENOSPC` | The per-value layer cap was exceeded. |
+| `EINVAL` | A non-volatile key under a volatile parent; a non-zero reserved field. |
+
+<a id="trm-5-5-2-3"></a>
+
+## `reg_begin_transaction` (1102)
+
+```c
+int reg_begin_transaction(void);
+```
+
+Allocates a transaction id, publishes a transaction fd in state
+`REG_TXN_ACTIVE_UNBOUND`, and starts the lifetime timer. It contacts no
+source and chooses none ([Scope and Lifetime](<~kernel/internals/lcs/transactions/scope-and-lifetime#trm-5-7-1>)). It can fail only with `ENOMEM`,
+`EOVERFLOW` on transaction id exhaustion, or `EINVAL`. <a id="cite-reg-syscall.begin-transaction.failure-set"></a>

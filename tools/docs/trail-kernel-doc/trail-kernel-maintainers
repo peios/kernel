@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""
+trail-kernel-maintainers: a Trail plugin that renders the MAINTAINERS file.
+
+A page writes, in place of reStructuredText's ``.. maintainers-include::``,
+
+    ```{kernel-maintainers}
+    ```
+
+and the kernel tree's current MAINTAINERS file appears, every subsystem
+entry an anchored heading (``#maintainers-3c59x-network-driver``) with its
+fields beneath.
+
+Configure it in the site's root trail.toml:
+
+    [plugins.kernel-maintainers]
+    command = ["python3", "../path/to/trail-kernel-maintainers", "--srctree", ".."]
+"""
+
+import argparse
+import glob
+import os
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+
+from trail_plugin import BlockError, block_options, fail, read_request, respond  # noqa: E402
+
+PLUGIN = "trail-kernel-maintainers"
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--srctree",
+        required=True,
+        help="the kernel source tree, relative to the Trail site root",
+    )
+    args = parser.parse_args()
+    srctree = os.path.realpath(args.srctree)
+    library = os.path.join(srctree, "tools", "lib", "python")
+    path = os.path.join(srctree, "MAINTAINERS")
+    if not os.path.isfile(path) or not os.path.isdir(os.path.join(library, "kdoc")):
+        fail(PLUGIN, f"{srctree} has no MAINTAINERS or tools/lib/python/kdoc; is --srctree the kernel tree?")
+    sys.path.insert(1, library)
+
+    import maintainers_markdown
+
+    request = read_request(PLUGIN)
+    markdown = None
+    blocks = []
+    for block in request["blocks"]:
+        try:
+            if block["argument"].strip():
+                raise BlockError("takes no argument: it always shows the kernel tree's MAINTAINERS")
+            if block["body"].strip():
+                raise BlockError("takes no body")
+            block_options(block, ())
+            if markdown is None:
+                with open(path, encoding="utf-8") as file:
+                    markdown = maintainers_markdown.render(file.read())
+            blocks.append((block, markdown))
+        except BlockError as error:
+            blocks.append((block, error))
+
+    depends_on = {path, os.path.realpath(__file__)}
+    depends_on |= {os.path.join(HERE, name) for name in ("maintainers_markdown.py", "kdoc_markdown.py", "trail_plugin.py")}
+    depends_on |= set(glob.glob(os.path.join(library, "kdoc", "*.py")))
+    respond(blocks, depends_on)
+
+
+if __name__ == "__main__":
+    main()

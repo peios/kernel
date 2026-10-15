@@ -1,0 +1,142 @@
+---
+title: "Linux Directory Notification"
+type: reference
+description: "Stephen Rothwell <sfr@canb.auug.org.au>"
+---
+
+> **Peios:** Unix mode, ownership and ACL examples describe the inherited metadata model. On managed Peios mounts, native security descriptors and granted handle rights determine access; `chmod`, `chown` and POSIX ACL recipes alone do not delegate it. Mount operations also require native authorization. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for mount-policy defaults and the tmpfs rootfs rule.
+
+
+<a id="rst-linux-directory-notification"></a>
+
+<!-- SPDX-License-Identifier: GPL-2.0 -->
+
+> Stephen Rothwell &lt;[sfr@canb.auug.org.au](<mailto:sfr@canb.auug.org.au>)&gt;
+
+The intention of directory notification is to allow user applications to be notified when a directory, or any of the files in it, are changed. The basic mechanism involves the application registering for notification on a directory using a fcntl(2) call and the notifications themselves being delivered using signals.
+
+The application decides which "events" it wants to be notified about. The currently defined events are:
+
+>
+> <table>
+> <tbody>
+> <tr>
+> <td>
+>
+>
+> DN_ACCESS
+>
+> </td>
+> <td>
+>
+>
+> A file in the directory was accessed (read)
+>
+> </td>
+> </tr>
+> <tr>
+> <td>
+>
+>
+> DN_MODIFY
+>
+> </td>
+> <td>
+>
+>
+> A file in the directory was modified (write,truncate)
+>
+> </td>
+> </tr>
+> <tr>
+> <td>
+>
+>
+> DN_CREATE
+>
+> </td>
+> <td>
+>
+>
+> A file was created in the directory
+>
+> </td>
+> </tr>
+> <tr>
+> <td>
+>
+>
+> DN_DELETE
+>
+> </td>
+> <td>
+>
+>
+> A file was unlinked from directory
+>
+> </td>
+> </tr>
+> <tr>
+> <td>
+>
+>
+> DN_RENAME
+>
+> </td>
+> <td>
+>
+>
+> A file in the directory was renamed
+>
+> </td>
+> </tr>
+> <tr>
+> <td>
+>
+>
+> DN_ATTRIB
+>
+> </td>
+> <td>
+>
+>
+> A file in the directory had its attributes changed (chmod,chown)
+>
+> </td>
+> </tr>
+> </tbody>
+> </table>
+
+Usually, the application must reregister after each notification, but if DN_MULTISHOT is or'ed with the event mask, then the registration will remain until explicitly removed (by registering for no events).
+
+By default, SIGIO will be delivered to the process and no other useful information.  However, if the F_SETSIG fcntl(2) call is used to let the kernel know which signal to deliver, a siginfo structure will be passed to the signal handler and the si_fd member of that structure will contain the file descriptor associated with the directory in which the event occurred.
+
+Preferably the application will choose one of the real time signals (SIGRTMIN + &lt;n&gt;) so that the notifications may be queued.  This is especially important if DN_MULTISHOT is specified.  Note that SIGRTMIN is often blocked, so it is better to use (at least) SIGRTMIN + 1.
+
+<a id="rst-implementation-expectations-features-and-bugs"></a>
+
+## Implementation expectations (features and bugs :-))
+
+The notification should work for any local access to files even if the actual file system is on a remote server.  This implies that remote access to files served by local user mode servers should be notified. Also, remote accesses to files served by a local kernel NFS server should be notified.
+
+In order to make the impact on the file system code as small as possible, the problem of hard links to files has been ignored.  So if a file (x) exists in two directories (a and b) then a change to the file using the name "a/x" should be notified to a program expecting notifications on directory "a", but will not be notified to one expecting notifications on directory "b".
+
+Also, files that are unlinked, will still cause notifications in the last directory that they were linked to.
+
+<a id="rst-configuration"></a>
+
+## Configuration
+
+Dnotify is controlled via the CONFIG_DNOTIFY configuration option.  When disabled, fcntl(fd, F_NOTIFY, ...) will return -EINVAL.
+
+<a id="rst-example"></a>
+
+## Example
+
+See tools/testing/selftests/filesystems/dnotify_test.c for an example.
+
+<a id="rst-note"></a>
+
+## NOTE
+
+Beginning with Linux 2.6.13, dnotify has been replaced by inotify. See [Documentation/filesystems/inotify.rst](~kernel/internals/filesystems/inotify) for more information on it.

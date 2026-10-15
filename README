@@ -1,168 +1,90 @@
-Linux kernel
-============
+# The Peios Kernel
 
-The Linux kernel is the core of any Linux operating system. It manages hardware,
-system resources, and provides the fundamental services for all other software.
+The Peios kernel is the core of the Peios operating system. It builds on Linux's
+hardware support and core services, with native access control, events,
+configuration, layered storage and network policy integrated into the kernel.
 
-Quick Start
------------
+The native subsystems are:
 
-* Report a bug: See Documentation/admin-guide/reporting-issues.rst
-* Get the latest kernel: https://kernel.org
-* Build the kernel: See Documentation/admin-guide/quickly-build-trimmed-linux.rst
-* Join the community: https://lore.kernel.org/
+- **KACS:** tokens, security descriptors, access checks and process integrity.
+- **KMES:** trusted event stamps, event emission and delivery rings.
+- **LCS:** registry objects, layers, watches, transactions and source dispatch.
+- **StrataFS:** a filesystem presenting an ordered stack of directories, with
+  provider selection and copy-up governed by Peios authority.
+- **NTFE:** packet policy evaluation, flow decisions and policy generations.
 
-Essential Documentation
------------------------
+Start with the [architecture and reading guide](docs/kernel.product/100--introduction.topic/300--architecture-and-reading-guide.md)
+for how these services fit together, and [Peios kernel behaviour](docs/kernel.product/100--introduction.topic/200--peios-behaviour.md)
+for the changes to inherited Linux behaviour.
 
-All users should be familiar with:
+## Documentation
 
-* Building requirements: Documentation/process/changes.rst
-* Code of Conduct: Documentation/process/code-of-conduct.rst
-* License: See COPYING
+The maintained kernel documentation lives in [docs/](docs/), in Trail format.
+The [documentation overview](docs/kernel.product/100--introduction.topic/100--overview.md)
+provides routes into internals, development, administration, hardware and
+userspace interfaces. Application and service developers can start with
+[native kernel interfaces](docs/kernel.product/600--userspace.antho/100--native.antho/100--start-here.topic/100--overview.md).
 
-Documentation can be built with make htmldocs or viewed online at:
-https://www.kernel.org/doc/html/latest/
+`Documentation/` contains retained machine-consumed inputs and documentation
+build integration. Edit explanatory articles in `docs/`; the
+[documentation maintenance guide](peios/docs-migration/README.md) explains source
+mapping, generated references and carrying upstream changes forward.
 
+With Trail and the documentation plugin dependencies installed, build and check
+the site from the repository root:
 
-Who Are You?
-============
+```sh
+make htmldocs
+make linkcheckdocs
+```
 
-Find your role below:
+Use `TRAIL=/path/to/trail` to select a binary. The default output directory is
+`Documentation/output/`.
 
-* New Kernel Developer - Getting started with kernel development
-* Academic Researcher - Studying kernel internals and architecture
-* Security Expert - Hardening and vulnerability analysis
-* Backport/Maintenance Engineer - Maintaining stable kernels
-* System Administrator - Configuring and troubleshooting
-* Maintainer - Leading subsystems and reviewing patches
-* Hardware Vendor - Writing drivers for new hardware
-* Distribution Maintainer - Packaging kernels for distros
-* AI Coding Assistant - LLMs and AI-powered development tools
+## Build and test
 
+The repository contains the directly maintained kernel source. Bazel declares
+build inputs and invokes Kbuild using a pinned container image. Read
+[Building Peios](docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md) for setup, outputs and qualification
+details before running the commands below.
 
-For Specific Users
-==================
+Kernel builds require an x86_64 Linux host, Python 3.11 or newer, Docker, and the
+image selected in `peios/build-settings.json` already available in the local
+Docker daemon. The Bazel launcher uses `curl` and `sha256sum` to download and
+verify its pinned binary.
 
-New Kernel Developer
---------------------
+From the repository root:
 
-Welcome! Start your kernel development journey here:
+```sh
+./peios/bazel build //:kernel       # production configuration, development keys
+./peios/bazel run //:kernel-dev     # incremental development build
+./peios/bazel test //:kunit         # build and boot the KUnit configuration
+```
 
-* Getting Started: Documentation/process/development-process.rst
-* Your First Patch: Documentation/process/submitting-patches.rst
-* Coding Style: Documentation/process/coding-style.rst
-* Build System: Documentation/kbuild/index.rst
-* Development Tools: Documentation/dev-tools/index.rst
-* Kernel Hacking Guide: Documentation/kernel-hacking/hacking.rst
-* Core APIs: Documentation/core-api/index.rst
+Controlled kernel outputs appear under `bazel-bin/kernel/`. These commands
+produce development artifacts: module archives are unsigned, and signing,
+native integration qualification and release publication are separate stages.
 
-Academic Researcher
--------------------
+## Working on the kernel
 
-Explore the kernel's architecture and internals:
+KACS, KMES and LCS live in `security/pkm/`; StrataFS in `fs/stratafs/`; NTFE's
+networking integration in `net/ntfe/`; and native public interfaces in
+`include/uapi/pkm/`. Peios build, test, packaging and maintenance tools live in
+`peios/`. Changes to existing Linux subsystems are maintained alongside them.
 
-* Researcher Guidelines: Documentation/process/researcher-guidelines.rst
-* Memory Management: Documentation/mm/index.rst
-* Scheduler: Documentation/scheduler/index.rst
-* Networking Stack: Documentation/networking/index.rst
-* Filesystems: Documentation/filesystems/index.rst
-* RCU (Read-Copy Update): Documentation/RCU/index.rst
-* Locking Primitives: Documentation/locking/index.rst
-* Power Management: Documentation/power/index.rst
+Follow the [kernel coding style](peios/CODING_STYLE.md) and the workspace
+`_styleguide` for shared engineering and Git conventions. The
+[style command guide](docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md) describes the required tooling.
+Update the relevant articles in `docs/` when changing documented behaviour or
+interfaces, and run the checks appropriate to the affected subsystem.
 
-Security Expert
----------------
+The `PEIOS KERNEL EXTENSIONS` entry in [MAINTAINERS](MAINTAINERS) identifies
+the Peios maintainer and owned paths. Inherited Linux maintainer entries and
+upstream contribution guides apply when working with those upstream projects.
 
-Security documentation and hardening guides:
+## Licensing
 
-* Security Documentation: Documentation/security/index.rst
-* LSM Development: Documentation/security/lsm-development.rst
-* Self Protection: Documentation/security/self-protection.rst
-* Reporting Vulnerabilities: Documentation/process/security-bugs.rst
-* CVE Procedures: Documentation/process/cve.rst
-* Embargoed Hardware Issues: Documentation/process/embargoed-hardware-issues.rst
-* Security Features: Documentation/userspace-api/seccomp_filter.rst
-
-Backport/Maintenance Engineer
------------------------------
-
-Maintain and stabilize kernel versions:
-
-* Stable Kernel Rules: Documentation/process/stable-kernel-rules.rst
-* Backporting Guide: Documentation/process/backporting.rst
-* Applying Patches: Documentation/process/applying-patches.rst
-* Subsystem Profile: Documentation/maintainer/maintainer-entry-profile.rst
-* Git for Maintainers: Documentation/maintainer/configure-git.rst
-
-System Administrator
---------------------
-
-Configure, tune, and troubleshoot Linux systems:
-
-* Admin Guide: Documentation/admin-guide/index.rst
-* Kernel Parameters: Documentation/admin-guide/kernel-parameters.rst
-* Sysctl Tuning: Documentation/admin-guide/sysctl/index.rst
-* Tracing/Debugging: Documentation/trace/index.rst
-* Performance Security: Documentation/admin-guide/perf-security.rst
-* Hardware Monitoring: Documentation/hwmon/index.rst
-
-Maintainer
-----------
-
-Lead kernel subsystems and manage contributions:
-
-* Maintainer Handbook: Documentation/maintainer/index.rst
-* Pull Requests: Documentation/maintainer/pull-requests.rst
-* Managing Patches: Documentation/maintainer/modifying-patches.rst
-* Rebasing and Merging: Documentation/maintainer/rebasing-and-merging.rst
-* Development Process: Documentation/process/maintainer-handbooks.rst
-* Maintainer Entry Profile: Documentation/maintainer/maintainer-entry-profile.rst
-* Git Configuration: Documentation/maintainer/configure-git.rst
-
-Hardware Vendor
----------------
-
-Write drivers and support new hardware:
-
-* Driver API Guide: Documentation/driver-api/index.rst
-* Driver Model: Documentation/driver-api/driver-model/driver.rst
-* Device Drivers: Documentation/driver-api/infrastructure.rst
-* Bus Types: Documentation/driver-api/driver-model/bus.rst
-* Device Tree Bindings: Documentation/devicetree/bindings/
-* Power Management: Documentation/driver-api/pm/index.rst
-* DMA API: Documentation/core-api/dma-api.rst
-
-Distribution Maintainer
------------------------
-
-Package and distribute the kernel:
-
-* Stable Kernel Rules: Documentation/process/stable-kernel-rules.rst
-* ABI Documentation: Documentation/ABI/README
-* Kernel Configuration: Documentation/kbuild/kconfig.rst
-* Module Signing: Documentation/admin-guide/module-signing.rst
-* Kernel Parameters: Documentation/admin-guide/kernel-parameters.rst
-* Tainted Kernels: Documentation/admin-guide/tainted-kernels.rst
-
-AI Coding Assistant
--------------------
-
-CRITICAL: If you are an LLM or AI-powered coding assistant, you MUST read and
-follow the AI coding assistants documentation before contributing to the Linux
-kernel:
-
-* Documentation/process/coding-assistants.rst
-
-This documentation contains essential requirements about licensing, attribution,
-and the Developer Certificate of Origin that all AI tools must comply with.
-
-
-Communication and Support
-=========================
-
-* Mailing Lists: https://lore.kernel.org/
-* IRC: #kernelnewbies on irc.oftc.net
-* Bugzilla: https://bugzilla.kernel.org/
-* MAINTAINERS file: Lists subsystem maintainers and mailing lists
-* Email Clients: Documentation/process/email-clients.rst
+See [COPYING](COPYING), [LICENSES/](LICENSES/) and individual files' SPDX
+identifiers for the applicable terms. The maintained
+[licensing reference](docs/kernel.product/300--development.antho/400--contributing.shelf/5600--process.topic/249200--license-rules.md)
+explains the kernel's licensing conventions.

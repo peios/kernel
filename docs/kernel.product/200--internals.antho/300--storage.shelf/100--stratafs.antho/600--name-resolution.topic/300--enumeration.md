@@ -1,0 +1,140 @@
+---
+title: "Enumeration"
+description: "The union of names across participating strata, each appearing once — captured at open, with consistency and position rules."
+type: reference
+---
+
+<a id="trm-4-3-4"></a>
+
+Enumerating a merged directory yields the union of the names held by
+its participating strata, with each distinct name appearing exactly
+once. <a id="cite-resolution.merged-directory-is-union"></a>
+
+<a id="trm-4-3-4-1"></a>
+
+## Capture at open
+
+The whole listing is built when the directory is opened, and the
+enumeration is served from that capture for the life of the descriptor.
+Each participant is opened and iterated in ascending stratum order, and
+its entries are appended to one list. <a id="cite-enumerate.captured-at-open"></a>
+
+Deduplication is global rather than per-stratum: before an entry is
+recorded, the whole accumulated list is scanned for the same name, and
+a match causes the entry to be dropped. Because participants are
+visited highest-precedence first, the entry that survives is always the
+provider's. <a id="cite-enumerate.duplicate-name-resolves-to-provider"></a> `.` and `..` are dropped from every participant and
+synthesised once. <a id="cite-enumerate.dot-entries-synthesised-once"></a>
+
+Each surviving entry carries the name, its length, the directory entry
+type reported by the providing participant, and an inode number
+obtained by looking the child up in that same participant and deriving
+its identity, with allocation only as a fallback ([Inode Identity and Lifecycle](<~kernel/internals/stratafs/coherency/inode-identity-and-lifecycle#trm-4-4-3>)), so `getdents` and
+`stat` agree. <a id="cite-enumerate.entry-inode-matches-stat"></a> The final component is not followed during that lookup,
+so a symlink entry reports its own identity rather than its target's. <a id="cite-enumerate.symlink-entry-reports-itself"></a>
+
+Two details of that: an entry that vanishes between the participant's
+own `readdir` and the follow-up lookup is silently dropped, which is
+ordinary provider behaviour; and a participant filesystem that reports
+`DT_UNKNOWN` has that propagated unchanged, even though the child path
+is in hand and the real type could be derived. <a id="cite-enumerate.dt-unknown-propagated"></a>
+
+Shadowed entries are neither reported nor otherwise detectable. No
+second record is ever allocated, so nothing about them survives into
+the listing, and the entry count reflects distinct names only. <a id="cite-enumerate.shadowed-entries-invisible"></a>
+
+The order in which names are reported is stratum-ascending and then
+each stratum's own `readdir` order — deterministic for one capture, and
+not otherwise specified. <a id="cite-enumerate.order-stratum-then-readdir"></a>
+
+The implementation uses a temporary, per-open name hash while capturing
+entries, then an immutable position index for enumeration. Growing the
+hash does not reorder entries or change which provider wins a duplicate.
+The hash buckets are released before the open succeeds. Capture remains
+eager under the opener's authority; the index does not defer any part of
+that authorisation to a later reader or descriptor recipient.
+
+Deduplication takes expected linear work in the number of names offered
+by the participants. Resuming enumeration or seeking to an ordinal does
+not scan earlier entries again. Provider enumeration, child lookup and
+access checks still contribute their own costs. Each independent open
+retains its own names and position index, so memory use still grows with
+the number of distinct captured names and simultaneously open file
+descriptions. These are implementation properties, not time or memory
+limits promised to callers.
+
+<a id="trm-4-3-4-2"></a>
+
+## Consistency <a id="cite-enumerate.changes-after-open-invisible"></a>
+
+There is exactly one capture per descriptor. Nothing appends to the
+list after the directory is opened, and nothing re-captures — a
+rewind replays the original capture, since the directory uses the
+generic `llseek`. A change to any participating stratum after the open
+is therefore invisible to that descriptor for its lifetime.
+
+What that bounds is only what stratafs itself contributes. Each
+participating directory is enumerated by its own filesystem, with
+whatever consistency that filesystem offers its own callers, and
+participants are read sequentially with no cross-stratum lock or
+barrier. A merged listing is no better than the listings it is
+assembled from, and nothing claims otherwise.
+
+<a id="trm-4-3-4-3"></a>
+
+## The settled participant set <a id="cite-enumerate.participant-set-settled-at-open"></a>
+
+For the purpose of enumeration, the participating set is settled when
+the directory is opened and does not change for the life of the
+descriptor. What is settled is the set of participating **directory
+objects**, not the set of stratum positions: the descriptor holds a
+`struct path` reference on each participant, pinned until release, and
+nothing re-resolves those positions by path. A participant that has
+since been removed and replaced by another directory at the same path
+is a different object and contributes nothing.
+
+The settled set has exactly three consumers: the enumeration itself,
+the access check performed when the directory is opened ([Checks on Merged Directories](<~kernel/internals/stratafs/security/checks-on-merged-directories#trm-4-6-2>)), and
+the origin attribute read through that descriptor ([The Origin Attribute](<~kernel/internals/stratafs/start-here/the-origin-attribute#trm-4-7>)). It extends to
+nothing else. Resolving a name relative to the descriptor — opening,
+removing, renaming, linking — is an ordinary live resolution under
+[Lookup](<~kernel/internals/stratafs/name-resolution/lookup-and-type-conflicts#trm-4-3-1>), performed against the strata as they are at that moment.
+
+So a descriptor opened before a stratum began to hold the directory
+will not list that stratum's names, but `openat` through the same
+descriptor will resolve them. The two answers differ deliberately:
+enumeration is a bulk disclosure whose authorisation was decided once,
+when the descriptor was opened; a resolution is a fresh operation that
+carries its own check.
+
+Freezing the participant set is what keeps that open-time check
+meaningful. Were a later re-read free to admit a stratum that joined
+afterwards, its names would reach the caller without its directory's
+descriptor ever having been consulted — and a stratum owner could make
+a directory participate precisely to expose it. A caller that wants the
+current participant set reopens.
+
+<a id="trm-4-3-4-4"></a>
+
+## Positions <a id="cite-enumerate.offsets-are-plain-ordinals"></a>
+
+Offsets 0 and 1 are `.` and `..`. Offset `2 + k` is the k-th element of
+the captured list — a plain ordinal. The offset each participant
+filesystem supplies is discarded: no provider cookie, no stratum index,
+and no name hash is encoded.
+
+A position is therefore meaningful only within one open file
+description. On close and reopen — and so across a remount or a reboot —
+the capture is rebuilt from each stratum's current contents and current
+`readdir` order, and ordinal `2 + k` may name a different entry or
+none. `telldir` and `seekdir` across descriptors are unreliable on a
+stratafs directory, as is NFS re-export of one.
+
+<a id="trm-4-3-4-5"></a>
+
+## Access <a id="cite-enumerate.requires-rights-on-every-participant"></a>
+
+Enumeration requires traverse and list rights on **every** participating
+directory, checked before the capture is built. The check returns on
+the first refusal, and a refusal aborts the open entirely, so no
+partial listing covering only the readable strata can be produced.

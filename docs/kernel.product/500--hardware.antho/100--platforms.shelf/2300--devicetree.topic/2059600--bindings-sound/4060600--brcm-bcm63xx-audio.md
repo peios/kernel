@@ -1,0 +1,42 @@
+---
+title: "Broadcom DSL/PON BCM63xx Audio I2S controller"
+type: reference
+description: "Device-tree binding reference for Broadcom DSL/PON BCM63xx Audio I2S controller."
+---
+
+## Required properties:
+
+```text
+- compatible:     Should be "brcm,bcm63xx-i2s".
+- #address-cells: 32bit valued, 1 cell.
+- #size-cells:    32bit valued, 0 cell.
+- reg:            Should contain audio registers location and length
+- interrupts:     Should contain the interrupt for the controller.
+- clocks:         Must contain an entry for each entry in clock-names.
+                  Please refer to clock-bindings.txt.
+- clock-names:    One of each entry matching the clocks phandles list:
+                  - "i2sclk" (generated clock) Required.
+                  - "i2sosc" (fixed 200MHz clock) Required.
+```
+
+(1) : The generated clock is required only when any of TX and RX
+
+```text
+      works on Master Mode.
+```
+
+(2) : The fixed 200MHz clock is from internal chip and always on
+
+## Example:
+
+```dts
+		i2s: bcm63xx-i2s {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm63xx-i2s";
+			reg = <0xFF802080 0xFF>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&i2sclk>, <&osc>;
+			clock-names = "i2sclk","i2sosc";
+		};
+```

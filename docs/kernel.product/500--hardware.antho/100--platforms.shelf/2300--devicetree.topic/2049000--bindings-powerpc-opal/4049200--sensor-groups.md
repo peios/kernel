@@ -1,0 +1,30 @@
+---
+title: "IBM OPAL Sensor Groups Binding"
+type: reference
+description: "Device-tree binding reference for IBM OPAL Sensor Groups Binding."
+---
+
+Node: /ibm,opal/sensor-groups
+
+Description: Contains sensor groups available in the Powernv P9
+servers. Each child node indicates a sensor group.
+
+- compatible : Should be "ibm,opal-sensor-group"
+
+## Each child node contains below properties:
+
+- type : String to indicate the type of sensor-group
+
+- sensor-group-id: Abstract unique identifier provided by firmware of
+  type &lt;u32&gt; which is used for sensor-group
+  operations like clearing the min/max history of all
+  sensors belonging to the group.
+
+- ibm,chip-id : Chip ID
+
+- sensors : Phandle array of child nodes of /ibm,opal/sensor/
+  belonging to this group
+
+- ops : Array of opal-call numbers indicating available operations on
+  sensor groups like clearing min/max, enabling/disabling sensor
+  group.

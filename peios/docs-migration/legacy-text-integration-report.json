@@ -1,0 +1,109 @@
+{
+  "validation_complete": true,
+  "scope": "732 device-tree legacy text bindings, seven other text documents and two README articles; no YAML catalogue.",
+  "new_articles": 741,
+  "mapped_articles": 4152,
+  "mapped_rst_articles": 3381,
+  "netlink_yaml_articles": 30,
+  "pending_rst_sources": 0,
+  "new_configs": 112,
+  "existing_link_updates": 11,
+  "source_and_rendered_preservation": {
+    "counts": {
+      "articles": 741,
+      "legacy_text_articles": 741,
+      "source_lines": 48568,
+      "literal_blocks": 2153,
+      "prose_blocks": 2173,
+      "headings": 2487,
+      "sequence_diagrams": 1,
+      "sequence_events": 65
+    },
+    "errors": []
+  },
+  "legacy_inventory": {
+    "metadata": 3,
+    "included or generated source": 62,
+    "direct article": 741
+  },
+  "sequence_diagram": {
+    "rendered_messages": 40,
+    "source_events": 65,
+    "participants": 3,
+    "visual_review": "Reviewed complete rendered sequence; labels, notes and branches visible."
+  },
+  "existing_content": {
+    "existing_articles_compared": 3411,
+    "only_expected_link_updates": true,
+    "link_updated_articles": 11,
+    "excluded": "Previous/next navigation"
+  },
+  "upstream_mapping": {
+    "simulated_source_edits": 741,
+    "all_expected_articles_flagged": true,
+    "baseline_advanced": false
+  },
+  "originals": {
+    "Documentation_entries_unchanged": 11072,
+    "source_queue_unchanged": true,
+    "mapped_output_hashes_checked": 4152
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 4236,
+    "warnings": "Inherited kernel-doc diagnostics; runtime plugins unchanged."
+  },
+  "site_links": {
+    "html_pages": 4236,
+    "local_links_and_assets": 1908750,
+    "errors": []
+  },
+  "migration_tests": 72,
+  "visual_samples": [
+    {
+      "path": "kernel/hardware/leds/well-known-leds",
+      "status": 200,
+      "title": "Well-known LED names",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/hardware/devicetree/bindings-pinctrl/microchip-pic32-pinctrl",
+      "status": 200,
+      "title": "Microchip PIC32 Pin Controller",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/administration/admin-guide/spkguide",
+      "status": 200,
+      "title": "The Speakup User's Guide",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/internals/filesystems/propagate-umount",
+      "status": 200,
+      "title": "Notes on propagate_umount()",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    }
+  ],
+  "source_preservation_method": "Every imported source line is accounted for. Source prose is compared in order with rendered text after removing only known Trail chrome; literal blocks are exact, including whitespace. Mermaid events and rendered messages are checked. All prior article bodies are compared allowing only the recorded link replacements and previous/next navigation.",
+  "limitations": [
+    "Mechanical translation preserves inherited technical claims; final editorial and Peios-applicability review remains.",
+    "Tables, nested property lists, ASCII figures and BibTeX retain literal formatting.",
+    "The 5415-schema YAML binding catalogue remains deferred.",
+    "Other source/data formats have not received a new whole-tree audit in this pass."
+  ],
+  "preview_output": "/home/jack/projects/peios/.tmp/pei-1505-legacy-text/site",
+  "environment_note": "Moved generated output to disk-backed scratch after temporary quota exhaustion; source/staging records retained."
+}

@@ -1,0 +1,10 @@
+---
+title: "AMD Seattle SoC Platforms"
+type: reference
+description: "Device-tree binding reference for AMD Seattle SoC Platforms."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/arm/amd,seattle.yaml
+```

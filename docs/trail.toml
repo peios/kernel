@@ -1,0 +1,29 @@
+sitename = "Peios Learn"
+title = "The Peios Kernel"
+description = "Guides and reference for the Peios kernel."
+footer = "Peios — kernel documentation."
+
+[plugins.kernel-doc]
+command = ["sources/trail-plugin", "kernel-doc", "--srctree", ".."]
+
+anchors = true
+
+[plugins.kernel-include]
+command = ["sources/trail-plugin", "kernel-include", "--srctree", ".."]
+anchors = true
+after = ["kernel-doc"]
+
+[plugins.kernel-feat]
+command = ["sources/trail-plugin", "kernel-feat", "--srctree", ".."]
+
+[plugins.kernel-abi]
+command = ["sources/trail-plugin", "kernel-abi", "--srctree", ".."]
+
+[plugins.kernel-maintainers]
+command = ["sources/trail-plugin", "kernel-maintainers", "--srctree", ".."]
+
+[plugins.kernel-netlink]
+command = ["sources/trail-plugin", "kernel-netlink", "--srctree", ".."]
+
+[plugins.kernel-binding]
+command = ["sources/trail-plugin", "kernel-binding", "--srctree", ".."]

@@ -1,0 +1,10 @@
+---
+title: "Samsung S5P/Exynos SoC MIPI CSIS/DSIM DPHY"
+type: reference
+description: "Device-tree binding reference for Samsung S5P/Exynos SoC MIPI CSIS/DSIM DPHY."
+---
+
+<!-- SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause -->
+
+```{kernel-binding} Documentation/devicetree/bindings/phy/samsung,mipi-video-phy.yaml
+```

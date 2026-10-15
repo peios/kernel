@@ -1,0 +1,96 @@
+---
+title: "Legacy Open Compatibility"
+description: "Linux open flags cannot express WRITE_DAC or READ_CONTROL — how FACS maps them to core and compat rights, and what O_PATH does."
+type: reference
+---
+
+<a id="trm-3-9-3"></a>
+
+> [!IMPORTANT]
+> The open-interface references contain [unresolved documentation differences](~kernel/userspace/native/kacs/abi-status-and-naming-differences#trm-3-d-6). Read that note alongside this page; no runtime behavior or release boundary has been established for those differences.
+
+Linux's `open()` and `openat()` cannot express rights like `WRITE_DAC`
+or `READ_CONTROL`. FACS maps the open flags to a **core** set of
+required rights plus a **compat** set of POSIX-expected ones, and
+evaluates both in a single AccessCheck.
+
+<a id="trm-3-9-3-1"></a>
+
+## Core rights <a id="cite-facs.legacy.core-rights"></a>
+
+The core set is the minimum for a usable descriptor, and the open
+fails if any of it is denied.
+
+For regular files, device nodes, FIFOs and pathname sockets:
+
+| Flags | Core rights |
+|---|---|
+| `O_RDONLY` | `FILE_READ_DATA \| FILE_READ_ATTRIBUTES` |
+| `O_WRONLY` | `FILE_WRITE_DATA \| FILE_READ_ATTRIBUTES` |
+| `O_RDWR` | `FILE_READ_DATA \| FILE_WRITE_DATA \| FILE_READ_ATTRIBUTES` |
+
+For directories, `O_RDONLY` gives
+`FILE_READ_ATTRIBUTES | FILE_TRAVERSE`. Directory core deliberately
+excludes `FILE_LIST_DIRECTORY`, so a directory opened `O_RDONLY` can
+be used for `fchdir()` and `fstat()` without listing permission;
+listing is a compat right. <a id="cite-facs.legacy.directory-core-excludes-list"></a>
+
+Two modifiers apply in order. `O_APPEND` replaces `FILE_WRITE_DATA`
+with `FILE_APPEND_DATA`, and `O_TRUNC` adds `FILE_WRITE_DATA`. Given
+both, the replacement happens first and the re-addition second, so
+core ends up with `FILE_APPEND_DATA` and `FILE_WRITE_DATA` together. <a id="cite-facs.legacy.append-trunc-order"></a>
+
+`FILE_READ_ATTRIBUTES` is always core: a descriptor granting data
+access but denying attribute reads is not openable through the legacy
+APIs at all. <a id="cite-facs.legacy.read-attributes-always-core"></a>
+
+<a id="trm-3-9-3-2"></a>
+
+## Compat rights <a id="cite-facs.legacy.compat-rights"></a>
+
+Requested alongside core and silently omitted where denied:
+`FILE_READ_EA` for `fgetxattr()`; `READ_CONTROL` for reading the
+descriptor; `FILE_WRITE_ATTRIBUTES` for `futimens()`; `FILE_WRITE_EA`
+for `fsetxattr()`; `FILE_WRITE_DATA` on `O_APPEND` opens so
+`ftruncate()` works where the descriptor allows it; `WRITE_DAC`,
+because POSIX permits `fchmod()` on any descriptor; `WRITE_OWNER`, for
+`fchown()` on the same grounds; `SYNCHRONIZE`;
+`FILE_LIST_DIRECTORY`, enabling `readdir()` on directory descriptors;
+and `FILE_EXECUTE`, enabling `fexecve()` on regular files.
+
+<a id="trm-3-9-3-3"></a>
+
+## The flow
+
+The full requested mask is core plus compat. AccessCheck returns the
+subset the descriptor allows. If every core right is present the
+actual granted mask — which may include all, some or none of compat —
+is stamped on the descriptor; otherwise the open fails with `EACCES`. <a id="cite-facs.legacy.core-missing-eacces"></a>
+
+Both open paths run the same pipeline with different success
+criteria. Native open is **strict**: everything requested has to be
+granted. Legacy open is **subset**: only core has to be fully present.
+
+<a id="trm-3-9-3-4"></a>
+
+## O_PATH
+
+`O_PATH` descriptors are not FACS-managed. The open hook does fire for
+them, but returns immediately without evaluating anything, so they
+carry no granted mask and are left unmanaged. <a id="cite-facs.legacy.o-path-unmanaged"></a> They serve as namespace
+anchors for the `*at()` syscalls.
+
+`fstat()` and `fstatfs()` on them are allowed unconditionally. <a id="cite-facs.legacy.o-path-fstat-unconditional"></a>
+`fchdir()` runs a live `FILE_TRAVERSE` check at use time. <a id="cite-facs.legacy.o-path-fchdir-live"></a> `fchmod()`,
+`fchown()`, `fgetxattr()`, `fsetxattr()`, `ioctl()` and `mmap()` are
+denied with `EBADF` — though `futimens()` currently has no such guard. <a id="cite-facs.legacy.o-path-ebadf"></a>
+`execveat(fd, "", ..., AT_EMPTY_PATH)` has exec permission enforced by
+a live AccessCheck in the bprm hook, and `kacs_get_sd` and
+`kacs_set_sd` with `AT_EMPTY_PATH` likewise run live, which gives
+race-free object identity without snapshot authorization. <a id="cite-facs.legacy.o-path-live-checks"></a>
+
+That `fstat()` is unconditional means `FILE_READ_ATTRIBUTES` is not
+authoritative for attribute confidentiality. In practice size,
+timestamps and inode number are rarely confidential. The descriptor
+itself *is* protected: `kacs_get_sd` on an `O_PATH` handle performs a
+live check.

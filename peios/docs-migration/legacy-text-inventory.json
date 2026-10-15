@@ -1,0 +1,3233 @@
+{
+  "counts": {
+    "metadata": 3,
+    "included or generated source": 62,
+    "direct article": 741
+  },
+  "sources": [
+    {
+      "source": "Documentation/.renames.txt",
+      "disposition": "metadata"
+    },
+    {
+      "source": "Documentation/ABI/README",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/RCU/RTFP.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/admin-guide/aoe/udev.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/admin-guide/devices.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/admin-guide/kdump/gdbmacros.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/admin-guide/kernel-parameters.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/admin-guide/spkguide.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/arch/powerpc/kasan.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/arch/sparc/oradax/dax-hv-api.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/atomic_bitops.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/atomic_t.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arc/axs101.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arc/axs103.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arc/eznps.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arc/hsdk.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arc/pct.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/atmel-sysregs.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/bcm/brcm,bcm63138.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/bcm/brcm,brcmstb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/firmware/sdei.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/98dx3236-resume-ctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/armada-370-xp-pmsu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/armada-380-mpcore-soc-ctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/armada-cpu-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/coherency-fabric.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/mvebu-cpu-config.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/marvell/mvebu-system-controller.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/mediatek/mediatek,g3dsys.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/counter.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/crossbar.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/ctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/dmm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/dsp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/iva.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/l3-noc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/l4.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/mpu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/omap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/omap/prcm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/secure.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/ste-nomadik.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/ux500/boards.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/ux500/power_domain.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/vexpress-scc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/vt8500/via,vt8500-pmc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/arm/xen.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/bus/brcm,bus-axi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/bus/mvebu-mbus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/bus/nvidia,tegra20-gmi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/bus/omap-ocp2scp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/bus/ti,da850-mstpri.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/bus/ts-nbus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cache/freescale-l2cache.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/axs10x-i2s-pll-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/clk-palmas-clk32kg-clocks.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/clock-bindings.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/hi3660-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/hi3670-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/hi6220-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/hisi-crg.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/img,boston-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/keystone-gate.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/keystone-pll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/marvell,pxa168.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/marvell,pxa1928.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/marvell,pxa910.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/nvidia,tegra124-dfll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/pxa-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/snps,hsdk-pll-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/snps,pll-clock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/st/st,clkgen-mux.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/st/st,clkgen-pll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/st/st,clkgen.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/st/st,flexgen.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/st/st,quadfs.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/st,nomadik.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/adpll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/apll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/clockdomain.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/davinci/da8xx-cfgchip.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/davinci/pll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/davinci/psc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/dpll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/dra7-atl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti/fapll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/ti,cdce706.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/vt8500.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/clock/zynq-7000.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/common-properties.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpu/cpu-capacity.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpufreq/brcm,stb-avs-cpu-freq.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpufreq/cpufreq-spear.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpufreq/cpufreq-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpufreq/imx-cpufreq-dt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpufreq/nvidia,tegra124-cpufreq.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/cpufreq/nvidia,tegra20-cpufreq.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/csky/cpus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/csky/pmu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/armada/marvell,dove-lcd.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/cirrus,clps711x-fb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/hisilicon/dw-dsi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/hisilicon/hisi-ade.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ilitek,ili9225.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/marvell,pxa2xx-lcdc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/marvell,pxa300-gcu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/mipi-dsi-bus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/multi-inno,mi0283qt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/panel/display-timing.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/repaper.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/sm501fb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/snps,arcpgu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ssd1289fb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/st,stih4xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,dra7-dss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,omap-dss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,omap2-dss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,omap3-dss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,omap4-dss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,omap5-dss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/ti/ti,tpd12s015.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/tilcdc/panel.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/tilcdc/tilcdc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/via,vt8500-fb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/wm,prizm-ge-rops.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/display/wm,wm8505-fb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/img-mdc-dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/k3dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/milbeaut-m10v-hdmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/milbeaut-m10v-xdmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/moxa,moxart-dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/mpc512x-dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/renesas,nbpfaxi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/st_fdma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/ti-dma-crossbar.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/ti-edma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/dma/xilinx/xilinx_dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/extcon/extcon-max3355.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/extcon/extcon-palmas.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/firmware/coreboot.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/firmware/nvidia,tegra210-bpmp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/fpga/altera-pr-ip.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/fpga/altera-socfpga-a10-fpga-mgr.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/fpga/altera-socfpga-fpga-mgr.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/fpga/lattice-machxo2-spi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/fsi/fsi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/gpio/gpio-adnp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/gpio/gpio-exar.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/gpio/gpio-grgpio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/gpio/gpio-thunderx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/gpio/gpio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/gpio/sodaville.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/graph.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hsi/client-devices.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hsi/nokia-modem.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hsi/omap-ssi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hwlock/hwlock.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hwmon/ltc2990.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hwmon/max6697.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hwmon/npcm750-pwm-fan.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hwmon/nsa320-mcu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/hwmon/vexpress.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-altera.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-axxia.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-cbus-gpio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-davinci.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-digicolor.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-img-scb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-iop3xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-mux-ltc4306.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-mux-reg.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-octeon.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-opal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-pca-platform.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/i2c/i2c-pxa-pci-ce4100.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/iio/accel/lis302.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/iio/adc/xilinx-xadc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/iio/mount-matrix.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/infiniband/hisilicon-hns-roce.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/brcm,bcm-keypad.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/clps711x-keypad.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/cpcap-pwrbutton.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/dlink,dir685-touchkeys.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/e3x0-button.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/gpio-decoder.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/input-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/matrix-keymap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/microchip,qt1050.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/nvidia,tegra20-kbc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/omap-keypad.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/ps2keyb-mouse-apbps2.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/pxa27x-keypad.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/raydium_i2c_ts.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/spear-keyboard.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/st-keyscan.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/ti,palmas-pwrbutton.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/auo_pixcir_ts.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/brcm,iproc-touchscreen.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/bu21029.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/fsl-mx25-tcq.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/hideep.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/sis_i2c.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/touchscreen/ts4800-ts.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/input/tps65218-pwrbutton.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/interconnect/interconnect.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/interrupt-controller/interrupts.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/interrupt-controller/msi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/iommu/iommu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/iommu/nvidia,tegra30-smmu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/iommu/ti,omap-iommu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/jailhouse.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/backlight/88pm860x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/backlight/sky81452-backlight.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/backlight/tps65217-backlight.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/common.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-bcm6358.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-cpcap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-cr0014114.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-el15203000.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-is31fl32xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-lm3532.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-lm3601x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-lm36274.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-lt3593.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-netxbig.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-ns2.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-powernv.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-spi-byte.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-trigger-pattern.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mailbox/altera-mailbox.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mailbox/hisilicon,hi3660-mailbox.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mailbox/hisilicon,hi6220-mailbox.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mailbox/mailbox.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mailbox/ti,message-manager.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/atmel-isi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/cdns,csi2tx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/hix5hd2-ir.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/adi,adp1653.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/adi,adv7343.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/aptina,mt9v032.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/maxim,max2175.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/melexis,mlx90640.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/micron,mt9m111.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/onnn,mt9m001.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ovti,ov2640.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ovti,ov2659.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ovti,ov7670.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ovti,ov7740.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ovti,ov9650.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/panasonic,amg88xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ti,ths8200.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ti,tvp514x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/ti,tvp7002.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/i2c/toshiba,tc358743.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/img-ir-rev1.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/pxa-camera.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/rc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/si4713.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/spi/sony-cxd2880.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/st,st-delta.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/st,st-hva.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/st,stih4xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/st-rc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/ti,da850-vpif.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/ti-am437x-vpfe.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/video-interfaces.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/xilinx/video.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/xilinx/xlnx,v-tc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/xilinx/xlnx,v-tpg.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/media/xilinx/xlnx,video.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/memory-controllers/atmel,ebi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/memory-controllers/mvebu-devbus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/memory-controllers/ti/emif.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/memory-controllers/ti-aemif.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/88pm860x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/altera-a10sr.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/as3722.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/atmel-smc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/bfticu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/da9055.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/da9150.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/fsl-imx25-tsadc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/hi6421.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/hisilicon,hi655x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/lp3943.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/max77620.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/mfd.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/motorola-cpcap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/omap-usb-host.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/omap-usb-tll.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/palmas.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/qriox.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/retu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/sky81452.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/tc3589x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/ti-keystone-devctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/ti-lmu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/tps6105x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/tps6507x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/tps65912.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/twl6040.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mfd/wm831x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/ath79-soc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/brcm/soc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/bootbus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/cib.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/ciu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/ciu2.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/ciu3.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/dma-engine.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/sata-uctl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/cavium/uctl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/img/pistachio-marduk.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/img/pistachio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/img/xilfpga.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/lantiq/fpi-bus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/lantiq/rcu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/mscc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/ni.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mips/pic32/microchip,pic32mzda.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/misc/ifm-csi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/misc/pvpanic-mmio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/bluefield-dw-mshc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/cavium-mmc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/k3-dw-mshc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/mmc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/moxa,moxart-mmc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/pxa-mmc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/sdhci-spear.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/sdhci-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/ti-omap-hsmmc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/ti-omap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mmc/usdhi6rol0.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/atmel-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/diskonchip.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/flctl-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/fsl-upm-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/fsmc-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/gpio-control-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/hisi504-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/hisilicon,fmc-spi-nor.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/ibm,ndfc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/lpc32xx-mlc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/lpc32xx-slc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/nand-macronix.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/orion-nand.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mtd/partitions/brcm,bcm963xx-cfe-nor-partitions.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mux/adi,adg792a.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/mux/adi,adgs1408.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/anarion-gmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/bluetooth/mediatek,bluetooth.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/bluetooth/nokia,h4p-bluetooth.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/broadcom-bcm87xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/btusb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/can/cc770.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/can/grcan.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/can/holt_hi311x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/can/ifi_canfd.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/can/mpc5xxx-mscan.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/can/ti_hecc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cavium-mdio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cavium-mix.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cavium-pip.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cirrus,cs89x0.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cortina.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cpsw-phy-sel.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/cpsw.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/davinci_emac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/dsa/dsa.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/dsa/lan9303.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ethernet.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ezchip_enet.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/faraday,ftmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/fixed-link.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/fsl-tsec-phy.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-femac-mdio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-femac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-hip04-net.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-hix5hd2-gmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-hns-dsaf.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-hns-mdio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/hisilicon-hns-nic.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ibm,emac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/icplus-ip101ag.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ieee802154/adf7242.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ieee802154/ca8210.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ieee802154/cc2520.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ieee802154/mcr20a.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ieee802154/mrf24j40.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/ipq806x-dwmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/keystone-netcp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/marvell-orion-net.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/marvell-pxa168.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/mdio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/microchip,enc28j60.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/microchip,lan78xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/nixge.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/opencores-ethoc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/phy.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/qcom-emac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/samsung-sxgbe.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/smsc-lan87xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/snps,dwc-qos-ethernet.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/sti-dwmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/stmmac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/via-velocity.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/wireless/ti,wl1251.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/net/wiznet,w5x00.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/nios2/nios2.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/nvmem/lpc1850-otp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/nvmem/nvmem.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/openrisc/opencores/or1ksim.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pci/hisilicon-histb-pcie.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pci/nvidia,tegra20-pcie.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pci/ralink,rt3883-pci.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pci/ti-pci.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/phy/phy-bindings.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/phy/phy-miphy28lp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/phy/phy-miphy365x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/abilis,tb10x-iomux.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/atmel,at91-pio4-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/axis,artpec6-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/brcm,cygnus-pinmux.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/brcm,nsp-gpio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/brcm,nsp-pinmux.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/cnxt,cx92755-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/cortina,gemini-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/fsl,imx-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/fsl,imx25-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/fsl,imx27-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/img,pistachio-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/lantiq,pinctrl-falcon.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/lantiq,pinctrl-xway.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,armada-370-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,armada-375-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,armada-38x-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,armada-39x-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,armada-98dx3236-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,armada-xp-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,dove-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,kirkwood-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,mvebu-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/marvell,orion-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/microchip,pic32-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/nuvoton,npcm7xx-pinctrl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/nvidia,tegra124-xusb-padctl.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-max77620.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-palmas.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-rk805.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-sirf.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl-vt8500.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/pinctrl_spear.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/ste,abx500.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/ste,nomadik.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/ti,da850-pupd.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pinctrl/ti,iodelay.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/amlogic,meson-gx-pwrc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/power-controller.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/power_domain.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/axxia-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/gemini-poweroff.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/keystone-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/ltc2952-poweroff.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/ocelot-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/qnap-poweroff.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/restart-poweroff.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/reset/st-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/ti-smartreflex.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/power/wakeup-source.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/4xx/akebono.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/4xx/cpm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/4xx/hsta.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/4xx/ppc440spe-adma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/4xx/reboot.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/ccf.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/cpus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/dcsr.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/diu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/ecm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/interlaken-lac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/lbc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/mcm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/mpc5121-psc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/mpc512x_lpbfifo.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/mpc5200.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/mpic-msgr.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/mpic-timer.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/pamu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/raideng.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/scfg.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/srio-rmu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/fsl/srio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/ibm,powerpc-cpu-features.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/ibm,vas.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/nintendo/gamecube.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/nintendo/wii.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/opal/oppanel-opal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/opal/power-mgt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/powerpc/opal/sensor-groups.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/ptp/brcm,ptp-dte.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/ptp/ptp-ines.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/ptp/timestamper.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/cirrus,clps711x-pwm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/img-pwm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/nxp,pca9685-pwm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/pwm-hibvt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/pwm-lp3943.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/pwm-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/pwm-tipwmss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/pwm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/spear-pwm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/pwm/st,stmpe-pwm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regmap/regmap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/88pg86x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/88pm800.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/88pm860x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/as3722-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/cpcap-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/hisilicon,hi655x-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/isl9305.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/lm363x-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/lp872x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/ltc3589.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/max1586-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/max8907.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/max8925-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/mp8859.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/mt6311-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/mt6323-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/mt6380-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/nvidia,tegra-regulators-coupling.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/palmas-pmic.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/pbias-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/pv88060.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/pv88080.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/pv88090.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/regulator-max77620.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/sky81452-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/ti-abb-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/tps51632-regulator.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/tps65023.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/tps65090.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/tps65217.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/tps65218.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/tps6586x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/regulator/vexpress.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/remoteproc/qcom,q6v5.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/remoteproc/st-rproc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/remoteproc/ti,davinci-rproc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/remoteproc/ti,keystone-rproc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/remoteproc/wkup_m3_rproc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reserved-memory/reserved-memory.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reserved-memory/xen,shared-memory.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/brcm,bcm63138-pmb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/img,pistachio-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/snps,hsdk-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/st,sti-softreset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/st,stm32-rcc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/st,stm32mp1-rcc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/ti-syscon-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/reset/zynq-reset.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/resource-names.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/cdns,rtc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/dallas,ds1390.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/epson,rx6110.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/isil,isl12026.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/maxim-ds1302.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/microchip,pic32-rtc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/moxa,moxart-rtc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/olpc-xo1-rtc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/realtek,rtd119x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/rtc-cmos.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/rtc-omap.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/rtc-opal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/rtc-palmas.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/rtc/rtc-st-lpc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/scsi/hisilicon-sas.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/serial/rs485.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/serio/altera_ps2.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/serio/olpc,ap-sp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/serio/snps-arc_ps2.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sifive/sifive-blocks-ip-versioning.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/dove/pmu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/cpm/brg.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/cpm/i2c.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/cpm/pic.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/cpm/usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/cpm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/gpio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/qe/firmware.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/qe/par_io.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/qe/pincfg.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/qe/ucc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/qe/usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/serial.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/cpm_qe/uqe_serial.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/fsl/guts.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/mediatek/scpsys.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/ti/keystone-navigator-dma.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/soc/ti/keystone-navigator-qmss.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ac97-bus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/adi,adau1701.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/adi,axi-i2s.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/adi,axi-spdif-tx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/adi,ssm2305.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ak4118.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ak5386.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/armada-370db-audio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/atmel_ac97c.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/axentia,tse850-pcm5142.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/brcm,bcm63xx-audio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/brcm,cygnus-audio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cdns,xtfpga-i2s.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs35l32.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs35l33.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs35l34.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs35l35.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs35l36.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs42l52.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs42l56.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs42l73.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs43130.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/cs53l30.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/da7218.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/davinci-evm-audio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/eukrea-tlv320.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/hisilicon,hi6210-i2s.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/img,i2s-in.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/img,i2s-out.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/img,parallel-out.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/img,pistachio-internal-dac.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/img,spdif-in.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/img,spdif-out.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/marvell,pxa2xx-ac97.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/max98373.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/max9860.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mikroe,mikroe-proto.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mrvl,pxa-ssp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt2701-cs42448.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt6351.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt6358.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt6797-afe-pcm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt6797-mt6351.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt8173-max98090.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt8173-rt5650-rt5514.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt8173-rt5650-rt5676.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mt8173-rt5650.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mtk-btcvsd-snd.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/mvebu-audio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/nokia,rx51.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/nvidia,tegra30-ahub.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/omap-abe-twl6040.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/omap-dmic.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/omap-mcbsp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/pcm3060.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/renesas,rsnd.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rockchip,rk3288-hdmi-analog.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rockchip,rk3399-gru-sound.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rockchip-max98090.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rockchip-rt5645.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt1011.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt1308.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt274.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt5660.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt5663.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt5665.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/rt5668.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/sirf-audio-port.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/sirf-audio.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/soc-ac97link.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ssm4567.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/st,sta32x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/st,sta350.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/st,sti-asoc-card.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/storm.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/tas5720.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/tda7419.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/tdm-slot.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ti,ads117x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ti,tas5086.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ti,tas6424.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/tscs42xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/tscs454.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/uda1334.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ux500-mop500.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/ux500-msp.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/widgets.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/sound/wm8741.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/icpdas-lp8841-spi-rtc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/jcore,spi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/microchip,spi-pic32.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/nuvoton,npcm-fiu.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-ath79.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-bus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-clps711x.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-davinci.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-img-spfi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-lantiq-ssc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-octeon.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi-xtensa-xtfpga.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi_altera.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/spi_oc_tiny.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/spi/sqi-pic32.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/thermal/dove-thermal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/thermal/kirkwood-thermal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/thermal/max77620_thermal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/thermal/spear-thermal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/thermal/ti_soc_thermal.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/unittest.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/am33xx-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/atmel-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/da8xx-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/dwc3-cavium.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/dwc3-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/ehci-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/gr-udc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/hisilicon,histb-xhci.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/iproc-udc.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/maxim,max3421.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/octeon-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/ohci-da8xx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/ohci-st.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/omap-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/pxa-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/richtek,rt1711h.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/ulpi.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/usb4604.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/usb/ux500-usb.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/w1/omap-hdq.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/w1/w1.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/watchdog/men-a021-wdt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/watchdog/microchip,pic32-dmt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/watchdog/microchip,pic32-wdt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/watchdog/st_lpc_wdt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/watchdog/ts4800-wdt.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/x86/ce4100.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/x86/timer.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/xilinx.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/devicetree/bindings/xillybus/xillybus.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/features/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/cBPF-JIT/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/eBPF-JIT/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/generic-idle-thread/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/jump-labels/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/mseal_sys_mappings/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/thread-info-in-task/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/core/tracehook/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/KASAN/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/debug-vm-pgtable/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/gcov-profile-all/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/kcov/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/kgdb/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/kmemleak/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/kprobes/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/kprobes-on-ftrace/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/kretprobes/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/optprobes/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/stackprotector/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/uprobes/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/debug/user-ret-profiler/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/io/dma-contiguous/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/locking/cmpxchg-local/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/locking/lockdep/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/locking/queued-rwlocks/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/locking/queued-spinlocks/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/perf/kprobes-event/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/perf/perf-regs/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/perf/perf-stackdump/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/sched/membarrier-sync-core/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/sched/numa-balancing/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/seccomp/seccomp-filter/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/time/arch-tick-broadcast/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/time/clockevents/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/time/context-tracking/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/time/irq-time-acct/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/time/virt-cpuacct/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/vm/ELF-ASLR/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/vm/THP/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/vm/TLB/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/vm/huge-vmap/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/vm/ioremap_prot/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/features/vm/pte_special/arch-support.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/filesystems/path-lookup.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/filesystems/propagate_umount.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/leds/well-known-leds.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/litmus-tests/README",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/memory-barriers.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/netlabel/draft-ietf-cipso-ipsecurity-01.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/networking/mac80211-auth-assoc-deauth.txt",
+      "disposition": "direct article"
+    },
+    {
+      "source": "Documentation/sphinx/min_requirements.txt",
+      "disposition": "metadata"
+    },
+    {
+      "source": "Documentation/sphinx/requirements.txt",
+      "disposition": "metadata"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_appendix.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_hist_options.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_options.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_osnoise_description.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_osnoise_options.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_timerlat_aa.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_timerlat_description.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_timerlat_options.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/tools/rtla/common_top_options.txt",
+      "disposition": "included or generated source"
+    },
+    {
+      "source": "Documentation/virt/kvm/devices/README",
+      "disposition": "direct article"
+    }
+  ]
+}

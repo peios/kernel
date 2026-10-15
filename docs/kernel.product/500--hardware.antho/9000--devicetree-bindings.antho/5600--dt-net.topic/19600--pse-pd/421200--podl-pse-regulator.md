@@ -1,0 +1,10 @@
+---
+title: "Regulator based Power Sourcing Equipment"
+type: reference
+description: "Device-tree binding reference for Regulator based Power Sourcing Equipment."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/net/pse-pd/podl-pse-regulator.yaml
+```

@@ -263,6 +263,11 @@ int vfs_getattr(const struct path *path, struct kstat *stat,
 }
 EXPORT_SYMBOL(vfs_getattr);
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_file_getattr(struct file *file);
+extern void pkm_kacs_file_end_metadata(struct file *file);
+#endif
+
 /**
  * vfs_fstat - Get the basic attributes by file descriptor
  * @fd: The file descriptor referring to the file of interest
@@ -270,13 +275,11 @@ EXPORT_SYMBOL(vfs_getattr);
  *
  * This function is a wrapper around vfs_getattr().  The main difference is
  * that it uses a file descriptor to determine the file location.
+ * Peios also checks the managed handle for FILE_READ_ATTRIBUTES before
+ * fetching the attributes.
  *
  * 0 will be returned on success, and a -ve error code if unsuccessful.
  */
-#ifdef CONFIG_SECURITY_PKM
-extern int pkm_kacs_file_getattr(struct file *file);
-extern void pkm_kacs_file_end_metadata(struct file *file);
-#endif
 
 
 int vfs_fstat(int fd, struct kstat *stat)

@@ -1,0 +1,106 @@
+---
+title: "The Layer Model"
+description: "A named collection of registry writes managed as a unit — precedence tiers, caps, and why layers are global while entries are per-source."
+type: reference
+---
+
+<a id="trm-5-3-1"></a>
+
+A layer is a named collection of registry writes that can be managed as
+a unit. Layers have precedence, and the highest-precedence entry wins.
+They are how role installation, Group Policy and configuration revert
+all work, and they are the reason removing a role does not leave its
+settings behind.
+
+| Field | Mutable | Description |
+|---|---|---|
+| Name | No | The layer's identity — not a GUID, not an integer. Case-preserving, compared with Unicode Simple Case Folding. Bounded by `MaxPathComponentLength`. <a id="cite-layer.model.name-is-the-identity"></a> |
+| Precedence | Yes | Higher wins. Default 0. |
+| Enabled | Yes | A disabled layer is invisible during resolution unless it is attached to the resolving thread's credentials ([Private Layers](<~kernel/internals/lcs/layers/private-layers#trm-5-3-5>)). Default true. |
+| Owner | — | The SID of the principal that created the layer. Informational only. |
+
+The name being the identity is deliberate. Layer names are
+code-generated and meaningful by construction —
+`role-jellyfin`, `gpo-security-baseline` — so there is nothing an
+opaque identifier would add.
+
+`Owner` is never used for an access check; authorisation is the
+descriptor on the layer's metadata key ([Writing Into a Layer](<~kernel/internals/lcs/layers/writing-into-a-layer#trm-5-3-4>)). <a id="cite-layer.model.owner-never-used-for-an-access-check"></a>
+
+It is also not quite immutable as a field: a refresh re-reads the
+`Owner` value and re-selects it, so rewriting the value does change what
+is cached. <a id="cite-layer.model.owner-re-selected-by-refresh"></a> Because nothing
+consults it, that has no effect on anything.
+
+<a id="trm-5-3-1-1"></a>
+
+## Precedence tiers
+
+The base layer and role layers all sit at precedence 0. Within one
+tier, the most recent write wins — the highest sequence number. Group
+Policy layers sit above 0 and override both.
+
+Establishing or raising a layer's precedence above 0 requires
+`SeTcbPrivilege` ([Writing Into a Layer](<~kernel/internals/lcs/layers/writing-into-a-layer#trm-5-3-4>)). That is what keeps the tier boundary
+meaningful.
+
+<a id="trm-5-3-1-2"></a>
+
+## Caps
+
+`MaxTotalLayers`, default 1024, bounds the in-memory layer table, the
+base layer included: a table holding that many entries admits no more. <a id="cite-layer.model.max-total-layers-default-1024"></a>
+
+Creating a layer when it is full returns `ENOSPC`. The refusal happens
+at the creation of the metadata key under `Layers\`, before anything
+reaches the source, so a full table never leaves a metadata key behind
+that the table cannot publish. <a id="cite-layer.model.layer-table-full-is-enospc"></a>
+
+The table is sized to `MaxTotalLayers` rather than fixed at build. It
+is allocated on the first publication and grows, under the table lock,
+whenever a publication finds every slot taken while the configured
+bound still admits one more; it never shrinks. <a id="cite-layer.model.table-grows-to-max-total-layers"></a>
+
+So a value anywhere in the configurable range, 16 to 65536, binds.
+Raising `MaxTotalLayers` above the default admits layers past 1024;
+lowering it below the current occupancy admits no new layer until
+enough have been deleted, and discards nothing. <a id="cite-layer.model.max-total-layers-binds-across-the-range"></a>
+
+`MaxLayersPerValue`, default 128, bounds how many layers may write to
+the same `(key GUID, value name)` pair. <a id="cite-layer.model.max-layers-per-value-default-128"></a> It is a guard against
+amplification — every read of that value has to resolve every entry —
+not an access control boundary.
+
+It is enforced at `REG_IOC_SET_VALUE` time, before the source is
+contacted, by querying the source for the current entry count. <a id="cite-layer.model.max-layers-per-value-checked-at-set-value"></a>
+
+A write that replaces an existing entry in the *same* layer does not
+increase the count and is not checked. <a id="cite-layer.model.max-layers-per-value-same-layer-replace-exempt"></a>
+Exceeding the cap is `ENOSPC`. <a id="cite-layer.model.max-layers-per-value-exceeded-is-enospc"></a>
+
+The check is deliberately **best-effort admission control**, not a
+storage invariant. <a id="cite-layer.model.max-layers-per-value-is-best-effort"></a> It queries and then dispatches without holding
+anything, so concurrent writers can both observe room and both proceed.
+Sources are not required to enforce it atomically.
+
+Once LCS observes a count at or above the cap, further new-layer writes
+are refused. <a id="cite-layer.model.max-layers-per-value-refuses-once-observed-full"></a>
+
+Blanket tombstones and value deletions are not subject to it. <a id="cite-layer.model.max-layers-per-value-exempts-blankets-and-deletions"></a>
+
+<a id="trm-5-3-1-3"></a>
+
+## Layers are global; entries are per-source <a id="cite-layer.model.table-is-global-entries-are-per-source"></a>
+
+There is one authoritative layer table, held by the kernel. Each source
+stores layer *entries* — path entries and value writes tagged with
+layer name strings — for its own hives. Layer *metadata* is global and
+lives in one place.
+
+A source never needs the layer table. It stores what it is told, tagged
+with whatever name it is given, and returns everything on request. A
+source that has never seen a particular layer name simply stores
+entries carrying it. Resolution — precedence, enabled state, tombstone
+evaluation — happens entirely in the kernel, and the layer snapshot is
+passed into each operation rather than pushed to sources. There is no
+RSI operation that hands a source the layer list. <a id="cite-layer.model.no-rsi-operation-sends-the-layer-list"></a>

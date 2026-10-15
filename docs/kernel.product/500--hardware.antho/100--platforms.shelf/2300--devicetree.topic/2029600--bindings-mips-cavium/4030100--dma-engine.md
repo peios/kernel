@@ -1,0 +1,31 @@
+---
+title: "DMA Engine."
+type: reference
+description: "Device-tree binding reference for DMA Engine.."
+---
+
+The Octeon DMA Engine transfers between the Boot Bus and main memory.
+The DMA Engine will be referred to by phandle by any device that is
+connected to it.
+
+## Properties:
+
+- compatible: "cavium,octeon-5750-bootbus-dma"
+
+```text
+  Compatibility with all cn52XX, cn56XX and cn6XXX SOCs.
+```
+
+- reg: The base address of the DMA Engine's register bank.
+
+- interrupts: A single interrupt specifier.
+
+## Example:
+
+```dts
+	dma0: dma-engine@1180000000100 {
+		compatible = "cavium,octeon-5750-bootbus-dma";
+		reg = <0x11800 0x00000100 0x0 0x8>;
+		interrupts = <0 63>;
+	};
+```

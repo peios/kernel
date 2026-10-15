@@ -1,0 +1,10 @@
+---
+title: "Legacy eDP panels from before the \"edp-panel\" compatible"
+type: reference
+description: "Device-tree binding reference for Legacy eDP panels from before the \"edp-panel\" compatible."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/display/panel/panel-edp-legacy.yaml
+```

@@ -1,0 +1,40 @@
+---
+title: "J-Core SPI master"
+type: reference
+description: "Device-tree binding reference for J-Core SPI master."
+---
+
+## Required properties:
+
+- compatible: Must be "jcore,spi2".
+
+- reg: Memory region for registers.
+
+- #address-cells: Must be 1.
+
+- #size-cells: Must be 0.
+
+## Optional properties:
+
+- clocks: If a phandle named "ref\_clk" is present, SPI clock speed
+  programming is relative to the frequency of the indicated clock.
+  Necessary only if the input clock rate is something other than a
+  fixed 50 MHz.
+
+- clock-names: Clock names, one for each phandle in clocks.
+
+See [spi-bus.txt](<~kernel/hardware/devicetree/bindings-spi/spi-bus>) for additional properties not specific to this device.
+
+## Example:
+
+```dts
+spi@40 {
+	compatible = "jcore,spi2";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x40 0x8>;
+	spi-max-frequency = <25000000>;
+	clocks = <&bus_clk>;
+	clock-names = "ref_clk";
+}
+```
