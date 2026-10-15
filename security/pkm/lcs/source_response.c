@@ -119,8 +119,8 @@ long pkm_lcs_source_response_waiter_retain_frame(
 
 void pkm_lcs_source_response_waiter_complete_with_frame(
 	struct pkm_lcs_source_response_waiter *waiter, long response_errno,
-	const struct pkm_lcs_source_response_result *result,
-	const u8 *frame, size_t frame_len)
+	const struct pkm_lcs_source_response_result *result, const u8 *frame,
+	size_t frame_len)
 {
 	struct pkm_lcs_source_response_frame *retained_frame;
 	unsigned long flags;
@@ -134,8 +134,8 @@ void pkm_lcs_source_response_waiter_complete_with_frame(
 		if (!frame || !frame_len) {
 			response_errno = -EIO;
 		} else {
-			retained_frame->data = kmemdup(frame, frame_len,
-						       GFP_KERNEL);
+			retained_frame->data =
+				kmemdup(frame, frame_len, GFP_KERNEL);
 			if (!retained_frame->data)
 				response_errno = -ENOMEM;
 			else
@@ -240,8 +240,7 @@ long pkm_lcs_source_response_waiter_wait_until(
 			break;
 
 		ret = wait_event_interruptible_timeout(
-			waiter->wait, READ_ONCE(waiter->completed),
-			remaining);
+			waiter->wait, READ_ONCE(waiter->completed), remaining);
 		if (ret < 0) {
 			pkm_lcs_source_response_waiter_detach(waiter);
 			rc = ret;

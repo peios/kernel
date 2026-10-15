@@ -1,0 +1,3 @@
+# Kbuild has its own bounded parallelism (peios/build-settings.json).
+build --jobs=1
+test --test_output=errors

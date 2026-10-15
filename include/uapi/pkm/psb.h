@@ -18,18 +18,18 @@
  * is rejected. KACS_MIT_CFI is a legacy alias: requesting it sets both
  * KACS_MIT_CFIF and KACS_MIT_CFIB, and the alias bit itself is not retained.
  */
-#define KACS_MIT_WXP		0x001U	/* Write-XOR-Execute protection */
-#define KACS_MIT_TLP		0x002U	/* Trusted Library Paths */
-#define KACS_MIT_LSV		0x004U	/* Library Signature Verification */
-#define KACS_MIT_CFI		0x008U	/* legacy alias: CFIF | CFIB */
-#define KACS_MIT_UI_ACCESS	0x010U	/* UI interaction (reserved) */
-#define KACS_MIT_NO_CHILD	0x020U	/* cannot fork (one-way) */
-#define KACS_MIT_CFIF		0x040U	/* forward-edge CFI (Intel IBT) */
-#define KACS_MIT_CFIB		0x080U	/* backward-edge CFI (shadow stack) */
-#define KACS_MIT_PIE		0x100U	/* reject non-PIE binaries at exec */
-#define KACS_MIT_SML		0x200U	/* speculation mitigation lock */
+#define KACS_MIT_WXP 0x001U /* Write-XOR-Execute protection */
+#define KACS_MIT_TLP 0x002U /* Trusted Library Paths */
+#define KACS_MIT_LSV 0x004U /* Library Signature Verification */
+#define KACS_MIT_CFI 0x008U /* legacy alias: CFIF | CFIB */
+#define KACS_MIT_UI_ACCESS 0x010U /* UI interaction (reserved) */
+#define KACS_MIT_NO_CHILD 0x020U /* cannot fork (one-way) */
+#define KACS_MIT_CFIF 0x040U /* forward-edge CFI (Intel IBT) */
+#define KACS_MIT_CFIB 0x080U /* backward-edge CFI (shadow stack) */
+#define KACS_MIT_PIE 0x100U /* reject non-PIE binaries at exec */
+#define KACS_MIT_SML 0x200U /* speculation mitigation lock */
 
 /* All valid mitigation bits OR'd together — the accepted-request mask. */
-#define KACS_MIT_ALL		0x3FFU
+#define KACS_MIT_ALL 0x3FFU
 
 #endif /* _UAPI_PKM_PSB_H */

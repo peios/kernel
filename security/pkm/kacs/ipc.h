@@ -7,9 +7,9 @@
 struct kern_ipc_perm;
 
 /* Object kinds: the ipc_ids index order (ipc/util.h), for ipc_lsm_with_object. */
-#define PKM_KACS_IPC_SEM	0
-#define PKM_KACS_IPC_MSG	1
-#define PKM_KACS_IPC_SHM	2
+#define PKM_KACS_IPC_SEM 0
+#define PKM_KACS_IPC_MSG 1
+#define PKM_KACS_IPC_SHM 2
 
 /* System V IPC objects: LSM hooks (lsm.c) */
 int pkm_kacs_ipc_alloc_security(struct kern_ipc_perm *perm);

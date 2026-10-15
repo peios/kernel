@@ -19,11 +19,14 @@ pub const SYSTEM_ALARM_ACE_TYPE: u8 = crate::peios_uapi::KACS_ACE_TYPE_SYSTEM_AL
 pub const ACCESS_ALLOWED_OBJECT_ACE_TYPE: u8 =
     crate::peios_uapi::KACS_ACE_TYPE_ACCESS_ALLOWED_OBJECT as u8;
 /// ACE type for object-scoped access-denied ACEs.
-pub const ACCESS_DENIED_OBJECT_ACE_TYPE: u8 = crate::peios_uapi::KACS_ACE_TYPE_ACCESS_DENIED_OBJECT as u8;
+pub const ACCESS_DENIED_OBJECT_ACE_TYPE: u8 =
+    crate::peios_uapi::KACS_ACE_TYPE_ACCESS_DENIED_OBJECT as u8;
 /// ACE type for object-scoped system-audit ACEs.
-pub const SYSTEM_AUDIT_OBJECT_ACE_TYPE: u8 = crate::peios_uapi::KACS_ACE_TYPE_SYSTEM_AUDIT_OBJECT as u8;
+pub const SYSTEM_AUDIT_OBJECT_ACE_TYPE: u8 =
+    crate::peios_uapi::KACS_ACE_TYPE_SYSTEM_AUDIT_OBJECT as u8;
 /// ACE type for object-scoped system-alarm ACEs.
-pub const SYSTEM_ALARM_OBJECT_ACE_TYPE: u8 = crate::peios_uapi::KACS_ACE_TYPE_SYSTEM_ALARM_OBJECT as u8;
+pub const SYSTEM_ALARM_OBJECT_ACE_TYPE: u8 =
+    crate::peios_uapi::KACS_ACE_TYPE_SYSTEM_ALARM_OBJECT as u8;
 /// ACE type for callback access-allowed ACEs.
 pub const ACCESS_ALLOWED_CALLBACK_ACE_TYPE: u8 =
     crate::peios_uapi::KACS_ACE_TYPE_ACCESS_ALLOWED_CALLBACK as u8;

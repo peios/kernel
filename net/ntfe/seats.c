@@ -48,7 +48,7 @@
 struct peios_ntfe_stats peios_ntfe_stats;
 
 bool peios_ntfe_traversal_reaches_ip_seat(__be16 protocol,
-					 const struct net_device *dev)
+					  const struct net_device *dev)
 {
 	if (protocol != htons(ETH_P_IP) && protocol != htons(ETH_P_IPV6))
 		return false;
@@ -100,7 +100,7 @@ static unsigned int judge(struct sk_buff *skb,
 			strscpy(out.attributed, "fail-closed",
 				sizeof(out.attributed));
 			peios_ntfe_event_emit(snap, &out, layers[i],
-					     PEIOS_NTFE_EV_F_FAIL_CLOSED);
+					      PEIOS_NTFE_EV_F_FAIL_CLOSED);
 			return NF_DROP;
 		}
 
@@ -117,7 +117,8 @@ static unsigned int judge(struct sk_buff *skb,
 			continue;
 		case PEIOS_NTFE_VERDICT_REJECT:
 			atomic64_inc(&peios_ntfe_stats.verdict_reject);
-			if (!peios_ntfe_refuse(skb, state, snap, out.reject_kind))
+			if (!peios_ntfe_refuse(skb, state, snap,
+					       out.reject_kind))
 				evflags |= PEIOS_NTFE_EV_F_REJECT_DEGRADED;
 			peios_ntfe_event_emit(snap, &out, layers[i], evflags);
 			return NF_DROP;
@@ -140,7 +141,7 @@ static void build_snapshot(const struct sk_buff *skb,
 }
 
 unsigned int peios_ntfe_hook_ingress(void *priv, struct sk_buff *skb,
-				    const struct nf_hook_state *state)
+				     const struct nf_hook_state *state)
 {
 	/* RawPacket judges everything here; the Packet layer joins as
 	 * fallback iff the traversal never reaches its proper seat.
@@ -159,13 +160,13 @@ unsigned int peios_ntfe_hook_ingress(void *priv, struct sk_buff *skb,
 		atomic64_inc(&peios_ntfe_stats.fallback_judged);
 		n_layers = 2;
 	}
-	build_snapshot(skb, state->in, PEIOS_NTFE_SEAT_INGRESS, PEIOS_NTFE_DIR_IN,
-		       &snap);
+	build_snapshot(skb, state->in, PEIOS_NTFE_SEAT_INGRESS,
+		       PEIOS_NTFE_DIR_IN, &snap);
 	return judge(skb, state, &snap, layers, n_layers);
 }
 
 unsigned int peios_ntfe_hook_egress(void *priv, struct sk_buff *skb,
-				   const struct nf_hook_state *state)
+				    const struct nf_hook_state *state)
 {
 	/* Outbound traversal order: the Packet layer's proper seat, then
 	 * wire-proximate RawPacket last.
@@ -177,13 +178,13 @@ unsigned int peios_ntfe_hook_egress(void *priv, struct sk_buff *skb,
 	if (ntfe_bypass_refusal(skb))
 		return NF_ACCEPT;
 	atomic64_inc(&peios_ntfe_stats.seen_egress);
-	build_snapshot(skb, state->out, PEIOS_NTFE_SEAT_EGRESS, PEIOS_NTFE_DIR_OUT,
-		       &snap);
+	build_snapshot(skb, state->out, PEIOS_NTFE_SEAT_EGRESS,
+		       PEIOS_NTFE_DIR_OUT, &snap);
 	return judge(skb, state, &snap, layers, 2);
 }
 
 unsigned int peios_ntfe_hook_local_in(void *priv, struct sk_buff *skb,
-				     const struct nf_hook_state *state)
+				      const struct nf_hook_state *state)
 {
 	static const u8 layers[1] = { PEIOS_NTFE_LAYER_PACKET };
 	struct peios_ntfe_snapshot snap;
@@ -204,7 +205,7 @@ unsigned int peios_ntfe_hook_local_in(void *priv, struct sk_buff *skb,
 }
 
 unsigned int peios_ntfe_hook_local_out(void *priv, struct sk_buff *skb,
-				      const struct nf_hook_state *state)
+				       const struct nf_hook_state *state)
 {
 	struct peios_ntfe_snapshot snap;
 

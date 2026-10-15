@@ -123,8 +123,8 @@ struct pkm_kmes_event_policy_node_state {
  * itself (ABSENT when the key holds none, or does not exist). Pure.
  */
 u64 pkm_kmes_event_policy_resolve(
-	s8 root_setting,
-	const struct pkm_kmes_event_policy_node_state *nodes, u32 node_count);
+	s8 root_setting, const struct pkm_kmes_event_policy_node_state *nodes,
+	u32 node_count);
 
 /*
  * What a value contributes to the walk: the setting it gives, or @current

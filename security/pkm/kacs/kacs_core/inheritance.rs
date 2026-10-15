@@ -1,6 +1,4 @@
-use crate::access_mask::{
-    GenericMapping, GENERIC_ALL, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE,
-};
+use crate::access_mask::{GenericMapping, GENERIC_ALL, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE};
 use crate::ace::{
     minimum_acl_revision_for_ace_type, Ace, AceKind, ACCESS_ALLOWED_ACE_TYPE,
     ACCESS_ALLOWED_CALLBACK_ACE_TYPE, ACCESS_ALLOWED_CALLBACK_OBJECT_ACE_TYPE,
@@ -27,7 +25,8 @@ pub const OBJECT_INHERIT_ACE: u8 = crate::peios_uapi::KACS_ACE_FLAG_OBJECT_INHER
 /// ACE flag: inherit to container children.
 pub const CONTAINER_INHERIT_ACE: u8 = crate::peios_uapi::KACS_ACE_FLAG_CONTAINER_INHERIT as u8;
 /// ACE flag: clear object/container propagation flags on the inherited copy.
-pub const NO_PROPAGATE_INHERIT_ACE: u8 = crate::peios_uapi::KACS_ACE_FLAG_NO_PROPAGATE_INHERIT as u8;
+pub const NO_PROPAGATE_INHERIT_ACE: u8 =
+    crate::peios_uapi::KACS_ACE_FLAG_NO_PROPAGATE_INHERIT as u8;
 /// ACE flag: ACE exists only for inheritance and does not apply locally.
 pub const INHERIT_ONLY_ACE: u8 = crate::peios_uapi::KACS_ACE_FLAG_INHERIT_ONLY as u8;
 /// ACE flag: ACE was produced by inheritance.

@@ -34,9 +34,9 @@ long pkm_kacs_port_reservations_refresh_from_key(u32 source_id,
 						 const u8 port_guid[16])
 {
 	struct pkm_lcs_source_response_frame frame;
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_layer_snapshot layers = { };
-	struct pkm_lcs_runtime_limits limits = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_layer_snapshot layers = {};
+	struct pkm_lcs_runtime_limits limits = {};
 	u64 next_sequence = 0;
 	u8 *blob = NULL;
 	size_t blob_len = 0;
@@ -107,8 +107,8 @@ long pkm_kacs_port_reservations_root_discover_from_machine_hive(
 		{ .name = "PortReservations",
 		  .name_len = sizeof("PortReservations") - 1 },
 	};
-	struct pkm_lcs_resolved_key_path key = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_resolved_key_path key = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	long ret;
 
 	if (present_out)
@@ -122,10 +122,11 @@ long pkm_kacs_port_reservations_root_discover_from_machine_hive(
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_walk_absolute_components(
-		source_id, 0, machine_root_guid, port_path,
-		ARRAY_SIZE(port_path), layers.layers, layers.layer_count, NULL,
-		0, &key);
+	ret = pkm_lcs_walk_absolute_components(source_id, 0, machine_root_guid,
+					       port_path, ARRAY_SIZE(port_path),
+					       layers.layers,
+					       layers.layer_count, NULL, 0,
+					       &key);
 	if (ret == -ENOENT) {
 		ret = 0;
 		goto out_layers;

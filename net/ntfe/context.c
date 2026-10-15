@@ -92,7 +92,7 @@ int peios_ntfe_context_publish(struct peios_ntfe_context_table *table)
 }
 
 void peios_ntfe_context_fill(const char *ifname,
-			    struct peios_ntfe_snapshot *snap)
+			     struct peios_ntfe_snapshot *snap)
 {
 	const struct peios_ntfe_context_table *table;
 	u32 i;

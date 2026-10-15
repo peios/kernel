@@ -38,18 +38,16 @@
  * port floor never refuses a bind, so every claim reaches the reservation
  * check.
  */
-#define KACS_PORT_BIND			0x00000001U /* bind(2) to a port the selector contains */
+#define KACS_PORT_BIND 0x00000001U /* bind(2) to a port the selector contains */
 
-#define KACS_PORT_ALL_ACCESS \
-	(KACS_PORT_BIND | KACS_ACCESS_READ_CONTROL)
+#define KACS_PORT_ALL_ACCESS (KACS_PORT_BIND | KACS_ACCESS_READ_CONTROL)
 
 /* Protocol bits in a reservation selector. */
-#define KACS_PORT_PROTO_TCP		0x01U
-#define KACS_PORT_PROTO_UDP		0x02U
-#define KACS_PORT_PROTO_ALL \
-	(KACS_PORT_PROTO_TCP | KACS_PORT_PROTO_UDP)
+#define KACS_PORT_PROTO_TCP 0x01U
+#define KACS_PORT_PROTO_UDP 0x02U
+#define KACS_PORT_PROTO_ALL (KACS_PORT_PROTO_TCP | KACS_PORT_PROTO_UDP)
 
 /* Longest accepted selector name, in bytes: "tcp,udp:65535-65535". */
-#define KACS_PORT_SELECTOR_MAX_LEN	19U
+#define KACS_PORT_SELECTOR_MAX_LEN 19U
 
 #endif /* _UAPI_PKM_NET_H */

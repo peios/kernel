@@ -29,8 +29,8 @@ unsigned long stratafs_derive_ino(unsigned long fsid, u64 ino)
 	if (ino >> (BITS_PER_LONG - 1 - tag_bits))
 		return 0;
 	marker = 1UL << (bits - 1);
-	return ((unsigned long)ino << tag_bits) |
-	       ((fsid ^ marker) << bits) | marker;
+	return ((unsigned long)ino << tag_bits) | ((fsid ^ marker) << bits) |
+	       marker;
 }
 
 void stratafs_init_identities(struct stratafs_sb_info *sbi)
@@ -62,8 +62,8 @@ int stratafs_alloc_ino(struct super_block *sb, unsigned long *number)
 	s64 previous;
 
 	/* Saturate instead of wrapping or truncating on a 32-bit build. */
-	previous = atomic64_fetch_add_unless(&STRATAFS_SB(sb)->next_ino,
-					   1, high - 1);
+	previous = atomic64_fetch_add_unless(&STRATAFS_SB(sb)->next_ino, 1,
+					     high - 1);
 	if ((u64)previous >= high - 1)
 		return -EOVERFLOW;
 	*number = high | (unsigned long)(previous + 1);
@@ -71,7 +71,7 @@ int stratafs_alloc_ino(struct super_block *sb, unsigned long *number)
 }
 
 int stratafs_identity_number(struct super_block *sb, struct inode *provider,
-			    const struct kstat *stat, unsigned long *number)
+			     const struct kstat *stat, unsigned long *number)
 {
 	struct stratafs_sb_info *sbi = STRATAFS_SB(sb);
 	struct stratafs_identity *identity;
@@ -99,8 +99,8 @@ int stratafs_identity_number(struct super_block *sb, struct inode *provider,
 			if (fsid >= (1UL << (BITS_PER_LONG / 2 - 1)))
 				goto fallback;
 			ret = xa_err(xa_store(&sbi->filesystem_ids,
-				(unsigned long)stat->dev, xa_mk_value(fsid),
-				GFP_KERNEL));
+					      (unsigned long)stat->dev,
+					      xa_mk_value(fsid), GFP_KERNEL));
 			if (ret)
 				goto out;
 			sbi->next_filesystem_id = fsid;
@@ -125,7 +125,8 @@ fallback:
 	}
 	ret = stratafs_alloc_ino(sb, &identity->number);
 	if (!ret)
-		ret = xa_err(xa_store(&sbi->identities, key, identity, GFP_KERNEL));
+		ret = xa_err(
+			xa_store(&sbi->identities, key, identity, GFP_KERNEL));
 	if (ret) {
 		iput(identity->inode);
 		kfree(identity);
@@ -138,7 +139,7 @@ out:
 }
 
 int stratafs_provider_ino(struct super_block *sb, const struct path *provider,
-			 unsigned long *number)
+			  unsigned long *number)
 {
 	struct kstat stat;
 	const struct cred *old_cred;
@@ -267,7 +268,7 @@ fail:
 
 static struct stratafs_dentry_info *
 stratafs_file_dentry_info(const char *relative, const struct path *provider,
-			 unsigned int provider_index)
+			  unsigned int provider_index)
 {
 	struct stratafs_dentry_info *info;
 
@@ -322,14 +323,13 @@ int stratafs_detach_open_file(struct file *file, const struct path *provider,
 	relative = stratafs_inode_relative(old_inode);
 	if (IS_ERR(relative))
 		return PTR_ERR(relative);
-	dinfo = stratafs_file_dentry_info(relative, provider,
-					 provider_index);
+	dinfo = stratafs_file_dentry_info(relative, provider, provider_index);
 	if (IS_ERR(dinfo)) {
 		ret = PTR_ERR(dinfo);
 		goto out_relative;
 	}
 	private_inode = stratafs_new_inode(old_inode->i_sb, provider,
-					 provider_index, relative);
+					   provider_index, relative);
 	if (IS_ERR(private_inode)) {
 		ret = PTR_ERR(private_inode);
 		path_put(&dinfo->provider);
@@ -383,7 +383,8 @@ int stratafs_settle_open_directory(struct file *file,
 	int provider;
 	int ret;
 
-	provider = stratafs_provider_index(participants, STRATAFS_SB(sb)->count);
+	provider =
+		stratafs_provider_index(participants, STRATAFS_SB(sb)->count);
 	if (provider < 0)
 		return 0;
 	settled = kzalloc_obj(*settled, GFP_KERNEL);
@@ -396,8 +397,8 @@ int stratafs_settle_open_directory(struct file *file,
 		settled->path[i] = participants->path[i];
 		path_get(&settled->path[i]);
 	}
-	ret = stratafs_detach_open_file(
-		file, &participants->path[provider], provider);
+	ret = stratafs_detach_open_file(file, &participants->path[provider],
+					provider);
 	if (ret) {
 		stratafs_put_paths(settled, STRATAFS_SB(sb)->count);
 		kfree(settled);
@@ -408,8 +409,7 @@ int stratafs_settle_open_directory(struct file *file,
 	return 0;
 }
 
-int stratafs_rebind_dentry(struct dentry *dentry,
-			   const struct path *provider,
+int stratafs_rebind_dentry(struct dentry *dentry, const struct path *provider,
 			   unsigned int provider_index)
 {
 	struct inode *inode;
@@ -467,12 +467,11 @@ int stratafs_rebind_open_file(struct file *file, const struct path *provider,
 			      unsigned int provider_index)
 {
 	return stratafs_rebind_dentry(file->f_path.dentry, provider,
-				       provider_index);
+				      provider_index);
 }
 
 int stratafs_getattr(struct mnt_idmap *idmap, const struct path *path,
-			     struct kstat *stat, u32 request_mask,
-			     unsigned int flags)
+		     struct kstat *stat, u32 request_mask, unsigned int flags)
 {
 	struct path provider;
 	const struct cred *old_cred;
@@ -480,7 +479,8 @@ int stratafs_getattr(struct mnt_idmap *idmap, const struct path *path,
 
 	ret = stratafs_get_provider(path->dentry, &provider, NULL);
 	if (ret == -ENOENT && path->dentry == path->dentry->d_sb->s_root) {
-		generic_fillattr(idmap, request_mask, d_inode(path->dentry), stat);
+		generic_fillattr(idmap, request_mask, d_inode(path->dentry),
+				 stat);
 		stat->dev = path->dentry->d_sb->s_dev;
 		stat->ino = d_inode(path->dentry)->i_ino;
 		stat->nlink = 1;
@@ -488,7 +488,8 @@ int stratafs_getattr(struct mnt_idmap *idmap, const struct path *path,
 	}
 	if (ret)
 		return ret;
-	old_cred = override_creds(STRATAFS_SB(path->dentry->d_sb)->resolution_cred);
+	old_cred = override_creds(
+		STRATAFS_SB(path->dentry->d_sb)->resolution_cred);
 	ret = vfs_getattr_nosec(&provider, stat, request_mask, flags);
 	revert_creds(old_cred);
 	path_put(&provider);
@@ -543,7 +544,7 @@ int stratafs_notify_change(const struct path *provider,
 }
 
 int stratafs_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
-			     struct iattr *attr)
+		     struct iattr *attr)
 {
 	struct path provider;
 	struct file *metadata_file = NULL;
@@ -561,8 +562,9 @@ int stratafs_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
 	if (ret)
 		return ret;
 	route = stratafs_route_existing(dentry->d_sb, index, &provider,
-					 S_ISREG(inode->i_mode) || S_ISDIR(inode->i_mode) ||
-					 S_ISLNK(inode->i_mode));
+					S_ISREG(inode->i_mode) ||
+						S_ISDIR(inode->i_mode) ||
+						S_ISLNK(inode->i_mode));
 	path_put(&provider);
 	if (route == STRATAFS_ROUTE_READ_ONLY) {
 		stratafs_audit_refusal(dentry, "setattr", index, -EROFS, false);
@@ -605,7 +607,7 @@ static const char *stratafs_get_link(struct dentry *dentry, struct inode *inode,
 				     struct delayed_call *done)
 {
 	const char *(*get_link)(struct dentry *, struct inode *,
-			       struct delayed_call *);
+				struct delayed_call *);
 	struct inode *provider_inode;
 	struct path provider;
 	const char *link;
@@ -709,7 +711,8 @@ static void stratafs_put_super(struct super_block *sb)
  * escaping already makes it safe inside a comma-separated options string. So
  * it goes out verbatim: the key through seq_puts, then the value.
  */
-void stratafs_show_strata(struct seq_file *m, const struct stratafs_sb_info *sbi)
+void stratafs_show_strata(struct seq_file *m,
+			  const struct stratafs_sb_info *sbi)
 {
 	if (!sbi->display_options)
 		return;
@@ -765,9 +768,10 @@ static int stratafs_statfs(struct dentry *dentry, struct kstatfs *buf)
 	return ret;
 }
 
-static int stratafs_validate_mountpoint_recursive(
-	struct super_block *sb, const struct path *mountpoint,
-	struct super_block **visited, unsigned int depth)
+static int stratafs_validate_mountpoint_recursive(struct super_block *sb,
+						  const struct path *mountpoint,
+						  struct super_block **visited,
+						  unsigned int depth)
 {
 	struct stratafs_sb_info *sbi = STRATAFS_SB(sb);
 	unsigned int i;
@@ -785,8 +789,7 @@ static int stratafs_validate_mountpoint_recursive(
 		struct super_block *lower_sb;
 
 		ret = stratafs_resolve_one(sb, i, "", true, &stratum);
-		if (ret == -ENOENT &&
-		    (sbi->strata[i].flags & STRATAFS_F_AM))
+		if (ret == -ENOENT && (sbi->strata[i].flags & STRATAFS_F_AM))
 			continue;
 		if (ret)
 			return ret;
@@ -815,8 +818,8 @@ static int stratafs_validate_mountpoint(struct super_block *sb,
 
 	if (!mountpoint || !mountpoint->mnt || !mountpoint->dentry)
 		return -EINVAL;
-	return stratafs_validate_mountpoint_recursive(
-		sb, mountpoint, visited, 0);
+	return stratafs_validate_mountpoint_recursive(sb, mountpoint, visited,
+						      0);
 }
 
 static int stratafs_freeze_fs(struct super_block *sb)

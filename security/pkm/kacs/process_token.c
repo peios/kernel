@@ -52,8 +52,8 @@ static long pkm_kacs_open_process_token_core(
 	if (ret) {
 		trace_kacs_process_token_open((u64)(uintptr_t)subject_token,
 					      (u64)(uintptr_t)target_token,
-					      access_mask, KACS_PTO_ACCESS_DENIED,
-					      ret);
+					      access_mask,
+					      KACS_PTO_ACCESS_DENIED, ret);
 		return ret;
 	}
 
@@ -82,13 +82,14 @@ static long pkm_kacs_authorize_process_token_inspection_core(
 
 	if (!subject_token || !caller_state || !target_state || !target_token) {
 		trace_kacs_process_token_open((u64)(uintptr_t)subject_token, 0,
-					      KACS_TOKEN_QUERY, KACS_PTO_BAD_ARGS,
-					      -EACCES);
+					      KACS_TOKEN_QUERY,
+					      KACS_PTO_BAD_ARGS, -EACCES);
 		return -EACCES;
 	}
 	if (self_target) {
 		trace_kacs_process_token_open((u64)(uintptr_t)subject_token, 0,
-					      KACS_TOKEN_QUERY, KACS_PTO_SELF, 0);
+					      KACS_TOKEN_QUERY, KACS_PTO_SELF,
+					      0);
 		return 0;
 	}
 
@@ -126,8 +127,7 @@ static long pkm_kacs_open_process_token_inspection_core(
 }
 
 static int pkm_kacs_bind_process_token_inspection_file(
-	struct file *file,
-	const void *subject_token,
+	struct file *file, const void *subject_token,
 	const struct pkm_kacs_process_state *caller_state,
 	const struct pkm_kacs_process_state *target_state,
 	const void *target_token, bool self_target)
@@ -208,8 +208,8 @@ static long __maybe_unused pkm_kacs_open_process_token_inspection_task(
 	return ret;
 }
 
-static const struct cred *pkm_kacs_get_task_effective_cred(
-	struct task_struct *task)
+static const struct cred *
+pkm_kacs_get_task_effective_cred(struct task_struct *task)
 {
 	const struct cred *cred;
 
@@ -396,8 +396,8 @@ SYSCALL_DEFINE2(kacs_open_process_token, int, pidfd, u32, access_mask)
 	if (!task)
 		return -ESRCH;
 
-	ret = pkm_kacs_open_process_token_task(subject_token, caller_state, task,
-					       access_mask);
+	ret = pkm_kacs_open_process_token_task(subject_token, caller_state,
+					       task, access_mask);
 	put_task_struct(task);
 	return ret;
 }

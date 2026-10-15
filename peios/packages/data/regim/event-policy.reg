@@ -1,0 +1,41 @@
+{
+  "_comment": [
+    "The event emission policy (PGSS §6.9): Machine\\Generic\\Events holds",
+    "one key per event-type segment, any of which may carry an Enabled",
+    "REG_DWORD of 0 or 1; the deepest on a type's path decides, and the",
+    "type's tier decides where none does -- standard on, verbose and debug",
+    "off. Essential types never consult it.",
+    "",
+    "This seed sets no Enabled anywhere: with nothing set, the tiers decide,",
+    "which is the policy a machine ships with. It creates the key so the",
+    "policy has a home an administrator writes beneath, and so the key's",
+    "descriptor has something to ride on:",
+    "",
+    "    S:(AL;CI;0x10002;;;WD)",
+    "",
+    "a SYSTEM_ALARM ACE for Everyone, inherited by every key beneath, over",
+    "KEY_SET_VALUE (0x2) | DELETE (0x10000). A handle opened for writing",
+    "anywhere in the tree carries that continuous-audit mask, so each change",
+    "to what is recorded is itself recorded (PGSS §6.9: a SACL that audits",
+    "writes). Only the SACL is given; the owner and DACL stay inherited from",
+    "the Machine hive (Administrators and SYSTEM full, Authenticated Users",
+    "read), which is what §6.9 asks for. Setting a SACL needs",
+    "SeSecurityPrivilege, which autoapply, running as SYSTEM, holds.",
+    "",
+    "Every emitter reads the tree: the kernel (kmes/event_policy.c, a watch",
+    "on this key, a change applied within about 50 ms plus one walk), and",
+    "libpeios, peios-rs and libp-go for userspace components.",
+    "",
+    "Shipped by the kernel package into /usr/share/regim/; inert until an",
+    "image names it in [registry] autoapply. Until it is applied the key does",
+    "not exist, every emitter still decides by tier, and the kernel keeps its",
+    "machine-root fallback watch armed to notice the key being created."
+  ],
+  "keys": [
+    { "path": "Machine\\Generic" },
+    {
+      "path": "Machine\\Generic\\Events",
+      "descriptor": "S:(AL;CI;0x10002;;;WD)"
+    }
+  ]
+}

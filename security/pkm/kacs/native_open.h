@@ -18,9 +18,9 @@
  * §3.2.3). The intents never reach path lookup.
  */
 #define PKM_KACS_OPEN_INTENT_FLAGS (KACS_BACKUP_INTENT | KACS_RESTORE_INTENT)
-#define PKM_KACS_OPEN_ALLOWED_AT_FLAGS                                        \
+#define PKM_KACS_OPEN_ALLOWED_AT_FLAGS \
 	(AT_SYMLINK_NOFOLLOW | PKM_KACS_OPEN_INTENT_FLAGS)
-#define PKM_KACS_DIRECTORY_MUTATION_RIGHTS                                 \
+#define PKM_KACS_DIRECTORY_MUTATION_RIGHTS \
 	(KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA | KACS_FILE_DELETE_CHILD)
 
 struct kacs_open_how;
@@ -31,16 +31,18 @@ long pkm_kacs_prepare_native_open(
 	const struct kacs_open_how *how,
 	struct pkm_kacs_native_open_prepared *prepared);
 bool pkm_kacs_file_delete_on_close_pending(const struct file *file);
-long pkm_kacs_maybe_arm_delete_on_close_for_subject(
-	const void *subject_token, struct file *file, u32 create_options);
+long pkm_kacs_maybe_arm_delete_on_close_for_subject(const void *subject_token,
+						    struct file *file,
+						    u32 create_options);
 bool pkm_kacs_native_open_request_matches(struct file *file,
 					  u32 *desired_access_out,
 					  u32 *create_options_out,
 					  u32 *privilege_intent_out);
 
-void pkm_kacs_set_current_native_open_request(
-	const struct path *path, u32 desired_access, u32 create_options,
-	u32 privilege_intent);
+void pkm_kacs_set_current_native_open_request(const struct path *path,
+					      u32 desired_access,
+					      u32 create_options,
+					      u32 privilege_intent);
 void pkm_kacs_clear_current_native_open_request(void);
 void pkm_kacs_set_current_native_create_request(
 	const struct inode *parent_inode, bool directory, const u8 *sd_bytes,

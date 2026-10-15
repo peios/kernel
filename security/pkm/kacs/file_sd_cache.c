@@ -61,7 +61,8 @@ static long pkm_kacs_superblock_synthesis_snapshot(const struct super_block *sb,
 		return 0;
 	}
 
-	copy = kmemdup(sec->template_sd_bytes, sec->template_sd_len, GFP_KERNEL);
+	copy = kmemdup(sec->template_sd_bytes, sec->template_sd_len,
+		       GFP_KERNEL);
 	if (!copy) {
 		mutex_unlock(&sec->lock);
 		return -ENOMEM;
@@ -115,9 +116,9 @@ static u8 pkm_kacs_inode_sd_default_source(u8 state)
 	}
 }
 
-struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_sd_cache_alloc_ex(
-	u8 state, const u8 *bytes, size_t len, u8 source,
-	u32 policy_generation)
+struct pkm_kacs_inode_sd_cache *
+pkm_kacs_inode_sd_cache_alloc_ex(u8 state, const u8 *bytes, size_t len,
+				 u8 source, u32 policy_generation)
 {
 	struct pkm_kacs_inode_sd_cache *cache;
 
@@ -143,15 +144,15 @@ struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_sd_cache_alloc_ex(
 	return cache;
 }
 
-struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_sd_cache_alloc(
-	u8 state, const u8 *bytes, size_t len)
+struct pkm_kacs_inode_sd_cache *
+pkm_kacs_inode_sd_cache_alloc(u8 state, const u8 *bytes, size_t len)
 {
 	return pkm_kacs_inode_sd_cache_alloc_ex(
 		state, bytes, len, pkm_kacs_inode_sd_default_source(state), 0);
 }
 
 bool pkm_kacs_inode_sd_cache_current(const struct super_block *sb,
-					    const struct pkm_kacs_inode_sd_cache *cache)
+				     const struct pkm_kacs_inode_sd_cache *cache)
 {
 	if (!cache)
 		return false;
@@ -173,14 +174,13 @@ bool pkm_kacs_inode_sd_cache_current(const struct super_block *sb,
  * entries and entries installed by set_sd. The root can also change provider
  * without notification (PEI-575). This does not change a file's frozen grant.
  */
-static bool pkm_kacs_inode_sd_cache_rereads_each_time(
-	const struct inode *inode)
+static bool pkm_kacs_inode_sd_cache_rereads_each_time(const struct inode *inode)
 {
 	return inode->i_sb->s_magic == STRATAFS_SUPER_MAGIC;
 }
 
-static void pkm_kacs_inode_sd_cache_destroy(
-	struct pkm_kacs_inode_sd_cache *cache)
+static void
+pkm_kacs_inode_sd_cache_destroy(struct pkm_kacs_inode_sd_cache *cache)
 {
 	if (!cache)
 		return;
@@ -254,8 +254,9 @@ void pkm_kacs_stratafs_invalidate_sd_cache(struct inode *inode)
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-static ssize_t pkm_kacs_kunit_fake_getxattr_locked(
-	struct pkm_kacs_inode_security *sec, void *buffer, size_t size)
+static ssize_t
+pkm_kacs_kunit_fake_getxattr_locked(struct pkm_kacs_inode_security *sec,
+				    void *buffer, size_t size)
 {
 	if (!sec->kunit_fake_xattr_enabled)
 		return -EOPNOTSUPP;
@@ -272,8 +273,8 @@ static ssize_t pkm_kacs_kunit_fake_getxattr_locked(
 	return (ssize_t)sec->kunit_fake_xattr_len;
 }
 
-long pkm_kacs_kunit_fake_setxattr_locked(
-	struct pkm_kacs_inode_security *sec, const u8 *sd_bytes, size_t sd_len)
+long pkm_kacs_kunit_fake_setxattr_locked(struct pkm_kacs_inode_security *sec,
+					 const u8 *sd_bytes, size_t sd_len)
 {
 	const u8 *copied_bytes;
 
@@ -343,8 +344,9 @@ static long pkm_kacs_inode_alloc_corrupt_sd_cache(
 	return 0;
 }
 
-static long pkm_kacs_inode_read_sd_xattr(struct file *file,
-					 struct pkm_kacs_inode_sd_cache **cache_out)
+static long
+pkm_kacs_inode_read_sd_xattr(struct file *file,
+			     struct pkm_kacs_inode_sd_cache **cache_out)
 {
 	struct dentry *dentry;
 	struct inode *inode;
@@ -370,8 +372,7 @@ static long pkm_kacs_inode_read_sd_xattr(struct file *file,
 		mutex_lock(&sec->lock);
 		len = pkm_kacs_kunit_fake_getxattr_locked(sec, NULL, 0);
 		mutex_unlock(&sec->lock);
-	}
-	else
+	} else
 #endif
 	{
 		/*
@@ -398,9 +399,8 @@ static long pkm_kacs_inode_read_sd_xattr(struct file *file,
 	if (len < 0)
 		return len;
 	if (len == 0 || len > PKM_KACS_MAX_SD_BYTES) {
-		trace_kacs_sd_cache_corrupt(inode,
-					    KACS_SDC_CORRUPT_EMPTY_OR_OVERSIZE,
-					    (u32)len);
+		trace_kacs_sd_cache_corrupt(
+			inode, KACS_SDC_CORRUPT_EMPTY_OR_OVERSIZE, (u32)len);
 		return pkm_kacs_inode_alloc_corrupt_sd_cache(inode, len,
 							     cache_out);
 	}
@@ -414,8 +414,7 @@ static long pkm_kacs_inode_read_sd_xattr(struct file *file,
 		mutex_lock(&sec->lock);
 		ret = pkm_kacs_kunit_fake_getxattr_locked(sec, bytes, len);
 		mutex_unlock(&sec->lock);
-	}
-	else
+	} else
 #endif
 	{
 		if (current && current->security)
@@ -430,8 +429,8 @@ static long pkm_kacs_inode_read_sd_xattr(struct file *file,
 	}
 	if (ret != len || kacs_rust_validate_stored_sd_bytes(bytes, len) != 0) {
 		pkm_kacs_free(bytes);
-		trace_kacs_sd_cache_corrupt(inode, KACS_SDC_CORRUPT_VALIDATE_FAIL,
-					    (u32)len);
+		trace_kacs_sd_cache_corrupt(
+			inode, KACS_SDC_CORRUPT_VALIDATE_FAIL, (u32)len);
 		return pkm_kacs_inode_alloc_corrupt_sd_cache(inode, len,
 							     cache_out);
 	}
@@ -492,7 +491,7 @@ retry:
 	published = rcu_dereference_protected(sec->sd_cache,
 					      lockdep_is_held(&sec->lock));
 	if ((reread ? invalidation != sec->sd_cache_invalidation :
-	     (published != cache || epoch != sec->sd_cache_epoch)) ||
+		      (published != cache || epoch != sec->sd_cache_epoch)) ||
 	    generation != pkm_kacs_superblock_policy_generation(inode->i_sb)) {
 		pkm_kacs_inode_sd_cache_free(fresh);
 		pkm_kacs_inode_sd_cache_free(cache);
@@ -545,12 +544,14 @@ retry:
 long pkm_kacs_inode_resolve_effective_cache_locked(
 	struct file *file, struct pkm_kacs_inode_security *sec,
 	struct pkm_kacs_inode_sd_cache **cache_out, unsigned int depth);
-static void pkm_kacs_inode_queue_sd_persist(
-	struct file *file, struct pkm_kacs_inode_security *sec);
+static void
+pkm_kacs_inode_queue_sd_persist(struct file *file,
+				struct pkm_kacs_inode_security *sec);
 
-static long pkm_kacs_synthesize_missing_file_sd(struct file *file,
-						struct pkm_kacs_inode_sd_cache **cache_out,
-						unsigned int depth)
+static long
+pkm_kacs_synthesize_missing_file_sd(struct file *file,
+				    struct pkm_kacs_inode_sd_cache **cache_out,
+				    unsigned int depth)
 {
 	struct pkm_kacs_inode_sd_cache *new_cache = NULL;
 	struct pkm_kacs_inode_sd_cache *parent_cache = NULL;
@@ -582,11 +583,9 @@ static long pkm_kacs_synthesize_missing_file_sd(struct file *file,
 	if (!inode || !dentry)
 		return -EACCES;
 
-	ret = pkm_kacs_superblock_synthesis_snapshot(inode->i_sb,
-						     &template_sd_ptr,
-						     &template_sd_len,
-						     &mount_policy,
-						     &policy_generation);
+	ret = pkm_kacs_superblock_synthesis_snapshot(
+		inode->i_sb, &template_sd_ptr, &template_sd_len, &mount_policy,
+		&policy_generation);
 	if (ret)
 		return ret;
 	if (mount_policy != KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL &&
@@ -633,17 +632,19 @@ static long pkm_kacs_synthesize_missing_file_sd(struct file *file,
 		mutex_unlock(&parent_sec->lock);
 		parent_sd_ptr = parent_cache->bytes;
 		parent_sd_len = parent_cache->len;
-		ret = kacs_rust_synthesize_file_sd(
-			parent_sd_ptr, parent_sd_len, template_sd_ptr,
-			template_sd_len, S_ISDIR(inode->i_mode), &new_sd_bytes,
-			&new_sd_len);
+		ret = kacs_rust_synthesize_file_sd(parent_sd_ptr, parent_sd_len,
+						   template_sd_ptr,
+						   template_sd_len,
+						   S_ISDIR(inode->i_mode),
+						   &new_sd_bytes, &new_sd_len);
 		pkm_kacs_inode_sd_cache_free(parent_cache);
 		if (ret)
 			goto out_template;
 	} else {
-		ret = kacs_rust_synthesize_file_sd(
-			NULL, 0, template_sd_ptr, template_sd_len,
-			S_ISDIR(inode->i_mode), &new_sd_bytes, &new_sd_len);
+		ret = kacs_rust_synthesize_file_sd(NULL, 0, template_sd_ptr,
+						   template_sd_len,
+						   S_ISDIR(inode->i_mode),
+						   &new_sd_bytes, &new_sd_len);
 		if (ret)
 			goto out_template;
 	}
@@ -726,8 +727,8 @@ retry:
 				      lockdep_is_held(&sec->lock)) != cache ||
 	    epoch != sec->sd_cache_epoch ||
 	    !pkm_kacs_inode_sd_cache_current(file_inode(file)->i_sb, cache) ||
-	    (fresh && !pkm_kacs_inode_sd_cache_current(file_inode(file)->i_sb,
-						     fresh))) {
+	    (fresh &&
+	     !pkm_kacs_inode_sd_cache_current(file_inode(file)->i_sb, fresh))) {
 		pkm_kacs_inode_sd_cache_free(fresh);
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto retry;
@@ -753,8 +754,9 @@ static bool pkm_kacs_missing_cache_requires_synthesis(
 	       mount_policy == KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT;
 }
 
-static const struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_current_cache_rcu(
-	const struct inode *inode, const struct pkm_kacs_inode_security *sec)
+static const struct pkm_kacs_inode_sd_cache *
+pkm_kacs_inode_current_cache_rcu(const struct inode *inode,
+				 const struct pkm_kacs_inode_security *sec)
 {
 	const struct pkm_kacs_inode_sd_cache *cache;
 
@@ -778,8 +780,9 @@ static const struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_current_cache_rcu(
 	return cache;
 }
 
-struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_sd_cache_get_current(
-	const struct inode *inode, const struct pkm_kacs_inode_security *sec)
+struct pkm_kacs_inode_sd_cache *
+pkm_kacs_inode_sd_cache_get_current(const struct inode *inode,
+				    const struct pkm_kacs_inode_security *sec)
 {
 	const struct pkm_kacs_inode_sd_cache *cache;
 	struct pkm_kacs_inode_sd_cache *candidate;
@@ -795,8 +798,9 @@ struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_sd_cache_get_current(
 	return owned;
 }
 
-long pkm_kacs_inode_get_effective_cache(struct file *file, struct pkm_kacs_inode_security *sec,
-					struct pkm_kacs_inode_sd_cache **cache_out)
+long pkm_kacs_inode_get_effective_cache(
+	struct file *file, struct pkm_kacs_inode_security *sec,
+	struct pkm_kacs_inode_sd_cache **cache_out)
 {
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct pkm_kacs_inode_sd_cache *locked_cache = NULL;
@@ -816,9 +820,10 @@ long pkm_kacs_inode_get_effective_cache(struct file *file, struct pkm_kacs_inode
 
 	cache = pkm_kacs_inode_sd_cache_get_current(inode, sec);
 	if (cache) {
-		bool pending = cache->state == PKM_KACS_INODE_SD_VALID &&
-			       cache->source ==
-				       PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING;
+		bool pending =
+			cache->state == PKM_KACS_INODE_SD_VALID &&
+			cache->source ==
+				PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING;
 		bool reread = pkm_kacs_inode_sd_cache_rereads_each_time(inode);
 
 		if (reread) {
@@ -866,7 +871,8 @@ resolve:
 	 */
 	if (ret == 0 && locked_cache &&
 	    locked_cache->state == PKM_KACS_INODE_SD_VALID &&
-	    locked_cache->source == PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING &&
+	    locked_cache->source ==
+		    PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING &&
 	    !sec->persist_work_queued) {
 		sec->persist_work_queued = true;
 		needs_persist = true;
@@ -879,7 +885,8 @@ resolve:
 }
 
 /* Population-only callers do not retain a descriptor snapshot. */
-long pkm_kacs_inode_ensure_effective_cache(struct file *file, struct pkm_kacs_inode_security *sec)
+long pkm_kacs_inode_ensure_effective_cache(struct file *file,
+					   struct pkm_kacs_inode_security *sec)
 {
 	struct pkm_kacs_inode_sd_cache *cache = NULL;
 	long ret;
@@ -913,9 +920,10 @@ long pkm_kacs_inode_ensure_effective_cache_by_inode(
 	 */
 	cache = pkm_kacs_inode_sd_cache_get_current(inode, sec);
 	if (cache) {
-		bool pending = cache->state == PKM_KACS_INODE_SD_VALID &&
-			       cache->source ==
-				       PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING;
+		bool pending =
+			cache->state == PKM_KACS_INODE_SD_VALID &&
+			cache->source ==
+				PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING;
 		bool reread = pkm_kacs_inode_sd_cache_rereads_each_time(inode);
 
 		pkm_kacs_inode_sd_cache_free(cache);
@@ -947,9 +955,11 @@ long pkm_kacs_inode_ensure_effective_cache_by_inode(
 	return ret;
 }
 
-static long pkm_kacs_inode_write_sd_xattr_dentry_locked(
-	struct mnt_idmap *idmap, struct dentry *dentry, struct inode *inode,
-	const u8 *sd_bytes, size_t sd_len)
+static long pkm_kacs_inode_write_sd_xattr_dentry_locked(struct mnt_idmap *idmap,
+							struct dentry *dentry,
+							struct inode *inode,
+							const u8 *sd_bytes,
+							size_t sd_len)
 {
 	struct pkm_kacs_inode_security *sec;
 	int ret;
@@ -962,7 +972,8 @@ static long pkm_kacs_inode_write_sd_xattr_dentry_locked(
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 	if (sec && sec->kunit_fake_xattr_enabled)
-		return pkm_kacs_kunit_fake_setxattr_locked(sec, sd_bytes, sd_len);
+		return pkm_kacs_kunit_fake_setxattr_locked(sec, sd_bytes,
+							   sd_len);
 #endif
 
 	inode_lock(inode);
@@ -984,15 +995,15 @@ static long pkm_kacs_inode_write_sd_xattr_dentry_locked(
 	return ret;
 }
 
-long pkm_kacs_inode_write_sd_xattr_locked(struct file *file,
-						 const u8 *sd_bytes,
-						 size_t sd_len)
+long pkm_kacs_inode_write_sd_xattr_locked(struct file *file, const u8 *sd_bytes,
+					  size_t sd_len)
 {
 	if (!file)
 		return -EINVAL;
-	return pkm_kacs_inode_write_sd_xattr_dentry_locked(
-		file_mnt_idmap(file), file_dentry(file), file_inode(file),
-		sd_bytes, sd_len);
+	return pkm_kacs_inode_write_sd_xattr_dentry_locked(file_mnt_idmap(file),
+							   file_dentry(file),
+							   file_inode(file),
+							   sd_bytes, sd_len);
 }
 
 /*
@@ -1011,17 +1022,16 @@ struct pkm_kacs_sd_persist_work {
 	struct dentry *dentry;
 };
 
-static void pkm_kacs_inode_clear_persist_claim(
-	struct pkm_kacs_inode_security *sec)
+static void
+pkm_kacs_inode_clear_persist_claim(struct pkm_kacs_inode_security *sec)
 {
 	mutex_lock(&sec->lock);
 	sec->persist_work_queued = false;
 	mutex_unlock(&sec->lock);
 }
 
-void pkm_kacs_inode_run_sd_persist(struct dentry *dentry,
-					  struct inode *inode,
-					  struct pkm_kacs_inode_security *sec)
+void pkm_kacs_inode_run_sd_persist(struct dentry *dentry, struct inode *inode,
+				   struct pkm_kacs_inode_security *sec)
 {
 	struct pkm_kacs_inode_sd_cache *cur;
 	struct pkm_kacs_inode_sd_cache *promoted;
@@ -1058,9 +1068,8 @@ void pkm_kacs_inode_run_sd_persist(struct dentry *dentry,
 	 * Best-effort. On failure the entry stays SYNTHETIC_PENDING and simply
 	 * re-synthesizes (and is offered for write-back again) later.
 	 */
-	if (pkm_kacs_inode_write_sd_xattr_dentry_locked(&nop_mnt_idmap, dentry,
-						       inode, snapshot,
-						       snapshot_len)) {
+	if (pkm_kacs_inode_write_sd_xattr_dentry_locked(
+		    &nop_mnt_idmap, dentry, inode, snapshot, snapshot_len)) {
 		kfree(snapshot);
 		return;
 	}
@@ -1111,8 +1120,8 @@ static void pkm_kacs_inode_sd_persist_work_fn(struct callback_head *cb)
 	kfree(work);
 }
 
-static void pkm_kacs_inode_queue_sd_persist(
-	struct file *file, struct pkm_kacs_inode_security *sec)
+static void pkm_kacs_inode_queue_sd_persist(struct file *file,
+					    struct pkm_kacs_inode_security *sec)
 {
 	struct pkm_kacs_sd_persist_work *work;
 	struct dentry *dentry;
@@ -1178,7 +1187,7 @@ struct pkm_sd_test_fixture {
 	struct pkm_sd_test_contention *contention;
 	struct dentry *chain[PKM_SD_TEST_LEVELS];
 	struct file files[PKM_SD_TEST_LEVELS];
-	const struct xattr_handler * const *old_handlers;
+	const struct xattr_handler *const *old_handlers;
 	struct pkm_kacs_inode_sd_cache *replacement;
 	struct inode *trigger;
 	struct inode *target;
@@ -1196,8 +1205,8 @@ static int pkm_sd_test_contended_xattr(struct pkm_sd_test_contention *c,
 				       void *buffer, size_t size)
 {
 	static const u8 sd[] = {
-		1, 0, 0, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+		1, 0, 0, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0,
+		0, 0, 0, 0,   1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
 	};
 	struct pkm_sd_test_reader *r = NULL;
 	u8 state;
@@ -1212,7 +1221,8 @@ static int pkm_sd_test_contended_xattr(struct pkm_sd_test_contention *c,
 	if (!r)
 		return -EIO;
 	state = c->latest_missing && r->index == PKM_SD_TEST_READERS - 1 ?
-		PKM_KACS_INODE_SD_MISSING : c->state;
+			PKM_KACS_INODE_SD_MISSING :
+			c->state;
 	if (!buffer)
 		r->probes++;
 	if (buffer) {
@@ -1221,8 +1231,7 @@ static int pkm_sd_test_contended_xattr(struct pkm_sd_test_contention *c,
 		memcpy(buffer, sd, sizeof(sd));
 		((u8 *)buffer)[28] += r->index + READ_ONCE(c->revision);
 	}
-	if (r->probes == 1 &&
-	    (buffer || state != PKM_KACS_INODE_SD_VALID)) {
+	if (r->probes == 1 && (buffer || state != PKM_KACS_INODE_SD_VALID)) {
 		complete(&r->entered);
 		wait_for_completion(&r->release);
 	}
@@ -1259,14 +1268,15 @@ static int pkm_sd_test_getxattr(const struct xattr_handler *handler,
 				return -EDEADLK;
 			if (f->empty_round_trip) {
 				refcount_inc(&f->replacement->refs);
-				pkm_kacs_inode_replace_sd_cache_locked(sec,
-								       f->replacement);
+				pkm_kacs_inode_replace_sd_cache_locked(
+					sec, f->replacement);
 			}
 			pkm_kacs_inode_replace_sd_cache_locked(sec, NULL);
 			mutex_unlock(&sec->lock);
 			f->interference++;
 			/* Bytes from before that invalidation must not be published. */
-			memcpy(buffer, f->replacement->bytes, f->replacement->len);
+			memcpy(buffer, f->replacement->bytes,
+			       f->replacement->len);
 		}
 		return f->replacement->len;
 	}
@@ -1286,7 +1296,8 @@ static int pkm_sd_test_getxattr(const struct xattr_handler *handler,
 
 		mutex_lock(&sb_sec->lock);
 		sb_sec->policy_generation =
-			pkm_kacs_next_mount_policy_generation(sb_sec->policy_generation);
+			pkm_kacs_next_mount_policy_generation(
+				sb_sec->policy_generation);
 		mutex_unlock(&sb_sec->lock);
 		f->interference++;
 	}
@@ -1317,7 +1328,7 @@ static const struct xattr_handler pkm_sd_test_xattr_handler = {
 	.get = pkm_sd_test_getxattr,
 };
 
-static const struct xattr_handler * const pkm_sd_test_handlers[] = {
+static const struct xattr_handler *const pkm_sd_test_handlers[] = {
 	&pkm_sd_test_xattr_handler,
 	NULL,
 };
@@ -1364,8 +1375,8 @@ pkm_sd_test_fixture(struct kunit *test, unsigned int levels, u32 policy)
 	sb_sec = pkm_kacs_sb(f->mnt->mnt_sb);
 	mutex_lock(&sb_sec->lock);
 	sb_sec->mount_policy = policy;
-	sb_sec->policy_generation =
-		pkm_kacs_next_mount_policy_generation(sb_sec->policy_generation);
+	sb_sec->policy_generation = pkm_kacs_next_mount_policy_generation(
+		sb_sec->policy_generation);
 	mutex_unlock(&sb_sec->lock);
 	for (i = 0; i < levels; i++) {
 		struct pkm_kacs_inode_security *sec;
@@ -1399,18 +1410,19 @@ pkm_sd_test_fixture(struct kunit *test, unsigned int levels, u32 policy)
 	return f;
 }
 
-static long pkm_sd_test_resolve(struct pkm_sd_test_fixture *f, unsigned int index)
+static long pkm_sd_test_resolve(struct pkm_sd_test_fixture *f,
+				unsigned int index)
 {
 	struct file *file = &f->files[index];
 
-	return pkm_kacs_inode_ensure_effective_cache(file,
-						   pkm_kacs_inode(file_inode(file)));
+	return pkm_kacs_inode_ensure_effective_cache(
+		file, pkm_kacs_inode(file_inode(file)));
 }
 
 static void pkm_sd_test_resolve_chain(struct kunit *test)
 {
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test, 6,
-		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT);
+	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(
+		test, 6, KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT);
 	struct pkm_kacs_inode_security *sec;
 	unsigned int i;
 
@@ -1434,8 +1446,9 @@ static void pkm_sd_test_resolve_chain(struct kunit *test)
 
 static void pkm_sd_test_depth_bound(struct kunit *test)
 {
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test,
-		PKM_SD_TEST_LEVELS, KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
+	struct pkm_sd_test_fixture *f =
+		pkm_sd_test_fixture(test, PKM_SD_TEST_LEVELS,
+				    KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
 
 	KUNIT_ASSERT_NOT_NULL(test, f);
 	KUNIT_EXPECT_EQ(test, pkm_sd_test_resolve(f, 32), -EACCES);
@@ -1444,15 +1457,16 @@ static void pkm_sd_test_depth_bound(struct kunit *test)
 }
 
 static void pkm_sd_test_replacement(struct kunit *test, bool in_ancestor,
-				    bool empty_invalidation, bool empty_round_trip)
+				    bool empty_invalidation,
+				    bool empty_round_trip)
 {
 	/* SYSTEM owner with a NULL DACL; the cache pointer identifies the winner. */
 	static const u8 sd[] = {
-		1, 0, 0, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+		1, 0, 0, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0,
+		0, 0, 0, 0,   1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
 	};
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test, 2,
-		KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
+	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(
+		test, 2, KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
 	struct pkm_kacs_inode_sd_cache *cache;
 	const u8 *bytes;
 
@@ -1506,8 +1520,8 @@ static void pkm_sd_test_empty_round_trip(struct kunit *test)
 
 static void pkm_sd_test_generation_during_parent(struct kunit *test)
 {
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test, 2,
-		KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
+	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(
+		test, 2, KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct inode *inode;
 
@@ -1517,7 +1531,8 @@ static void pkm_sd_test_generation_during_parent(struct kunit *test)
 	inode = file_inode(&f->files[1]);
 	KUNIT_ASSERT_EQ(test, pkm_sd_test_resolve(f, 1), 0L);
 	KUNIT_EXPECT_EQ(test, f->interference, 1U);
-	cache = pkm_kacs_inode_sd_cache_get_current(inode, pkm_kacs_inode(inode));
+	cache = pkm_kacs_inode_sd_cache_get_current(inode,
+						    pkm_kacs_inode(inode));
 	KUNIT_ASSERT_NOT_NULL(test, cache);
 	KUNIT_EXPECT_EQ(test, cache->policy_generation,
 			pkm_kacs_superblock_policy_generation(inode->i_sb));
@@ -1527,8 +1542,8 @@ static void pkm_sd_test_generation_during_parent(struct kunit *test)
 
 static void pkm_sd_test_stale_read_error(struct kunit *test)
 {
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test, 1,
-		KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
+	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(
+		test, 1, KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
 	struct pkm_kacs_superblock_security *sb_sec;
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct inode *inode;
@@ -1537,13 +1552,14 @@ static void pkm_sd_test_stale_read_error(struct kunit *test)
 	KUNIT_ASSERT_EQ(test, pkm_sd_test_resolve(f, 0), 0L);
 	sb_sec = pkm_kacs_sb(f->mnt->mnt_sb);
 	mutex_lock(&sb_sec->lock);
-	sb_sec->policy_generation =
-		pkm_kacs_next_mount_policy_generation(sb_sec->policy_generation);
+	sb_sec->policy_generation = pkm_kacs_next_mount_policy_generation(
+		sb_sec->policy_generation);
 	mutex_unlock(&sb_sec->lock);
 	f->read_error = -EIO;
 	KUNIT_EXPECT_EQ(test, pkm_sd_test_resolve(f, 0), -EIO);
 	inode = file_inode(&f->files[0]);
-	cache = pkm_kacs_inode_sd_cache_get_current(inode, pkm_kacs_inode(inode));
+	cache = pkm_kacs_inode_sd_cache_get_current(inode,
+						    pkm_kacs_inode(inode));
 	KUNIT_EXPECT_PTR_EQ(test, cache, NULL);
 	pkm_kacs_inode_sd_cache_free(cache);
 	KUNIT_EXPECT_TRUE(test, debug_locks);
@@ -1551,8 +1567,8 @@ static void pkm_sd_test_stale_read_error(struct kunit *test)
 
 static void pkm_sd_test_stacked_xattr(struct kunit *test)
 {
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test, 2,
-		KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
+	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(
+		test, 2, KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL);
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct inode *inode;
 
@@ -1561,7 +1577,8 @@ static void pkm_sd_test_stacked_xattr(struct kunit *test)
 	f->trigger = inode;
 	f->lower = &f->files[0];
 	KUNIT_ASSERT_EQ(test, pkm_sd_test_resolve(f, 1), 0L);
-	cache = pkm_kacs_inode_sd_cache_get_current(inode, pkm_kacs_inode(inode));
+	cache = pkm_kacs_inode_sd_cache_get_current(inode,
+						    pkm_kacs_inode(inode));
 	KUNIT_ASSERT_NOT_NULL(test, cache);
 	KUNIT_EXPECT_EQ(test, cache->source,
 			(u8)PKM_KACS_INODE_SD_SOURCE_XATTR);
@@ -1572,11 +1589,13 @@ static void pkm_sd_test_stacked_xattr(struct kunit *test)
 static int pkm_sd_test_reader_thread(void *data)
 {
 	struct pkm_sd_test_reader *r = data;
-	struct pkm_kacs_inode_security *sec = pkm_kacs_inode(file_inode(r->file));
+	struct pkm_kacs_inode_security *sec =
+		pkm_kacs_inode(file_inode(r->file));
 	struct pkm_kacs_inode_sd_cache *cache;
 
 	mutex_lock(&sec->lock);
-	r->ret = pkm_kacs_inode_resolve_effective_cache_locked(r->file, sec, &cache, 0);
+	r->ret = pkm_kacs_inode_resolve_effective_cache_locked(r->file, sec,
+							       &cache, 0);
 	if (!r->ret) {
 		r->state = cache->state;
 		if (cache->state == PKM_KACS_INODE_SD_VALID && cache->len >= 32)
@@ -1593,8 +1612,8 @@ static void pkm_sd_test_contention(struct kunit *test, u8 state, bool reverse,
 				   bool error_first, unsigned int mutation,
 				   bool latest_missing)
 {
-	struct pkm_sd_test_fixture *f = pkm_sd_test_fixture(test, 1,
-		KACS_MOUNT_POLICY_DENY_MISSING);
+	struct pkm_sd_test_fixture *f =
+		pkm_sd_test_fixture(test, 1, KACS_MOUNT_POLICY_DENY_MISSING);
 	struct pkm_sd_test_contention *c;
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct pkm_kacs_inode_security *sec;
@@ -1616,7 +1635,9 @@ static void pkm_sd_test_contention(struct kunit *test, u8 state, bool reverse,
 	if (mutation == 3 || mutation == 4) {
 		/* A pre-read replacement is not a later reader, even at wrap. */
 		KUNIT_ASSERT_EQ(test,
-				pkm_kacs_missing_file_sd_policy_result(f->mnt->mnt_sb, &cache), 0L);
+				pkm_kacs_missing_file_sd_policy_result(
+					f->mnt->mnt_sb, &cache),
+				0L);
 		mutex_lock(&sec->lock);
 		sec->sd_cache_read_ticket = mutation == 3 ? U64_MAX - 2 : 0;
 		pkm_kacs_inode_replace_sd_cache_locked(sec, cache);
@@ -1633,7 +1654,8 @@ static void pkm_sd_test_contention(struct kunit *test, u8 state, bool reverse,
 		init_completion(&r->done);
 		r->file = &f->files[0];
 		r->index = i;
-		r->task = kthread_create(pkm_sd_test_reader_thread, r, "pkm-sd-reader");
+		r->task = kthread_create(pkm_sd_test_reader_thread, r,
+					 "pkm-sd-reader");
 		if (IS_ERR(r->task)) {
 			KUNIT_FAIL(test, "could not start reader %u", i);
 			ready = false;
@@ -1662,7 +1684,8 @@ static void pkm_sd_test_contention(struct kunit *test, u8 state, bool reverse,
 
 			mutex_lock(&sb_sec->lock);
 			sb_sec->policy_generation =
-				pkm_kacs_next_mount_policy_generation(sb_sec->policy_generation);
+				pkm_kacs_next_mount_policy_generation(
+					sb_sec->policy_generation);
 			mutex_unlock(&sb_sec->lock);
 		}
 		mutex_unlock(&sec->lock);
@@ -1679,15 +1702,21 @@ static void pkm_sd_test_contention(struct kunit *test, u8 state, bool reverse,
 			ready = false;
 			goto out_stop;
 		}
-		KUNIT_EXPECT_EQ(test, r->ret, error_first && !index ? -EIO : 0L);
+		KUNIT_EXPECT_EQ(test, r->ret,
+				error_first && !index ? -EIO : 0L);
 		KUNIT_EXPECT_EQ(test, r->probes, changed ? 2U : 1U);
 		if (!r->ret) {
-			KUNIT_EXPECT_EQ(test, r->state, latest_missing ?
-				(u8)PKM_KACS_INODE_SD_MISSING : state);
+			KUNIT_EXPECT_EQ(test, r->state,
+					latest_missing ?
+						(u8)PKM_KACS_INODE_SD_MISSING :
+						state);
 			if (r->state == PKM_KACS_INODE_SD_VALID)
 				KUNIT_EXPECT_EQ(test, r->owner,
-						(u8)(18 + (reverse && !changed ? started - 1 :
-						   index) + (changed ? 32 : 0)));
+						(u8)(18 +
+						     (reverse && !changed ?
+							      started - 1 :
+							      index) +
+						     (changed ? 32 : 0)));
 		}
 	}
 out_stop:
@@ -1697,14 +1726,17 @@ out_stop:
 		kthread_stop(c->readers[i].task);
 	if (!ready)
 		return;
-	cache = pkm_kacs_inode_sd_cache_get_current(file_inode(&f->files[0]), sec);
+	cache = pkm_kacs_inode_sd_cache_get_current(file_inode(&f->files[0]),
+						    sec);
 	KUNIT_EXPECT_NOT_NULL(test, cache);
 	if (cache) {
-		KUNIT_EXPECT_EQ(test, cache->state, latest_missing ?
-			(u8)PKM_KACS_INODE_SD_MISSING : state);
+		KUNIT_EXPECT_EQ(test, cache->state,
+				latest_missing ? (u8)PKM_KACS_INODE_SD_MISSING :
+						 state);
 		if (cache->state == PKM_KACS_INODE_SD_VALID)
-			KUNIT_EXPECT_EQ(test, cache->bytes[28],
-					(u8)(18 + started - 1 + (changed ? 32 : 0)));
+			KUNIT_EXPECT_EQ(
+				test, cache->bytes[28],
+				(u8)(18 + started - 1 + (changed ? 32 : 0)));
 		pkm_kacs_inode_sd_cache_free(cache);
 	}
 	KUNIT_EXPECT_TRUE(test, debug_locks);
@@ -1712,52 +1744,62 @@ out_stop:
 
 static void pkm_sd_test_contended_valid(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 0, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 0,
+			       false);
 }
 
 static void pkm_sd_test_contended_reverse(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, true, false, 0, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, true, false, 0,
+			       false);
 }
 
 static void pkm_sd_test_contended_missing(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_MISSING, false, false, 0, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_MISSING, false, false, 0,
+			       false);
 }
 
 static void pkm_sd_test_contended_corrupt(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_CORRUPT, false, false, 0, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_CORRUPT, false, false, 0,
+			       false);
 }
 
 static void pkm_sd_test_contended_error(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, true, true, 0, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, true, true, 0,
+			       false);
 }
 
 static void pkm_sd_test_contended_invalidation(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 1, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 1,
+			       false);
 }
 
 static void pkm_sd_test_contended_generation(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 2, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 2,
+			       false);
 }
 
 static void pkm_sd_test_contended_later_missing(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, true, false, 0, true);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, true, false, 0,
+			       true);
 }
 
 static void pkm_sd_test_contended_ticket_wrap(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 3, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 3,
+			       false);
 }
 
 static void pkm_sd_test_contended_old_ticket(struct kunit *test)
 {
-	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 4, false);
+	pkm_sd_test_contention(test, PKM_KACS_INODE_SD_VALID, false, false, 4,
+			       false);
 }
 
 static struct kunit_case pkm_sd_cache_cases[] = {

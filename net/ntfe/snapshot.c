@@ -85,7 +85,7 @@ static void snapshot_flow_state(const struct sk_buff *skb, u8 seat,
 
 	ct = nf_ct_get(skb, &ctinfo);
 	if (ct && !nf_ct_is_template(ct)) {
-		snap->flow = ct;	/* the tag and sentence stores' scope */
+		snap->flow = ct; /* the tag and sentence stores' scope */
 		snap->flow_related = ct->master != NULL;
 		snap->flow_reply = CTINFO2DIR(ctinfo) == IP_CT_DIR_REPLY;
 		snapshot_start(ct, snap);
@@ -308,8 +308,8 @@ stop:
 }
 
 int peios_ntfe_snapshot_from_skb(const struct sk_buff *skb,
-				const struct net_device *dev, u8 seat,
-				u8 direction, struct peios_ntfe_snapshot *snap)
+				 const struct net_device *dev, u8 seat,
+				 u8 direction, struct peios_ntfe_snapshot *snap)
 {
 	int network_offset;
 	u16 ether_type;
@@ -350,8 +350,7 @@ int peios_ntfe_snapshot_from_skb(const struct sk_buff *skb,
 		snap->has |= PEIOS_NTFE_HAS_VLAN;
 	}
 
-	if (skb_mac_header_was_set(skb) && dev &&
-	    dev->type == ARPHRD_ETHER) {
+	if (skb_mac_header_was_set(skb) && dev && dev->type == ARPHRD_ETHER) {
 		const struct ethhdr *eth = eth_hdr(skb);
 
 		ether_addr_copy(snap->src_mac, eth->h_source);

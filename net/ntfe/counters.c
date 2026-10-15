@@ -49,22 +49,22 @@
 
 #include "ntfe.h"
 
-#define NTFE_COUNTER_BUCKETS	8
-#define NTFE_COUNTER_HASH_BITS	10
-#define NTFE_COUNTER_HASH	(1U << NTFE_COUNTER_HASH_BITS)
+#define NTFE_COUNTER_BUCKETS 8
+#define NTFE_COUNTER_HASH_BITS 10
+#define NTFE_COUNTER_HASH (1U << NTFE_COUNTER_HASH_BITS)
 /* A cell with no activity for this long past its longest window is idle. */
-#define NTFE_COUNTER_IDLE_FLOOR_SECS	60
+#define NTFE_COUNTER_IDLE_FLOOR_SECS 60
 
 struct ntfe_counter_key {
-	u8 family;			/* 4 / 6 / 0 (address facts unused) */
+	u8 family; /* 4 / 6 / 0 (address facts unused) */
 	u8 _pad[3];
-	s32 ifindex;			/* 0 when the interface fact is unused */
+	s32 ifindex; /* 0 when the interface fact is unused */
 	u8 src[16];
 	u8 dst[16];
 };
 
 struct ntfe_counter_ring {
-	u64 period[NTFE_COUNTER_BUCKETS];	/* which period each bucket holds */
+	u64 period[NTFE_COUNTER_BUCKETS]; /* which period each bucket holds */
 	u64 count[NTFE_COUNTER_BUCKETS];
 };
 
@@ -74,7 +74,7 @@ struct ntfe_counter_cell {
 	struct ntfe_counter_key key;
 	u64 total;
 	u64 last_secs;
-	struct ntfe_counter_ring rings[];	/* one per table window */
+	struct ntfe_counter_ring rings[]; /* one per table window */
 };
 
 struct ntfe_counter_table {
@@ -84,7 +84,7 @@ struct ntfe_counter_table {
 	u64 hash;
 	u8 keyspec;
 	u32 n_windows;
-	u32 windows[PEIOS_NTFE_COUNTER_MAX_WINDOWS];	/* seconds */
+	u32 windows[PEIOS_NTFE_COUNTER_MAX_WINDOWS]; /* seconds */
 	spinlock_t lock;
 	u32 n_cells;
 	struct hlist_head heads[NTFE_COUNTER_HASH];
@@ -108,7 +108,7 @@ static u32 ntfe_bucket_secs(u32 window_secs)
  * is absent (absent-fact law: no cell for this packet).
  */
 static bool ntfe_counter_key_of(const struct peios_ntfe_snapshot *snap,
-			       u8 keyspec, struct ntfe_counter_key *key)
+				u8 keyspec, struct ntfe_counter_key *key)
 {
 	memset(key, 0, sizeof(*key));
 	if (keyspec & (PEIOS_NTFE_KEY_SRC_ADDR | PEIOS_NTFE_KEY_DST_ADDR)) {
@@ -167,7 +167,7 @@ static int ntfe_window_index(const struct ntfe_counter_table *t, u32 window)
 }
 
 static u64 ntfe_ring_sum(const struct ntfe_counter_ring *r, u32 window_secs,
-			u64 now)
+			 u64 now)
 {
 	u64 cur = now / ntfe_bucket_secs(window_secs);
 	u64 sum = 0;
@@ -182,8 +182,8 @@ static u64 ntfe_ring_sum(const struct ntfe_counter_ring *r, u32 window_secs,
 	return sum;
 }
 
-static void ntfe_ring_add(struct ntfe_counter_ring *r, u32 window_secs,
-			 u64 now, u64 amount)
+static void ntfe_ring_add(struct ntfe_counter_ring *r, u32 window_secs, u64 now,
+			  u64 amount)
 {
 	u64 cur = now / ntfe_bucket_secs(window_secs);
 	u32 slot = cur % NTFE_COUNTER_BUCKETS;
@@ -196,7 +196,7 @@ static void ntfe_ring_add(struct ntfe_counter_ring *r, u32 window_secs,
 }
 
 int peios_ntfe_counter_read(const struct peios_ntfe_snapshot *snap, u64 hash,
-			   u8 keyspec, u32 window_secs, u64 *value_out)
+			    u8 keyspec, u32 window_secs, u64 *value_out)
 {
 	struct ntfe_counter_table *t;
 	struct ntfe_counter_cell *c;
@@ -242,7 +242,8 @@ static void ntfe_table_reap(struct ntfe_counter_table *t, u64 now)
 
 	for (b = 0; b < NTFE_COUNTER_HASH; b++) {
 		hlist_for_each_entry_safe(c, tmp, &t->heads[b], node) {
-			if (now > c->last_secs && now - c->last_secs > horizon) {
+			if (now > c->last_secs &&
+			    now - c->last_secs > horizon) {
 				hlist_del_rcu(&c->node);
 				kfree_rcu(c, rcu);
 				t->n_cells--;
@@ -264,7 +265,7 @@ static struct ntfe_counter_cell *ntfe_cell_alloc(u32 n_windows, gfp_t gfp)
  */
 static struct ntfe_counter_cell *
 ntfe_cell_get(struct ntfe_counter_table *t, const struct ntfe_counter_key *key,
-	     u64 now)
+	      u64 now)
 {
 	struct ntfe_counter_cell *c = ntfe_cell_find(t, key);
 
@@ -286,7 +287,7 @@ ntfe_cell_get(struct ntfe_counter_table *t, const struct ntfe_counter_key *key,
 }
 
 void peios_ntfe_counter_add(const struct peios_ntfe_snapshot *snap, u64 hash,
-			   u64 amount)
+			    u64 amount)
 {
 	struct ntfe_counter_table *t;
 	u64 now = ntfe_now_secs();
@@ -337,7 +338,7 @@ struct ntfe_table_spec {
 };
 
 static bool ntfe_windows_equal(const struct ntfe_counter_table *t,
-			      const struct ntfe_table_spec *s)
+			       const struct ntfe_table_spec *s)
 {
 	u32 i;
 
@@ -373,7 +374,7 @@ static void ntfe_table_free_rcu(struct rcu_head *head)
  * share carry over; new windows start empty and converge.
  */
 static int ntfe_table_migrate(struct ntfe_counter_table *t,
-			     const struct ntfe_table_spec *s)
+			      const struct ntfe_table_spec *s)
 {
 	u32 b, i;
 
@@ -457,7 +458,7 @@ int peios_ntfe_counters_publish(const struct peios_ntfe_view *views, u32 count)
 			s->keyspec = views[i].keyspec;
 		}
 		if (!views[i].window_secs)
-			continue;	/* the total is always kept */
+			continue; /* the total is always kept */
 		for (j = 0; j < s->n_windows; j++)
 			if (s->windows[j] == views[i].window_secs)
 				break;
@@ -546,13 +547,13 @@ static void ntfe_counter_fill(struct peios_ntfe_counter_rec *rec,
 	rec->n_windows = t->n_windows;
 	for (w = 0; w < t->n_windows; w++) {
 		rec->window_secs[w] = t->windows[w];
-		rec->window_value[w] = ntfe_ring_sum(&c->rings[w],
-						     t->windows[w], now);
+		rec->window_value[w] =
+			ntfe_ring_sum(&c->rings[w], t->windows[w], now);
 	}
 }
 
 /* The most records one pass gathers before copying out. */
-#define NTFE_COUNTERS_BATCH		4096U
+#define NTFE_COUNTERS_BATCH 4096U
 
 /*
  * The cells are gathered into a kernel batch under one RCU read section
@@ -578,8 +579,9 @@ long peios_ntfe_counters_dump(struct peios_ntfe_counters_query *query)
 
 	room = clamp_t(u64, min_t(u64, max, peios_ntfe_counters_cells()), 1,
 		       NTFE_COUNTERS_BATCH);
-	recs = peios_ntfe_kunit_alloc_should_fail() ? NULL :
-		kvcalloc(room, sizeof(*recs), GFP_KERNEL);
+	recs = peios_ntfe_kunit_alloc_should_fail() ?
+		       NULL :
+		       kvcalloc(room, sizeof(*recs), GFP_KERNEL);
 	if (!recs)
 		return -ENOMEM;
 
@@ -594,20 +596,23 @@ long peios_ntfe_counters_dump(struct peios_ntfe_counters_query *query)
 			for (b = 0; b < NTFE_COUNTER_HASH; b++) {
 				struct ntfe_counter_cell *c;
 
-				hlist_for_each_entry_rcu(c, &t->heads[b], node) {
+				hlist_for_each_entry_rcu(c, &t->heads[b],
+							 node) {
 					if (first)
 						total++;
 					if (idx++ < written)
 						continue;
 					if (written + n >= max || n == room)
 						continue;
-					ntfe_counter_fill(&recs[n++], t, c, now);
+					ntfe_counter_fill(&recs[n++], t, c,
+							  now);
 				}
 			}
 		}
 		rcu_read_unlock();
 		first = false;
-		if (n && copy_to_user(&urec[written], recs, n * sizeof(*recs))) {
+		if (n &&
+		    copy_to_user(&urec[written], recs, n * sizeof(*recs))) {
 			ret = -EFAULT;
 			break;
 		}

@@ -44,12 +44,12 @@ static int pkm_kacs_require_tcb(const void *token)
 		return -EACCES;
 	}
 	if (!kacs_rust_token_has_enabled_privilege(token,
-						  KACS_SE_TCB_PRIVILEGE)) {
+						   KACS_SE_TCB_PRIVILEGE)) {
 		trace_kacs_caap(0, 0, 0, KACS_CAAP_TCB_GATE, -EACCES);
 		return -EACCES;
 	}
 	if (!kacs_rust_token_mark_privileges_used(token,
-						 KACS_SE_TCB_PRIVILEGE)) {
+						  KACS_SE_TCB_PRIVILEGE)) {
 		trace_kacs_caap(0, 0, 0, KACS_CAAP_TCB_GATE, -EACCES);
 		return -EACCES;
 	}
@@ -165,9 +165,9 @@ int pkm_kacs_set_caap_internal(const void *policy_sid, u32 policy_sid_len,
 
 out:
 	trace_kacs_caap(policy_sid_len, spec_len,
-			pkm_kacs_caap_cache ?
-				(u32)kacs_rust_caap_cache_len(pkm_kacs_caap_cache) :
-				0,
+			pkm_kacs_caap_cache ? (u32)kacs_rust_caap_cache_len(
+						      pkm_kacs_caap_cache) :
+					      0,
 			KACS_CAAP_SET, ret);
 	mutex_unlock(&pkm_kacs_caap_mutex);
 	return ret;
@@ -200,9 +200,9 @@ static void pkm_kacs_audit_caap_policy_changed(const void *token,
 						 (s32)ret, pip_type, pip_trust);
 }
 
-static __maybe_unused int pkm_kacs_set_caap_for_token(const void *token, const void *policy_sid,
-				       u32 policy_sid_len, const void *spec,
-				       u32 spec_len)
+static __maybe_unused int
+pkm_kacs_set_caap_for_token(const void *token, const void *policy_sid,
+			    u32 policy_sid_len, const void *spec, u32 spec_len)
 {
 	int ret;
 
@@ -217,9 +217,11 @@ static __maybe_unused int pkm_kacs_set_caap_for_token(const void *token, const v
 	return ret;
 }
 
-static long pkm_kacs_set_caap_user_for_token(
-	const void *token, const void __user *policy_sid, u32 policy_sid_len,
-	const void __user *spec, u32 spec_len)
+static long pkm_kacs_set_caap_user_for_token(const void *token,
+					     const void __user *policy_sid,
+					     u32 policy_sid_len,
+					     const void __user *spec,
+					     u32 spec_len)
 {
 	u8 *policy_sid_copy = NULL;
 	u8 *spec_copy = NULL;
@@ -274,13 +276,14 @@ int pkm_kacs_kunit_set_caap_for_token(const void *token, const void *policy_sid,
 					   spec, spec_len);
 }
 
-long pkm_kacs_kunit_set_caap_user_for_token(
-	const void *token, const void __user *policy_sid, u32 policy_sid_len,
-	const void __user *spec, u32 spec_len)
+long pkm_kacs_kunit_set_caap_user_for_token(const void *token,
+					    const void __user *policy_sid,
+					    u32 policy_sid_len,
+					    const void __user *spec,
+					    u32 spec_len)
 {
 	return pkm_kacs_set_caap_user_for_token(token, policy_sid,
-						policy_sid_len, spec,
-						spec_len);
+						policy_sid_len, spec, spec_len);
 }
 #endif
 

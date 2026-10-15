@@ -30,10 +30,10 @@ int pkm_kacs_socket_listen(struct socket *sock, int backlog);
 bool pkm_kacs_reuseport_owner_matches(const struct sock *sk, kuid_t uid,
 				      const struct sock *sk2);
 /* SOL_KACS option handlers, dispatched from net/socket.c. */
-int pkm_kacs_sock_setsockopt(struct socket *sock, int optname,
-			     sockptr_t optval, unsigned int optlen);
-int pkm_kacs_sock_getsockopt(struct socket *sock, int optname,
-			     sockptr_t optval, sockptr_t optlen);
+int pkm_kacs_sock_setsockopt(struct socket *sock, int optname, sockptr_t optval,
+			     unsigned int optlen);
+int pkm_kacs_sock_getsockopt(struct socket *sock, int optname, sockptr_t optval,
+			     sockptr_t optlen);
 
 /*
  * Per-message identity (KACS_SCM_TOKEN), reached from net/core/scm.c and

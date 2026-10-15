@@ -7,15 +7,12 @@
 
 struct cred;
 
-long pkm_kacs_task_fix_setuid_core(const void *subject_token,
-				   struct cred *new, const struct cred *old,
-				   int flags);
-long pkm_kacs_task_fix_setgid_core(const void *subject_token,
-				   struct cred *new, const struct cred *old,
-				   int flags);
+long pkm_kacs_task_fix_setuid_core(const void *subject_token, struct cred *new,
+				   const struct cred *old, int flags);
+long pkm_kacs_task_fix_setgid_core(const void *subject_token, struct cred *new,
+				   const struct cred *old, int flags);
 long pkm_kacs_task_fix_setgroups_core(const void *subject_token,
-				      struct cred *new,
-				      const struct cred *old);
+				      struct cred *new, const struct cred *old);
 int pkm_kacs_task_fix_setuid(struct cred *new, const struct cred *old,
 			     int flags);
 int pkm_kacs_task_fix_setgid(struct cred *new, const struct cred *old,

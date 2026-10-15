@@ -14,9 +14,8 @@
 
 extern int lcs_rust_route_hive_from_source_slots(
 	const struct pkm_lcs_source_slot_view_copy *slots, size_t slot_count,
-	const u8 *hive_name, u32 hive_name_len,
-	const u8 (*scope_guids)[16], size_t scope_count,
-	struct pkm_lcs_hive_route_result *result,
+	const u8 *hive_name, u32 hive_name_len, const u8 (*scope_guids)[16],
+	size_t scope_count, struct pkm_lcs_hive_route_result *result,
 	const struct pkm_lcs_runtime_limits *limits);
 extern int lcs_rust_route_absolute_path_from_source_slots(
 	const struct pkm_lcs_source_slot_view_copy *slots, size_t slot_count,
@@ -64,10 +63,10 @@ long pkm_lcs_route_hive_name(const char *hive_name, u32 hive_name_len,
 out_unlock:
 	pkm_lcs_source_table_unlock();
 	pkm_lcs_source_slot_view_buffer_destroy(&view_buffer);
-	trace_lcs_route(LCS_ROUTE_HIVE_NAME, slot_count, scope_count,
-			ret ? 0 : result->source_id,
-			ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0),
-			ret);
+	trace_lcs_route(
+		LCS_ROUTE_HIVE_NAME, slot_count, scope_count,
+		ret ? 0 : result->source_id,
+		ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0), ret);
 	return ret;
 }
 
@@ -102,17 +101,17 @@ long pkm_lcs_route_absolute_path(const char *path, u32 path_len,
 out_unlock:
 	pkm_lcs_source_table_unlock();
 	pkm_lcs_source_slot_view_buffer_destroy(&view_buffer);
-	trace_lcs_route(LCS_ROUTE_ABSOLUTE_PATH, slot_count, scope_count,
-			ret ? 0 : result->source_id,
-			ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0),
-			ret);
+	trace_lcs_route(
+		LCS_ROUTE_ABSOLUTE_PATH, slot_count, scope_count,
+		ret ? 0 : result->source_id,
+		ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0), ret);
 	return ret;
 }
 
 long pkm_lcs_route_absolute_path_for_token_with_limits(
 	const void *token, const char *path, u32 path_len,
-	bool rewrite_current_user, const u8 (*scope_guids)[16],
-	u32 scope_count, const struct pkm_lcs_runtime_limits *limits,
+	bool rewrite_current_user, const u8 (*scope_guids)[16], u32 scope_count,
+	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_hive_route_result *result)
 {
 	struct pkm_lcs_source_slot_view_buffer view_buffer;
@@ -147,19 +146,17 @@ long pkm_lcs_route_absolute_path_for_token_with_limits(
 out_unlock:
 	pkm_lcs_source_table_unlock();
 	pkm_lcs_source_slot_view_buffer_destroy(&view_buffer);
-	trace_lcs_route(LCS_ROUTE_ABSOLUTE_PATH, slot_count, scope_count,
-			ret ? 0 : result->source_id,
-			ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0),
-			ret);
+	trace_lcs_route(
+		LCS_ROUTE_ABSOLUTE_PATH, slot_count, scope_count,
+		ret ? 0 : result->source_id,
+		ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0), ret);
 	return ret;
 }
 
-long pkm_lcs_route_absolute_path_for_token(const void *token, const char *path,
-					   u32 path_len,
-					   bool rewrite_current_user,
-					   const u8 (*scope_guids)[16],
-					   u32 scope_count,
-					   struct pkm_lcs_hive_route_result *result)
+long pkm_lcs_route_absolute_path_for_token(
+	const void *token, const char *path, u32 path_len,
+	bool rewrite_current_user, const u8 (*scope_guids)[16], u32 scope_count,
+	struct pkm_lcs_hive_route_result *result)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -169,11 +166,10 @@ long pkm_lcs_route_absolute_path_for_token(const void *token, const char *path,
 		scope_count, &limits, result);
 }
 
-long pkm_lcs_route_current_absolute_path(const char *path, u32 path_len,
-					 bool rewrite_current_user,
-					 const u8 (*scope_guids)[16],
-					 u32 scope_count,
-					 struct pkm_lcs_hive_route_result *result)
+long pkm_lcs_route_current_absolute_path(
+	const char *path, u32 path_len, bool rewrite_current_user,
+	const u8 (*scope_guids)[16], u32 scope_count,
+	struct pkm_lcs_hive_route_result *result)
 {
 	return pkm_lcs_route_absolute_path_for_token(
 		pkm_kacs_current_effective_token_ptr(), path, path_len,
@@ -186,7 +182,7 @@ long pkm_lcs_route_user_absolute_path_for_token(
 	const u8 (*scope_guids)[16], u32 scope_count,
 	struct pkm_lcs_hive_route_result *result)
 {
-	struct pkm_lcs_syscall_path_copy copy = { };
+	struct pkm_lcs_syscall_path_copy copy = {};
 	struct pkm_lcs_runtime_limits limits;
 	long ret;
 
@@ -231,16 +227,16 @@ long pkm_lcs_route_symlink_target_with_limits(
 out_unlock:
 	pkm_lcs_source_table_unlock();
 	pkm_lcs_source_slot_view_buffer_destroy(&view_buffer);
-	trace_lcs_route(LCS_ROUTE_SYMLINK_TARGET, slot_count, scope_count,
-			ret ? 0 : result->source_id,
-			ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0),
-			ret);
+	trace_lcs_route(
+		LCS_ROUTE_SYMLINK_TARGET, slot_count, scope_count,
+		ret ? 0 : result->source_id,
+		ret ? 0 : (u64)jhash(result->root_guid, RSI_GUID_SIZE, 0), ret);
 	return ret;
 }
 
-long pkm_lcs_route_symlink_target(
-	const char *target, u32 target_len, const u8 (*scope_guids)[16],
-	u32 scope_count, struct pkm_lcs_hive_route_result *result)
+long pkm_lcs_route_symlink_target(const char *target, u32 target_len,
+				  const u8 (*scope_guids)[16], u32 scope_count,
+				  struct pkm_lcs_hive_route_result *result)
 {
 	struct pkm_lcs_runtime_limits limits;
 

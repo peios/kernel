@@ -1,0 +1,16 @@
+# cpupower-libs-devel — libcpupower development files: headers + the .so dev
+# symlink (which resolves into cpupower-libs).
+
+[package]
+name = "dev.peios.cpupower-libs-devel"
+description = "libcpupower - development files (headers)"
+
+[dependencies]
+"dev.peios.cpupower-libs" = "= {{release}}"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.cpupower-libs-devel/COPYING"
+"tools:usr/lib/x86_64-linux-peios/libcpupower.so" = "usr/lib/x86_64-linux-peios/libcpupower.so"
+"tools:usr/include/cpufreq.h"  = "usr/include/cpufreq.h"
+"tools:usr/include/cpuidle.h"  = "usr/include/cpuidle.h"
+"tools:usr/include/powercap.h" = "usr/include/powercap.h"

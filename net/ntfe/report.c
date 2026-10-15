@@ -26,7 +26,7 @@
 #include "../../security/pkm/kmes/kmes.h"
 #include "ntfe.h"
 
-#define NTFE_REPORT_MAX_PAYLOAD	512
+#define NTFE_REPORT_MAX_PAYLOAD 512
 
 struct ntfe_mp {
 	u8 *buf;
@@ -192,7 +192,7 @@ static u8 ntfe_af(u8 family)
 }
 
 static void ntfe_addr_text(u8 family, const u8 addr[16], char *out,
-			  size_t out_len)
+			   size_t out_len)
 {
 	if (family == 4)
 		snprintf(out, out_len, "%pI4", addr);
@@ -217,8 +217,8 @@ static void ntfe_endpoint(struct ntfe_mp *m, const char *key, u8 family,
 }
 
 void peios_ntfe_report_emit(const struct peios_ntfe_snapshot *snap,
-			   const char *rule, size_t rule_len, u8 level,
-			   u8 layer, u8 verdict, u8 reject_kind)
+			    const char *rule, size_t rule_len, u8 level,
+			    u8 layer, u8 verdict, u8 reject_kind)
 {
 	u8 payload[NTFE_REPORT_MAX_PAYLOAD];
 	struct ntfe_mp m = { .buf = payload, .cap = sizeof(payload) };
@@ -247,7 +247,8 @@ void peios_ntfe_report_emit(const struct peios_ntfe_snapshot *snap,
 	if (rejected)
 		mp_key_cstr(&m, "reason",
 			    reject_kind == PEIOS_NTFE_REJECT_PROHIBITED ?
-				    "prohibited" : "refused");
+				    "prohibited" :
+				    "refused");
 
 	mp_cstr(&m, "network");
 	mp_map(&m, l3 ? 6 : 5);
@@ -277,7 +278,8 @@ void peios_ntfe_report_emit(const struct peios_ntfe_snapshot *snap,
 	if (tracked) {
 		mp_cstr(&m, "flow");
 		mp_map(&m, 1);
-		mp_key_cstr(&m, "state", ntfe_flow_state_name(snap->flow_state));
+		mp_key_cstr(&m, "state",
+			    ntfe_flow_state_name(snap->flow_state));
 	}
 
 	mp_cstr(&m, "policy");
@@ -314,11 +316,11 @@ void peios_ntfe_report_emit(const struct peios_ntfe_snapshot *snap,
 	mp_key_str(&m, "name", rule, n);
 	if (truncated) {
 		mp_cstr(&m, "name-truncated");
-		mp_byte(&m, 0xc3);	/* true */
+		mp_byte(&m, 0xc3); /* true */
 	}
 
 	if (m.overflow)
-		return;	/* cannot happen at these sizes; never emit a lie */
+		return; /* cannot happen at these sizes; never emit a lie */
 	payload[rule_map] = 0x80 | (truncated ? 6 : 5);
 
 	pkm_kmes_emit_kernel(KMES_ORIGIN_NTFE,

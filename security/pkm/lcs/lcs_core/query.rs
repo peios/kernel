@@ -4,7 +4,9 @@ use crate::lcs_core::output_buffer::{
     OutputBufferAggregate, OutputBufferCopyPlan, OutputBufferDecision, OutputBufferRequest,
     plan_output_buffer_copy, validate_output_buffer_required_size,
 };
-use crate::lcs_core::resolution::{EnumeratedSubkey, EnumeratedValue, ResolvedValueEntry, ValueResolution};
+use crate::lcs_core::resolution::{
+    EnumeratedSubkey, EnumeratedValue, ResolvedValueEntry, ValueResolution,
+};
 use crate::lcs_core::rsi::RsiMappedErrno;
 use crate::lcs_core::value::RegistryValueType;
 

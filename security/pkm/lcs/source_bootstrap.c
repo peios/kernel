@@ -19,12 +19,12 @@ long pkm_lcs_source_bootstrap_refresh_machine_hive(
 	struct pkm_lcs_source_bootstrap_refresh_result *result_out)
 {
 	struct pkm_lcs_source_bootstrap_refresh_result *result;
-	u8 registry_guid[RSI_GUID_SIZE] = { };
-	u8 kmes_guid[RSI_GUID_SIZE] = { };
-	u8 layers_root_guid[RSI_GUID_SIZE] = { };
-	u8 port_guid[RSI_GUID_SIZE] = { };
-	u8 network_guid[RSI_GUID_SIZE] = { };
-	u8 events_guid[RSI_GUID_SIZE] = { };
+	u8 registry_guid[RSI_GUID_SIZE] = {};
+	u8 kmes_guid[RSI_GUID_SIZE] = {};
+	u8 layers_root_guid[RSI_GUID_SIZE] = {};
+	u8 port_guid[RSI_GUID_SIZE] = {};
+	u8 network_guid[RSI_GUID_SIZE] = {};
+	u8 events_guid[RSI_GUID_SIZE] = {};
 	bool registry_root_present = false;
 	bool kmes_root_present = false;
 	bool layers_root_present = false;
@@ -115,7 +115,8 @@ long pkm_lcs_source_bootstrap_refresh_machine_hive(
 	 * keeps its previous policy generation and says why.
 	 */
 	ret = peios_ntfe_network_root_discover_from_machine_hive(
-		source_id, machine_root_guid, &network_root_present, network_guid);
+		source_id, machine_root_guid, &network_root_present,
+		network_guid);
 	if (ret)
 		goto out;
 	result->network_root_present = network_root_present;
@@ -131,7 +132,8 @@ long pkm_lcs_source_bootstrap_refresh_machine_hive(
 	 * every type -- which also undoes the policy of a key since deleted.
 	 */
 	ret = pkm_kmes_event_policy_root_discover_from_machine_hive(
-		source_id, machine_root_guid, &events_root_present, events_guid);
+		source_id, machine_root_guid, &events_root_present,
+		events_guid);
 	if (ret)
 		goto out;
 	result->events_root_present = events_root_present;
@@ -168,7 +170,7 @@ out:
 		 * targeted watches once it completes. Best effort — if even
 		 * this fails there is nothing left to do but report.
 		 */
-		struct pkm_lcs_internal_self_watch_arm_result fallback = { };
+		struct pkm_lcs_internal_self_watch_arm_result fallback = {};
 		long arm_ret;
 
 		arm_ret = pkm_lcs_internal_self_watch_arm_full(

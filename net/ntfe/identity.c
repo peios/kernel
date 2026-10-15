@@ -62,11 +62,12 @@ extern struct udp_table udplite_table;
  * back an unreferenced socket under RCU, so the reference is taken here.
  */
 static struct sock *ntfe_udp4_lookup(struct net *net, u8 protocol, __be32 saddr,
-				    __be16 sport, __be32 daddr, __be16 dport,
-				    int dif, struct sk_buff *skb)
+				     __be16 sport, __be32 daddr, __be16 dport,
+				     int dif, struct sk_buff *skb)
 {
 	struct udp_table *table = protocol == IPPROTO_UDPLITE ?
-		&udplite_table : net->ipv4.udp_table;
+					  &udplite_table :
+					  net->ipv4.udp_table;
 	struct sock *sk;
 
 	rcu_read_lock();
@@ -80,12 +81,13 @@ static struct sock *ntfe_udp4_lookup(struct net *net, u8 protocol, __be32 saddr,
 
 #if IS_ENABLED(CONFIG_IPV6)
 static struct sock *ntfe_udp6_lookup(struct net *net, u8 protocol,
-				    const struct in6_addr *saddr, __be16 sport,
-				    const struct in6_addr *daddr, __be16 dport,
-				    int dif, struct sk_buff *skb)
+				     const struct in6_addr *saddr, __be16 sport,
+				     const struct in6_addr *daddr, __be16 dport,
+				     int dif, struct sk_buff *skb)
 {
 	struct udp_table *table = protocol == IPPROTO_UDPLITE ?
-		&udplite_table : net->ipv4.udp_table;
+					  &udplite_table :
+					  net->ipv4.udp_table;
 	struct sock *sk;
 
 	rcu_read_lock();
@@ -100,7 +102,7 @@ static struct sock *ntfe_udp6_lookup(struct net *net, u8 protocol,
 
 /* The owner a socket carries, mapped to the fact's kinds. */
 static void ntfe_identity_from_sock(const struct sock *sk,
-				   struct peios_ntfe_identity *out)
+				    struct peios_ntfe_identity *out)
 {
 	int ret;
 
@@ -142,7 +144,7 @@ static const struct sock *ntfe_full_sock(const struct sock *sk)
 }
 
 static struct sock *ntfe_raw_v4_lookup(struct net *net, u8 protocol,
-				      __be32 saddr, __be32 daddr, int dif)
+				       __be32 saddr, __be32 daddr, int dif)
 {
 	struct hlist_head *hlist;
 	struct sock *sk;
@@ -162,8 +164,8 @@ static struct sock *ntfe_raw_v4_lookup(struct net *net, u8 protocol,
 
 #if IS_ENABLED(CONFIG_IPV6)
 static struct sock *ntfe_raw_v6_lookup(struct net *net, u8 protocol,
-				      const struct in6_addr *saddr,
-				      const struct in6_addr *daddr, int dif)
+				       const struct in6_addr *saddr,
+				       const struct in6_addr *daddr, int dif)
 {
 	struct hlist_head *hlist;
 	struct sock *sk;
@@ -206,8 +208,8 @@ static struct sock *ntfe_early_receiver(struct sock *early)
  * early demux attached to the packet, if any.
  */
 static struct sock *ntfe_receiver_v4(struct net *net, struct sk_buff *skb,
-				    int dif, struct sock *early, bool *handled,
-				    bool *shared)
+				     int dif, struct sock *early, bool *handled,
+				     bool *shared)
 {
 	const struct iphdr *iph = ip_hdr(skb);
 	const struct rtable *rt = skb_rtable(skb);
@@ -220,7 +222,8 @@ static struct sock *ntfe_receiver_v4(struct net *net, struct sk_buff *skb,
 	/* A transport with no socket is nobody's: the stack answers it with
 	 * a reset or an unreachable rather than consuming it.
 	 */
-	*handled = iph->protocol != IPPROTO_TCP && iph->protocol != IPPROTO_UDP &&
+	*handled = iph->protocol != IPPROTO_TCP &&
+		   iph->protocol != IPPROTO_UDP &&
 		   iph->protocol != IPPROTO_UDPLITE &&
 		   rcu_access_pointer(inet_protos[iph->protocol]) != NULL;
 	*shared = false;
@@ -232,12 +235,14 @@ static struct sock *ntfe_receiver_v4(struct net *net, struct sk_buff *skb,
 		if (!th)
 			return NULL;
 		return inet_lookup(net, skb, thoff + __tcp_hdrlen(th),
-				   iph->saddr, th->source, iph->daddr,
-				   th->dest, dif);
+				   iph->saddr, th->source, iph->daddr, th->dest,
+				   dif);
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
-		if (ipv4_is_multicast(iph->daddr) || ipv4_is_lbcast(iph->daddr) ||
-		    (rt && (rt->rt_flags & (RTCF_BROADCAST | RTCF_MULTICAST)))) {
+		if (ipv4_is_multicast(iph->daddr) ||
+		    ipv4_is_lbcast(iph->daddr) ||
+		    (rt &&
+		     (rt->rt_flags & (RTCF_BROADCAST | RTCF_MULTICAST)))) {
 			*shared = true;
 			return NULL;
 		}
@@ -247,18 +252,18 @@ static struct sock *ntfe_receiver_v4(struct net *net, struct sk_buff *skb,
 		if (!uh)
 			return NULL;
 		return ntfe_udp4_lookup(net, iph->protocol, iph->saddr,
-				       uh->source, iph->daddr, uh->dest, dif,
-				       skb);
+					uh->source, iph->daddr, uh->dest, dif,
+					skb);
 	default:
 		return ntfe_raw_v4_lookup(net, iph->protocol, iph->saddr,
-					 iph->daddr, dif);
+					  iph->daddr, dif);
 	}
 }
 
 #if IS_ENABLED(CONFIG_IPV6)
 static struct sock *ntfe_receiver_v6(struct net *net, struct sk_buff *skb,
-				    int dif, struct sock *early, bool *handled,
-				    bool *shared)
+				     int dif, struct sock *early, bool *handled,
+				     bool *shared)
 {
 	const struct ipv6hdr *ip6 = ipv6_hdr(skb);
 	struct tcphdr _th;
@@ -297,16 +302,16 @@ static struct sock *ntfe_receiver_v6(struct net *net, struct sk_buff *skb,
 		if (!uh)
 			return NULL;
 		return ntfe_udp6_lookup(net, (u8)proto, &ip6->saddr, uh->source,
-				       &ip6->daddr, uh->dest, dif, skb);
+					&ip6->daddr, uh->dest, dif, skb);
 	default:
 		return ntfe_raw_v6_lookup(net, proto, &ip6->saddr, &ip6->daddr,
-					 dif);
+					  dif);
 	}
 }
 #else
 static struct sock *ntfe_receiver_v6(struct net *net, struct sk_buff *skb,
-				    int dif, struct sock *early, bool *handled,
-				    bool *shared)
+				     int dif, struct sock *early, bool *handled,
+				     bool *shared)
 {
 	*handled = false;
 	*shared = false;
@@ -321,8 +326,8 @@ static struct sock *ntfe_receiver_v6(struct net *net, struct sk_buff *skb,
  * (PEI-1301), so the caller says which it is.
  */
 static void ntfe_identity_receiver(struct sk_buff *skb,
-				  const struct net_device *dev, bool inbound,
-				  struct peios_ntfe_identity *out)
+				   const struct net_device *dev, bool inbound,
+				   struct peios_ntfe_identity *out)
 {
 	struct net *net = dev ? dev_net(dev) : NULL;
 	bool handled = false, shared = false;
@@ -375,9 +380,10 @@ static void ntfe_identity_receiver(struct sk_buff *skb,
 }
 
 void peios_ntfe_identity_resolve(struct sk_buff *skb,
-				const struct nf_hook_state *state,
-				const struct peios_ntfe_snapshot *snap,
-				bool other_end, struct peios_ntfe_identity *out)
+				 const struct nf_hook_state *state,
+				 const struct peios_ntfe_snapshot *snap,
+				 bool other_end,
+				 struct peios_ntfe_identity *out)
 {
 	memset(out, 0, sizeof(*out));
 	out->owner.kind = PEIOS_NTFE_OWNER_UNSTAMPED;

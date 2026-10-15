@@ -26,9 +26,7 @@ void pkm_kacs_inode_free_security_rcu(void *inode_security);
 
 bool pkm_kacs_inode_signed_exec_pinned(const struct inode *inode);
 int pkm_kacs_mark_signed_exec_pinned_file(const struct file *file);
-int pkm_kacs_check_signed_exec_content_mutation_inode(
-	const struct inode *inode);
-int pkm_kacs_check_signed_exec_content_mutation_file(
-	const struct file *file);
+int pkm_kacs_check_signed_exec_content_mutation_inode(const struct inode *inode);
+int pkm_kacs_check_signed_exec_content_mutation_file(const struct file *file);
 
 #endif /* _SECURITY_PKM_KACS_OBJECT_LIFECYCLE_H */

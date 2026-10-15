@@ -1,0 +1,250 @@
+# PKM kernel config fragment — merged over the vendored base via
+# scripts/kconfig/merge_config.sh. Declarative replacement for the old
+# Dockerfile's inline `scripts/config` calls. Applied AFTER localmodconfig so
+# these forced choices survive the module narrowing.
+
+# --- Deterministic kernel release ---
+# LOCALVERSION_AUTO runs scripts/setlocalversion, which appends "+"/"-dirty"
+# from the git state of the (patched, hence dirty) source tree — yielding a
+# non-reproducible "7.0.9-dirty" release. We pin the release to the clean
+# upstream base; the Peios package version is carried separately (--version).
+# CONFIG_LOCALVERSION_AUTO is not set
+CONFIG_LOCALVERSION=""
+
+# --- Rust (kernel Kbuild Rust; staged kacs-core/lcs-core compile here) ---
+CONFIG_RUST=y
+
+# --- KACS must be the sole MAC LSM; conflicting MACs are excluded ---
+# CONFIG_SECURITY_SELINUX is not set
+# CONFIG_SECURITY_APPARMOR is not set
+# CONFIG_SECURITY_TOMOYO is not set
+# CONFIG_SECURITY_SMACK is not set
+# CONFIG_BPF_LSM is not set
+# Yama is out too (PEI-689). It is not a MAC, but its ptrace_scope gate runs
+# ahead of KACS and, at the default relational scope, answers every attach
+# to a non-descendant with "does the caller hold CAP_SYS_PTRACE", which the
+# switchboard maps to SeDebugPrivilege. That made the process descriptor's
+# PROCESS_VM_WRITE and PROCESS_DUP_HANDLE inert: the descriptor never got a
+# say. KACS's own hook, plus PIP dominance, is the whole ptrace authority
+# (TRM §3.7), and the same-uid attack Yama exists to close cannot arise
+# under KACS, which never grants on uid.
+# CONFIG_SECURITY_YAMA is not set
+CONFIG_SECURITY_PKM=y
+CONFIG_LSM="landlock,lockdown,integrity,pkm"
+# LoadPin (pin module/firmware loads to one filesystem) was =y in the base
+# config but never in CONFIG_LSM, so it was compiled and never initialised —
+# and it could not work here anyway: it pins to whichever filesystem serves
+# the FIRST kernel file load, which on Peios is the writable initramfs
+# tmpfs (the coldplug hook modprobes before root is mounted), at which point
+# it disables itself. Module signing (MODULE_SIG_FORCE) and PEI-493 are the
+# controls Peios actually relies on. PEI-495.
+# CONFIG_SECURITY_LOADPIN is not set
+
+# --- Lockdown: integrity mode, enabled early ---
+# security_locked_down() takes no subject -- it consults no task, cred or token,
+# so it is not an identity control and still holds if the identity layer itself
+# is compromised. That is the reason it is here: it is the one control in the
+# system not mediated by KACS's own logic. It is NOT load-bearing for module
+# signing, which MODULE_SIG_FORCE enforces independently (module/signing.c:119
+# returns -EKEYREJECTED before the lockdown call at :124).
+#
+# Integrity mode blocks the kernel-write paths: /dev/mem, kexec, hibernation,
+# raw MSR writes, PCI BAR access, ACPI table override, unsigned BPF. NOT
+# confidentiality mode, which additionally blocks reading kernel memory and
+# would break kdump and profiling.
+#
+# Known tension: lockdown is absolute ("nobody, ever") where KACS is granular
+# ("this principal, with this privilege"). Under integrity mode kexec and
+# hibernation are unavailable even to a fully authorised TCB principal, and
+# there is no per-principal exemption -- the only lever is disabling lockdown
+# globally. Nothing in Peios needs those operations today; when something does,
+# that is a deliberate trade-off, not a switch to flip quietly. See PEI-218.
+# CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE is not set
+CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY=y
+CONFIG_SECURITY_LOCKDOWN_LSM_EARLY=y
+
+# --- PIP build-hardening prerequisites (fail-closed in lsm.c) ---
+CONFIG_STRICT_DEVMEM=y
+CONFIG_MODULE_SIG=y
+CONFIG_MODULE_SIG_FORCE=y
+CONFIG_MODULE_SIG_ALL=y
+CONFIG_MODULE_SIG_SHA512=y
+
+# --- Module signing algorithm: ML-DSA-65, matching KACS binary signing ---
+# The key itself is separate from the TCB key and is pointed at by
+# CONFIG_MODULE_SIG_KEY, which configure-kernel.sh sets from the keyring.
+# CONFIG_MODULE_SIG_KEY_TYPE_RSA is not set
+# CONFIG_MODULE_SIG_KEY_TYPE_ECDSA is not set
+CONFIG_MODULE_SIG_KEY_TYPE_MLDSA_65=y
+#
+# MANDATORY with OpenSSL < 4.0, not optional. scripts/sign-file.c:287 detects an
+# ML-DSA key on OpenSSL 3.x and strips CMS_NOATTR, because 3.x cannot produce the
+# direct-signing CMS form for ML-DSA. The result carries signedAttrs, which module
+# verification rejects outright (pkcs7_verify.c:427) unless this waiver is set —
+# without it EVERY module load fails at boot with "Invalid module sig (has
+# authattrs)". The waiver is narrow: pkcs7_parser.c:104 only marks the rejection
+# waivable when the algorithm is ML-DSA, so RSA/ECDSA signatures with signedAttrs
+# are still refused. Drop this when the pool moves to OpenSSL 4.x.
+CONFIG_PKCS7_WAIVE_AUTHATTRS_REJECTION_FOR_MLDSA=y
+
+# --- Firmware loader ---
+# FW_UPLOAD (a sysfs interface for pushing firmware INTO a device, bypassing
+# the file-based loader) cannot be turned off: CXL, FPGA, greybus, the
+# Microchip firmware driver and pse-pd all `select` it. It stays =y. A
+# load-time firmware check (PEI-493) does not cover this path; the drivers
+# that expose it are the place to gate it if that ever matters.
+#
+# Firmware signature verification (PEI-493): KACS checks the PIP signature of
+# every file the kernel reads as firmware and requires the PeiosTcb tier.
+# 2026.8 ships in LOG mode -- the verdict goes to dmesg and the
+# kacs:kacs_firmware_load tracepoint and the load proceeds -- because the
+# farm is being signed for the first time and a blob the packaging missed
+# must show up as a warning, not as a device that silently stops probing.
+# Flip to =y (or boot with kacs_fwsig=enforce) once a release has run clean.
+# CONFIG_SECURITY_PKM_FIRMWARE_SIG_ENFORCE is not set
+#
+# The loader's self-test module: /sys/devices/virtual/misc/test_firmware/
+# trigger_request pulls a named file through the real request_firmware()
+# path with no hardware, which is how test.fwsig proves the check above
+# without a device. A module, so it costs nothing until a test loads it; it
+# is not in the initramfs set (build/config/irf-modules.list).
+CONFIG_TEST_FIRMWARE=m
+
+# --- request_module()'s helper ---
+# The upstream default is /sbin/modprobe, which does not exist on Peios: kmod's
+# compat symlinks install beside the multicall binary in /usr/bin, and the /sbin
+# view is composed from usr/sbin + lcl/sbin, so modprobe is reachable at
+# /bin/modprobe and nowhere else. Left at the default, every kernel-initiated
+# load — get_fs_type() on mount, socket() for a protocol family, the crypto API —
+# fails to find the helper and reports nothing that names the cause.
+#
+# The path being a writable sysctl is the reason KACS applies a PeiosTcb floor to
+# usermodehelper execs: redirecting /proc/sys/kernel/modprobe gains an attacker
+# nothing unless they can also produce a TCB-signed binary. See PEI-59.
+CONFIG_MODPROBE_PATH="/bin/modprobe"
+
+# --- QEMU guest boot + test harness (built-in; monolithic profile) ---
+# initrd
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_RD_GZIP=y
+# virtio transport + devices
+CONFIG_VIRTIO=y
+CONFIG_VIRTIO_PCI=y
+CONFIG_VIRTIO_MMIO=y
+CONFIG_VIRTIO_BLK=y
+CONFIG_VIRTIO_CONSOLE=y
+CONFIG_VIRTIO_NET=y
+# 9p (host<->guest fs) + vsock
+CONFIG_NET_9P=y
+CONFIG_NET_9P_VIRTIO=y
+CONFIG_9P_FS=y
+CONFIG_9P_FS_POSIX_ACL=y
+CONFIG_VSOCKETS=y
+CONFIG_VIRTIO_VSOCKETS=y
+CONFIG_VHOST=y
+CONFIG_VHOST_VSOCK=y
+# core fs + storage
+CONFIG_DEVTMPFS=y
+CONFIG_DEVTMPFS_MOUNT=y
+CONFIG_TMPFS=y
+# The initramfs root's seeded descriptor is a tmpfs xattr (PEI-1211).
+CONFIG_TMPFS_XATTR=y
+CONFIG_BLK_DEV_LOOP=y
+CONFIG_SQUASHFS=y
+CONFIG_SQUASHFS_ZSTD=y
+CONFIG_OVERLAY_FS=y
+CONFIG_STRATAFS_FS=y
+# Test rendezvous/fail points: compiled in, but inert (nothing registers,
+# hooks read one never-true bool) unless booted with stratafs.test_hooks=1.
+# Only the provium profiles pass that.
+CONFIG_STRATAFS_FS_TEST_HOOKS=y
+# console / display
+CONFIG_VT=y
+CONFIG_VT_CONSOLE=y
+CONFIG_VGA_CONSOLE=y
+CONFIG_FRAMEBUFFER_CONSOLE=y
+CONFIG_DRM=y
+CONFIG_DRM_BOCHS=y
+CONFIG_SERIAL_8250=y
+CONFIG_SERIAL_8250_CONSOLE=y
+# ATA / optical / vfat (CD-based boot paths)
+CONFIG_ATA=y
+CONFIG_ATA_PIIX=y
+CONFIG_SATA_AHCI=y
+CONFIG_BLK_DEV_SR=y
+CONFIG_ISO9660_FS=y
+CONFIG_FAT_FS=y
+CONFIG_VFAT_FS=y
+CONFIG_NLS_ISO8859_1=y
+# USB mass storage — real-hardware USB-stick boot (the off-RAM live medium read
+# over USB). The xHCI host plus the usb-storage and UAS SCSI bridges, built-in
+# so early boot reaches the stick with no module load. The base config carries
+# these as `m`, which localmodconfig prunes (no stick attached on the build
+# host) — forcing y here makes them survive. SCSI + BLK_DEV_SD (their hard
+# dependency) are already y from the base config.
+CONFIG_USB=y
+CONFIG_USB_XHCI_HCD=y
+CONFIG_USB_STORAGE=y
+CONFIG_USB_UAS=y
+
+# --- trim base-config leftovers irrelevant to a QEMU guest ---
+# Watchdog pretimeout governors are unneeded in a guest, and GOV_SEL is a hidden
+# `default m` symbol that mod2yesconfig won't convert (leaving a stray module).
+# Disabling the parent removes the whole subtree.
+# CONFIG_WATCHDOG_PRETIMEOUT_GOV is not set
+
+# --- NTFE: the Network Traffic Filtering Engine, the kernel executor of PNP (PEI-598) ---
+# The engine itself. Built-in (bool); its Rust semantics ride the
+# security/pkm Rust island.
+CONFIG_PEIOS_NTFE=y
+# Machinery NTFE stands on, forced =y: NTFE is built-in and calls these
+# symbols on the packet path, so modules won't do — and the kunit profile's
+# localmodconfig would otherwise prune them (this fragment merges after the
+# narrowing precisely so these survive).
+CONFIG_NETFILTER=y
+CONFIG_NETFILTER_ADVANCED=y
+CONFIG_NETFILTER_INGRESS=y
+CONFIG_NETFILTER_EGRESS=y
+CONFIG_NF_CONNTRACK=y
+CONFIG_NF_CONNTRACK_EVENTS=y
+CONFIG_NF_CONNTRACK_ZONES=y
+CONFIG_NF_CONNTRACK_TIMEOUT=y
+CONFIG_NF_CONNTRACK_TIMESTAMP=y
+CONFIG_NETFILTER_NETLINK=y
+CONFIG_NF_CT_NETLINK=y
+CONFIG_NF_DEFRAG_IPV4=y
+CONFIG_NF_DEFRAG_IPV6=y
+# REJECT response emitters (protocol-phrased refusals: RST / ICMP
+# unreachable). Normally selected by the nft/xtables reject targets, which
+# are gone below; NTFE is their consumer now.
+CONFIG_NF_REJECT_IPV4=y
+CONFIG_NF_REJECT_IPV6=y
+# NAT engine: kept DORMANT by ratified decision — compiled, no configurator
+# until NTFE steers it at router time.
+CONFIG_NF_NAT=y
+
+# --- the clean slate: every netfilter policy frontend, configured out ---
+# Ratified (PEI-598/PEI-28): nf_tables and the whole xtables family are
+# replaced by NTFE. Machinery (hooks, conntrack, defrag, reject emitters,
+# dormant NAT) stays above; every policy surface goes. Config-off, not
+# source excision: unbuilt code ships nothing, and this is reversible
+# while NTFE grows into the space.
+# CONFIG_NF_TABLES is not set
+# CONFIG_NETFILTER_XTABLES is not set
+# CONFIG_NETFILTER_XTABLES_COMPAT is not set
+# CONFIG_NETFILTER_XTABLES_LEGACY is not set
+# CONFIG_IP_NF_IPTABLES is not set
+# CONFIG_IP_NF_IPTABLES_LEGACY is not set
+# CONFIG_IP6_NF_IPTABLES is not set
+# CONFIG_IP6_NF_IPTABLES_LEGACY is not set
+# CONFIG_BRIDGE_NF_EBTABLES is not set
+# CONFIG_BRIDGE_NF_EBTABLES_LEGACY is not set
+# CONFIG_NF_TABLES_ARP is not set
+# CONFIG_IP_SET is not set
+# CONFIG_NETFILTER_NETLINK_QUEUE is not set
+# CONFIG_NETFILTER_NETLINK_LOG is not set
+# CONFIG_NETFILTER_NETLINK_HOOK is not set
+# CONFIG_NETFILTER_BPF_LINK is not set
+# CONFIG_NF_FLOW_TABLE is not set
+# CONFIG_BRIDGE_NETFILTER is not set
+# CONFIG_IP_VS is not set

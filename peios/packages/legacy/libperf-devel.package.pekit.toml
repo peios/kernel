@@ -1,0 +1,31 @@
+# libperf-devel — libperf development files: public + internal headers, static
+# lib, pkg-config, the .so dev symlink, and the API man pages / html docs.
+# (perf_dlfilter.h shares usr/include/perf/ but belongs to perf-devel, so it is
+# excluded here.)
+
+excludes = ["tools:usr/include/perf/perf_dlfilter.h"]
+
+# PSPU §5.24: a payload carrying man pages SHOULD declare man-db, so that
+# `man -k` and `apropos` find them instead of falling back to a filesystem
+# scan. Top-level, not inside a table -- TOML would otherwise scope it to
+# whichever table precedes it.
+side_effects = ["man-db"]
+
+[package]
+name = "dev.peios.libperf-devel"
+description = "libperf - development files (headers, static lib, pkg-config)"
+
+[dependencies]
+"dev.peios.libperf" = "= {{release}}"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.libperf-devel/COPYING"
+"tools:usr/lib/x86_64-linux-peios/libperf.so"           = "usr/lib/x86_64-linux-peios/libperf.so"
+"tools:usr/lib/x86_64-linux-peios/libperf.a"            = "usr/lib/x86_64-linux-peios/libperf.a"
+"tools:usr/lib/x86_64-linux-peios/pkgconfig/libperf.pc" = "usr/lib/x86_64-linux-peios/pkgconfig/libperf.pc"
+"tools:usr/include/perf/**"      = "usr/include/perf/"
+"tools:usr/include/internal/**"  = "usr/include/internal/"
+# The libperf API man pages: man3 for the functions, man7 for the library
+# overview. asciidoc and xmlto render them (PEI-535).
+"tools:usr/share/man/man3/libperf*.3.gz" = "usr/share/man/man3"
+"tools:usr/share/man/man7/libperf*.7.gz" = "usr/share/man/man7"

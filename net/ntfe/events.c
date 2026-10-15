@@ -32,13 +32,13 @@
 
 static struct {
 	spinlock_t lock;
-	struct peios_ntfe_event *buf;	/* PEIOS_NTFE_EVENT_RING entries */
-	u32 head;			/* next write slot */
-	u32 count;			/* live records */
+	struct peios_ntfe_event *buf; /* PEIOS_NTFE_EVENT_RING entries */
+	u32 head; /* next write slot */
+	u32 count; /* live records */
 	u64 next_seq;
 	u64 dropped;
 	wait_queue_head_t wq;
-	struct file *reader;		/* the one file draining the ring */
+	struct file *reader; /* the one file draining the ring */
 } peios_ntfe_events = {
 	.lock = __SPIN_LOCK_UNLOCKED(peios_ntfe_events.lock),
 	.wq = __WAIT_QUEUE_HEAD_INITIALIZER(peios_ntfe_events.wq),
@@ -50,10 +50,10 @@ static u8 saturate_u8(u32 v)
 }
 
 void peios_ntfe_event_emit(const struct peios_ntfe_snapshot *snap,
-			  const struct peios_ntfe_outcome *out, u8 layer,
-			  u8 flags)
+			   const struct peios_ntfe_outcome *out, u8 layer,
+			   u8 flags)
 {
-	struct peios_ntfe_event ev = { };
+	struct peios_ntfe_event ev = {};
 	unsigned long irqflags;
 	u32 slot;
 
@@ -81,8 +81,7 @@ void peios_ntfe_event_emit(const struct peios_ntfe_snapshot *snap,
 		     (u32)saturate_u8(out->n_counts) << 8 |
 		     (u32)saturate_u8(out->n_reports) << 16 |
 		     (u32)saturate_u8(out->n_prompts) << 24;
-	strscpy((char *)ev.attributed, out->attributed,
-		sizeof(ev.attributed));
+	strscpy((char *)ev.attributed, out->attributed, sizeof(ev.attributed));
 	/* The identity facts: set on Flow views, zero everywhere else. */
 	ev.local_kind = snap->local_kind;
 	ev.remote_kind = snap->remote_kind;
@@ -96,10 +95,10 @@ void peios_ntfe_event_emit(const struct peios_ntfe_snapshot *snap,
 	memcpy(ev.remote_comm, snap->remote_comm, sizeof(ev.remote_comm));
 	if (snap->local_token)
 		ntfe_rust_owner_sids(snap->local_token, ev.local_user,
-				    ev.local_service);
+				     ev.local_service);
 	if (snap->remote_token)
 		ntfe_rust_owner_sids(snap->remote_token, ev.remote_user,
-				    ev.remote_service);
+				     ev.remote_service);
 
 	spin_lock_irqsave(&peios_ntfe_events.lock, irqflags);
 	ev.seq = peios_ntfe_events.next_seq++;
@@ -109,7 +108,7 @@ void peios_ntfe_event_emit(const struct peios_ntfe_snapshot *snap,
 	if (peios_ntfe_events.count < PEIOS_NTFE_EVENT_RING)
 		peios_ntfe_events.count++;
 	else
-		peios_ntfe_events.dropped++;	/* oldest overwritten */
+		peios_ntfe_events.dropped++; /* oldest overwritten */
 	spin_unlock_irqrestore(&peios_ntfe_events.lock, irqflags);
 
 	wake_up_interruptible(&peios_ntfe_events.wq);
@@ -135,7 +134,8 @@ static u32 peios_ntfe_events_pop(struct peios_ntfe_event *out, u32 max)
 	spin_lock_irqsave(&peios_ntfe_events.lock, irqflags);
 	while (taken < max && peios_ntfe_events.count) {
 		u32 tail = (peios_ntfe_events.head + PEIOS_NTFE_EVENT_RING -
-			    peios_ntfe_events.count) % PEIOS_NTFE_EVENT_RING;
+			    peios_ntfe_events.count) %
+			   PEIOS_NTFE_EVENT_RING;
 
 		out[taken++] = peios_ntfe_events.buf[tail];
 		peios_ntfe_events.count--;
@@ -157,7 +157,7 @@ static int peios_ntfe_dev_release(struct inode *inode, struct file *file)
 }
 
 static ssize_t peios_ntfe_dev_read(struct file *file, char __user *ubuf,
-				  size_t len, loff_t *ppos)
+				   size_t len, loff_t *ppos)
 {
 	struct peios_ntfe_event *batch;
 	u32 want, got;
@@ -172,8 +172,9 @@ static ssize_t peios_ntfe_dev_read(struct file *file, char __user *ubuf,
 		return -EINVAL;
 	want = min_t(u32, want, 64);
 
-	batch = peios_ntfe_kunit_alloc_should_fail() ? NULL :
-		kmalloc_array(want, sizeof(*batch), GFP_KERNEL);
+	batch = peios_ntfe_kunit_alloc_should_fail() ?
+			NULL :
+			kmalloc_array(want, sizeof(*batch), GFP_KERNEL);
 	if (!batch)
 		return -ENOMEM;
 
@@ -208,7 +209,7 @@ static __poll_t peios_ntfe_dev_poll(struct file *file, poll_table *wait)
 }
 
 static long peios_ntfe_dev_ioctl(struct file *file, unsigned int cmd,
-				unsigned long arg)
+				 unsigned long arg)
 {
 	void __user *uarg = (void __user *)arg;
 

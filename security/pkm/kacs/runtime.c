@@ -102,8 +102,7 @@ void pkm_kacs_local_irq_restore(unsigned long flags)
 	local_irq_restore(flags);
 }
 
-bool pkm_kacs_subjective_cred_context_allowed(bool task_context,
-					      bool has_cred,
+bool pkm_kacs_subjective_cred_context_allowed(bool task_context, bool has_cred,
 					      bool has_security_blob,
 					      bool has_token)
 {
@@ -149,14 +148,14 @@ const void *pkm_kacs_current_primary_token_ptr(void)
 
 static kacs_uuid_t pkm_kacs_null_uuid(void)
 {
-	kacs_uuid_t uuid = { };
+	kacs_uuid_t uuid = {};
 
 	return uuid;
 }
 
 static kacs_uuid_t pkm_kacs_token_guid_or_null(const void *token)
 {
-	kacs_uuid_t uuid = { };
+	kacs_uuid_t uuid = {};
 
 	if (!token)
 		return uuid;
@@ -187,7 +186,7 @@ kacs_uuid_t kacs_primary_token_guid(void)
 kacs_uuid_t kacs_process_guid(void)
 {
 	struct pkm_kacs_process_state *state;
-	kacs_uuid_t uuid = { };
+	kacs_uuid_t uuid = {};
 
 	/*
 	 * The same guard the other two identity-stamp accessors carry.
@@ -241,7 +240,8 @@ long pkm_kacs_require_enabled_privilege(const void *subject_token,
 		return -EPERM;
 	}
 	if (!kacs_rust_token_mark_privileges_used(subject_token, privilege)) {
-		trace_kacs_privilege(privilege, KACS_PRIV_USE_MARK_FAIL, -EPERM);
+		trace_kacs_privilege(privilege, KACS_PRIV_USE_MARK_FAIL,
+				     -EPERM);
 		return -EPERM;
 	}
 

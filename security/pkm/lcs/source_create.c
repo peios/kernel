@@ -21,7 +21,7 @@ long pkm_lcs_create_existing_user_path_for_token(
 	int parent_fd, const char __user *upath, u32 desired_access, u32 flags,
 	u32 *disposition)
 {
-	struct pkm_lcs_create_preflight_plan preflight = { };
+	struct pkm_lcs_create_preflight_plan preflight = {};
 	long ret;
 
 	if (disposition)
@@ -37,8 +37,8 @@ long pkm_lcs_create_existing_user_path_for_token(
 			NULL, 0);
 	else
 		ret = pkm_lcs_open_user_relative_path_for_token(
-			token, ops, parent_fd, upath, desired_access, 0, NULL, 0,
-			NULL, 0);
+			token, ops, parent_fd, upath, desired_access, 0, NULL,
+			0, NULL, 0);
 
 	if (ret >= 0 && disposition)
 		*disposition = REG_OPENED_EXISTING;
@@ -48,12 +48,11 @@ long pkm_lcs_create_existing_user_path_for_token(
 static long pkm_lcs_create_existing_copied_path_for_token_with_txn(
 	const void *token, int parent_fd,
 	const struct pkm_lcs_syscall_path_copy *copy, u32 desired_access,
-	u32 flags, const struct pkm_lcs_rsi_layer_view *layers,
-	u32 layer_count,
+	u32 flags, const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
 	u32 private_layer_count, int txn_fd, u32 *disposition)
 {
-	struct pkm_lcs_create_preflight_plan preflight = { };
+	struct pkm_lcs_create_preflight_plan preflight = {};
 	long ret;
 
 	if (disposition)
@@ -66,11 +65,13 @@ static long pkm_lcs_create_existing_copied_path_for_token_with_txn(
 	if (parent_fd == -1)
 		ret = pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
 			token, copy, desired_access, 0, NULL, 0, layers,
-			layer_count, private_layers, private_layer_count, txn_fd);
+			layer_count, private_layers, private_layer_count,
+			txn_fd);
 	else
 		ret = pkm_lcs_open_copied_relative_path_after_preflight(
 			token, parent_fd, copy, desired_access, 0, layers,
-			layer_count, private_layers, private_layer_count, txn_fd);
+			layer_count, private_layers, private_layer_count,
+			txn_fd);
 
 	if (ret >= 0 && disposition)
 		*disposition = REG_OPENED_EXISTING;
@@ -83,8 +84,8 @@ long pkm_lcs_create_existing_copied_path_for_token(
 	u32 flags, u32 *disposition)
 {
 	return pkm_lcs_create_existing_copied_path_for_token_with_txn(
-		token, parent_fd, copy, desired_access, flags, NULL, 0, NULL, 0, -1,
-		disposition);
+		token, parent_fd, copy, desired_access, flags, NULL, 0, NULL, 0,
+		-1, disposition);
 }
 
 long pkm_lcs_reg_create_key_copy_disposition_to_user(
@@ -113,8 +114,8 @@ long pkm_lcs_reg_create_key_finish_success_to_user(
 	if (fd < 0 || fd > INT_MAX)
 		return -EINVAL;
 
-	ret = pkm_lcs_reg_create_key_copy_disposition_to_user(
-		ops, udisposition, disposition);
+	ret = pkm_lcs_reg_create_key_copy_disposition_to_user(ops, udisposition,
+							      disposition);
 	if (ret) {
 		close_fd((unsigned int)fd);
 		return ret;
@@ -264,8 +265,11 @@ extern int lcs_rust_value_name_casefold_eq(
 static long pkm_lcs_create_missing_layer_table_admit(
 	const struct pkm_lcs_create_missing_parent_resolution *resolution)
 {
-	static const char * const prefix[] = {
-		"Machine", "System", "Registry", "Layers",
+	static const char *const prefix[] = {
+		"Machine",
+		"System",
+		"Registry",
+		"Layers",
 	};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
@@ -290,10 +294,11 @@ static long pkm_lcs_create_missing_layer_table_admit(
 		component_len = strlen(component);
 		if (component_len > U32_MAX)
 			return -EOVERFLOW;
-		ret = lcs_rust_value_name_casefold_eq(
-			(const u8 *)component, (u32)component_len,
-			(const u8 *)prefix[i], (u32)strlen(prefix[i]), limits,
-			&equal);
+		ret = lcs_rust_value_name_casefold_eq((const u8 *)component,
+						      (u32)component_len,
+						      (const u8 *)prefix[i],
+						      (u32)strlen(prefix[i]),
+						      limits, &equal);
 		if (ret)
 			return ret;
 		if (!equal)
@@ -338,8 +343,8 @@ static long pkm_lcs_resolved_parent_from_snapshot_prepare(
 		pkm_lcs_resolved_key_path_destroy(result);
 		return -EINVAL;
 	}
-	result->ancestor_guids = kmemdup(parent->ancestor_guids, guid_bytes,
-					GFP_KERNEL);
+	result->ancestor_guids =
+		kmemdup(parent->ancestor_guids, guid_bytes, GFP_KERNEL);
 	if (!result->ancestor_guids) {
 		pkm_lcs_resolved_key_path_destroy(result);
 		return -ENOMEM;
@@ -350,8 +355,8 @@ static long pkm_lcs_resolved_parent_from_snapshot_prepare(
 			pkm_lcs_resolved_key_path_destroy(result);
 			return -EINVAL;
 		}
-		result->resolved_path[i] = kstrdup(parent->resolved_path[i],
-						   GFP_KERNEL);
+		result->resolved_path[i] =
+			kstrdup(parent->resolved_path[i], GFP_KERNEL);
 		if (!result->resolved_path[i]) {
 			pkm_lcs_resolved_key_path_destroy(result);
 			return -ENOMEM;
@@ -366,9 +371,9 @@ static long pkm_lcs_create_missing_read_parent_key(
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_resolved_key_path *parent)
 {
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_source_enqueue_result enqueue = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_source_enqueue_result enqueue = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
 	struct pkm_lcs_source_response_frame frame;
 	long ret;
 
@@ -377,8 +382,8 @@ static long pkm_lcs_create_missing_read_parent_key(
 
 	pkm_lcs_source_response_frame_init(&frame);
 	ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
-		source_id, txn_id, key_guid, limits,
-		limits->request_timeout_ms, &frame, &response, &enqueue);
+		source_id, txn_id, key_guid, limits, limits->request_timeout_ms,
+		&frame, &response, &enqueue);
 	if (ret)
 		goto out_destroy_frame;
 
@@ -386,10 +391,8 @@ static long pkm_lcs_create_missing_read_parent_key(
 		frame.data, frame.len, response.request_id, limits, &read_key);
 	if (ret)
 		goto out_destroy_frame;
-	if (!read_key.sd_len ||
-	    (size_t)read_key.sd_offset > frame.len ||
-	    (size_t)read_key.sd_len >
-		    frame.len - (size_t)read_key.sd_offset) {
+	if (!read_key.sd_len || (size_t)read_key.sd_offset > frame.len ||
+	    (size_t)read_key.sd_len > frame.len - (size_t)read_key.sd_offset) {
 		ret = -EIO;
 		goto out_destroy_frame;
 	}
@@ -409,17 +412,16 @@ out_destroy_frame:
 
 long pkm_lcs_create_missing_absolute_parent_for_token(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
-	const char __user *upath, const u8 (*scope_guids)[16],
-	u32 scope_count, const struct pkm_lcs_rsi_layer_view *layers,
-	u32 layer_count,
+	const char __user *upath, const u8 (*scope_guids)[16], u32 scope_count,
+	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
 	u32 private_layer_count,
 	struct pkm_lcs_create_missing_parent_resolution *result)
 {
-	struct pkm_lcs_materialized_path components = { };
-	struct pkm_lcs_hive_route_result route = { };
+	struct pkm_lcs_materialized_path components = {};
+	struct pkm_lcs_hive_route_result route = {};
 	struct pkm_lcs_runtime_limits limits;
-	struct pkm_lcs_syscall_path_copy copy = { };
+	struct pkm_lcs_syscall_path_copy copy = {};
 	u32 parent_component_count;
 	long ret;
 
@@ -438,8 +440,8 @@ long pkm_lcs_create_missing_absolute_parent_for_token(
 	result->limits = limits;
 	result->limits_present = true;
 	ret = pkm_lcs_route_absolute_path_for_token_with_limits(
-		token, copy.path, copy.path_len, true, scope_guids,
-		scope_count, &limits, &route);
+		token, copy.path, copy.path_len, true, scope_guids, scope_count,
+		&limits, &route);
 	if (ret)
 		goto out_copy;
 
@@ -461,13 +463,14 @@ long pkm_lcs_create_missing_absolute_parent_for_token(
 	parent_component_count = components.component_count - 1U;
 	ret = pkm_lcs_walk_absolute_components_for_open_with_limits(
 		route.source_id, 0, route.root_guid, components.components,
-		parent_component_count, false, scope_guids, scope_count,
-		layers, layer_count, private_layers, private_layer_count,
-		-1, &limits, &result->parent);
+		parent_component_count, false, scope_guids, scope_count, layers,
+		layer_count, private_layers, private_layer_count, -1, &limits,
+		&result->parent);
 	if (ret)
 		goto out_result;
 
-	ret = pkm_lcs_create_missing_set_child_depth(result, limits.max_key_depth);
+	ret = pkm_lcs_create_missing_set_child_depth(result,
+						     limits.max_key_depth);
 	if (ret)
 		goto out_result;
 
@@ -486,18 +489,17 @@ out_copy:
 
 long pkm_lcs_create_missing_relative_parent(
 	const struct pkm_lcs_usercopy_ops *ops, int parent_fd,
-	const char __user *upath, const u8 (*scope_guids)[16],
-	u32 scope_count, const struct pkm_lcs_rsi_layer_view *layers,
-	u32 layer_count,
+	const char __user *upath, const u8 (*scope_guids)[16], u32 scope_count,
+	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
 	u32 private_layer_count,
 	struct pkm_lcs_create_missing_parent_resolution *result)
 {
-	struct pkm_lcs_key_fd_parent_snapshot parent = { };
-	struct pkm_lcs_materialized_path components = { };
-	struct pkm_lcs_path_validation_result path = { };
+	struct pkm_lcs_key_fd_parent_snapshot parent = {};
+	struct pkm_lcs_materialized_path components = {};
+	struct pkm_lcs_path_validation_result path = {};
 	struct pkm_lcs_runtime_limits limits;
-	struct pkm_lcs_syscall_path_copy copy = { };
+	struct pkm_lcs_syscall_path_copy copy = {};
 	long ret;
 
 	if (!result)
@@ -545,9 +547,10 @@ long pkm_lcs_create_missing_relative_parent(
 			&parent, &result->parent);
 		if (ret)
 			goto out_result;
-		ret = pkm_lcs_create_missing_read_parent_key(
-			parent.source_id, 0, parent.key_guid, &limits,
-			&result->parent);
+		ret = pkm_lcs_create_missing_read_parent_key(parent.source_id,
+							     0, parent.key_guid,
+							     &limits,
+							     &result->parent);
 	} else {
 		ret = pkm_lcs_walk_relative_components_for_open_with_limits(
 			&parent, 0, components.components,
@@ -588,8 +591,8 @@ static long pkm_lcs_create_missing_copied_absolute_parent_for_token_with_txn(
 	u32 private_layer_count, int txn_fd,
 	struct pkm_lcs_create_missing_parent_resolution *result)
 {
-	struct pkm_lcs_materialized_path components = { };
-	struct pkm_lcs_hive_route_result route = { };
+	struct pkm_lcs_materialized_path components = {};
+	struct pkm_lcs_hive_route_result route = {};
 	struct pkm_lcs_runtime_limits limits;
 	u32 parent_component_count;
 	long ret;
@@ -630,9 +633,9 @@ static long pkm_lcs_create_missing_copied_absolute_parent_for_token_with_txn(
 	parent_component_count = components.component_count - 1U;
 	ret = pkm_lcs_walk_absolute_components_for_open_with_limits(
 		route.source_id, 0, route.root_guid, components.components,
-		parent_component_count, false, scope_guids, scope_count,
-		layers, layer_count, private_layers, private_layer_count,
-		txn_fd, &limits, &result->parent);
+		parent_component_count, false, scope_guids, scope_count, layers,
+		layer_count, private_layers, private_layer_count, txn_fd,
+		&limits, &result->parent);
 	if (ret)
 		goto out_result;
 
@@ -673,9 +676,9 @@ static long pkm_lcs_create_missing_copied_relative_parent_with_txn(
 	u32 private_layer_count, int txn_fd,
 	struct pkm_lcs_create_missing_parent_resolution *result)
 {
-	struct pkm_lcs_key_fd_parent_snapshot parent = { };
-	struct pkm_lcs_materialized_path components = { };
-	struct pkm_lcs_path_validation_result path = { };
+	struct pkm_lcs_key_fd_parent_snapshot parent = {};
+	struct pkm_lcs_materialized_path components = {};
+	struct pkm_lcs_path_validation_result path = {};
 	struct pkm_lcs_runtime_limits limits;
 	long ret;
 
@@ -725,8 +728,8 @@ static long pkm_lcs_create_missing_copied_relative_parent_with_txn(
 		if (ret)
 			goto out_result;
 		ret = pkm_lcs_transaction_read_txn_id_for_target(
-			txn_fd, parent.source_id, parent.ancestor_guids[0],
-			0, &effective_txn_id);
+			txn_fd, parent.source_id, parent.ancestor_guids[0], 0,
+			&effective_txn_id);
 		if (ret)
 			goto out_result;
 		ret = pkm_lcs_create_missing_read_parent_key(
@@ -790,9 +793,8 @@ static long pkm_lcs_create_missing_copied_parent_for_token_with_txn(
 			txn_fd, result);
 
 	return pkm_lcs_create_missing_copied_relative_parent_with_txn(
-		parent_fd, copy, scope_guids, scope_count, layers,
-		layer_count, private_layers, private_layer_count, txn_fd,
-		result);
+		parent_fd, copy, scope_guids, scope_count, layers, layer_count,
+		private_layers, private_layer_count, txn_fd, result);
 }
 
 long pkm_lcs_create_missing_copied_parent_for_token(
@@ -811,9 +813,9 @@ long pkm_lcs_create_missing_copied_parent_for_token(
 
 long pkm_lcs_create_missing_parent_for_token(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
-	int parent_fd, const char __user *upath,
-	const u8 (*scope_guids)[16], u32 scope_count,
-	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
+	int parent_fd, const char __user *upath, const u8 (*scope_guids)[16],
+	u32 scope_count, const struct pkm_lcs_rsi_layer_view *layers,
+	u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
 	u32 private_layer_count,
 	struct pkm_lcs_create_missing_parent_resolution *result)
@@ -922,10 +924,11 @@ long pkm_lcs_create_missing_initial_sd_for_token(
 	if (ret)
 		return ret;
 
-	ret = kacs_rust_build_created_container_sd(
-		token, parent_sd, parent_sd_len, KEY_READ, KEY_WRITE, 0,
-		KEY_ALL_ACCESS, REG_VALID_MAPPED_ACCESS_MASK, &child_sd,
-		&child_sd_len);
+	ret = kacs_rust_build_created_container_sd(token, parent_sd,
+						   parent_sd_len, KEY_READ,
+						   KEY_WRITE, 0, KEY_ALL_ACCESS,
+						   REG_VALID_MAPPED_ACCESS_MASK,
+						   &child_sd, &child_sd_len);
 	if (ret == -EINVAL || ret == -ERANGE)
 		return -EIO;
 	if (ret)
@@ -992,13 +995,13 @@ static long pkm_lcs_create_missing_source_records_with_sequence(
 	const struct pkm_lcs_create_missing_parent_resolution *resolution,
 	const struct pkm_lcs_create_layer_target *target,
 	const u8 child_guid[RSI_GUID_SIZE],
-	const struct pkm_lcs_created_key_sd *created_sd,
-	bool volatile_key, bool symlink, u64 txn_id, u64 sequence,
+	const struct pkm_lcs_created_key_sd *created_sd, bool volatile_key,
+	bool symlink, u64 txn_id, u64 sequence,
 	struct pkm_lcs_create_missing_source_records_result *result)
 {
-	struct pkm_lcs_source_response_result entry_response = { };
-	struct pkm_lcs_source_response_result key_response = { };
-	struct pkm_lcs_reg_create_source_response_plan plan = { };
+	struct pkm_lcs_source_response_result entry_response = {};
+	struct pkm_lcs_source_response_result key_response = {};
+	struct pkm_lcs_reg_create_source_response_plan plan = {};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
 	long ret;
@@ -1022,9 +1025,9 @@ static long pkm_lcs_create_missing_source_records_with_sequence(
 	ret = pkm_lcs_source_create_entry_round_trip_timeout_with_limits(
 		resolution->parent.source_id, txn_id,
 		resolution->parent.key_guid, resolution->child_name,
-		resolution->child_name_len,
-		target->name, target->name_len, child_guid, sequence,
-		limits, limits->request_timeout_ms, &entry_response, NULL);
+		resolution->child_name_len, target->name, target->name_len,
+		child_guid, sequence, limits, limits->request_timeout_ms,
+		&entry_response, NULL);
 	ret = pkm_lcs_create_missing_source_response_plan(ret, &entry_response,
 							  &plan);
 	if (ret)
@@ -1050,8 +1053,7 @@ static long pkm_lcs_create_missing_source_records_with_sequence(
 							  &plan);
 	if (ret)
 		return ret;
-	if (plan.action !=
-	    PKM_LCS_REG_CREATE_SOURCE_ACTION_PUBLISH_CREATED_NEW)
+	if (plan.action != PKM_LCS_REG_CREATE_SOURCE_ACTION_PUBLISH_CREATED_NEW)
 		return -EIO;
 
 	result->disposition = plan.disposition;
@@ -1063,8 +1065,8 @@ long pkm_lcs_create_missing_source_records(
 	const struct pkm_lcs_create_missing_parent_resolution *resolution,
 	const struct pkm_lcs_create_layer_target *target,
 	const u8 child_guid[RSI_GUID_SIZE],
-	const struct pkm_lcs_created_key_sd *created_sd,
-	bool volatile_key, bool symlink,
+	const struct pkm_lcs_created_key_sd *created_sd, bool volatile_key,
+	bool symlink,
 	struct pkm_lcs_create_missing_source_records_result *result)
 {
 	u64 sequence = 0;
@@ -1106,8 +1108,8 @@ static long pkm_lcs_create_missing_child_path_prepare(
 	if (!resolution || !child_guid || !resolution->parent.source_id ||
 	    !resolution->parent.component_count ||
 	    !resolution->parent.resolved_path ||
-	    !resolution->parent.ancestor_guids ||
-	    !resolution->child_name || !resolution->child_name_len)
+	    !resolution->parent.ancestor_guids || !resolution->child_name ||
+	    !resolution->child_name_len)
 		return -EINVAL;
 
 	parent_count = resolution->parent.component_count;
@@ -1147,17 +1149,15 @@ static long pkm_lcs_create_missing_child_path_prepare(
 			ret = -EINVAL;
 			goto out_error;
 		}
-		child->resolved_path[i] =
-			kstrdup(resolution->parent.resolved_path[i],
-				GFP_KERNEL);
+		child->resolved_path[i] = kstrdup(
+			resolution->parent.resolved_path[i], GFP_KERNEL);
 		if (!child->resolved_path[i])
 			goto out_nomem;
 	}
 
 	child_index = parent_count;
-	child->resolved_path[child_index] =
-		kmemdup_nul(resolution->child_name,
-			    resolution->child_name_len, GFP_KERNEL);
+	child->resolved_path[child_index] = kmemdup_nul(
+		resolution->child_name, resolution->child_name_len, GFP_KERNEL);
 	if (!child->resolved_path[child_index])
 		goto out_nomem;
 	memcpy(child->ancestor_guids[child_index], child_guid, RSI_GUID_SIZE);
@@ -1177,7 +1177,7 @@ long pkm_lcs_create_missing_publish_created_key_for_token(
 	const u8 child_guid[RSI_GUID_SIZE],
 	const struct pkm_lcs_created_key_sd *created_sd, u32 desired_access)
 {
-	struct pkm_lcs_resolved_key_path child = { };
+	struct pkm_lcs_resolved_key_path child = {};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
 	long ret;
@@ -1192,15 +1192,15 @@ long pkm_lcs_create_missing_publish_created_key_for_token(
 		return -EINVAL;
 
 	ret = pkm_lcs_create_missing_child_path_prepare(resolution, child_guid,
-						       &child);
+							&child);
 	if (ret)
 		return ret;
 
 	ret = pkm_lcs_publish_open_key_for_token(
 		token, child.source_id, child.key_guid, created_sd->sd,
 		created_sd->sd_len, desired_access,
-		(const char * const *)child.resolved_path,
-		child.ancestor_guids, child.component_count, limits);
+		(const char *const *)child.resolved_path, child.ancestor_guids,
+		child.component_count, limits);
 	pkm_lcs_resolved_key_path_destroy(&child);
 	return ret;
 }
@@ -1208,7 +1208,7 @@ long pkm_lcs_create_missing_publish_created_key_for_token(
 static void pkm_lcs_create_missing_dispatch_subkey_created_best_effort(
 	const struct pkm_lcs_create_missing_parent_resolution *resolution)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
 
@@ -1225,7 +1225,7 @@ static void pkm_lcs_create_missing_dispatch_subkey_created_best_effort(
 	context.changed_key_guid = resolution->parent.key_guid;
 	context.ancestor_guids = resolution->parent.ancestor_guids;
 	context.resolved_path =
-		(const char * const *)resolution->parent.resolved_path;
+		(const char *const *)resolution->parent.resolved_path;
 	context.limits = limits;
 	context.path_component_count = resolution->parent.component_count;
 	context.event_type = REG_WATCH_SUBKEY_CREATED;
@@ -1239,7 +1239,7 @@ static long pkm_lcs_create_missing_refresh_layer_metadata_if_needed(
 	const struct pkm_lcs_create_missing_parent_resolution *resolution,
 	const u8 child_guid[RSI_GUID_SIZE], bool *effective_changed_out)
 {
-	struct pkm_lcs_resolved_key_path child = { };
+	struct pkm_lcs_resolved_key_path child = {};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
 	const u8 *creator_sid = NULL;
@@ -1256,7 +1256,7 @@ static long pkm_lcs_create_missing_refresh_layer_metadata_if_needed(
 		return -EINVAL;
 
 	ret = pkm_lcs_create_missing_child_path_prepare(resolution, child_guid,
-						       &child);
+							&child);
 	if (ret)
 		return ret;
 
@@ -1266,8 +1266,8 @@ static long pkm_lcs_create_missing_refresh_layer_metadata_if_needed(
 
 	ret = pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result_with_limits(
 		child.source_id, child.key_guid,
-		(const char * const *)child.resolved_path,
-		child.component_count, creator_sid, creator_sid_len, true, limits,
+		(const char *const *)child.resolved_path, child.component_count,
+		creator_sid, creator_sid_len, true, limits,
 		effective_changed_out);
 out_child:
 	pkm_lcs_resolved_key_path_destroy(&child);
@@ -1283,7 +1283,7 @@ long pkm_lcs_create_missing_prepared_key_for_token(
 	bool volatile_key, bool symlink,
 	struct pkm_lcs_create_missing_prepared_result *result)
 {
-	struct pkm_lcs_create_missing_source_records_result source = { };
+	struct pkm_lcs_create_missing_source_records_result source = {};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
 	bool layer_effective_changed = false;
@@ -1301,9 +1301,10 @@ long pkm_lcs_create_missing_prepared_key_for_token(
 	memset(result, 0, sizeof(*result));
 	result->fd = -1;
 
-	ret = pkm_lcs_create_missing_source_records(
-		resolution, target, child_guid, created_sd, volatile_key,
-		symlink, &source);
+	ret = pkm_lcs_create_missing_source_records(resolution, target,
+						    child_guid, created_sd,
+						    volatile_key, symlink,
+						    &source);
 	if (ret)
 		return ret;
 
@@ -1322,19 +1323,20 @@ long pkm_lcs_create_missing_prepared_key_for_token(
 		return ret;
 
 	ret = pkm_lcs_source_record_transaction_generation(
-		resolution->parent.source_id, resolution->parent.ancestor_guids[0],
-		&generation);
+		resolution->parent.source_id,
+		resolution->parent.ancestor_guids[0], &generation);
 	if (ret) {
 		pkm_lcs_source_mark_down_by_id(resolution->parent.source_id);
 		return -EIO;
 	}
 
 	if (layer_effective_changed) {
-		struct pkm_lcs_layer_operation_recovery_result recovery = { };
+		struct pkm_lcs_layer_operation_recovery_result recovery = {};
 
 		ret = pkm_lcs_source_layer_operation_recover_skip_generation_with_limits(
 			resolution->parent.source_id,
-			resolution->parent.ancestor_guids[0], limits, &recovery);
+			resolution->parent.ancestor_guids[0], limits,
+			&recovery);
 		if (ret) {
 			pkm_lcs_source_mark_down_by_id(
 				resolution->parent.source_id);
@@ -1395,8 +1397,8 @@ static long pkm_lcs_retry_open_components_prepare(
 	if (!resolution || !resolution->parent.source_id ||
 	    !resolution->parent.component_count ||
 	    !resolution->parent.resolved_path ||
-	    !resolution->parent.ancestor_guids ||
-	    !resolution->child_name || !resolution->child_name_len)
+	    !resolution->parent.ancestor_guids || !resolution->child_name ||
+	    !resolution->child_name_len)
 		return -EINVAL;
 
 	parent_count = resolution->parent.component_count;
@@ -1445,7 +1447,7 @@ static long pkm_lcs_create_missing_retry_open_existing_for_token_with_txn(
 	u32 private_layer_count, int txn_fd, u32 __user *udisposition)
 {
 	struct pkm_lcs_path_component_view *components = NULL;
-	struct pkm_lcs_resolved_key_path resolved = { };
+	struct pkm_lcs_resolved_key_path resolved = {};
 	struct pkm_lcs_runtime_limits fallback_limits;
 	const struct pkm_lcs_runtime_limits *limits;
 	const u8 *final_sd;
@@ -1460,8 +1462,8 @@ static long pkm_lcs_create_missing_retry_open_existing_for_token_with_txn(
 	if (!limits)
 		return -EINVAL;
 
-	ret = pkm_lcs_retry_open_components_prepare(
-		resolution, &components, &component_count);
+	ret = pkm_lcs_retry_open_components_prepare(resolution, &components,
+						    &component_count);
 	if (ret)
 		return ret;
 
@@ -1487,7 +1489,7 @@ static long pkm_lcs_create_missing_retry_open_existing_for_token_with_txn(
 	fd = pkm_lcs_publish_open_key_for_token(
 		token, resolved.source_id, resolved.key_guid, final_sd,
 		resolved.final_sd_len, desired_access,
-		(const char * const *)resolved.resolved_path,
+		(const char *const *)resolved.resolved_path,
 		resolved.ancestor_guids, resolved.component_count, limits);
 	if (fd < 0) {
 		ret = fd;
@@ -1536,17 +1538,18 @@ static void pkm_lcs_create_missing_emit_created_audit(
 	const struct pkm_lcs_created_key_sd *created_sd,
 	const struct pkm_lcs_create_preflight_plan *preflight, u64 txn_id)
 {
-	struct pkm_lcs_key_audit_record record = { };
+	struct pkm_lcs_key_audit_record record = {};
 	char *path = NULL;
 	u32 path_len = 0;
 
-	if (!token || !parent_plan || !parent_plan->key_open_sacl_audit_required)
+	if (!token || !parent_plan ||
+	    !parent_plan->key_open_sacl_audit_required)
 		return;
 	if (!resolution || !child_guid || !created_sd || !created_sd->sd ||
 	    !created_sd->sd_len || created_sd->sd_len > U32_MAX || !preflight)
 		return;
 	if (pkm_lcs_audit_join_path(
-		    (const char * const *)resolution->parent.resolved_path,
+		    (const char *const *)resolution->parent.resolved_path,
 		    resolution->parent.component_count, resolution->child_name,
 		    resolution->child_name_len, &path, &path_len))
 		return;
@@ -1600,16 +1603,16 @@ long pkm_lcs_create_missing_user_path_finish_for_token(
 	u32 __user *udisposition)
 {
 	static const struct pkm_lcs_create_missing_runtime_inputs empty_inputs;
-	struct pkm_lcs_create_preflight_plan preflight = { };
-	struct pkm_lcs_create_layer_target target = { };
-	struct pkm_lcs_layer_target_admission_plan target_plan = { };
-	struct pkm_lcs_create_missing_parent_resolution resolution = { };
-	struct pkm_lcs_key_open_access_plan parent_plan = { };
-	struct pkm_lcs_key_open_access_plan link_plan = { };
-	struct pkm_lcs_key_open_access_plan layer_plan = { };
-	struct pkm_lcs_key_guid_assignment_plan guid_plan = { };
-	struct pkm_lcs_created_key_sd created_sd = { };
-	struct pkm_lcs_create_missing_prepared_result prepared = { };
+	struct pkm_lcs_create_preflight_plan preflight = {};
+	struct pkm_lcs_create_layer_target target = {};
+	struct pkm_lcs_layer_target_admission_plan target_plan = {};
+	struct pkm_lcs_create_missing_parent_resolution resolution = {};
+	struct pkm_lcs_key_open_access_plan parent_plan = {};
+	struct pkm_lcs_key_open_access_plan link_plan = {};
+	struct pkm_lcs_key_open_access_plan layer_plan = {};
+	struct pkm_lcs_key_guid_assignment_plan guid_plan = {};
+	struct pkm_lcs_created_key_sd created_sd = {};
+	struct pkm_lcs_create_missing_prepared_result prepared = {};
 	long ret;
 
 	prepared.fd = -1;
@@ -1657,13 +1660,13 @@ long pkm_lcs_create_missing_user_path_finish_for_token(
 		&layer_plan);
 	if (ret)
 		goto out_target;
-	ret = pkm_lcs_assign_new_key_guid(
-		inputs->active_key_guids, inputs->active_key_guid_count,
-		inputs->generator, &guid_plan);
+	ret = pkm_lcs_assign_new_key_guid(inputs->active_key_guids,
+					  inputs->active_key_guid_count,
+					  inputs->generator, &guid_plan);
 	if (ret)
 		goto out_target;
-	ret = pkm_lcs_create_missing_initial_sd_for_token(
-		token, &resolution, &created_sd);
+	ret = pkm_lcs_create_missing_initial_sd_for_token(token, &resolution,
+							  &created_sd);
 	if (ret)
 		goto out_target;
 
@@ -1707,24 +1710,24 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
 	int parent_fd, const struct pkm_lcs_syscall_path_copy *copy,
 	u32 desired_access, const char __user *ulayer, u32 flags,
-	const struct pkm_lcs_create_missing_runtime_inputs *inputs,
-	int txn_fd, u32 __user *udisposition)
+	const struct pkm_lcs_create_missing_runtime_inputs *inputs, int txn_fd,
+	u32 __user *udisposition)
 {
 	static const struct pkm_lcs_create_missing_runtime_inputs empty_inputs;
-	struct pkm_lcs_create_preflight_plan preflight = { };
-	struct pkm_lcs_create_layer_target target = { };
-	struct pkm_lcs_layer_target_admission_plan target_plan = { };
-	struct pkm_lcs_create_missing_parent_resolution resolution = { };
-	struct pkm_lcs_key_open_access_plan parent_plan = { };
-	struct pkm_lcs_key_open_access_plan link_plan = { };
-	struct pkm_lcs_key_open_access_plan layer_plan = { };
-	struct pkm_lcs_key_guid_assignment_plan guid_plan = { };
-	struct pkm_lcs_created_key_sd created_sd = { };
-	struct pkm_lcs_create_missing_prepared_result prepared = { };
-	struct pkm_lcs_create_missing_source_records_result source = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_key_create_log_input log_input = { };
+	struct pkm_lcs_create_preflight_plan preflight = {};
+	struct pkm_lcs_create_layer_target target = {};
+	struct pkm_lcs_layer_target_admission_plan target_plan = {};
+	struct pkm_lcs_create_missing_parent_resolution resolution = {};
+	struct pkm_lcs_key_open_access_plan parent_plan = {};
+	struct pkm_lcs_key_open_access_plan link_plan = {};
+	struct pkm_lcs_key_open_access_plan layer_plan = {};
+	struct pkm_lcs_key_guid_assignment_plan guid_plan = {};
+	struct pkm_lcs_created_key_sd created_sd = {};
+	struct pkm_lcs_create_missing_prepared_result prepared = {};
+	struct pkm_lcs_create_missing_source_records_result source = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_key_create_log_input log_input = {};
 	const u8 *creator_sid = NULL;
 	size_t creator_sid_len = 0;
 	u64 sequence = 0;
@@ -1744,8 +1747,8 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 	ret = pkm_lcs_create_missing_copied_parent_for_token_with_txn(
 		token, parent_fd, copy, inputs->scope_guids,
 		inputs->scope_count, inputs->layers, inputs->layer_count,
-		inputs->private_layers, inputs->private_layer_count,
-		txn_fd, &resolution);
+		inputs->private_layers, inputs->private_layer_count, txn_fd,
+		&resolution);
 	if (ret)
 		return ret;
 
@@ -1778,13 +1781,13 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 		&layer_plan);
 	if (ret)
 		goto out_target;
-	ret = pkm_lcs_assign_new_key_guid(
-		inputs->active_key_guids, inputs->active_key_guid_count,
-		inputs->generator, &guid_plan);
+	ret = pkm_lcs_assign_new_key_guid(inputs->active_key_guids,
+					  inputs->active_key_guid_count,
+					  inputs->generator, &guid_plan);
 	if (ret)
 		goto out_target;
-	ret = pkm_lcs_create_missing_initial_sd_for_token(
-		token, &resolution, &created_sd);
+	ret = pkm_lcs_create_missing_initial_sd_for_token(token, &resolution,
+							  &created_sd);
 	if (ret)
 		goto out_target;
 
@@ -1804,7 +1807,7 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 		log_input.layer = target.name;
 		log_input.layer_len = target.name_len;
 		log_input.parent_path =
-			(const char * const *)resolution.parent.resolved_path;
+			(const char *const *)resolution.parent.resolved_path;
 		log_input.parent_ancestor_guids =
 			resolution.parent.ancestor_guids;
 		log_input.creator_sid = creator_sid;
@@ -1861,8 +1864,7 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 			mutation.audited =
 				parent_plan.key_open_sacl_audit_required != 0;
 			mutation.audit_token = token;
-			ret = pkm_lcs_transaction_fd_commit_mutation(
-				&mutation);
+			ret = pkm_lcs_transaction_fd_commit_mutation(&mutation);
 			if (ret)
 				goto out_created_sd;
 			pkm_lcs_create_missing_emit_created_audit(
@@ -1912,23 +1914,24 @@ static long pkm_lcs_create_named_layer_entry_present(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
 	int parent_fd, const struct pkm_lcs_syscall_path_copy *copy,
 	const char __user *ulayer,
-	const struct pkm_lcs_create_missing_runtime_inputs *inputs,
-	int txn_fd, bool *present)
+	const struct pkm_lcs_create_missing_runtime_inputs *inputs, int txn_fd,
+	bool *present)
 {
-	struct pkm_lcs_create_missing_parent_resolution resolution = { };
-	struct pkm_lcs_create_layer_target target = { };
-	struct pkm_lcs_layer_target_admission_plan target_plan = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_lookup_guid_entry_result entry = { };
+	struct pkm_lcs_create_missing_parent_resolution resolution = {};
+	struct pkm_lcs_create_layer_target target = {};
+	struct pkm_lcs_layer_target_admission_plan target_plan = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_lookup_guid_entry_result entry = {};
 	u64 txn_id = 0, next_sequence = 0;
 	long ret;
 
 	*present = false;
 	ret = pkm_lcs_create_missing_copied_parent_for_token_with_txn(
-		token, parent_fd, copy, inputs->scope_guids, inputs->scope_count,
-		inputs->layers, inputs->layer_count, inputs->private_layers,
-		inputs->private_layer_count, txn_fd, &resolution);
+		token, parent_fd, copy, inputs->scope_guids,
+		inputs->scope_count, inputs->layers, inputs->layer_count,
+		inputs->private_layers, inputs->private_layer_count, txn_fd,
+		&resolution);
 	if (ret)
 		return ret;
 	ret = pkm_lcs_create_layer_target_prepare_with_limits(
@@ -1953,8 +1956,8 @@ static long pkm_lcs_create_named_layer_entry_present(
 		goto out_frame;
 	ret = pkm_lcs_rsi_materialize_lookup_layer_entry(
 		frame.data, frame.len, response.request_id, next_sequence,
-		resolution.child_name, resolution.child_name_len,
-		target.name, target.name_len, &response.limits, &entry);
+		resolution.child_name, resolution.child_name_len, target.name,
+		target.name_len, &response.limits, &entry);
 	if (!ret)
 		*present = entry.present != 0;
 out_frame:
@@ -1971,7 +1974,7 @@ static long pkm_lcs_reg_create_key_needs_layer_lookup(
 	const struct pkm_lcs_usercopy_ops *ops, const char __user *ulayer,
 	bool *needs_lookup_out)
 {
-	struct pkm_lcs_create_layer_target target = { };
+	struct pkm_lcs_create_layer_target target = {};
 	bool is_base = false;
 	long ret;
 
@@ -1995,14 +1998,14 @@ static long pkm_lcs_reg_create_key_for_token_with_txn(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
 	int parent_fd, const char __user *upath, u32 desired_access,
 	const char __user *ulayer, u32 flags,
-	const struct pkm_lcs_create_missing_runtime_inputs *inputs,
-	int txn_fd, u32 __user *udisposition)
+	const struct pkm_lcs_create_missing_runtime_inputs *inputs, int txn_fd,
+	u32 __user *udisposition)
 {
-	struct pkm_lcs_create_preflight_plan preflight = { };
-	struct pkm_lcs_syscall_path_copy copy = { };
-	struct pkm_lcs_create_missing_runtime_inputs live_inputs = { };
-	struct pkm_lcs_private_credential_view private_view = { };
-	struct pkm_lcs_layer_snapshot snapshot = { };
+	struct pkm_lcs_create_preflight_plan preflight = {};
+	struct pkm_lcs_syscall_path_copy copy = {};
+	struct pkm_lcs_create_missing_runtime_inputs live_inputs = {};
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_layer_snapshot snapshot = {};
 	struct pkm_lcs_runtime_limits limits;
 	const struct pkm_lcs_create_missing_runtime_inputs *active_inputs =
 		inputs;
@@ -2015,7 +2018,7 @@ static long pkm_lcs_reg_create_key_for_token_with_txn(
 		return ret;
 
 	ret = pkm_lcs_reg_create_key_needs_layer_lookup(ops, ulayer,
-						      &needs_layer_lookup);
+							&needs_layer_lookup);
 	if (ret)
 		return ret;
 
@@ -2086,9 +2089,10 @@ long pkm_lcs_reg_create_key_for_token(
 	const struct pkm_lcs_create_missing_runtime_inputs *inputs,
 	u32 __user *udisposition)
 {
-	return pkm_lcs_reg_create_key_for_token_with_txn(
-		token, ops, parent_fd, upath, desired_access, ulayer, flags,
-		inputs, -1, udisposition);
+	return pkm_lcs_reg_create_key_for_token_with_txn(token, ops, parent_fd,
+							 upath, desired_access,
+							 ulayer, flags, inputs,
+							 -1, udisposition);
 }
 
 long pkm_lcs_reg_create_key_args_copy_from_user(
@@ -2115,7 +2119,7 @@ long pkm_lcs_reg_create_key_args_for_token(
 	const struct reg_create_key_args *args,
 	const struct pkm_lcs_create_missing_runtime_inputs *inputs)
 {
-	struct pkm_lcs_create_preflight_plan preflight = { };
+	struct pkm_lcs_create_preflight_plan preflight = {};
 	long ret;
 
 	if (!args)
@@ -2152,7 +2156,7 @@ SYSCALL_DEFINE1(reg_create_key, const struct reg_create_key_args __user *, args)
 long pkm_lcs_kunit_create_missing_child_depth(u32 parent_depth,
 					      u32 *child_depth_out)
 {
-	struct pkm_lcs_create_missing_parent_resolution resolution = { };
+	struct pkm_lcs_create_missing_parent_resolution resolution = {};
 	long ret;
 
 	if (!child_depth_out)

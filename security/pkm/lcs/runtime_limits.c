@@ -14,29 +14,28 @@
 
 #include "source_device.h"
 
-#define PKM_LCS_RUNTIME_LIMITS_DEFAULT_INITIALIZER                    \
-	{                                                             \
-		.request_timeout_ms = PKM_LCS_REQUEST_TIMEOUT_MS_DEFAULT, \
-		.transaction_timeout_ms = 30000U,                     \
-		.notification_queue_size = 256U,                      \
-		.symlink_depth_limit =                                \
-			PKM_LCS_SYMLINK_DEPTH_LIMIT_DEFAULT,          \
-		.max_value_size = 1048576U,                           \
-		.max_key_depth = 512U,                                \
-		.max_path_component_length = 255U,                    \
-		.max_total_path_length = 16383U,                      \
-		.max_layers_per_value = 128U,                         \
-		.max_bound_transactions_per_source = 16U,             \
-		.max_read_only_transactions_per_source = 16U,         \
-		.max_total_layers = PKM_LCS_MAX_TOTAL_LAYERS_DEFAULT,  \
-		.max_registered_sources = 32U,                        \
-		.max_hives_per_source = 64U,                          \
-		.max_concurrent_rsi_requests =                        \
-			PKM_LCS_MAX_CONCURRENT_RSI_REQUESTS_DEFAULT,  \
-		.max_scope_guids_per_token = 8U,                      \
-		.max_private_layers_per_token = 16U,                  \
-		.max_subtree_watch_depth = 0U,                        \
-		.max_transaction_watch_event_burst = 4096U,           \
+#define PKM_LCS_RUNTIME_LIMITS_DEFAULT_INITIALIZER                          \
+	{                                                                   \
+		.request_timeout_ms = PKM_LCS_REQUEST_TIMEOUT_MS_DEFAULT,   \
+		.transaction_timeout_ms = 30000U,                           \
+		.notification_queue_size = 256U,                            \
+		.symlink_depth_limit = PKM_LCS_SYMLINK_DEPTH_LIMIT_DEFAULT, \
+		.max_value_size = 1048576U,                                 \
+		.max_key_depth = 512U,                                      \
+		.max_path_component_length = 255U,                          \
+		.max_total_path_length = 16383U,                            \
+		.max_layers_per_value = 128U,                               \
+		.max_bound_transactions_per_source = 16U,                   \
+		.max_read_only_transactions_per_source = 16U,               \
+		.max_total_layers = PKM_LCS_MAX_TOTAL_LAYERS_DEFAULT,       \
+		.max_registered_sources = 32U,                              \
+		.max_hives_per_source = 64U,                                \
+		.max_concurrent_rsi_requests =                              \
+			PKM_LCS_MAX_CONCURRENT_RSI_REQUESTS_DEFAULT,        \
+		.max_scope_guids_per_token = 8U,                            \
+		.max_private_layers_per_token = 16U,                        \
+		.max_subtree_watch_depth = 0U,                              \
+		.max_transaction_watch_event_burst = 4096U,                 \
 	}
 
 static seqlock_t pkm_lcs_runtime_limits_lock =
@@ -60,20 +59,19 @@ static bool pkm_lcs_runtime_limits_in_range(u32 value, u32 min, u32 max)
 	return value >= min && value <= max;
 }
 
-long pkm_lcs_runtime_limits_validate(
-	const struct pkm_lcs_runtime_limits *limits)
+long pkm_lcs_runtime_limits_validate(const struct pkm_lcs_runtime_limits *limits)
 {
 	if (!limits)
 		return -EINVAL;
 
-#define PKM_LCS_CHECK_LIMIT(_field, _min, _max, _id)                    \
-	do {                                                            \
-		if (!pkm_lcs_runtime_limits_in_range(limits->_field,    \
-						     (_min), (_max))) {     \
-			trace_lcs_limits_validate((_id), limits->_field, \
-						  -EINVAL);              \
-			return -EINVAL;                                  \
-		}                                                        \
+#define PKM_LCS_CHECK_LIMIT(_field, _min, _max, _id)                         \
+	do {                                                                 \
+		if (!pkm_lcs_runtime_limits_in_range(limits->_field, (_min), \
+						     (_max))) {              \
+			trace_lcs_limits_validate((_id), limits->_field,     \
+						  -EINVAL);                  \
+			return -EINVAL;                                      \
+		}                                                            \
 	} while (0)
 
 	PKM_LCS_CHECK_LIMIT(request_timeout_ms, 1000U, 600000U,
@@ -134,8 +132,7 @@ long pkm_lcs_runtime_limits_snapshot(struct pkm_lcs_runtime_limits *limits)
 	return 0;
 }
 
-long pkm_lcs_runtime_limits_publish(
-	const struct pkm_lcs_runtime_limits *limits)
+long pkm_lcs_runtime_limits_publish(const struct pkm_lcs_runtime_limits *limits)
 {
 	u32 previous_max_concurrent;
 	long ret;

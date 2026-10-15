@@ -1,0 +1,15 @@
+# kernel-debugsource — the kernel sources referenced by the debug info, staged
+# under /usr/src/debug/kernel-<release> (paths sanitized by debugedit so gdb
+# resolves them against this package). Produced by build.debuginfo.
+
+[package]
+name = "dev.peios.kernel-debugsource"
+architecture = "noarch"
+description = "Peios Kernel - debug sources"
+
+[dependencies]
+"dev.peios.kernel" = "= {{release}}"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.kernel-debugsource/COPYING"
+"debuginfo:usr/src/debug/**" = "usr/src/debug/"

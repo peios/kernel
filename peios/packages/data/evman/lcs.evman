@@ -1,0 +1,784 @@
+--- field source.rsi.slot
+type: uint
+
+Which registry source slot supplied the data, by index. Sources are the
+userspace backends that serve registry content to the kernel, so this names
+the backend rather than anything about the caller.
+
+--- field source.rsi.hive
+type: str
+
+The hive the offending source data belonged to, where the failure could be
+attributed to one. Absent when the data was malformed before a hive could
+be determined.
+
+--- field request.id
+type: uint
+
+The identifier of the source request this record concerns, for joining a
+record to the exchange that produced it. A pure correlation key.
+
+--- field request.op-code
+type: uint
+
+The source-protocol operation code of the request this record concerns.
+Identifies which kind of exchange returned unusable data.
+
+--- field request.op-code-expected
+type: uint
+
+The source-protocol operation code the kernel expected a response to carry,
+recorded where the source answered with a different one. Read it beside
+`request.op-code`, which holds the code that actually arrived; the
+disagreement between the two is the finding.
+
+A response code is the request code with the high bit `0x8000` set, so an
+expected code of `0x8021` answers a request of `0x0021` (`RSI_SET_VALUE`).
+
+--- field request.status
+type: str.enum
+values: ok | not-found | already-exists | storage-error | not-empty | too-large | txn-busy | invalid | cas-failed | txn-not-supported
+closed: false
+
+The RSI status code a registry source returned for a request, named from
+the `RSI_*` status constants with the prefix removed. The kernel maps each
+status to an errno before the caller sees it, and the errno loses the
+source's own account: `storage-error` and a response the kernel could not
+use at all both reach the caller as `EIO`, and only this field says which
+it was.
+
+A status code outside this list is never carried here. It is rejected as
+malformed source data and recorded on `lcs.source.response.rejected` with
+the reason `unknown-rsi-status-code`.
+
+--- field request.deferred-effect
+type: str.enum
+values: restore-commit | key-mutation
+closed: false
+
+The kind of kernel-side work attached to a source request, to be applied
+when the source's reply arrives rather than when the caller returns.
+`restore-commit` completes a registry restore; `key-mutation` publishes
+the effects of a key write, such as watch notifications and generation
+updates. Absent when the request carries no deferred work.
+
+Deferred work is what makes a late reply consequential. When the caller
+has already given up (`request.waiter-detached`), the effect is still
+applied, so a change the caller was told had failed can land afterwards.
+
+--- field request.waited
+type: bool
+
+Whether the kernel blocked waiting for the source's reply to a request.
+False for a request dispatched without a waiter, whose outcome no caller
+will see directly.
+
+--- field request.timed-out
+type: bool
+
+Whether a request's wait for the source's reply ran out before the reply
+arrived. The deadline is the configured request timeout. A timed-out
+request is not cancelled at the source: its reply may still arrive, and
+any deferred effect attached to it may still be applied.
+
+--- field request.waiter-detached
+type: bool
+
+Whether the caller that issued a request had stopped waiting by the time
+the source's reply arrived. True means the operation had already reported
+failure to userspace, typically a timeout, so any effect the reply carries
+lands after the caller was told it did not. This is the entry condition for
+the kernel's late-effect replay.
+
+--- field source.rsi.generation
+type: uint
+
+The restart generation of a registry source slot: how many times the slot
+has been resumed by a re-registering source after going down. Zero for a
+source that has never been restarted. A count that climbs quickly is a
+source crash-looping.
+
+--- field source.rsi.generation-validated
+type: uint
+
+The source restart generation that a cached key handle was last validated
+against. A handle whose validated generation is behind
+`source.rsi.generation` has outlived a source restart and must be
+revalidated before use, because the key it names may no longer exist.
+
+--- field source.rsi.in-flight
+type: uint
+
+The number of requests dispatched to a registry source and still awaiting
+a reply, at the moment of the record. Bounded by the configured concurrency
+ceiling per source, so a value at that ceiling means new requests are
+queuing behind slow ones.
+
+--- field source.rsi.queued
+type: uint
+
+The number of requests queued for a registry source and not yet delivered
+to it, at the moment of the record. Distinct from `source.rsi.in-flight`:
+a queued request has not reached the source at all, so it is discarded
+rather than failed if the source goes down.
+
+--- field mutation.sequence
+type: uint
+
+The sequence number LCS stamped on a registry mutation. Allocated from the
+kernel's global monotonic counter, so sequences order writes across every
+hive and source, and the higher sequence wins when two writes land in
+layers of equal precedence.
+
+The counter resumes at boot from one past the highest sequence any
+registered source reports. A record's sequence is therefore comparable
+with any other from the same registry, not only those from the same boot.
+
+--- field mutation.sequence-expected
+type: uint
+
+The sequence number a conditional write asserted as the value's current
+one, the precondition of a compare-and-swap. The write proceeds only if
+the value still carries this sequence, and fails with `cas-failed` from the
+source otherwise. Absent on an unconditional write.
+
+--- field mutation.sequence-watermark
+type: uint
+
+The next sequence number the kernel would allocate, at the moment of the
+record. Every sequence legitimately stored in the registry is below it, so
+a source reporting a sequence at or above the watermark is claiming a
+write the kernel never allocated, which is the future-sequence check that
+`lcs.source.response.rejected` records.
+
+--- field object.hive.name
+type: str
+
+The name of the registry hive an operation acted on, such as `Machine` or
+`Users`. A hive is the unit a registry source registers to serve, so this
+names which source's namespace the operation reached.
+
+--- field object.layer.name
+type: str
+
+The name of the registry layer an operation acted on, as written when the
+layer was created. Layer names are compared without regard to case, so
+two records whose names differ only in case name the same layer. The base
+layer is named `base`.
+
+--- field object.layer.base
+type: bool
+
+Whether an operation targeted the base layer, the bottom of every key's
+resolution order. The base layer always exists at precedence 0 and cannot
+be disabled.
+
+--- field object.layer.enabled
+type: bool
+
+Whether a registry layer is enabled, after the change the record
+describes. A disabled layer takes no part in resolution: its values exist
+but no reader sees them.
+
+--- field object.layer.enabled-previous
+type: bool
+
+Whether a registry layer was enabled before the change the record
+describes. Read with `object.layer.enabled`: a record where the two differ
+is a layer being switched on or off.
+
+--- field object.layer.precedence
+type: uint
+
+A registry layer's precedence, after the change the record describes.
+Where two layers define the same value, the one with the higher
+precedence wins, and the higher sequence breaks a tie. This number
+therefore decides which value the whole system sees.
+
+--- field object.layer.precedence-previous
+type: uint
+
+A registry layer's precedence before the change the record describes.
+Read with `object.layer.precedence`: raising a layer above another
+silently changes which of their values every reader resolves.
+
+--- field object.layer.resolution-changed
+type: bool
+
+Whether a change to a layer altered what any reader of the registry
+actually resolves, as opposed to changing a layer whose values were
+already outranked. LCS computes this and discards it today, so it is not
+yet emitted on any record.
+
+--- field object.watch.filter
+type: uint.flags
+values: 0x1 REG_NOTIFY_VALUE | 0x2 REG_NOTIFY_SUBKEY | 0x4 REG_NOTIFY_SD
+
+The categories of change a process asked a registry watch to report: value
+changes, subkey creation and deletion, and security descriptor changes. A
+watcher is told only of changes in the categories it set.
+
+--- field object.watch.subtree
+type: bool
+
+Whether a registry watch covers the whole subtree beneath its key rather
+than the key alone. How deep a subtree watch reaches is
+`object.watch.depth-limit`, and that limit is unbounded by default.
+
+--- field object.watch.depth-limit
+type: uint
+
+The maximum depth beneath its key at which a subtree watch reports
+changes. 0 means unbounded, and 0 is the default. The limit is the
+machine-wide `MaxSubtreeWatchDepth` setting rather than anything the
+watcher chose, so changes deeper than it are suppressed for every subtree
+watch at once.
+
+--- field object.watch.event
+type: str.enum
+values: value-set | value-deleted | subkey-created | subkey-deleted | sd-changed | key-deleted | overflow
+closed: false
+
+The type of a registry watch event, named from its `REG_WATCH_*` constant
+with the prefix removed. `overflow` replaces individual events when they
+could not all be delivered, telling the watcher only that it missed
+something and must re-read the key.
+
+An `overflow` does not always mean a full queue. It is also queued when a
+single event could not be encoded, so a watcher seeing one cannot tell
+which happened.
+
+--- field object.watch.effects
+type: uint.flags
+values: 0x1 layer-delete
+
+The internal effects that a registry commit triggered through the
+kernel's own configuration watches. `layer-delete` means the watch
+dispatch for the commit already handled a layer deletion, so the commit
+skips its own separate layer-delete step. Absent when the commit
+triggered none.
+
+--- group caller
+include: subject.token.sid
+include: subject.token.integrity
+include: subject.token.id
+include: subject.token.auth-id
+include: subject.token.type
+include: subject.token.impersonation
+
+The identity LCS records on an audited operation. A deliberate subset of
+`subject` — the token's durable GUIDs ride in the event header, and the
+group SIDs and PIP state that KACS records are absent here.
+
+**That absence is a gap rather than a design.** Access to a registry key is
+granted through a group as often as to a user SID directly, so an LCS
+record cannot answer "which membership let this through" where the
+equivalent KACS record can. The two subsystems reached the bound on what to
+serialise independently and landed in different places.
+
+--- event lcs.audit.key.opened
+tier: essential
+gating: a matching SACL audit ACE on the key
+cardinality: once per matching open
+
+The record that a registry key was opened and what access the open
+received. SACL evaluation follows the KACS AccessCheck algorithm, with the
+SACL evaluated alongside the DACL rather than separately.
+
+**A request of `MAXIMUM_ALLOWED` alone records nothing.** It maps to a
+desired mask of zero, and the SACL walk tests each audit ACE's mask against
+that mask, so no ACE matches. The one request shape that asks for
+everything is the one shape that produces no record — a real hole for
+anyone auditing key opens, and the same defect KACS's own SACL walk was
+changed to close.
+
+Emission failure is handled in two halves. If a valid payload cannot be
+**constructed**, the open fails with `EIO` and no key descriptor is
+published — the audit is a precondition of the access. If a valid payload
+cannot be **retained** by KMES, the decision and the descriptor stand, and
+the loss is accounted as a gap in the stream rather than as a failed open.
+
+include: caller
+field: object.kind              required
+  Always `key`. Names the table the access masks decode against.
+field: object.key.guid          required
+field: access.requested         required
+  After registry generic mapping, with `MAXIMUM_ALLOWED` re-added when the
+  caller asked for it.
+field: access.granted           required
+  Forced to zero on a denial, and enforced rather than merely intended — a
+  denied record carrying a non-zero granted mask is rejected as malformed.
+field: outcome.success          required
+  Whether the open was allowed. Replaces the former `decision` string,
+  which carried the same two states as words.
+field: trigger.sacl-match       required
+
+--- event lcs.audit.value.set
+tier: essential
+gating: KEY_SET_VALUE overlaps the alarm mask cached on the key handle
+cardinality: once per write through a handle whose mask covers it
+
+The record that a registry value was written through a key handle, or that
+an attempt to write one failed. The key's `SYSTEM_ALARM` ACEs configure it:
+the ACEs that match the caller when the key is opened give the handle a
+continuous-audit mask, and every later write whose right overlaps the mask
+is recorded, as `kacs.audit.handle.used` does for files.
+
+**The mask is fixed when the key is opened.** Removing the alarm ACE does
+not silence a handle already open, so the write that removes it is still
+recorded; equally, adding one does not reach handles opened before.
+
+**A transacted write is recorded when it is staged, not when it lands.**
+`outcome.success` then means the source accepted it into the transaction;
+whether the transaction took effect is the matching
+`lcs.audit.transaction.committed`, joined on `transaction.id`.
+
+**A timed-out write may have been applied later.** The source is not told
+to cancel, and when its reply arrives the kernel still applies the write's
+effects, with nothing recording who made it. Such a record says
+`outcome.success` false with `request.timed-out` true: read it as "may
+have been applied".
+
+The data itself is never recorded, only its type, length and SHA-256
+digest, with the same three for the value it replaced.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+field: object.key.path          required
+field: object.key.layer.name    optional
+  The layer written, `base` when the caller named none. Absent only when
+  the request failed before its layer was read.
+field: object.key.value.name    optional
+  Absent only when the request failed before its name was read.
+field: object.key.value.type    optional
+  The type written. Present once the data was read from the caller.
+field: object.key.value.length  optional
+  Present with `object.key.value.type`.
+field: object.key.value.digest  optional
+  Present with `object.key.value.type`.
+field: object.key.value.type-previous    optional
+  The effective value before the write. Only on a write outside a
+  transaction that found one: a transacted write never reads it.
+field: object.key.value.length-previous  optional
+  Present with `object.key.value.type-previous`.
+field: object.key.value.digest-previous  optional
+  Present with `object.key.value.type-previous`.
+field: access.requested         required
+  Always `KEY_SET_VALUE`.
+field: access.granted           required
+  What the handle was opened with.
+field: access.matched           required
+field: access.audit-mask        required
+field: mutation.sequence        optional
+  The sequence stamped on the write. Absent only when the request failed
+  before one was allocated.
+field: mutation.sequence-expected  optional
+  Present on a compare-and-swap write.
+field: transaction.id           optional
+  Present when the write was staged in a transaction.
+field: request.timed-out        when outcome.success == false
+  True when the source did not answer in time, so the write may have
+  been applied after all.
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.value.deleted
+tier: essential
+gating: KEY_SET_VALUE overlaps the alarm mask cached on the key handle
+cardinality: once per delete through a handle whose mask covers it
+
+The record that a registry value was deleted through a key handle, or that
+an attempt to delete one failed. Gated, staged and fixed at open exactly as
+`lcs.audit.value.set` is.
+
+What was removed is recorded by type, length and SHA-256 digest: the
+effective value before the delete, read in the transaction's own view when
+the delete is transacted.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+field: object.key.path          required
+field: object.key.layer.name    optional
+  The layer whose entry was deleted. Absent only when the request failed
+  before its layer was read.
+field: object.key.value.name    optional
+  Absent only when the request failed before its name was read.
+field: object.key.value.type-previous    optional
+  Absent when no value was found to delete.
+field: object.key.value.length-previous  optional
+  Present with `object.key.value.type-previous`.
+field: object.key.value.digest-previous  optional
+  Present with `object.key.value.type-previous`.
+field: access.requested         required
+  Always `KEY_SET_VALUE`.
+field: access.granted           required
+field: access.matched           required
+field: access.audit-mask        required
+field: transaction.id           optional
+field: request.timed-out        when outcome.success == false
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.key.tombstoned
+tier: essential
+gating: KEY_SET_VALUE overlaps the alarm mask cached on the key handle
+cardinality: once per blanket tombstone change through a handle whose mask covers it
+
+The record that a key's blanket tombstone was set or cleared in a layer, or
+that an attempt failed. A blanket tombstone hides every value lower layers
+hold for the key at once, so setting one is a bulk value change and is
+gated on `KEY_SET_VALUE`, as value writes are.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+field: object.key.path          required
+field: object.key.layer.name    optional
+  The layer the blanket belongs to.
+field: operation.name           optional
+  values: set | clear
+  closed: true
+  Whether the blanket was set or cleared. Absent only when the request
+  failed before it was read.
+field: access.requested         required
+  Always `KEY_SET_VALUE`.
+field: access.granted           required
+field: access.matched           required
+field: access.audit-mask        required
+field: mutation.sequence        optional
+  Present when a blanket was set: clearing one stamps no sequence.
+field: transaction.id           optional
+field: request.timed-out        when outcome.success == false
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.key.deleted
+tier: essential
+gating: DELETE overlaps the alarm mask cached on the key handle
+cardinality: once per delete through a handle whose mask covers it
+
+The record that a registry key was deleted from a layer through its own
+handle, or that an attempt failed. The key named is the one deleted, the
+handle's key, by GUID and full path.
+
+Deleting a layer's metadata key, `Machine\System\Registry\Layers\<Name>`,
+deletes the layer itself; the record then also names the layer.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+field: object.key.path          required
+field: object.key.layer.name    optional
+  The layer whose entry was deleted.
+field: object.layer.name        optional
+  Present when the delete removed a layer, naming it.
+field: access.requested         required
+  Always `DELETE`.
+field: access.granted           required
+field: access.matched           required
+field: access.audit-mask        required
+field: transaction.id           optional
+field: request.timed-out        when outcome.success == false
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.key.hidden
+tier: essential
+gating: DELETE overlaps the alarm mask cached on the key handle
+cardinality: once per hide through a handle whose mask covers it
+
+The record that a registry key was hidden in a layer through its own
+handle, or that an attempt failed. Hiding writes a marker that masks the
+key in every lower layer without deleting it there, so to every reader the
+key is gone; it is gated on `DELETE`, as deleting is.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+field: object.key.path          required
+field: object.key.layer.name    optional
+  The layer the marker was written in.
+field: access.requested         required
+  Always `DELETE`.
+field: access.granted           required
+field: access.matched           required
+field: access.audit-mask        required
+field: mutation.sequence        optional
+field: transaction.id           optional
+field: request.timed-out        when outcome.success == false
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.key.created
+tier: essential
+gating: a matching SACL audit ACE on the parent key, for KEY_CREATE_SUB_KEY
+cardinality: once per key created
+
+The record that a registry key was created. Creating a key checks only
+`KEY_CREATE_SUB_KEY` on its parent, so the parent's SACL decides, by the
+rule `lcs.audit.key.opened` applies to an open: a success audit ACE on the
+parent that matches the caller. No handle exists yet to carry an alarm
+mask.
+
+Only a key that was made is recorded. A create that found the key already
+there and opened it instead writes nothing here; it is an open, and
+`lcs.audit.key.opened` records it if the key's own SACL asks. The record
+is written once the key exists, so a create whose handle then fails to
+reach the caller is still recorded, because the key was still made. A
+transacted create is recorded when staged.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+  The new key.
+field: object.key.path          required
+  The new key's full path.
+field: object.key.layer.name    optional
+  The layer the key was created in.
+field: object.key.created       required
+  Always true.
+field: object.key.volatile      required
+field: object.key.volatile-requested  required
+  Equal to `object.key.volatile`, since only a key that was made is
+  recorded.
+field: object.key.symlink       required
+field: object.sd.length         required
+  The new key's descriptor, as built from the parent's inheritable ACEs
+  and the caller's token.
+field: object.sd.owner          optional
+field: access.requested         required
+  Always `KEY_CREATE_SUB_KEY`, the right checked on the parent.
+field: access.granted           required
+  What the parent check granted.
+field: transaction.id           optional
+field: outcome.success          required
+  Always true.
+
+--- event lcs.audit.key.descriptor.changed
+tier: essential
+gating: always when the change includes the SACL; otherwise WRITE_DAC or WRITE_OWNER overlaps the alarm mask cached on the key handle
+cardinality: once per descriptor change it covers
+
+The record that a registry key's security descriptor was changed through a
+key handle, or that an attempt failed.
+
+**A change to the SACL is always recorded**, whatever the handle's mask.
+It takes `ACCESS_SYSTEM_SECURITY`, which only `SeSecurityPrivilege` grants,
+such changes are rare, and removing a SACL is exactly how someone hides
+what follows. It is recorded once the handle's own access check admits it:
+a caller whose handle lacks `ACCESS_SYSTEM_SECURITY` is refused before any
+record, so asking for a SACL change cannot be used to write records.
+Owner, group and DACL changes follow the handle's mask, as writes do.
+
+Both descriptors are recorded by length, SHA-256 digest and owner, never
+in full. Whether the SACL was part of the change is
+`object.sd.components`.
+
+include: caller
+field: object.kind              required
+  Always `key`.
+field: object.key.guid          required
+field: object.key.path          required
+field: object.sd.components     required
+  The parts the caller asked to change, its `security_info`.
+field: object.sd.length         optional
+  The descriptor as written: the merge of the caller's parts into the
+  old one. Absent when the request failed before the merge.
+field: object.sd.length-previous  optional
+  Absent when the request failed before the old descriptor was read.
+field: object.sd.digest         optional
+  Present with `object.sd.length`.
+field: object.sd.digest-previous  optional
+  Present with `object.sd.length-previous`.
+field: object.sd.owner          optional
+  Present with `object.sd.length`.
+field: object.sd.owner-previous   optional
+  Present with `object.sd.length-previous`.
+field: access.requested         required
+  The rights the change needs: `WRITE_OWNER` for the owner or group,
+  `WRITE_DAC` for the DACL, `ACCESS_SYSTEM_SECURITY` for the SACL.
+field: access.granted           required
+field: access.matched           required
+  Zero when the record exists only because the change included the SACL.
+field: access.audit-mask        required
+field: transaction.id           optional
+field: request.timed-out        when outcome.success == false
+  True when the source did not answer in time, so the change may have
+  been applied after all.
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.transaction.committed
+tier: essential
+gating: the transaction staged at least one recorded write
+cardinality: once per transaction that staged a recorded write
+
+The record of how a registry transaction ended, written for a transaction
+that staged at least one write some other record covers. Transacted
+writes are recorded when they are staged; this says whether they took
+effect, joined to them on `transaction.id`.
+
+It is written once, at the end: when `REG_IOC_COMMIT` leaves the
+transaction committed or otherwise finished, when it times out, or when
+its fd is closed without a commit. A commit that fails and leaves the
+transaction open writes nothing yet.
+
+**A commit that timed out may have taken effect.** The commit was sent
+and not answered; `transaction.commit-outstanding` true says so, and the
+source may have applied it before the reply was lost.
+
+**The subject depends on how it ended.** On `REG_IOC_COMMIT` it is the
+subject who committed, not who staged the writes. A transaction that ended
+by timeout or by its fd closing has nobody acting, and names the subject
+that staged its first recorded write.
+
+include: caller
+field: transaction.id           required
+field: transaction.state        required
+  The state it ended in: `committed` on success.
+field: transaction.commit-outstanding  when outcome.success == false
+field: outcome.success          required
+  True only when the transaction committed.
+field: outcome.errno            optional
+  Present when a `REG_IOC_COMMIT` call failed; absent for a transaction
+  that ended without one.
+field: outcome.reason           when outcome.success == false
+  values: aborted | timed-out | source-error
+  closed: false
+  `aborted` when its fd was closed without a commit or a layer it wrote
+  was deleted, `timed-out` when it passed its deadline, `source-error`
+  when its source failed or went away.
+
+--- event lcs.audit.backup.started
+tier: essential
+gating: none — audited unconditionally
+
+The record that a registry subtree backup began, emitted **before any data
+is read**. Backup is a privilege-gated bulk operation that bypasses
+per-key access checks entirely, so this trail is the only evidence it
+happened at all — which is why it is audited whatever the target key's
+SACL says.
+
+The start record exists so that an operation dying partway still leaves
+evidence that it began. A start with no matching end is itself the
+finding.
+
+Emission failure fails the operation with `EIO`, unlike every other LCS
+event: an unrecorded bulk read of the configuration store is not permitted
+to proceed.
+
+include: caller
+field: object.key.guid          required
+field: operation.fd             required
+  The descriptor the backup stream was written to.
+
+--- event lcs.audit.backup.ended
+tier: essential
+gating: none — audited unconditionally
+
+The record that a registry subtree backup finished, successfully or
+otherwise. Pairs with `lcs.audit.backup.started` on the same key.
+
+Emission failure here does not affect the result, which has already been
+determined by the time this is written.
+
+include: caller
+field: object.key.guid          required
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.audit.restore.started
+tier: essential
+gating: none — audited unconditionally
+
+The record that a registry subtree restore began, emitted **before any
+state is modified**. As with backup, this is a privilege-gated bulk
+operation that bypasses per-key access checks, and is audited regardless of
+the target's SACL.
+
+A restore rewrites configuration wholesale, so a start with no matching
+end means the store may be in a partially rewritten state.
+
+Emission failure fails the operation with `EIO`.
+
+include: caller
+field: object.key.guid          required
+field: operation.fd             required
+  The descriptor the restore stream was read from.
+
+--- event lcs.audit.restore.ended
+tier: essential
+gating: none — audited unconditionally
+
+The record that a registry subtree restore finished, successfully or
+otherwise. Pairs with `lcs.audit.restore.started` on the same key.
+
+include: caller
+field: object.key.guid          required
+field: outcome.success          required
+field: outcome.errno            when outcome.success == false
+
+--- event lcs.source.response.rejected
+tier: essential
+gating: none — every rejection is recorded
+
+The record that LCS rejected data a registry source sent it. Sources are
+userspace backends serving configuration into the kernel, so this is the
+boundary where the kernel refuses to believe what userspace told it.
+
+**This is the one LCS event with no caller.** It describes a source
+misbehaving rather than a principal acting, and there is frequently no
+principal involved — the data arrived on a source channel, not through a
+syscall.
+
+The failure classes distinguish malformed structure from semantic
+impossibility: a security descriptor that will not parse is a different
+problem from a sequence number from the future or two layers claiming the
+same winning sequence.
+
+field: source.rsi.slot          required
+field: source.rsi.hive          optional
+field: request.id               optional
+field: request.op-code          optional
+field: object.key.guid          optional
+  Present when the rejected data could be attributed to a specific key.
+field: outcome.reason           required
+  values: malformed-security-descriptor | malformed-layer-name | unknown-rsi-status-code | future-sequence-number | duplicate-winning-sequence-tie | malformed-layer-metadata-security-descriptor | malformed-key-name | malformed-value-name | malformed-response-payload | malformed-key-metadata | malformed-value-payload | malformed-delete-layer-orphan-list
+  closed: false
+  The source-validation failure class.
+
+--- event lcs.config.value.rejected
+tier: essential
+gating: none — every rejected configuration value is recorded
+cardinality: once per rejected value
+
+The record that LCS read one of its own configuration values, rejected it,
+and carried on with what it had. Identical in shape and meaning to
+`kmes.config.value.rejected`, differing only in which key the values live
+under.
+
+Validation is reject-or-keep and never clamps, so this event is the only
+place where what an administrator wrote and what LCS is running on can be
+seen to differ.
+
+Emission failure preserves the retained configuration — a failure to record
+the rejection must not change which value is in force.
+
+field: config.key.path          required
+field: config.name              required
+field: config.expected.type     required
+field: config.expected.min      required
+field: config.expected.max      required
+field: config.received.kind     required
+field: config.received.type     when config.received.kind == wrong-type
+field: config.received.value    when config.received.kind == out-of-range
+field: config.value             required
+  The value retained.

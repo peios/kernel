@@ -21,7 +21,6 @@
 
 #include <crypto/sig.h>
 
-
 #include <kunit/test.h>
 
 #include <linux/anon_inodes.h>
@@ -90,9 +89,7 @@
 
 #include <linux/xattr.h>
 
-
 #include <asm/ioctls.h>
-
 
 #include "access_check.h"
 
@@ -104,13 +101,11 @@
 
 #include "token_runtime.h"
 
-
 #ifndef PTRACE_MODE_PIDFD_OPEN
 
 #define PTRACE_MODE_PIDFD_OPEN 0x40
 
 #endif
-
 
 #ifndef PTRACE_MODE_PROC_QUERY_LIMITED
 
@@ -118,15 +113,13 @@
 
 #endif
 
-
 #ifndef PTRACE_MODE_PROC_QUERY_INFORMATION
 
 #define PTRACE_MODE_PROC_QUERY_INFORMATION 0x100
 
 #endif
 
-
-#define PKM_KUNIT_SYSTEM_READ_CONTROL_GRANT \
+#define PKM_KUNIT_SYSTEM_READ_CONTROL_GRANT                 \
 	(KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC | \
 	 KACS_ACCESS_ACCESS_SYSTEM_SECURITY)
 
@@ -185,7 +178,6 @@
 
 #define PKM_KUNIT_SE_CREATE_SYMBOLIC_LINK_PRIVILEGE (1ULL << 35)
 
-
 #define PKM_KUNIT_AUDIT_POLICY_OBJECT_ACCESS_SUCCESS 0x00000001U
 #define PKM_KUNIT_AUDIT_POLICY_PRIVILEGE_USE_SUCCESS 0x00000004U
 
@@ -211,12 +203,12 @@
 
 #define PKM_KUNIT_PRIV_LUID_ABSENT_REMOVE 13U
 
-#define PKM_KUNIT_ADJUSTABLE_PRIV_PRESENT \
+#define PKM_KUNIT_ADJUSTABLE_PRIV_PRESENT       \
 	((1ULL << PKM_KUNIT_PRIV_LUID_REMOVE) | \
 	 (1ULL << PKM_KUNIT_PRIV_LUID_ENABLE) | \
 	 (1ULL << PKM_KUNIT_PRIV_LUID_DISABLE))
 
-#define PKM_KUNIT_ADJUSTABLE_PRIV_ENABLED \
+#define PKM_KUNIT_ADJUSTABLE_PRIV_ENABLED       \
 	((1ULL << PKM_KUNIT_PRIV_LUID_REMOVE) | \
 	 (1ULL << PKM_KUNIT_PRIV_LUID_DISABLE))
 
@@ -224,10 +216,10 @@
 	PKM_KUNIT_ADJUSTABLE_PRIV_ENABLED
 
 #define PKM_KUNIT_ADJUSTABLE_PRIV_AFTER_ENABLE_DISABLE \
-	((1ULL << PKM_KUNIT_PRIV_LUID_REMOVE) | \
+	((1ULL << PKM_KUNIT_PRIV_LUID_REMOVE) |        \
 	 (1ULL << PKM_KUNIT_PRIV_LUID_ENABLE))
 
-#define PKM_KUNIT_ADJUSTABLE_PRIV_AFTER_REMOVE \
+#define PKM_KUNIT_ADJUSTABLE_PRIV_AFTER_REMOVE  \
 	((1ULL << PKM_KUNIT_PRIV_LUID_ENABLE) | \
 	 (1ULL << PKM_KUNIT_PRIV_LUID_DISABLE))
 
@@ -245,7 +237,7 @@
 
 #define PKM_KUNIT_SE_GROUP_LOGON_ID 0xC0000000U
 
-#define PKM_KUNIT_DEFAULT_TOKEN_SELF_ACCESS \
+#define PKM_KUNIT_DEFAULT_TOKEN_SELF_ACCESS           \
 	(KACS_TOKEN_QUERY | KACS_TOKEN_ADJUST_PRIVS | \
 	 KACS_TOKEN_ADJUST_GROUPS | KACS_TOKEN_ADJUST_DEFAULT)
 
@@ -461,13 +453,13 @@
 
 #define PKM_KUNIT_FILE_WRITE_ATTRIBUTES 0x00000100U
 
-#define PKM_KUNIT_FILE_SD_ADMIN_MASK                                           \
-	(PKM_KUNIT_FILE_READ_DATA | PKM_KUNIT_FILE_WRITE_DATA |               \
-	 PKM_KUNIT_FILE_APPEND_DATA | PKM_KUNIT_FILE_READ_EA |               \
-	 PKM_KUNIT_FILE_WRITE_EA | PKM_KUNIT_FILE_EXECUTE |                 \
-	 PKM_KUNIT_FILE_DELETE_CHILD | PKM_KUNIT_FILE_READ_ATTRIBUTES |      \
-	 PKM_KUNIT_FILE_WRITE_ATTRIBUTES | KACS_ACCESS_DELETE |              \
-	 KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC |                  \
+#define PKM_KUNIT_FILE_SD_ADMIN_MASK                                    \
+	(PKM_KUNIT_FILE_READ_DATA | PKM_KUNIT_FILE_WRITE_DATA |         \
+	 PKM_KUNIT_FILE_APPEND_DATA | PKM_KUNIT_FILE_READ_EA |          \
+	 PKM_KUNIT_FILE_WRITE_EA | PKM_KUNIT_FILE_EXECUTE |             \
+	 PKM_KUNIT_FILE_DELETE_CHILD | PKM_KUNIT_FILE_READ_ATTRIBUTES | \
+	 PKM_KUNIT_FILE_WRITE_ATTRIBUTES | KACS_ACCESS_DELETE |         \
+	 KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC |             \
 	 KACS_ACCESS_WRITE_OWNER)
 
 #define PKM_KUNIT_FILE_SD_QUERY_MASK KACS_ACCESS_READ_CONTROL
@@ -476,13 +468,11 @@
 
 #define PKM_KUNIT_FILE_SD_SACL_MASK KACS_ACCESS_ACCESS_SYSTEM_SECURITY
 
-
 #ifndef PTRACE_MODE_GETFD
 
 #define PTRACE_MODE_GETFD 0x20
 
 #endif
-
 
 #ifndef ARCH_SHSTK_DISABLE
 
@@ -490,9 +480,7 @@
 
 #endif
 
-
 extern size_t kacs_rust_kunit_probe(void);
-
 
 #define PKM_KUNIT_ASSERT_SIZE(type, expected) \
 	static_assert(sizeof(type) == (expected))
@@ -500,17 +488,15 @@ extern size_t kacs_rust_kunit_probe(void);
 #define PKM_KUNIT_ASSERT_OFFSET(type, member, expected) \
 	static_assert(offsetof(type, member) == (expected))
 
-#define PKM_KUNIT_ASSERT_IOC(cmd, nr, dir, arg_size) \
+#define PKM_KUNIT_ASSERT_IOC(cmd, nr, dir, arg_size)     \
 	static_assert(_IOC_TYPE(cmd) == KACS_IOC_MAGIC); \
-	static_assert(_IOC_NR(cmd) == (nr)); \
-	static_assert(_IOC_DIR(cmd) == (dir)); \
+	static_assert(_IOC_NR(cmd) == (nr));             \
+	static_assert(_IOC_DIR(cmd) == (dir));           \
 	static_assert(_IOC_SIZE(cmd) == (arg_size))
 
-
 void pkm_kunit_expect_bytes_eq(struct kunit *test, const u8 *actual,
-				      size_t actual_len, const u8 *expected,
-				      size_t expected_len);
-
+			       size_t actual_len, const u8 *expected,
+			       size_t expected_len);
 
 struct pkm_kunit_region {
 	u64 base;
@@ -520,18 +506,15 @@ struct pkm_kunit_region {
 	bool fault_write;
 };
 
-
 struct pkm_kunit_mem {
 	struct pkm_kunit_region regions[8];
 	size_t count;
 };
 
-
 struct pkm_kunit_event_counts {
 	u32 audit_events;
 	u32 privilege_use_events;
 };
-
 
 struct pkm_kunit_linked_pair {
 	const void *source_token;
@@ -540,13 +523,11 @@ struct pkm_kunit_linked_pair {
 	u64 logon_session_id;
 };
 
-
 struct pkm_kunit_sid_attr_spec {
 	const u8 *sid;
 	size_t sid_len;
 	u32 attributes;
 };
-
 
 struct pkm_kunit_token_spec_args {
 	u8 token_type;
@@ -596,7 +577,6 @@ struct pkm_kunit_token_spec_args {
 	u32 interactivity_scope;
 };
 
-
 struct pkm_kunit_kmes_event_view {
 	u32 event_size;
 	u32 header_size;
@@ -613,15 +593,13 @@ struct pkm_kunit_kmes_event_view {
 	size_t payload_len;
 };
 
-
 size_t pkm_kunit_build_logon_session_spec(u8 *dst, u8 logon_type,
-					   const char *auth_pkg,
-					   const u8 *user_sid,
-					   size_t user_sid_len);
+					  const char *auth_pkg,
+					  const u8 *user_sid,
+					  size_t user_sid_len);
 
-size_t pkm_kunit_build_token_spec(
-	u8 *dst, size_t dst_len, const struct pkm_kunit_token_spec_args *args);
-
+size_t pkm_kunit_build_token_spec(u8 *dst, size_t dst_len,
+				  const struct pkm_kunit_token_spec_args *args);
 
 enum pkm_kunit_msgpack_kind {
 	PKM_KUNIT_MSGPACK_NIL = 0,
@@ -635,7 +613,6 @@ enum pkm_kunit_msgpack_kind {
 	PKM_KUNIT_MSGPACK_INT,
 };
 
-
 struct pkm_kunit_msgpack_view {
 	enum pkm_kunit_msgpack_kind kind;
 	const u8 *data_ptr;
@@ -647,13 +624,11 @@ struct pkm_kunit_msgpack_view {
 	bool bool_value;
 };
 
-
 struct pkm_kunit_read_ace_spec {
 	u8 ace_type;
 	const u8 *sid;
 	size_t sid_len;
 };
-
 
 /*
  * Aliases, not copies: these duplicated the Ed25519 sizes and silently drifted
@@ -684,7 +659,6 @@ struct pkm_kunit_read_ace_spec {
 
 #define PKM_KUNIT_SIGNING_TRUST_TCB 8192U
 
-
 struct pkm_kunit_continuous_audit_op_case {
 	u32 op;
 	const char *operation;
@@ -699,14 +673,10 @@ struct pkm_kunit_continuous_audit_op_case {
 	int expected_ret;
 };
 
+const u8 *pkm_kunit_create_precise_file_sd(const void *token, u32 self_mask,
+					   size_t *len_out);
 
-const u8 *pkm_kunit_create_precise_file_sd(const void *token,
-						  u32 self_mask,
-						  size_t *len_out);
-
-void pkm_kunit_make_first_file_ace_inheritable(u8 *sd_bytes,
-						      u8 inherit_flags);
-
+void pkm_kunit_make_first_file_ace_inheritable(u8 *sd_bytes, u8 inherit_flags);
 
 struct pkm_kunit_ioctl_expectation {
 	unsigned int cmd;
@@ -716,7 +686,6 @@ struct pkm_kunit_ioctl_expectation {
 	bool compat;
 };
 
-
 struct pkm_kunit_inheritance_flags_case {
 	u8 parent_flags;
 	bool file_inherits;
@@ -724,7 +693,6 @@ struct pkm_kunit_inheritance_flags_case {
 	bool dir_inherits;
 	u8 dir_flags;
 };
-
 
 struct pkm_kunit_impersonation_gate_case {
 	u32 server_user_kind;
@@ -741,291 +709,330 @@ struct pkm_kunit_impersonation_gate_case {
 	u32 expected_used_impersonate;
 };
 
-
 /* Shared const test data (small; duplicated per TU is fine). */
 
 static __maybe_unused const u8 pkm_kunit_kmes_ring_magic[] = "KMESRING";
 
-static __maybe_unused const u8 pkm_kunit_anonymous_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_anonymous_sid[] = { 1, 1, 0, 0, 0, 0,
+							     0, 5, 7, 0, 0, 0 };
 
-static __maybe_unused const u8 pkm_kunit_local_service_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 5, 19, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_local_service_sid[] = { 1,  1, 0, 0,
+								 0,  0, 0, 5,
+								 19, 0, 0, 0 };
 
-static __maybe_unused const u8 pkm_kunit_system_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_system_sid[] = { 1, 1, 0,  0, 0, 0,
+							  0, 5, 18, 0, 0, 0 };
 
 static __maybe_unused const u8 pkm_kunit_administrators_sid[] = {
 	1, 2, 0, 0, 0, 0, 0, 5, 32, 0, 0, 0, 32, 2, 0, 0
 };
 
-static __maybe_unused const u8 pkm_kunit_owner_rights_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 3, 4, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_owner_rights_sid[] = { 1, 1, 0, 0,
+								0, 0, 0, 3,
+								4, 0, 0, 0 };
 
-static __maybe_unused const u8 pkm_kunit_creator_owner_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_creator_owner_sid[] = { 1, 1, 0, 0,
+								 0, 0, 0, 3,
+								 0, 0, 0, 0 };
 
-static __maybe_unused const u8 pkm_kunit_creator_group_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_creator_group_sid[] = { 1, 1, 0, 0,
+								 0, 0, 0, 3,
+								 1, 0, 0, 0 };
 
-static __maybe_unused const u8 pkm_kunit_everyone_sid[] = {
-	1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0
-};
+static __maybe_unused const u8 pkm_kunit_everyone_sid[] = { 1, 1, 0, 0, 0, 0,
+							    0, 1, 0, 0, 0, 0 };
 
 static __maybe_unused const u8 pkm_kunit_authenticated_users_sid[] = {
 	1, 1, 0, 0, 0, 0, 0, 5, 11, 0, 0, 0
 };
 
-static __maybe_unused const u8 pkm_kunit_all_restricted_application_packages_sid[] = {
-	1, 2, 0, 0, 0, 0, 0, 15, 2, 0, 0, 0, 2, 0, 0, 0
-};
+static __maybe_unused const u8
+	pkm_kunit_all_restricted_application_packages_sid[] = {
+		1, 2, 0, 0, 0, 0, 0, 15, 2, 0, 0, 0, 2, 0, 0, 0
+	};
 
 static __maybe_unused const u8 pkm_kunit_sample_confinement_sid[] = {
 	1, 2, 0, 0, 0, 0, 0, 15, 2, 0, 0, 0, 0xe8, 0x03, 0, 0
 };
 
-
 static __maybe_unused const u8 pkm_kunit_system_read_sd[] = {
-	1, 0, 4, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	32, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1, 0, 4,  128, 20, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0,  0, 32, 0, 0, 0,
+	1, 1, 0,  0,   0,  0, 0, 5, 18, 0, 0, 0, 2, 0, 28, 0, 1,  0, 0, 0,
+	0, 0, 20, 0,   0,  0, 2, 0, 1,	1, 0, 0, 0, 0, 0,  5, 18, 0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_everyone_read_sd[] = {
-	1, 0, 4, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	32, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+	1, 0, 4,  128, 20, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0,  0, 32, 0, 0, 0,
+	1, 1, 0,  0,   0,  0, 0, 5, 18, 0, 0, 0, 2, 0, 28, 0, 1,  0, 0, 0,
+	0, 0, 20, 0,   0,  0, 2, 0, 1,	1, 0, 0, 0, 0, 0,  1, 0,  0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_anonymous_read_sd[] = {
-	1, 0, 4, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	32, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0,
+	1, 0, 4,  128, 20, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0,  0, 32, 0, 0, 0,
+	1, 1, 0,  0,   0,  0, 0, 5, 18, 0, 0, 0, 2, 0, 28, 0, 1,  0, 0, 0,
+	0, 0, 20, 0,   0,  0, 2, 0, 1,	1, 0, 0, 0, 0, 0,  5, 7,  0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_authenticated_users_read_sd[] = {
-	1, 0, 4, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	32, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 11, 0, 0, 0,
+	1, 0, 4,  128, 20, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0,  0, 32, 0, 0, 0,
+	1, 1, 0,  0,   0,  0, 0, 5, 18, 0, 0, 0, 2, 0, 28, 0, 1,  0, 0, 0,
+	0, 0, 20, 0,   0,  0, 2, 0, 1,	1, 0, 0, 0, 0, 0,  5, 11, 0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_system_default_dacl[] = {
-	2, 0, 52, 0, 2, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 0, 16,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	0, 0, 24, 0, 0, 0, 0, 16,
-	1, 2, 0, 0, 0, 0, 0, 5, 32, 0, 0, 0, 32, 2, 0, 0,
+	2, 0, 52, 0, 2, 0, 0,  0, 0,  0, 20, 0, 0,  0, 0, 16, 1, 1,
+	0, 0, 0,  0, 0, 5, 18, 0, 0,  0, 0,  0, 24, 0, 0, 0,  0, 16,
+	1, 2, 0,  0, 0, 0, 0,  5, 32, 0, 0,  0, 32, 2, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_replacement_default_dacl[] = {
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 0, 16,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	2, 0,  28, 0, 1, 0, 0, 0, 0, 0, 20, 0, 0, 0,
+	0, 16, 1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_invalid_default_dacl[] = {
 	2, 0, 7, 0, 0, 0, 0, 0,
 };
 
-
 /* Owner SYSTEM, success-audit SYSTEM READ_CONTROL, allow SYSTEM READ_CONTROL. */
 static __maybe_unused const u8 pkm_kunit_system_read_audit_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0,
-	60, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	2, 64, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1, 0, 20, 128, 20, 0,  0,  0, 0,  0, 0,	 0, 32, 0, 0, 0, 60, 0,
+	0, 0, 1,  1,   0,  0,  0,  0, 0,  5, 18, 0, 0,	0, 2, 0, 28, 0,
+	1, 0, 0,  0,   2,  64, 20, 0, 0,  0, 2,	 0, 1,	1, 0, 0, 0,  0,
+	0, 5, 18, 0,   0,  0,  2,  0, 28, 0, 1,	 0, 0,	0, 0, 0, 20, 0,
+	0, 0, 2,  0,   1,  1,  0,  0, 0,  0, 0,	 5, 18, 0, 0, 0,
 };
-
 
 /* Owner SYSTEM, alarm SYSTEM FILE_READ_DATA, allow SYSTEM read-open subset. */
 static __maybe_unused const u8 pkm_kunit_system_file_read_alarm_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0,
-	60, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	3, 0, 20, 0, 1, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 137, 0, 6, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1,   0, 20, 128, 20, 0, 0,  0, 0,  0, 0,  0, 32, 0, 0, 0, 60, 0,
+	0,   0, 1,  1,	 0,  0, 0,  0, 0,  5, 18, 0, 0,	 0, 2, 0, 28, 0,
+	1,   0, 0,  0,	 3,  0, 20, 0, 1,  0, 0,  0, 1,	 1, 0, 0, 0,  0,
+	0,   5, 18, 0,	 0,  0, 2,  0, 28, 0, 1,  0, 0,	 0, 0, 0, 20, 0,
+	137, 0, 6,  0,	 1,  1, 0,  0, 0,  0, 0,  5, 18, 0, 0, 0,
 };
-
 
 /* Owner SYSTEM, audit SYSTEM FILE_READ_DATA, allow SYSTEM read-open subset. */
 static __maybe_unused const u8 pkm_kunit_system_file_read_audit_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0,
-	60, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	2, 192, 20, 0, 1, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 137, 0, 6, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1,   0, 20, 128, 20, 0,	  0,  0, 0,  0, 0,  0, 32, 0, 0, 0, 60, 0,
+	0,   0, 1,  1,	 0,  0,	  0,  0, 0,  5, 18, 0, 0,  0, 2, 0, 28, 0,
+	1,   0, 0,  0,	 2,  192, 20, 0, 1,  0, 0,  0, 1,  1, 0, 0, 0,	0,
+	0,   5, 18, 0,	 0,  0,	  2,  0, 28, 0, 1,  0, 0,  0, 0, 0, 20, 0,
+	137, 0, 6,  0,	 1,  1,	  0,  0, 0,  0, 0,  5, 18, 0, 0, 0,
 };
-
 
 /* Owner SYSTEM, success-audit SYSTEM ACCESS_SYSTEM_SECURITY. */
 static __maybe_unused const u8 pkm_kunit_system_set_sd_audit_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0,
-	60, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	2, 64, 20, 0, 0, 0, 0, 1,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	2, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1, 0, 20, 128, 20, 0,  0,  0, 0,  0, 0,	 0, 32, 0, 0, 0, 60, 0,
+	0, 0, 1,  1,   0,  0,  0,  0, 0,  5, 18, 0, 0,	0, 2, 0, 28, 0,
+	1, 0, 0,  0,   2,  64, 20, 0, 0,  0, 0,	 1, 1,	1, 0, 0, 0,  0,
+	0, 5, 18, 0,   0,  0,  2,  0, 28, 0, 1,	 0, 0,	0, 0, 0, 20, 0,
+	0, 0, 2,  0,   1,  1,  0,  0, 0,  0, 0,	 5, 18, 0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_system_pip_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 32, 0, 0, 0, 44, 0, 0, 0,
-	76, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	4, 0, 32, 0, 1, 0, 0, 0,
-	20, 0, 24, 0, 0, 0, 2, 0,
-	1, 2, 0, 0, 0, 0, 0, 19, 0, 2, 0, 0, 5, 0, 0, 0,
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 6, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1,  0, 20, 128, 20, 0, 0,  0, 32, 0, 0,	 0, 44, 0,  0,	0, 76, 0,
+	0,  0, 1,  1,	0,  0, 0,  0, 0,  5, 18, 0, 0,	0,  1,	1, 0,  0,
+	0,  0, 0,  5,	18, 0, 0,  0, 4,  0, 32, 0, 1,	0,  0,	0, 20, 0,
+	24, 0, 0,  0,	2,  0, 1,  2, 0,  0, 0,	 0, 0,	19, 0,	2, 0,  0,
+	5,  0, 0,  0,	4,  0, 28, 0, 1,  0, 0,	 0, 0,	0,  20, 0, 0,  0,
+	6,  0, 1,  1,	0,  0, 0,  0, 0,  5, 18, 0, 0,	0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_everyone_pip_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 32, 0, 0, 0, 44, 0, 0, 0,
-	76, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	4, 0, 32, 0, 1, 0, 0, 0,
-	20, 0, 24, 0, 0, 0, 2, 0,
-	1, 2, 0, 0, 0, 0, 0, 19, 0, 2, 0, 0, 5, 0, 0, 0,
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 6, 0,
-	1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+	1,  0, 20, 128, 20, 0, 0,  0, 32, 0, 0,	 0, 44, 0,  0,	0, 76, 0,
+	0,  0, 1,  1,	0,  0, 0,  0, 0,  5, 18, 0, 0,	0,  1,	1, 0,  0,
+	0,  0, 0,  5,	18, 0, 0,  0, 4,  0, 32, 0, 1,	0,  0,	0, 20, 0,
+	24, 0, 0,  0,	2,  0, 1,  2, 0,  0, 0,	 0, 0,	19, 0,	2, 0,  0,
+	5,  0, 0,  0,	4,  0, 28, 0, 1,  0, 0,	 0, 0,	0,  20, 0, 0,  0,
+	6,  0, 1,  1,	0,  0, 0,  0, 0,  1, 0,	 0, 0,	0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_everyone_file_read_pip_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 32, 0, 0, 0, 44, 0, 0, 0,
-	76, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	4, 0, 32, 0, 1, 0, 0, 0,
-	20, 0, 24, 0, 0, 0, 2, 0,
-	1, 2, 0, 0, 0, 0, 0, 19, 0, 2, 0, 0, 5, 0, 0, 0,
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 137, 0, 6, 0,
-	1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+	1,  0, 20, 128, 20, 0, 0,  0, 32, 0, 0,	 0, 44, 0,  0,	0, 76,	0,
+	0,  0, 1,  1,	0,  0, 0,  0, 0,  5, 18, 0, 0,	0,  1,	1, 0,	0,
+	0,  0, 0,  5,	18, 0, 0,  0, 4,  0, 32, 0, 1,	0,  0,	0, 20,	0,
+	24, 0, 0,  0,	2,  0, 1,  2, 0,  0, 0,	 0, 0,	19, 0,	2, 0,	0,
+	5,  0, 0,  0,	4,  0, 28, 0, 1,  0, 0,	 0, 0,	0,  20, 0, 137, 0,
+	6,  0, 1,  1,	0,  0, 0,  0, 0,  1, 0,	 0, 0,	0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_everyone_process_query_pip_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 32, 0, 0, 0, 44, 0, 0, 0,
-	76, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	4, 0, 32, 0, 1, 0, 0, 0,
-	20, 0, 24, 0, 0, 0, 2, 0,
-	1, 2, 0, 0, 0, 0, 0, 19, 0, 2, 0, 0, 5, 0, 0, 0,
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 16, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+	1,  0, 20, 128, 20, 0, 0,  0, 32, 0, 0,	 0, 44, 0,  0,	0, 76, 0,
+	0,  0, 1,  1,	0,  0, 0,  0, 0,  5, 18, 0, 0,	0,  1,	1, 0,  0,
+	0,  0, 0,  5,	18, 0, 0,  0, 4,  0, 32, 0, 1,	0,  0,	0, 20, 0,
+	24, 0, 0,  0,	2,  0, 1,  2, 0,  0, 0,	 0, 0,	19, 0,	2, 0,  0,
+	5,  0, 0,  0,	4,  0, 28, 0, 1,  0, 0,	 0, 0,	0,  20, 0, 0,  16,
+	0,  0, 1,  1,	0,  0, 0,  0, 0,  1, 0,	 0, 0,	0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_caap_policy_sid[] = {
 	1, 2, 0, 0, 0, 0, 0, 5, 21, 0, 0, 0, 4, 1, 0, 0,
 };
 
-
 static __maybe_unused const u8 pkm_kunit_caap_object_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 36, 0, 0, 0, 48, 0, 0, 0,
-	80, 0, 0, 0,
-	1, 2, 0, 0, 0, 0, 0, 5, 21, 0, 0, 0, 231, 3, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	4, 0, 32, 0, 1, 0, 0, 0,
-	19, 0, 24, 0, 0, 0, 0, 0,
-	1, 2, 0, 0, 0, 0, 0, 5, 21, 0, 0, 0, 4, 1, 0, 0,
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1,  0, 20, 128, 20, 0, 0, 0, 36, 0, 0,	0, 48, 0, 0,   0, 80, 0,
+	0,  0, 1,  2,	0,  0, 0, 0, 0,	 5, 21, 0, 0,  0, 231, 3, 0,  0,
+	1,  1, 0,  0,	0,  0, 0, 5, 18, 0, 0,	0, 4,  0, 32,  0, 1,  0,
+	0,  0, 19, 0,	24, 0, 0, 0, 0,	 0, 1,	2, 0,  0, 0,   0, 0,  5,
+	21, 0, 0,  0,	4,  1, 0, 0, 4,	 0, 28, 0, 1,  0, 0,   0, 0,  0,
+	20, 0, 0,  0,	2,  0, 1, 1, 0,	 0, 0,	0, 0,  5, 18,  0, 0,  0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_caap_empty_dacl[] = {
 	4, 0, 8, 0, 0, 0, 0, 0,
 };
 
-
 static __maybe_unused const u8 pkm_kunit_caap_system_read_dacl[] = {
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0, 0, 0, 2, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	4, 0, 28, 0, 1, 0, 0, 0, 0, 0, 20, 0, 0, 0,
+	2, 0, 1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_caap_file_read_dacl[] = {
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0,
-	PKM_KUNIT_FILE_READ_DATA | PKM_KUNIT_FILE_READ_ATTRIBUTES, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	4,
+	0,
+	28,
+	0,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	20,
+	0,
+	PKM_KUNIT_FILE_READ_DATA | PKM_KUNIT_FILE_READ_ATTRIBUTES,
+	0,
+	0,
+	0,
+	1,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	5,
+	18,
+	0,
+	0,
+	0,
 };
-
 
 static __maybe_unused const u8 pkm_kunit_caap_file_read_sd[] = {
-	1, 0, 20, 128, 20, 0, 0, 0, 32, 0, 0, 0, 44, 0, 0, 0,
-	76, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
-	4, 0, 32, 0, 1, 0, 0, 0,
-	19, 0, 24, 0, 0, 0, 0, 0,
-	1, 2, 0, 0, 0, 0, 0, 5, 21, 0, 0, 0, 4, 1, 0, 0,
-	4, 0, 28, 0, 1, 0, 0, 0,
-	0, 0, 20, 0,
-	PKM_KUNIT_FILE_READ_DATA | PKM_KUNIT_FILE_READ_ATTRIBUTES, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+	1,
+	0,
+	20,
+	128,
+	20,
+	0,
+	0,
+	0,
+	32,
+	0,
+	0,
+	0,
+	44,
+	0,
+	0,
+	0,
+	76,
+	0,
+	0,
+	0,
+	1,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	5,
+	18,
+	0,
+	0,
+	0,
+	1,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	5,
+	18,
+	0,
+	0,
+	0,
+	4,
+	0,
+	32,
+	0,
+	1,
+	0,
+	0,
+	0,
+	19,
+	0,
+	24,
+	0,
+	0,
+	0,
+	0,
+	0,
+	1,
+	2,
+	0,
+	0,
+	0,
+	0,
+	0,
+	5,
+	21,
+	0,
+	0,
+	0,
+	4,
+	1,
+	0,
+	0,
+	4,
+	0,
+	28,
+	0,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	20,
+	0,
+	PKM_KUNIT_FILE_READ_DATA | PKM_KUNIT_FILE_READ_ATTRIBUTES,
+	0,
+	0,
+	0,
+	1,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	5,
+	18,
+	0,
+	0,
+	0,
 };
 
+static __maybe_unused const struct file_operations
+	pkm_kunit_file_fd_transfer_fops = {};
 
-static __maybe_unused const struct file_operations pkm_kunit_file_fd_transfer_fops = { };
+static __maybe_unused const struct file_operations
+	pkm_kunit_non_process_fops = {};
 
-
-static __maybe_unused const struct file_operations pkm_kunit_non_process_fops = { };
-
-
-static __maybe_unused const struct file_operations pkm_kunit_non_token_fops = { };
-
+static __maybe_unused const struct file_operations pkm_kunit_non_token_fops = {};
 
 /* Helper prototypes (definitions in kunit_common.c). */
 
@@ -1034,16 +1041,16 @@ bool pkm_kunit_mem_read(void *ctx, u64 user_ptr, void *dst, size_t len);
 bool pkm_kunit_mem_write(void *ctx, u64 user_ptr, const void *src, size_t len);
 
 bool pkm_kunit_on_audit_event(void *ctx,
-				     const struct pkm_kacs_audit_event_view *event);
+			      const struct pkm_kacs_audit_event_view *event);
 
 bool pkm_kunit_on_privilege_use_event(
 	void *ctx, const struct pkm_kacs_privilege_use_event_view *event);
 
-bool pkm_kunit_fail_audit_event(
-	void *ctx, const struct pkm_kacs_audit_event_view *event);
+bool pkm_kunit_fail_audit_event(void *ctx,
+				const struct pkm_kacs_audit_event_view *event);
 
 void pkm_kunit_add_region(struct pkm_kunit_mem *mem, u64 base, u8 *bytes,
-				 size_t len);
+			  size_t len);
 
 void pkm_kunit_write_u32(u8 *bytes, size_t offset, u32 value);
 
@@ -1053,32 +1060,30 @@ void pkm_kunit_write_u16(u8 *bytes, size_t offset, u16 value);
 
 size_t pkm_kunit_utf16_cstr_len(const char *value);
 
-void pkm_kunit_write_utf16_cstr(u8 *bytes, size_t offset,
-				       const char *value);
+void pkm_kunit_write_utf16_cstr(u8 *bytes, size_t offset, const char *value);
 
 size_t pkm_kunit_build_claim_entry_empty(u8 *dst, size_t dst_len,
-						const char *name, u16 value_type,
-						u32 flags);
+					 const char *name, u16 value_type,
+					 u32 flags);
 
 size_t pkm_kunit_build_claim_entry_scalar(u8 *dst, size_t dst_len,
-						 const char *name, u16 value_type,
-						 u32 flags, u64 value);
+					  const char *name, u16 value_type,
+					  u32 flags, u64 value);
 
 size_t pkm_kunit_build_claim_entry_string(u8 *dst, size_t dst_len,
-						 const char *name, u32 flags,
-						 const char *value);
+					  const char *name, u32 flags,
+					  const char *value);
 
 size_t pkm_kunit_build_claim_entry_sid(u8 *dst, size_t dst_len,
-					      const char *name, u32 flags,
-					      const u8 *sid, size_t sid_len);
+				       const char *name, u32 flags,
+				       const u8 *sid, size_t sid_len);
 
 size_t pkm_kunit_build_claim_entry_octet(u8 *dst, size_t dst_len,
-						const char *name, u32 flags,
-						const u8 *value, size_t value_len);
+					 const char *name, u32 flags,
+					 const u8 *value, size_t value_len);
 
-int pkm_kunit_append_claim_entry(u8 *dst, size_t dst_len,
-					size_t *offset_io, const u8 *entry,
-					size_t entry_len);
+int pkm_kunit_append_claim_entry(u8 *dst, size_t dst_len, size_t *offset_io,
+				 const u8 *entry, size_t entry_len);
 
 u32 pkm_kunit_read_u32(const u8 *bytes, size_t offset);
 
@@ -1089,52 +1094,48 @@ void pkm_kunit_make_sd_ownerless(u8 *sd);
 void pkm_kunit_make_sd_groupless(u8 *sd);
 
 size_t pkm_kunit_build_owner_subset_sd(u8 *dst, size_t dst_len,
-					      const u8 *owner_sid,
-					      size_t owner_sid_len);
+				       const u8 *owner_sid,
+				       size_t owner_sid_len);
 
 void pkm_kunit_set_sd_rm_control(u8 *sd, u8 value);
 
-void pkm_kunit_expect_sd_rm_control(struct kunit *test, const u8 *sd,
-					   u8 value);
+void pkm_kunit_expect_sd_rm_control(struct kunit *test, const u8 *sd, u8 value);
 
 void pkm_kunit_set_sd_dacl_reserved_fields(u8 *sd, u8 sbz1, u16 sbz2);
 
-void pkm_kunit_expect_sd_dacl_reserved_fields(struct kunit *test,
-						     const u8 *sd, u8 sbz1,
-						     u16 sbz2);
+void pkm_kunit_expect_sd_dacl_reserved_fields(struct kunit *test, const u8 *sd,
+					      u8 sbz1, u16 sbz2);
 
 void pkm_kunit_expect_sd_sid_component(struct kunit *test, const u8 *sd,
-					      size_t sd_len, size_t offset,
-					      const u8 *expected_sid,
-					      size_t expected_sid_len);
+				       size_t sd_len, size_t offset,
+				       const u8 *expected_sid,
+				       size_t expected_sid_len);
 
-void pkm_kunit_expect_stored_sd_has_owner(struct kunit *test,
-						 const u8 *sd, size_t sd_len);
+void pkm_kunit_expect_stored_sd_has_owner(struct kunit *test, const u8 *sd,
+					  size_t sd_len);
 
 const u8 *pkm_kunit_dacl_ace_const(const u8 *sd, size_t sd_len,
-					  u16 target_index);
+				   u16 target_index);
 
 u8 *pkm_kunit_dacl_ace(u8 *sd, size_t sd_len, u16 target_index);
 
-void pkm_kunit_set_dacl_ace_header(u8 *sd, size_t sd_len,
-					  u16 index, u8 ace_type,
-					  u8 ace_flags, u32 mask);
+void pkm_kunit_set_dacl_ace_header(u8 *sd, size_t sd_len, u16 index,
+				   u8 ace_type, u8 ace_flags, u32 mask);
 
-void pkm_kunit_set_dacl_ace_sid(struct kunit *test, u8 *sd,
-				       size_t sd_len, u16 index,
-				       const u8 *sid, size_t sid_len);
+void pkm_kunit_set_dacl_ace_sid(struct kunit *test, u8 *sd, size_t sd_len,
+				u16 index, const u8 *sid, size_t sid_len);
 
 void pkm_kunit_expect_dacl_ace_header(struct kunit *test, const u8 *sd,
-					     size_t sd_len, u16 index,
-					     u8 ace_type, u8 ace_flags,
-					     u32 mask);
+				      size_t sd_len, u16 index, u8 ace_type,
+				      u8 ace_flags, u32 mask);
 
-void pkm_kunit_expect_allow_ace(struct kunit *test, const u8 *sd,
-				       size_t sd_len, u16 index, u32 mask,
-				       const u8 *sid, size_t sid_len);
+void pkm_kunit_expect_allow_ace(struct kunit *test, const u8 *sd, size_t sd_len,
+				u16 index, u32 mask, const u8 *sid,
+				size_t sid_len);
 
-void pkm_kunit_expect_owner_rights_read_control_ace(
-	struct kunit *test, const u8 *sd, size_t sd_len, u16 index);
+void pkm_kunit_expect_owner_rights_read_control_ace(struct kunit *test,
+						    const u8 *sd, size_t sd_len,
+						    u16 index);
 
 u64 pkm_kunit_read_u64(const u8 *bytes, size_t offset);
 
@@ -1143,22 +1144,21 @@ u32 pkm_kunit_query_token_u32(struct kunit *test, int fd, u32 token_class);
 u32 pkm_kunit_groups_query_attr(const u8 *bytes, u32 index);
 
 void pkm_kunit_expect_bytes_eq(struct kunit *test, const u8 *actual,
-				      size_t actual_len, const u8 *expected,
-				      size_t expected_len);
+			       size_t actual_len, const u8 *expected,
+			       size_t expected_len);
 
-void pkm_kunit_expect_token_query_payload_eq(struct kunit *test,
-						    int lhs_fd, int rhs_fd,
-						    u32 token_class);
+void pkm_kunit_expect_token_query_payload_eq(struct kunit *test, int lhs_fd,
+					     int rhs_fd, u32 token_class);
 
-bool pkm_kunit_snapshot_has_group(
-	const struct pkm_kacs_boot_snapshot *snapshot,
-	const u8 *sid, size_t sid_len, u32 *attributes_out);
+bool pkm_kunit_snapshot_has_group(const struct pkm_kacs_boot_snapshot *snapshot,
+				  const u8 *sid, size_t sid_len,
+				  u32 *attributes_out);
 
-void pkm_kunit_fill_group_limit_specs(
-	struct pkm_kunit_sid_attr_spec *groups, u32 count);
+void pkm_kunit_fill_group_limit_specs(struct pkm_kunit_sid_attr_spec *groups,
+				      u32 count);
 
 bool pkm_kunit_contains_bytes(const u8 *haystack, size_t haystack_len,
-				     const u8 *needle, size_t needle_len);
+			      const u8 *needle, size_t needle_len);
 
 void pkm_kunit_reset_kmes(void);
 
@@ -1167,82 +1167,82 @@ void pkm_kunit_close_fds(struct kunit *test, int *fds, int count);
 int pkm_kunit_dup_fd_same_file(int fd);
 
 void pkm_kunit_cleanup_linked_pair(struct kunit *test,
-					  struct pkm_kunit_linked_pair *pair);
+				   struct pkm_kunit_linked_pair *pair);
 
 int pkm_kunit_create_link_candidates(struct kunit *test,
-					    const void *caller_token,
-					    struct pkm_kunit_linked_pair *out);
+				     const void *caller_token,
+				     struct pkm_kunit_linked_pair *out);
 
-int pkm_kunit_create_linked_pair(struct kunit *test,
-					const void *caller_token,
-					struct pkm_kunit_linked_pair *out);
+int pkm_kunit_create_linked_pair(struct kunit *test, const void *caller_token,
+				 struct pkm_kunit_linked_pair *out);
 
 int pkm_kunit_create_dynamic_linked_pair(struct kunit *test,
-						const void *caller_token,
-						struct pkm_kunit_linked_pair *out);
+					 const void *caller_token,
+					 struct pkm_kunit_linked_pair *out);
 
 int pkm_kunit_find_current_kmes_fd(struct kunit *test, int *fds, int count,
-					  struct pkm_kmes_kunit_fd_snapshot *out);
+				   struct pkm_kmes_kunit_fd_snapshot *out);
 long pkm_kunit_kmes_attach_all(const void *token, int *fds, int *count,
-				      u64 *capacity);
+			       u64 *capacity);
 
-bool pkm_kunit_parse_kmes_event(
-	const u8 *bytes, size_t len, struct pkm_kunit_kmes_event_view *out);
+bool pkm_kunit_parse_kmes_event(const u8 *bytes, size_t len,
+				struct pkm_kunit_kmes_event_view *out);
 
-bool pkm_kunit_msgpack_read_be(const u8 *bytes, size_t len,
-				      size_t width, u64 *out);
+bool pkm_kunit_msgpack_read_be(const u8 *bytes, size_t len, size_t width,
+			       u64 *out);
 
 bool pkm_kunit_msgpack_parse_one(const u8 *bytes, size_t len,
-					struct pkm_kunit_msgpack_view *out,
-					u32 depth);
+				 struct pkm_kunit_msgpack_view *out, u32 depth);
 
 bool pkm_kunit_msgpack_map_get(const struct pkm_kunit_msgpack_view *map,
-				      const char *key,
-				      struct pkm_kunit_msgpack_view *out);
+			       const char *key,
+			       struct pkm_kunit_msgpack_view *out);
 
-bool pkm_kunit_msgpack_str_eq(
-	const struct pkm_kunit_msgpack_view *view, const char *expected);
+bool pkm_kunit_msgpack_str_eq(const struct pkm_kunit_msgpack_view *view,
+			      const char *expected);
 
-bool pkm_kunit_msgpack_bin_eq(
-	const struct pkm_kunit_msgpack_view *view, const u8 *expected,
-	size_t expected_len);
+bool pkm_kunit_msgpack_bin_eq(const struct pkm_kunit_msgpack_view *view,
+			      const u8 *expected, size_t expected_len);
 
-bool pkm_kunit_msgpack_require_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, enum pkm_kunit_msgpack_kind kind,
-	struct pkm_kunit_msgpack_view *out);
+bool pkm_kunit_msgpack_require_key(struct kunit *test,
+				   const struct pkm_kunit_msgpack_view *map,
+				   const char *key,
+				   enum pkm_kunit_msgpack_kind kind,
+				   struct pkm_kunit_msgpack_view *out);
 
-bool pkm_kunit_msgpack_expect_uint_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, u64 expected);
+bool pkm_kunit_msgpack_expect_uint_key(struct kunit *test,
+				       const struct pkm_kunit_msgpack_view *map,
+				       const char *key, u64 expected);
 
-bool pkm_kunit_msgpack_expect_int_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, s64 expected);
+bool pkm_kunit_msgpack_expect_int_key(struct kunit *test,
+				      const struct pkm_kunit_msgpack_view *map,
+				      const char *key, s64 expected);
 
-bool pkm_kunit_msgpack_expect_bool_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, bool expected);
+bool pkm_kunit_msgpack_expect_bool_key(struct kunit *test,
+				       const struct pkm_kunit_msgpack_view *map,
+				       const char *key, bool expected);
 
-bool pkm_kunit_msgpack_expect_str_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, const char *expected);
+bool pkm_kunit_msgpack_expect_str_key(struct kunit *test,
+				      const struct pkm_kunit_msgpack_view *map,
+				      const char *key, const char *expected);
 
-bool pkm_kunit_msgpack_expect_bin_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, const u8 *expected, size_t expected_len);
+bool pkm_kunit_msgpack_expect_bin_key(struct kunit *test,
+				      const struct pkm_kunit_msgpack_view *map,
+				      const char *key, const u8 *expected,
+				      size_t expected_len);
 
-bool pkm_kunit_msgpack_expect_nil_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key);
+bool pkm_kunit_msgpack_expect_nil_key(struct kunit *test,
+				      const struct pkm_kunit_msgpack_view *map,
+				      const char *key);
 
 bool pkm_kunit_msgpack_expect_absent_key(
 	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
 	const char *key);
 
-bool pkm_kunit_msgpack_require_map_key(
-	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
-	const char *key, u32 expected_count, struct pkm_kunit_msgpack_view *out);
+bool pkm_kunit_msgpack_require_map_key(struct kunit *test,
+				       const struct pkm_kunit_msgpack_view *map,
+				       const char *key, u32 expected_count,
+				       struct pkm_kunit_msgpack_view *out);
 
 bool pkm_kunit_msgpack_expect_process_map(
 	struct kunit *test, const struct pkm_kunit_msgpack_view *map,
@@ -1322,9 +1322,9 @@ void pkm_kunit_expect_boot_snapshot_eq_internal(
 	struct kunit *test, const struct pkm_kacs_boot_snapshot *lhs,
 	const struct pkm_kacs_boot_snapshot *rhs, bool compare_identity);
 
-void pkm_kunit_expect_boot_snapshot_eq(
-	struct kunit *test, const struct pkm_kacs_boot_snapshot *lhs,
-	const struct pkm_kacs_boot_snapshot *rhs);
+void pkm_kunit_expect_boot_snapshot_eq(struct kunit *test,
+				       const struct pkm_kacs_boot_snapshot *lhs,
+				       const struct pkm_kacs_boot_snapshot *rhs);
 
 void pkm_kunit_expect_boot_snapshot_eq_except_identity(
 	struct kunit *test, const struct pkm_kacs_boot_snapshot *lhs,
@@ -1347,55 +1347,53 @@ bool pkm_kunit_guid_is_zero(const u8 guid[KACS_UUID_BYTES]);
 bool pkm_kunit_guid_is_uuid_v4(const u8 guid[KACS_UUID_BYTES]);
 
 void pkm_kunit_expect_guid_v4(struct kunit *test,
-				     const u8 guid[KACS_UUID_BYTES]);
+			      const u8 guid[KACS_UUID_BYTES]);
 
-void pkm_kunit_expect_guid_eq(struct kunit *test,
-				     const u8 lhs[KACS_UUID_BYTES],
-				     const u8 rhs[KACS_UUID_BYTES]);
+void pkm_kunit_expect_guid_eq(struct kunit *test, const u8 lhs[KACS_UUID_BYTES],
+			      const u8 rhs[KACS_UUID_BYTES]);
 
-void pkm_kunit_expect_guid_ne(struct kunit *test,
-				     const u8 lhs[KACS_UUID_BYTES],
-				     const u8 rhs[KACS_UUID_BYTES]);
+void pkm_kunit_expect_guid_ne(struct kunit *test, const u8 lhs[KACS_UUID_BYTES],
+			      const u8 rhs[KACS_UUID_BYTES]);
 
 size_t pkm_kunit_build_logon_session_spec(u8 *dst, u8 logon_type,
-					   const char *auth_pkg,
-					   const u8 *user_sid,
-					   size_t user_sid_len);
+					  const char *auth_pkg,
+					  const u8 *user_sid,
+					  size_t user_sid_len);
 
-size_t pkm_kunit_sid_attr_array_len(
-	const struct pkm_kunit_sid_attr_spec *entries, u32 count);
+size_t
+pkm_kunit_sid_attr_array_len(const struct pkm_kunit_sid_attr_spec *entries,
+			     u32 count);
 
 size_t pkm_kunit_write_sid_attr_array(
 	u8 *dst, const struct pkm_kunit_sid_attr_spec *entries, u32 count);
 
-int pkm_kunit_append_bytes_section(u8 *dst, size_t dst_len,
-					  size_t *offset_io,
-					  const void *bytes, size_t len,
-					  u32 *offset_out);
+int pkm_kunit_append_bytes_section(u8 *dst, size_t dst_len, size_t *offset_io,
+				   const void *bytes, size_t len,
+				   u32 *offset_out);
 
 int pkm_kunit_append_sid_attr_section(
 	u8 *dst, size_t dst_len, size_t *offset_io,
 	const struct pkm_kunit_sid_attr_spec *entries, u32 count,
 	u32 *offset_out);
 
-int pkm_kunit_append_u32_section(u8 *dst, size_t dst_len,
-					size_t *offset_io,
-					const u32 *values, u32 count,
-					u32 *offset_out);
+int pkm_kunit_append_u32_section(u8 *dst, size_t dst_len, size_t *offset_io,
+				 const u32 *values, u32 count, u32 *offset_out);
 
-size_t pkm_kunit_build_token_spec(
-	u8 *dst, size_t dst_len, const struct pkm_kunit_token_spec_args *args);
+size_t pkm_kunit_build_token_spec(u8 *dst, size_t dst_len,
+				  const struct pkm_kunit_token_spec_args *args);
 
 void pkm_kunit_build_logon_sid(u64 logon_session_id, u8 out[20]);
 
 void pkm_kunit_build_args_v136(u8 *args);
 
 size_t pkm_kunit_build_caap_spec(u8 *spec, const u8 *effective_dacl,
-					u32 effective_dacl_len);
+				 u32 effective_dacl_len);
 
-size_t pkm_kunit_build_caap_spec_with_staged_dacl(
-	u8 *spec, const u8 *effective_dacl, u32 effective_dacl_len,
-	const u8 *staged_dacl, u32 staged_dacl_len);
+size_t pkm_kunit_build_caap_spec_with_staged_dacl(u8 *spec,
+						  const u8 *effective_dacl,
+						  u32 effective_dacl_len,
+						  const u8 *staged_dacl,
+						  u32 staged_dacl_len);
 
 void pkm_kunit_build_read_control_args(u8 *args, s32 token_fd);
 
@@ -1404,39 +1402,31 @@ size_t pkm_kunit_build_read_control_sd(
 	const struct pkm_kunit_read_ace_spec *aces, size_t ace_count);
 
 size_t pkm_kunit_build_null_dacl_sd(u8 *dst, size_t dst_len,
-					   const u8 *owner_sid,
-					   size_t owner_sid_len);
+				    const u8 *owner_sid, size_t owner_sid_len);
 
 size_t pkm_kunit_build_confinement_object_sd(u8 *dst, size_t dst_len,
-						    const u8 object_guid[16]);
+					     const u8 object_guid[16]);
 
 size_t pkm_kunit_build_restrict_payload(
-	u8 *payload,
-	const u32 *deny_indices,
-	size_t deny_count,
-	const struct pkm_kacs_boot_group_view *restrict_sids,
-	size_t sid_count);
+	u8 *payload, const u32 *deny_indices, size_t deny_count,
+	const struct pkm_kacs_boot_group_view *restrict_sids, size_t sid_count);
 
 long pkm_kunit_run_read_control_with_token_fd_summary(
 	int token_fd, const u8 *sd, size_t sd_len, u32 *granted_out,
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kunit_run_read_control_with_token_fd(int token_fd, const u8 *sd,
-						     size_t sd_len,
-						     u32 *granted_out);
+					      size_t sd_len, u32 *granted_out);
 
 long pkm_kunit_create_confined_access_check_token(
 	u64 privileges, struct pkm_kacs_token_fd_view *view);
 
-long pkm_kunit_run_pip_labeled_sd_access_check(const u8 *sd,
-						      size_t sd_len,
-						      u32 arg_pip_type,
-						      u32 arg_pip_trust,
-						      u32 *granted);
+long pkm_kunit_run_pip_labeled_sd_access_check(const u8 *sd, size_t sd_len,
+					       u32 arg_pip_type,
+					       u32 arg_pip_trust, u32 *granted);
 
-long pkm_kunit_run_pip_labeled_access_check(u32 arg_pip_type,
-						   u32 arg_pip_trust,
-						   u32 *granted);
+long pkm_kunit_run_pip_labeled_access_check(u32 arg_pip_type, u32 arg_pip_trust,
+					    u32 *granted);
 
 long pkm_kunit_run_caap_access_check(u32 *granted);
 
@@ -1445,131 +1435,120 @@ void pkm_kunit_build_access_system_args(u8 *args, s32 token_fd);
 struct pkm_kmes_runtime_config pkm_kunit_kmes_default_config(void);
 
 void pkm_kunit_expect_create_token_spec_einval(struct kunit *test,
-						      const void *subject_token,
-						      const u8 *spec,
-						      size_t spec_len);
+					       const void *subject_token,
+					       const u8 *spec, size_t spec_len);
 
 void pkm_kunit_expect_allow_caps_present(struct kunit *test,
-						const struct cred *cred);
+					 const struct cred *cred);
 
 void pkm_kunit_expect_linux_cred_projection(struct kunit *test,
-						   const struct cred *cred,
-						   u32 uid, u32 gid);
+					    const struct cred *cred, u32 uid,
+					    u32 gid);
 
 void pkm_kunit_expect_process_state_snapshot_eq(
 	struct kunit *test, const struct pkm_kacs_kunit_process_state_view *lhs,
 	const struct pkm_kacs_kunit_process_state_view *rhs);
 
-void pkm_kunit_signing_fill_blob(u8 blob[PKM_KUNIT_SIGNING_BLOB_LEN],
-					u8 seed);
+void pkm_kunit_signing_fill_blob(u8 blob[PKM_KUNIT_SIGNING_BLOB_LEN], u8 seed);
 
-void pkm_kunit_signing_build_elf(
-	u8 file[PKM_KUNIT_ELF_LEN],
-	const u8 sig_blob[PKM_KUNIT_SIGNING_BLOB_LEN], bool include_sig_section,
-	bool valid_sig_section);
+void pkm_kunit_signing_build_elf(u8 file[PKM_KUNIT_ELF_LEN],
+				 const u8 sig_blob[PKM_KUNIT_SIGNING_BLOB_LEN],
+				 bool include_sig_section,
+				 bool valid_sig_section);
 
-void pkm_kunit_signing_fill_probe(
-	struct pkm_kacs_kunit_signing_probe *probe);
+void pkm_kunit_signing_fill_probe(struct pkm_kacs_kunit_signing_probe *probe);
 
-void pkm_kunit_signing_fill_key(
-	struct pkm_kacs_kunit_signing_key_entry *key, u8 seed, u32 pip_type,
-	u32 pip_trust);
+void pkm_kunit_signing_fill_key(struct pkm_kacs_kunit_signing_key_entry *key,
+				u8 seed, u32 pip_type, u32 pip_trust);
 
 void pkm_kunit_signing_fill_tcb_vector_material(
 	struct pkm_kacs_kunit_signing_probe *material);
 
 int pkm_kunit_mldsa65_crypto_verify(const u8 *public_key,
-					   unsigned int public_key_len,
-					   const u8 *msg, unsigned int msg_len,
-					   const u8 *signature,
-					   unsigned int signature_len);
+				    unsigned int public_key_len, const u8 *msg,
+				    unsigned int msg_len, const u8 *signature,
+				    unsigned int signature_len);
 
-int pkm_kunit_check_path_metadata_with_mask(u32 granted_mask, u32 op,
-						   u32 mode, const char *name);
+int pkm_kunit_check_path_metadata_with_mask(u32 granted_mask, u32 op, u32 mode,
+					    const char *name);
 
-int pkm_kunit_check_path_metadata_with_foreign_everyone_mask(
-	u32 granted_mask, u32 op, u32 mode, const char *name);
+int pkm_kunit_check_path_metadata_with_foreign_everyone_mask(u32 granted_mask,
+							     u32 op, u32 mode,
+							     const char *name);
 
-int pkm_kunit_check_inode_permission_with_mask(
-	const void *subject_token, u32 granted_mask, int mask);
+int pkm_kunit_check_inode_permission_with_mask(const void *subject_token,
+					       u32 granted_mask, int mask);
 
-int pkm_kunit_check_inode_permission_with_mode(
-	const void *subject_token, u32 granted_mask, u32 mode, int mask);
+int pkm_kunit_check_inode_permission_with_mode(const void *subject_token,
+					       u32 granted_mask, u32 mode,
+					       int mask);
 
-int pkm_kunit_namespace_parent_op(const void *subject_token,
-					 u32 parent_mask, u32 op,
-					 const u8 **created_sd_out,
-					 size_t *created_sd_len_out);
+int pkm_kunit_namespace_parent_op(const void *subject_token, u32 parent_mask,
+				  u32 op, const u8 **created_sd_out,
+				  size_t *created_sd_len_out);
 
 int pkm_kunit_namespace_mknod_mode_op(const void *subject_token,
-					     u32 parent_mask, umode_t mode,
-					     const u8 **created_sd_out,
-					     size_t *created_sd_len_out);
+				      u32 parent_mask, umode_t mode,
+				      const u8 **created_sd_out,
+				      size_t *created_sd_len_out);
 
-int pkm_kunit_namespace_link_op(const void *subject_token,
-				       u32 source_mask, u32 parent_mask);
+int pkm_kunit_namespace_link_op(const void *subject_token, u32 source_mask,
+				u32 parent_mask);
 
-int pkm_kunit_namespace_delete_op(const void *subject_token,
-					 u32 target_mask, u32 parent_mask,
-					 u32 op, umode_t target_mode);
+int pkm_kunit_namespace_delete_op(const void *subject_token, u32 target_mask,
+				  u32 parent_mask, u32 op, umode_t target_mode);
 
-int pkm_kunit_namespace_rename_op(const void *subject_token,
-					 u32 source_mask,
-					 u32 old_parent_mask,
-					 u32 new_parent_mask,
-					 u32 target_mask,
-					 bool target_present,
-					 umode_t source_mode);
+int pkm_kunit_namespace_rename_op(const void *subject_token, u32 source_mask,
+				  u32 old_parent_mask, u32 new_parent_mask,
+				  u32 target_mask, bool target_present,
+				  umode_t source_mode);
 
-int pkm_kunit_namespace_readlink_op(const void *subject_token,
-					   u32 source_mask);
+int pkm_kunit_namespace_readlink_op(const void *subject_token, u32 source_mask);
 
 int pkm_kunit_namespace_rename_flags_op(const void *subject_token,
-					       u32 mount_policy,
-					       u32 old_parent_mask,
-					       unsigned int flags);
+					u32 mount_policy, u32 old_parent_mask,
+					unsigned int flags);
 
 void pkm_kunit_expect_ioctl_access(
 	struct kunit *test, const struct pkm_kunit_ioctl_expectation *entry);
 
-void pkm_kunit_expect_proc_metadata_debug_bypass(
-	struct kunit *test, u32 proc_mode);
+void pkm_kunit_expect_proc_metadata_debug_bypass(struct kunit *test,
+						 u32 proc_mode);
 
-void pkm_kunit_expect_proc_metadata_debug_pip_denial(
-	struct kunit *test, u32 proc_mode);
+void pkm_kunit_expect_proc_metadata_debug_pip_denial(struct kunit *test,
+						     u32 proc_mode);
 
-const u8 *pkm_kunit_create_default_file_sd(const void *token,
-						  size_t *len_out);
+const u8 *pkm_kunit_create_default_file_sd(const void *token, size_t *len_out);
 
 const u8 *pkm_kunit_create_query_only_file_sd(const void *token,
-						     size_t *len_out);
+					      size_t *len_out);
 
 const u8 *pkm_kunit_create_write_only_file_sd(const void *token,
-						     size_t *len_out);
+					      size_t *len_out);
 
-const u8 *pkm_kunit_create_file_sd_with_mandatory_resource_attr(
-	const void *token, size_t *len_out);
+const u8 *
+pkm_kunit_create_file_sd_with_mandatory_resource_attr(const void *token,
+						      size_t *len_out);
 
 const u8 *pkm_kunit_create_file_sd_with_mandatory_resource_attr_value(
 	const void *token, u64 value, size_t *len_out);
 
 const u8 *pkm_kunit_create_labeled_file_sd(const void *token,
-						  u32 integrity_level,
-						  size_t *len_out);
+					   u32 integrity_level,
+					   size_t *len_out);
 
-const u8 *pkm_kunit_create_labeled_audit_file_sd(
-	const void *token, u32 integrity_level, size_t *len_out);
+const u8 *pkm_kunit_create_labeled_audit_file_sd(const void *token,
+						 u32 integrity_level,
+						 size_t *len_out);
 
-const u8 *pkm_kunit_create_precise_file_sd(const void *token,
-						  u32 self_mask,
-						  size_t *len_out);
+const u8 *pkm_kunit_create_precise_file_sd(const void *token, u32 self_mask,
+					   size_t *len_out);
 
 const u8 *pkm_kunit_synthesize_file_sd(const u8 *parent_sd,
-					      size_t parent_sd_len,
-					      const u8 *template_sd,
-					      size_t template_sd_len,
-					      u32 child_is_directory,
-					      size_t *len_out);
+				       size_t parent_sd_len,
+				       const u8 *template_sd,
+				       size_t template_sd_len,
+				       u32 child_is_directory, size_t *len_out);
 
 const u8 *pkm_kunit_first_dacl_ace_const(const u8 *sd_bytes);
 
@@ -1581,46 +1560,44 @@ const u8 *pkm_kunit_first_inherited_dacl_ace_const(const u8 *sd_bytes);
 
 const u8 *pkm_kunit_first_inherited_sacl_ace_const(const u8 *sd_bytes);
 
-void pkm_kunit_make_first_file_ace_inheritable(u8 *sd_bytes,
-						      u8 inherit_flags);
+void pkm_kunit_make_first_file_ace_inheritable(u8 *sd_bytes, u8 inherit_flags);
 
 void pkm_kunit_make_first_file_ace_mask(u8 *sd_bytes, u32 mask);
 
-void pkm_kunit_make_first_sacl_ace_inheritable(u8 *sd_bytes,
-						      u8 inherit_flags);
+void pkm_kunit_make_first_sacl_ace_inheritable(u8 *sd_bytes, u8 inherit_flags);
 
 void pkm_kunit_make_first_file_ace_opaque(u8 *sd_bytes, u8 ace_flags);
 
 void pkm_kunit_make_first_file_ace_sid(u8 *sd_bytes, const u8 *sid,
-					      size_t sid_len);
+				       size_t sid_len);
 
 long pkm_kunit_create_condition_token_ex(
 	bool with_device_group, bool with_user_claim, bool with_device_claim,
 	const struct pkm_kunit_sid_attr_spec *restricted_sids,
 	u32 restricted_sid_count,
 	const struct pkm_kunit_sid_attr_spec *restricted_device_groups,
-	u32 restricted_device_group_count,
-	struct pkm_kacs_token_fd_view *view);
+	u32 restricted_device_group_count, struct pkm_kacs_token_fd_view *view);
 
 long pkm_kunit_create_condition_token(
 	bool with_device_group, bool with_user_claim, bool with_device_claim,
 	const struct pkm_kunit_sid_attr_spec *restricted_device_groups,
-	u32 restricted_device_group_count,
-	struct pkm_kacs_token_fd_view *view);
+	u32 restricted_device_group_count, struct pkm_kacs_token_fd_view *view);
 
 long pkm_kunit_create_device_condition_token(
 	bool with_device_group, struct pkm_kacs_token_fd_view *view);
 
 void pkm_kunit_expect_native_overwrite_identity(struct kunit *test,
-						       u32 create_disposition);
+						u32 create_disposition);
 
-void pkm_kunit_expect_native_create_owner_success(
-	struct kunit *test, const void *subject_token, const u8 *owner_sid,
-	size_t owner_sid_len);
+void pkm_kunit_expect_native_create_owner_success(struct kunit *test,
+						  const void *subject_token,
+						  const u8 *owner_sid,
+						  size_t owner_sid_len);
 
-void pkm_kunit_expect_get_sd_syscall_copyout(
-	struct kunit *test, int fd, const u8 *expected, size_t expected_len,
-	u32 security_info);
+void pkm_kunit_expect_get_sd_syscall_copyout(struct kunit *test, int fd,
+					     const u8 *expected,
+					     size_t expected_len,
+					     u32 security_info);
 
 void pkm_kunit_expect_mount_policy_failure_preserves_state(
 	struct kunit *test, const void *subject_token,
@@ -1629,14 +1606,14 @@ void pkm_kunit_expect_mount_policy_failure_preserves_state(
 	long expected_failure_ret, u32 expected_template_len);
 
 void pkm_kunit_expect_inherited_ace_flags(struct kunit *test,
-						 const u8 *sd_bytes,
-						 bool expect_inherited,
-						 u8 expected_flags);
+					  const u8 *sd_bytes,
+					  bool expect_inherited,
+					  u8 expected_flags);
 
 void pkm_kunit_expect_inherited_sacl_ace_flags(struct kunit *test,
-						      const u8 *sd_bytes,
-						      bool expect_inherited,
-						      u8 expected_flags);
+					       const u8 *sd_bytes,
+					       bool expect_inherited,
+					       u8 expected_flags);
 
 int pkm_kunit_open_current_pidfd(void);
 
@@ -1648,8 +1625,7 @@ void pkm_kunit_expect_impersonation_gate(
 	struct kunit *test,
 	const struct pkm_kunit_impersonation_gate_case *gate_case);
 
-void pkm_kunit_expect_token_own_sd_valid(struct kunit *test,
-						const void *token);
+void pkm_kunit_expect_token_own_sd_valid(struct kunit *test, const void *token);
 
 void pkm_kunit_expect_access_check_list_input_denied(
 	struct kunit *test, u8 *object_tree, size_t object_tree_len,

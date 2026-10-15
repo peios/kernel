@@ -276,7 +276,7 @@ struct pkm_kacs_socket_security {
 	 */
 	spinlock_t owner_lock;
 	const void *owner_token;
-	u8 owner_kind;			/* enum peios_ntfe_owner_kind */
+	u8 owner_kind; /* enum peios_ntfe_owner_kind */
 	u8 owner_guid[16];
 	s32 owner_pid;
 	char owner_comm[16];
@@ -433,8 +433,9 @@ bool pkm_kacs_inode_on_unmanaged_mount(const struct inode *inode);
 long pkm_kacs_require_enabled_privilege(const void *subject_token,
 					u64 privilege);
 long pkm_kacs_unlink_delete_on_close_file(struct file *file);
-struct pkm_kacs_inode_sd_cache *pkm_kacs_inode_sd_cache_get_current(
-	const struct inode *inode, const struct pkm_kacs_inode_security *sec);
+struct pkm_kacs_inode_sd_cache *
+pkm_kacs_inode_sd_cache_get_current(const struct inode *inode,
+				    const struct pkm_kacs_inode_security *sec);
 void pkm_kacs_inode_sd_cache_free(struct pkm_kacs_inode_sd_cache *cache);
 u32 pkm_kacs_path_notify_required_access(const struct inode *inode,
 					 unsigned int obj_type);
@@ -445,68 +446,70 @@ int pkm_kacs_authorize_path_metadata_access(const struct path *path,
 int pkm_kacs_authorize_dentry_metadata_access(struct dentry *dentry,
 					      u32 desired_access);
 
-static inline struct pkm_kacs_cred_security *pkm_kacs_cred(const struct cred *cred)
+static inline struct pkm_kacs_cred_security *
+pkm_kacs_cred(const struct cred *cred)
 {
 	return (struct pkm_kacs_cred_security *)((char *)cred->security +
 						 pkm_blob_sizes.lbs_cred);
 }
 
-static inline struct pkm_kacs_task_security *pkm_kacs_task(
-	const struct task_struct *task)
+static inline struct pkm_kacs_task_security *
+pkm_kacs_task(const struct task_struct *task)
 {
 	return (struct pkm_kacs_task_security *)((char *)task->security +
 						 pkm_blob_sizes.lbs_task);
 }
 
-static inline struct pkm_kacs_socket_security *pkm_kacs_sock(
-	const struct sock *sk)
+static inline struct pkm_kacs_socket_security *
+pkm_kacs_sock(const struct sock *sk)
 {
 	return (struct pkm_kacs_socket_security *)((char *)sk->sk_security +
 						   pkm_blob_sizes.lbs_sock);
 }
 
 struct kern_ipc_perm;
-static inline struct pkm_kacs_ipc_security *pkm_kacs_ipc(
-	const struct kern_ipc_perm *ipcp)
+static inline struct pkm_kacs_ipc_security *
+pkm_kacs_ipc(const struct kern_ipc_perm *ipcp)
 {
 	return (struct pkm_kacs_ipc_security *)((char *)ipcp->security +
 						pkm_blob_sizes.lbs_ipc);
 }
 
-static inline struct pkm_kacs_inode_security *pkm_kacs_inode(
-	const struct inode *inode)
+static inline struct pkm_kacs_inode_security *
+pkm_kacs_inode(const struct inode *inode)
 {
 	return (struct pkm_kacs_inode_security *)((char *)inode->i_security +
 						  pkm_blob_sizes.lbs_inode);
 }
 
-static inline struct pkm_kacs_file_security *pkm_kacs_file(
-	const struct file *file)
+static inline struct pkm_kacs_file_security *
+pkm_kacs_file(const struct file *file)
 {
 	return (struct pkm_kacs_file_security *)((char *)file->f_security +
 						 pkm_blob_sizes.lbs_file);
 }
 
-static inline struct pkm_kacs_backing_file_security *pkm_kacs_backing_file(
-	const struct file *file)
+static inline struct pkm_kacs_backing_file_security *
+pkm_kacs_backing_file(const struct file *file)
 {
 	void *blob = backing_file_security(file);
 
-	return (struct pkm_kacs_backing_file_security *)
-		((char *)blob + pkm_blob_sizes.lbs_backing_file);
+	return (struct pkm_kacs_backing_file_security
+			*)((char *)blob + pkm_blob_sizes.lbs_backing_file);
 }
 
-static inline struct pkm_kacs_superblock_security *pkm_kacs_sb(
-	const struct super_block *sb)
+static inline struct pkm_kacs_superblock_security *
+pkm_kacs_sb(const struct super_block *sb)
 {
 	return (struct pkm_kacs_superblock_security *)((char *)sb->s_security +
-						       pkm_blob_sizes.lbs_superblock);
+						       pkm_blob_sizes
+							       .lbs_superblock);
 }
 
-struct pkm_kacs_process_sd *pkm_kacs_process_sd_get(
-	struct pkm_kacs_process_sd *process_sd);
-struct pkm_kacs_process_sd *pkm_kacs_process_sd_wrap_bytes(
-	const u8 *bytes, size_t len);
+struct pkm_kacs_process_sd *
+pkm_kacs_process_sd_get(struct pkm_kacs_process_sd *process_sd);
+struct pkm_kacs_process_sd *pkm_kacs_process_sd_wrap_bytes(const u8 *bytes,
+							   size_t len);
 struct pkm_kacs_process_sd *pkm_kacs_process_sd_alloc(const void *token);
 void pkm_kacs_process_sd_put(struct pkm_kacs_process_sd *process_sd);
 struct pkm_kacs_process_sd *pkm_kacs_socket_sd_alloc(const void *token);

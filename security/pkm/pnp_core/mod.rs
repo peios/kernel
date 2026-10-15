@@ -2,12 +2,10 @@
 //!
 //! The pure rules engine of Peios Network Policy: fact snapshot in, verdict
 //! and side effects out. No kernel dependencies, no I/O — the same code
-//! compiles into the kernel (`feature = "kernel"`, staged by
-//! `kernel/stage-rust-core.sh`) and under plain cargo, where the test suite
+//! compiles into the kernel (`feature = "kernel"`) and through its Cargo entry point under
+//! `peios/rust/pnp-core`, where the test suite
 //! encodes every ratified law of the design (PEI-598, "PNP Rules — Packet
 //! Layer Design" and the machinery slice).
-
-
 
 /// The action language: parsing and representation.
 pub mod action;

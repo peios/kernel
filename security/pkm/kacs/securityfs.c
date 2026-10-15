@@ -43,8 +43,7 @@ int pkm_kacs_securityfs_open_self_token_file(struct file *file)
 	return ret;
 }
 
-static int pkm_kacs_securityfs_self_open(struct inode *inode,
-					 struct file *file)
+static int pkm_kacs_securityfs_self_open(struct inode *inode, struct file *file)
 {
 	(void)inode;
 	return pkm_kacs_securityfs_open_self_token_file(file);
@@ -56,8 +55,9 @@ static const struct file_operations pkm_kacs_securityfs_self_fops = {
 };
 
 static ssize_t pkm_kacs_securityfs_logon_sessions_read(struct file *file,
-						 char __user *buf,
-						 size_t count, loff_t *ppos)
+						       char __user *buf,
+						       size_t count,
+						       loff_t *ppos)
 {
 	const void *subject_token;
 	u32 pip_type = 0;
@@ -70,7 +70,8 @@ static ssize_t pkm_kacs_securityfs_logon_sessions_read(struct file *file,
 	(void)file;
 	subject_token = pkm_kacs_current_effective_token_ptr();
 	if (!subject_token) {
-		trace_kacs_securityfs(KACS_SFS_LOGON_SESSIONS_NO_TOKEN, -EACCES);
+		trace_kacs_securityfs(KACS_SFS_LOGON_SESSIONS_NO_TOKEN,
+				      -EACCES);
 		return -EACCES;
 	}
 
@@ -80,10 +81,11 @@ static ssize_t pkm_kacs_securityfs_logon_sessions_read(struct file *file,
 		return ret;
 	}
 
-	ret = kacs_rust_check_securityfs_logon_sessions_read(subject_token, pip_type,
-						       pip_trust);
+	ret = kacs_rust_check_securityfs_logon_sessions_read(
+		subject_token, pip_type, pip_trust);
 	if (ret) {
-		trace_kacs_securityfs(KACS_SFS_LOGON_SESSIONS_ACCESS_CHECK, ret);
+		trace_kacs_securityfs(KACS_SFS_LOGON_SESSIONS_ACCESS_CHECK,
+				      ret);
 		return ret;
 	}
 
@@ -97,7 +99,8 @@ static ssize_t pkm_kacs_securityfs_logon_sessions_read(struct file *file,
 	if (!kbuf)
 		return -ENOMEM;
 
-	ret = kacs_rust_securityfs_logon_sessions_listing(kbuf, required, &required);
+	ret = kacs_rust_securityfs_logon_sessions_listing(kbuf, required,
+							  &required);
 	if (ret) {
 		kvfree(kbuf);
 		return ret;
@@ -172,9 +175,9 @@ static int __init pkm_kacs_securityfs_init(void)
 		return ret;
 	}
 
-	pkm_kacs_securityfs_self = securityfs_create_file(
-		"self", 0444, pkm_kacs_securityfs_dir, NULL,
-		&pkm_kacs_securityfs_self_fops);
+	pkm_kacs_securityfs_self =
+		securityfs_create_file("self", 0444, pkm_kacs_securityfs_dir,
+				       NULL, &pkm_kacs_securityfs_self_fops);
 	if (IS_ERR(pkm_kacs_securityfs_self)) {
 		ret = PTR_ERR(pkm_kacs_securityfs_self);
 		pkm_kacs_securityfs_self = NULL;
@@ -195,8 +198,7 @@ static int __init pkm_kacs_securityfs_init(void)
 		pkm_kacs_securityfs_self = NULL;
 		securityfs_remove(pkm_kacs_securityfs_dir);
 		pkm_kacs_securityfs_dir = NULL;
-		pr_err("pkm: securityfs kacs/sessions init failed (%d)\n",
-		       ret);
+		pr_err("pkm: securityfs kacs/sessions init failed (%d)\n", ret);
 		trace_kacs_securityfs(KACS_SFS_INIT, ret);
 		return ret;
 	}

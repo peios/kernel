@@ -27,8 +27,7 @@ static void pkm_kacs_restore_capability_sets(struct cred *new,
 	new->cap_ambient = old->cap_ambient;
 }
 
-static void pkm_kacs_restore_uid_state(struct cred *new,
-				       const struct cred *old)
+static void pkm_kacs_restore_uid_state(struct cred *new, const struct cred *old)
 {
 	struct user_struct *old_user;
 
@@ -49,8 +48,7 @@ static void pkm_kacs_restore_uid_state(struct cred *new,
 	new->user = old_user;
 }
 
-static void pkm_kacs_restore_gid_state(struct cred *new,
-				       const struct cred *old)
+static void pkm_kacs_restore_gid_state(struct cred *new, const struct cred *old)
 {
 	if (!new || !old)
 		return;
@@ -83,10 +81,8 @@ static long pkm_kacs_task_fix_setid_common(const void *subject_token)
 	return 0;
 }
 
-long pkm_kacs_task_fix_setuid_core(const void *subject_token,
-				   struct cred *new,
-				   const struct cred *old,
-				   int flags)
+long pkm_kacs_task_fix_setuid_core(const void *subject_token, struct cred *new,
+				   const struct cred *old, int flags)
 {
 	long ret;
 
@@ -116,10 +112,8 @@ long pkm_kacs_task_fix_setuid_core(const void *subject_token,
 	return 0;
 }
 
-long pkm_kacs_task_fix_setgid_core(const void *subject_token,
-				   struct cred *new,
-				   const struct cred *old,
-				   int flags)
+long pkm_kacs_task_fix_setgid_core(const void *subject_token, struct cred *new,
+				   const struct cred *old, int flags)
 {
 	long ret;
 
@@ -150,8 +144,7 @@ long pkm_kacs_task_fix_setgid_core(const void *subject_token,
 }
 
 long pkm_kacs_task_fix_setgroups_core(const void *subject_token,
-				      struct cred *new,
-				      const struct cred *old)
+				      struct cred *new, const struct cred *old)
 {
 	long ret;
 
@@ -161,8 +154,9 @@ long pkm_kacs_task_fix_setgroups_core(const void *subject_token,
 	ret = pkm_kacs_task_fix_setid_common(subject_token);
 	if (ret) {
 		trace_kacs_setid((u64)(uintptr_t)subject_token, 0,
-				 ret == -EACCES ? KACS_SETID_SETGROUPS_NO_TOKEN :
-						  KACS_SETID_SETGROUPS_PRIV_GATE,
+				 ret == -EACCES ?
+					 KACS_SETID_SETGROUPS_NO_TOKEN :
+					 KACS_SETID_SETGROUPS_PRIV_GATE,
 				 ret);
 		return ret;
 	}

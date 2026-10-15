@@ -45,7 +45,8 @@ long pkm_lcs_source_transaction_own(u64 id, u32 lifetime_ms)
 		return -ENOMEM;
 	owner->id = id;
 	if (lifetime_ms)
-		owner->lifetime = ktime_get_ns() + (u64)lifetime_ms * NSEC_PER_MSEC;
+		owner->lifetime =
+			ktime_get_ns() + (u64)lifetime_ms * NSEC_PER_MSEC;
 	mutex_lock(&lcs_transaction_owners_lock);
 	if (owner_find(id)) {
 		mutex_unlock(&lcs_transaction_owners_lock);
@@ -95,7 +96,8 @@ void pkm_lcs_source_transaction_begin_failed(u64 id, u64 session)
 	struct lcs_transaction_owner *owner;
 	mutex_lock(&lcs_transaction_owners_lock);
 	owner = owner_find(id);
-	if (owner && owner->session == session && owner_live(owner, ktime_get_ns())) {
+	if (owner && owner->session == session &&
+	    owner_live(owner, ktime_get_ns())) {
 		owner->session = 0;
 		owner->lease = 0;
 	}
@@ -121,7 +123,8 @@ long pkm_lcs_source_transaction_bind(u64 id, struct pkm_lcs_source_fd *source)
 		if (source->lifetime_protocol && !owner->lease) {
 			owner->lease = now + LCS_CLEANUP_LEASE_NS;
 			if (owner->lifetime)
-				owner->lease = min(owner->lease, owner->lifetime);
+				owner->lease =
+					min(owner->lease, owner->lifetime);
 		}
 	}
 	mutex_unlock(&lcs_transaction_owners_lock);
@@ -129,7 +132,7 @@ long pkm_lcs_source_transaction_bind(u64 id, struct pkm_lcs_source_fd *source)
 }
 
 long pkm_lcs_source_lifetime_ioctl(struct file *file, unsigned int cmd,
-				 unsigned long arg)
+				   unsigned long arg)
 {
 	struct pkm_lcs_source_fd *source = file->private_data;
 	struct reg_src_negotiate_args negotiate;
@@ -146,10 +149,12 @@ long pkm_lcs_source_lifetime_ioctl(struct file *file, unsigned int cmd,
 	if (cmd == REG_SRC_NEGOTIATE) {
 		if (copy_from_user(&negotiate, user, sizeof(negotiate)))
 			return -EFAULT;
-		if (negotiate.version != REG_SRC_LIFETIME_VERSION || negotiate.flags || negotiate.session)
+		if (negotiate.version != REG_SRC_LIFETIME_VERSION ||
+		    negotiate.flags || negotiate.session)
 			return -EINVAL;
 		mutex_lock(&source->queue_lock);
-		if (source->closing || source->state != PKM_LCS_SOURCE_FD_UNREGISTERED) {
+		if (source->closing ||
+		    source->state != PKM_LCS_SOURCE_FD_UNREGISTERED) {
 			ret = -EBUSY;
 		} else {
 			negotiate.session = source->session;
@@ -178,13 +183,16 @@ long pkm_lcs_source_lifetime_ioctl(struct file *file, unsigned int cmd,
 	}
 	mutex_lock(&source->queue_lock);
 	if (!source->lifetime_protocol || source->closing ||
-	    source->state != PKM_LCS_SOURCE_FD_ACTIVE || session != source->session) {
+	    source->state != PKM_LCS_SOURCE_FD_ACTIVE ||
+	    session != source->session) {
 		ret = -ESTALE;
 		goto out;
 	}
 	if (cmd == REG_SRC_REQUEST_CONTEXT) {
-		record = pkm_lcs_source_in_flight_find_locked(source, context.request_id);
-		if (!record || !record->delivered || record->response_accepted) {
+		record = pkm_lcs_source_in_flight_find_locked(
+			source, context.request_id);
+		if (!record || !record->delivered ||
+		    record->response_accepted) {
 			ret = -ENOENT;
 			goto out;
 		}
@@ -198,7 +206,8 @@ long pkm_lcs_source_lifetime_ioctl(struct file *file, unsigned int cmd,
 		if (cmd == REG_SRC_RENEW) {
 			owner->lease = now + LCS_CLEANUP_LEASE_NS;
 			if (owner->lifetime)
-				owner->lease = min(owner->lease, owner->lifetime);
+				owner->lease =
+					min(owner->lease, owner->lifetime);
 			renew.lifetime_deadline_ns = owner->lifetime;
 			renew.lease_deadline_ns = owner->lease;
 		} else {
@@ -209,9 +218,11 @@ long pkm_lcs_source_lifetime_ioctl(struct file *file, unsigned int cmd,
 		ret = -ESTALE;
 	}
 	mutex_unlock(&lcs_transaction_owners_lock);
-	if (!ret && cmd == REG_SRC_RENEW && copy_to_user(user, &renew, sizeof(renew)))
+	if (!ret && cmd == REG_SRC_RENEW &&
+	    copy_to_user(user, &renew, sizeof(renew)))
 		ret = -EFAULT;
-	if (!ret && cmd == REG_SRC_REQUEST_CONTEXT && copy_to_user(user, &context, sizeof(context)))
+	if (!ret && cmd == REG_SRC_REQUEST_CONTEXT &&
+	    copy_to_user(user, &context, sizeof(context)))
 		ret = -EFAULT;
 out:
 	mutex_unlock(&source->queue_lock);

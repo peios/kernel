@@ -942,8 +942,10 @@ pub fn validate_backup_layer_manifest_set(
 ) -> LcsResult<BackupLayerManifestSetSummary> {
     for (index, manifest) in manifests.iter().enumerate() {
         let name = validate_layer_name_bytes(manifest.name.as_bytes(), limits)?;
-        crate::kacs_core::Sid::parse(manifest.owner_sid).map_err(|_| LcsError::MalformedBackupSid {
-            field: "backup_layer.owner",
+        crate::kacs_core::Sid::parse(manifest.owner_sid).map_err(|_| {
+            LcsError::MalformedBackupSid {
+                field: "backup_layer.owner",
+            }
         })?;
         if backup_manifest_seen_before(limits, manifests, index, name)? {
             return Err(LcsError::DuplicateBackupLayerManifest);

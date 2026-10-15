@@ -109,7 +109,7 @@ static int stratafs_origin_value(struct dentry *dentry, void *buffer,
 	}
 	if (!descriptor_view && S_ISDIR(d_inode(dentry)->i_mode)) {
 		ret = stratafs_check_paths_access(paths, sbi->count,
-					  KACS_FILE_READ_EA);
+						  KACS_FILE_READ_EA);
 		if (ret)
 			goto out_paths;
 	}
@@ -156,7 +156,8 @@ static int stratafs_origin_value(struct dentry *dentry, void *buffer,
 			continue;
 		if (cursor != value)
 			*cursor++ = '\n';
-		cursor = stratafs_copy_escaped_path(cursor, sbi->strata[i].path);
+		cursor =
+			stratafs_copy_escaped_path(cursor, sbi->strata[i].path);
 		base_len = strlen(sbi->strata[i].path);
 		if (relative[0] && base_len &&
 		    sbi->strata[i].path[base_len - 1] != '/')
@@ -229,15 +230,14 @@ static int stratafs_xattr_set(const struct xattr_handler *handler,
 	if (ret)
 		return ret;
 	route = stratafs_route_existing(dentry->d_sb, index, &provider,
-					 S_ISREG(inode->i_mode) ||
-					 S_ISDIR(inode->i_mode) ||
-					 S_ISLNK(inode->i_mode));
+					S_ISREG(inode->i_mode) ||
+						S_ISDIR(inode->i_mode) ||
+						S_ISLNK(inode->i_mode));
 	path_put(&provider);
 	if (route == STRATAFS_ROUTE_READ_ONLY) {
 		stratafs_audit_refusal(dentry,
-					 value ? "setxattr" : "removexattr", index,
-					 -EROFS,
-					 false);
+				       value ? "setxattr" : "removexattr",
+				       index, -EROFS, false);
 		return -EROFS;
 	}
 	if (route == STRATAFS_ROUTE_COPY_UP) {
@@ -265,8 +265,8 @@ static int stratafs_xattr_set(const struct xattr_handler *handler,
 	if (!ret) {
 		if (value)
 			ret = vfs_setxattr(mnt_idmap(provider.mnt),
-					   provider.dentry, name, value,
-					   size, flags);
+					   provider.dentry, name, value, size,
+					   flags);
 		else
 			ret = vfs_removexattr(mnt_idmap(provider.mnt),
 					      provider.dentry, name);
@@ -349,7 +349,7 @@ static const struct xattr_handler stratafs_xattr_handler = {
 	.set = stratafs_xattr_set,
 };
 
-const struct xattr_handler * const stratafs_xattr_handlers[] = {
+const struct xattr_handler *const stratafs_xattr_handlers[] = {
 	&stratafs_xattr_handler,
 	NULL,
 };

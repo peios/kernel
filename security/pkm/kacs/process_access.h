@@ -31,8 +31,8 @@ long pkm_kacs_authorize_process_access_core(
 	u32 caller_pip_trust, u32 desired_process_access);
 
 long pkm_kacs_signal_to_process_access(int sig, u32 *desired_access);
-bool pkm_kacs_signal_is_kernel_originated(
-	const struct kernel_siginfo *info, const struct cred *cred);
+bool pkm_kacs_signal_is_kernel_originated(const struct kernel_siginfo *info,
+					  const struct cred *cred);
 long pkm_kacs_ptrace_mode_to_process_access(unsigned int mode,
 					    u32 *desired_access);
 long pkm_kacs_check_process_capget_core(
@@ -43,8 +43,7 @@ long pkm_kacs_validate_process_attribute_access(u32 desired_access);
 long pkm_kacs_check_process_attribute_core(
 	const void *subject_token,
 	const struct pkm_kacs_process_state *caller_state,
-	const struct pkm_kacs_process_state *target_state,
-	u32 desired_access);
+	const struct pkm_kacs_process_state *target_state, u32 desired_access);
 long pkm_kacs_prlimit_flags_to_process_access(unsigned int flags,
 					      u32 *desired_access);
 long pkm_kacs_check_process_setinfo_core(
@@ -58,18 +57,15 @@ long pkm_kacs_check_process_affinity_core(
 long pkm_kacs_check_process_perf_core(
 	const void *subject_token,
 	const struct pkm_kacs_process_state *caller_state,
-	const struct pkm_kacs_process_state *target_state,
-	bool self_target);
+	const struct pkm_kacs_process_state *target_state, bool self_target);
 
 long pkm_kacs_proc_process_setinfo(struct task_struct *task);
 long pkm_kacs_sched_setaffinity(struct task_struct *task);
 long pkm_kacs_perf_event_open(struct task_struct *task);
 long pkm_kacs_perf_event_open_system_wide(void);
-int pkm_kacs_task_kill(struct task_struct *target,
-		       struct kernel_siginfo *info, int sig,
-		       const struct cred *cred);
-int pkm_kacs_ptrace_access_check(struct task_struct *child,
-				 unsigned int mode);
+int pkm_kacs_task_kill(struct task_struct *target, struct kernel_siginfo *info,
+		       int sig, const struct cred *cred);
+int pkm_kacs_ptrace_access_check(struct task_struct *child, unsigned int mode);
 int pkm_kacs_ptrace_traceme(struct task_struct *parent);
 int pkm_kacs_task_setnice(struct task_struct *task, int nice);
 int pkm_kacs_task_setscheduler(struct task_struct *task);

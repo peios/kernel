@@ -56,7 +56,7 @@
 #include "ntfe.h"
 
 static bool ntfe_dst_is_group(const struct sk_buff *skb,
-			     const struct peios_ntfe_snapshot *snap)
+			      const struct peios_ntfe_snapshot *snap)
 {
 	if (snap->addr_family == 4) {
 		__be32 d;
@@ -66,7 +66,7 @@ static bool ntfe_dst_is_group(const struct sk_buff *skb,
 			return true;
 		/* Subnet broadcast: only the route knows. */
 		if (skb_dst(skb) && skb_rtable(skb)->rt_flags &
-				    (RTCF_BROADCAST | RTCF_MULTICAST))
+					    (RTCF_BROADCAST | RTCF_MULTICAST))
 			return true;
 		return false;
 	}
@@ -80,9 +80,9 @@ static bool ntfe_dst_is_group(const struct sk_buff *skb,
 }
 
 struct sk_buff *peios_ntfe_refuse_build(struct sk_buff *skb,
-				       const struct nf_hook_state *state,
-				       const struct peios_ntfe_snapshot *snap,
-				       u8 kind)
+					const struct nf_hook_state *state,
+					const struct peios_ntfe_snapshot *snap,
+					u8 kind)
 {
 	const struct net_device *dev = state->in ? state->in : state->out;
 	bool prohibited = kind == PEIOS_NTFE_REJECT_PROHIBITED;
@@ -147,7 +147,7 @@ struct sk_buff *peios_ntfe_refuse_build(struct sk_buff *skb,
 
 /* The wire: the answer goes back out the device the frame came in on. */
 static bool ntfe_refuse_send_wire(struct sk_buff *nskb, struct sk_buff *skb,
-				 const struct net_device *dev)
+				  const struct net_device *dev)
 {
 	const struct ethhdr *eth;
 
@@ -178,9 +178,10 @@ drop:
  * loopback route. Both ends fail at once. New flows have no far end to
  * tear down, and UDP has no connection state; neither gets one.
  */
-struct sk_buff *peios_ntfe_teardown_build(const struct sk_buff *skb,
-					 const struct nf_hook_state *state,
-					 const struct peios_ntfe_snapshot *snap)
+struct sk_buff *
+peios_ntfe_teardown_build(const struct sk_buff *skb,
+			  const struct nf_hook_state *state,
+			  const struct peios_ntfe_snapshot *snap)
 {
 	struct sk_buff *nskb;
 	struct tcphdr _oth, *tcph;
@@ -200,10 +201,9 @@ struct sk_buff *peios_ntfe_teardown_build(const struct sk_buff *skb,
 		u8 proto = ipv6_hdr(skb)->nexthdr;
 		__be16 frag_off;
 
-		thoff = ipv6_skip_exthdr(skb,
-					 skb_network_offset(skb) +
-						 sizeof(struct ipv6hdr),
-					 &proto, &frag_off);
+		thoff = ipv6_skip_exthdr(
+			skb, skb_network_offset(skb) + sizeof(struct ipv6hdr),
+			&proto, &frag_off);
 		if (thoff < 0 || proto != IPPROTO_TCP || frag_off)
 			return NULL;
 	} else {
@@ -214,7 +214,8 @@ struct sk_buff *peios_ntfe_teardown_build(const struct sk_buff *skb,
 		return NULL;
 
 	nskb = alloc_skb(LL_MAX_HEADER + sizeof(struct ipv6hdr) +
-			 sizeof(struct tcphdr), GFP_ATOMIC);
+				 sizeof(struct tcphdr),
+			 GFP_ATOMIC);
 	if (!nskb)
 		return NULL;
 	skb_reserve(nskb, LL_MAX_HEADER);
@@ -269,10 +270,9 @@ struct sk_buff *peios_ntfe_teardown_build(const struct sk_buff *skb,
 		struct ipv6hdr *nip6h = ipv6_hdr(nskb);
 
 		nip6h->payload_len = htons(sizeof(*tcph));
-		tcph->check = csum_ipv6_magic(&nip6h->saddr, &nip6h->daddr,
-					      sizeof(*tcph), IPPROTO_TCP,
-					      csum_partial(tcph, sizeof(*tcph),
-							   0));
+		tcph->check = csum_ipv6_magic(
+			&nip6h->saddr, &nip6h->daddr, sizeof(*tcph),
+			IPPROTO_TCP, csum_partial(tcph, sizeof(*tcph), 0));
 	}
 
 	nskb->ntfe_refusal = 1;
@@ -293,7 +293,7 @@ struct sk_buff *peios_ntfe_teardown_build(const struct sk_buff *skb,
  * the call that sent the refused packet has returned. A full queue sends
  * at once (the soft error is the old behaviour, not a lost answer).
  */
-#define NTFE_DEFERRED_REFUSALS_MAX	256
+#define NTFE_DEFERRED_REFUSALS_MAX 256
 
 static struct sk_buff_head ntfe_deferred_refusals;
 
@@ -332,8 +332,7 @@ static bool ntfe_refusal_must_wait(const struct sk_buff *nskb,
 	u8 proto;
 
 	if (!outbound || !sk || !sk_fullsock(sk) ||
-	    sk->sk_protocol != IPPROTO_TCP ||
-	    !sock_owned_by_user_nocheck(sk))
+	    sk->sk_protocol != IPPROTO_TCP || !sock_owned_by_user_nocheck(sk))
 		return false;
 	proto = nskb->protocol == htons(ETH_P_IP) ? ip_hdr(nskb)->protocol :
 						    ipv6_hdr(nskb)->nexthdr;
@@ -393,8 +392,8 @@ static bool ntfe_answer6_on_ingress(const struct sk_buff *nskb,
  * toward the peer goes out to the wire.
  */
 static bool ntfe_refuse_send_self(struct sk_buff *nskb, struct sk_buff *skb,
-				 const struct nf_hook_state *state,
-				 const struct peios_ntfe_snapshot *snap)
+				  const struct nf_hook_state *state,
+				  const struct peios_ntfe_snapshot *snap)
 {
 	u8 family = snap->addr_family;
 	struct net *net = state->net;
@@ -435,7 +434,7 @@ drop:
 }
 
 bool peios_ntfe_refuse(struct sk_buff *skb, const struct nf_hook_state *state,
-		      const struct peios_ntfe_snapshot *snap, u8 kind)
+		       const struct peios_ntfe_snapshot *snap, u8 kind)
 {
 	struct sk_buff *nskb;
 	bool sent;
@@ -456,8 +455,8 @@ bool peios_ntfe_refuse(struct sk_buff *skb, const struct nf_hook_state *state,
 
 	/* An established TCP connection is torn down at both ends. */
 	if (snap->seat != PEIOS_NTFE_SEAT_INGRESS) {
-		struct sk_buff *reset = peios_ntfe_teardown_build(skb, state,
-								 snap);
+		struct sk_buff *reset =
+			peios_ntfe_teardown_build(skb, state, snap);
 
 		if (reset && ntfe_refuse_send_self(reset, skb, state, snap))
 			atomic64_inc(&peios_ntfe_stats.teardowns_emitted);

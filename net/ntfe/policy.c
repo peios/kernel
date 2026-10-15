@@ -33,7 +33,7 @@
 
 struct peios_ntfe_policy {
 	struct rcu_head rcu;
-	void *forests[PEIOS_NTFE_LAYER_COUNT];	/* by enum peios_ntfe_layer */
+	void *forests[PEIOS_NTFE_LAYER_COUNT]; /* by enum peios_ntfe_layer */
 	u64 generation;
 	u8 reporting_level;
 };
@@ -92,10 +92,10 @@ static void peios_ntfe_why_note(struct peios_ntfe_build_why *why,
 }
 
 int peios_ntfe_policy_publish(void *packet_forest, void *raw_forest,
-			     void *flow_forest, u8 reporting_level)
+			      void *flow_forest, u8 reporting_level)
 {
-	return peios_ntfe_policy_publish_why(packet_forest, raw_forest,
-					     flow_forest, reporting_level, NULL);
+	return peios_ntfe_policy_publish_why(
+		packet_forest, raw_forest, flow_forest, reporting_level, NULL);
 }
 
 int peios_ntfe_policy_publish_why(void *packet_forest, void *raw_forest,
@@ -104,7 +104,7 @@ int peios_ntfe_policy_publish_why(void *packet_forest, void *raw_forest,
 {
 	struct peios_ntfe_policy *fresh, *old;
 	u64 generation, generation_previous = 0;
-	u8 threshold_previous = 1;	/* the default, with no policy */
+	u8 threshold_previous = 1; /* the default, with no policy */
 	u8 layers = 0;
 	int ret;
 
@@ -132,16 +132,16 @@ int peios_ntfe_policy_publish_why(void *packet_forest, void *raw_forest,
 	if (ret) {
 		mutex_unlock(&peios_ntfe_publish_lock);
 		kfree(fresh);
-		peios_ntfe_why_note(why, ret == -ENOMEM ? "out-of-memory" :
-							  "counter-store-refused");
+		peios_ntfe_why_note(why, ret == -ENOMEM ?
+						 "out-of-memory" :
+						 "counter-store-refused");
 		return ret;
 	}
 	peios_ntfe_kunit_policy_publishing(PEIOS_NTFE_BEFORE_GENERATION);
 	fresh->generation = ntfe_rust_generation_advance();
 	peios_ntfe_kunit_policy_publishing(PEIOS_NTFE_BEFORE_POLICY_SWAP);
 	old = rcu_dereference_protected(
-		peios_ntfe_active,
-		lockdep_is_held(&peios_ntfe_publish_lock));
+		peios_ntfe_active, lockdep_is_held(&peios_ntfe_publish_lock));
 	rcu_assign_pointer(peios_ntfe_active, fresh);
 	peios_ntfe_kunit_policy_publishing(PEIOS_NTFE_AFTER_POLICY_SWAP);
 	/* Taken under the lock: once it drops, a later publication may
@@ -174,15 +174,16 @@ int peios_ntfe_policy_publish_why(void *packet_forest, void *raw_forest,
 	return 0;
 }
 
-void peios_ntfe_policy_snapshot_begin(u8 layer,
-				     struct peios_ntfe_policy_snapshot *snapshot)
+void peios_ntfe_policy_snapshot_begin(
+	u8 layer, struct peios_ntfe_policy_snapshot *snapshot)
 {
 	const struct peios_ntfe_policy *policy;
 
 	rcu_read_lock();
 	policy = rcu_dereference(peios_ntfe_active);
 	snapshot->forest = policy && layer < PEIOS_NTFE_LAYER_COUNT ?
-		policy->forests[layer] : NULL;
+				   policy->forests[layer] :
+				   NULL;
 	snapshot->generation = policy ? policy->generation : 0;
 	snapshot->reporting_level = policy ? policy->reporting_level : 1;
 	snapshot->cache_generation = ntfe_rust_generation();
@@ -194,9 +195,9 @@ void peios_ntfe_policy_snapshot_end(void)
 	rcu_read_unlock();
 }
 
-int peios_ntfe_policy_snapshot_eval(const struct peios_ntfe_policy_snapshot *policy,
-				    const struct peios_ntfe_snapshot *snap,
-				    struct peios_ntfe_outcome *out)
+int peios_ntfe_policy_snapshot_eval(
+	const struct peios_ntfe_policy_snapshot *policy,
+	const struct peios_ntfe_snapshot *snap, struct peios_ntfe_outcome *out)
 {
 	if (policy->layer >= PEIOS_NTFE_LAYER_COUNT)
 		return -EINVAL;
@@ -210,7 +211,7 @@ int peios_ntfe_policy_snapshot_eval(const struct peios_ntfe_policy_snapshot *pol
 }
 
 int peios_ntfe_policy_eval(u8 layer, const struct peios_ntfe_snapshot *snap,
-			  struct peios_ntfe_outcome *out)
+			   struct peios_ntfe_outcome *out)
 {
 	struct peios_ntfe_policy_snapshot policy;
 	int ret;
@@ -228,10 +229,9 @@ bool peios_ntfe_policy_enforcing(void)
 
 	rcu_read_lock();
 	policy = rcu_dereference(peios_ntfe_active);
-	enforcing = policy &&
-		    (policy->forests[PEIOS_NTFE_LAYER_PACKET] ||
-		     policy->forests[PEIOS_NTFE_LAYER_RAWPACKET] ||
-		     policy->forests[PEIOS_NTFE_LAYER_FLOW]);
+	enforcing = policy && (policy->forests[PEIOS_NTFE_LAYER_PACKET] ||
+			       policy->forests[PEIOS_NTFE_LAYER_RAWPACKET] ||
+			       policy->forests[PEIOS_NTFE_LAYER_FLOW]);
 	rcu_read_unlock();
 	return enforcing;
 }
@@ -304,8 +304,7 @@ void peios_ntfe_status_fill(struct peios_ntfe_status *status)
 				   &status->changes_walked);
 	status->last_ingest_error =
 		atomic64_read(&peios_ntfe_last_ingest_error);
-	status->last_ingest_t_ns =
-		atomic64_read(&peios_ntfe_last_ingest_t_ns);
+	status->last_ingest_t_ns = atomic64_read(&peios_ntfe_last_ingest_t_ns);
 	status->tag_writes = atomic64_read(&peios_ntfe_stats.tag_writes);
 	status->tag_untracked = atomic64_read(&peios_ntfe_stats.tag_untracked);
 	status->tag_refused = atomic64_read(&peios_ntfe_stats.tag_refused);
@@ -317,7 +316,8 @@ void peios_ntfe_status_fill(struct peios_ntfe_status *status)
 		atomic64_read(&peios_ntfe_stats.reports_emitted);
 	status->counter_cells = peios_ntfe_counters_cells();
 	status->reporting_level = peios_ntfe_policy_reporting_level();
-	status->seen_local_out = atomic64_read(&peios_ntfe_stats.seen_local_out);
+	status->seen_local_out =
+		atomic64_read(&peios_ntfe_stats.seen_local_out);
 	status->flow_judged = atomic64_read(&peios_ntfe_stats.flow_judged);
 	status->flow_cached = atomic64_read(&peios_ntfe_stats.flow_cached);
 	status->flow_rejudged = atomic64_read(&peios_ntfe_stats.flow_rejudged);

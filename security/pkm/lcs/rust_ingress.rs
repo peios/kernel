@@ -9,88 +9,78 @@ use crate::lcs_core::{
     backup_restore_fd_mode_linux_errno, backup_restore_start_audit_payload_len, casefold_eq,
     classify_hive_route, current_user_sid_component_from_binary_sid, find_config_range,
     for_each_effective_value, for_each_effective_value_watch_event,
-    for_each_routable_path_component,
-    for_each_rsi_enum_children_source_path_entry, for_each_rsi_lookup_source_path_entry,
-    for_each_rsi_query_values_source_blanket_entry,
+    for_each_routable_path_component, for_each_rsi_enum_children_source_path_entry,
+    for_each_rsi_lookup_source_path_entry, for_each_rsi_query_values_source_blanket_entry,
     for_each_rsi_query_values_source_value_entry, for_each_visible_subkey,
     layer_target_admission_linux_errno, parse_rsi_delete_layer_success_response_payload,
     parse_rsi_lookup_success_response_payload, parse_rsi_enum_children_success_response_payload,
     parse_rsi_query_values_success_response_payload, parse_rsi_read_key_success_response_payload,
     parse_rsi_request_header, plan_backup_complete_audit_record, plan_backup_restore_fd_mode,
     plan_backup_restore_layer_precedence_gate, plan_backup_start_audit_record,
-    plan_key_guid_assignment, plan_key_open_audit_record,
-    plan_restore_complete_audit_record, plan_restore_start_audit_record,
-    plan_source_validation_failure_audit_record, plan_layer_publication,
-    plan_layer_target_admission, plan_registry_get_security,
+    plan_key_guid_assignment, plan_key_open_audit_record, plan_restore_complete_audit_record,
+    plan_restore_start_audit_record, plan_source_validation_failure_audit_record,
+    plan_layer_publication, plan_layer_target_admission, plan_registry_get_security,
     plan_registry_ioctl_fixed_fd_access_gate, plan_registry_key_open_access_with_privilege_use,
     plan_registry_open_pre_resolution_access, plan_registry_security_info_fd_access_gate,
-    plan_registry_set_security, plan_value_layer_admission,
-    plan_rsi_source_read, plan_source_registration_sequence_update,
-    registry_ioctl_access_requirement, registry_ioctl_fd_access_gate_errno,
-    registry_open_pre_resolution_linux_errno, resolve_named_path_entry, resolve_value, route_hive,
-    route_routable_path_hive, route_symlink_target_hive, rsi_queued_request_from_frame,
-    rsi_status_code_errno, source_registration_error_linux_errno, source_registration_hive_scope,
-    source_slot_hive_status, plan_watch_event_record, plan_watch_notify,
-    validate_key_component_bytes, validate_key_create_flags, validate_key_fd_open_view,
-    validate_layer_name_bytes,
+    plan_registry_set_security, plan_value_layer_admission, plan_rsi_source_read,
+    plan_source_registration_sequence_update, registry_ioctl_access_requirement,
+    registry_ioctl_fd_access_gate_errno, registry_open_pre_resolution_linux_errno,
+    resolve_named_path_entry, resolve_value, route_hive, route_routable_path_hive,
+    route_symlink_target_hive, rsi_queued_request_from_frame, rsi_status_code_errno,
+    source_registration_error_linux_errno, source_registration_hive_scope, source_slot_hive_status,
+    plan_watch_event_record, plan_watch_notify, validate_key_component_bytes,
+    validate_key_create_flags, validate_key_fd_open_view, validate_layer_name_bytes,
     validate_registry_open_flags, validate_resolved_relative_path_depth,
     validate_rsi_enum_children_metadata_completeness,
     validate_rsi_enum_children_metadata_security_descriptors,
     validate_rsi_enum_children_path_response_names,
     validate_rsi_enum_children_path_response_sequences, validate_rsi_lookup_metadata_completeness,
     validate_rsi_lookup_metadata_security_descriptors, validate_rsi_lookup_path_response_names,
-    validate_rsi_lookup_path_response_sequences,
-    validate_rsi_query_values_response_names,
-    validate_rsi_delete_layer_orphaned_guids,
-    validate_rsi_query_values_response_sequences,
+    validate_rsi_lookup_path_response_sequences, validate_rsi_query_values_response_names,
+    validate_rsi_delete_layer_orphaned_guids, validate_rsi_query_values_response_sequences,
     validate_rsi_query_values_response_value_payloads, validate_rsi_read_key_response_names,
     validate_rsi_read_key_response_security_descriptor,
     validate_rsi_status_only_response_for_request, validate_source_registration,
     validate_source_slots, validate_symlink_target_bytes, validate_syscall_path_c_string,
     validate_value_data_len, validate_value_name_bytes, validate_value_write_type,
     value_data_len_linux_errno, value_layer_admission_linux_errno,
-    value_type_validation_linux_errno,
-    self_config_audit_intent, self_config_invalid_audit_payload_len,
-    source_validation_failure_audit_payload_len, validate_config_value,
-    write_backup_restore_complete_audit_payload, write_backup_restore_start_audit_payload,
-    parse_backup_blanket_tombstone_record, parse_backup_header_record, parse_backup_key_record,
-    parse_backup_layer_manifest_record, parse_backup_path_entry_record,
-    parse_backup_trailer_record, parse_backup_value_record, validate_backup_layer_manifest_set,
-    write_backup_blanket_tombstone_record_frame, write_backup_header_record_frame,
-    write_backup_key_record_frame, write_backup_layer_manifest_record_frame,
-    write_backup_path_entry_record_frame, write_backup_trailer_record_frame,
-    write_backup_value_record_frame, write_key_open_audit_payload,
-    write_self_config_invalid_audit_payload, write_source_validation_failure_audit_payload,
-    write_rsi_abort_transaction_request_frame, write_rsi_begin_transaction_request_frame,
-    write_rsi_commit_transaction_request_frame,
+    value_type_validation_linux_errno, self_config_audit_intent,
+    self_config_invalid_audit_payload_len, source_validation_failure_audit_payload_len,
+    validate_config_value, write_backup_restore_complete_audit_payload,
+    write_backup_restore_start_audit_payload, parse_backup_blanket_tombstone_record,
+    parse_backup_header_record, parse_backup_key_record, parse_backup_layer_manifest_record,
+    parse_backup_path_entry_record, parse_backup_trailer_record, parse_backup_value_record,
+    validate_backup_layer_manifest_set, write_backup_blanket_tombstone_record_frame,
+    write_backup_header_record_frame, write_backup_key_record_frame,
+    write_backup_layer_manifest_record_frame, write_backup_path_entry_record_frame,
+    write_backup_trailer_record_frame, write_backup_value_record_frame,
+    write_key_open_audit_payload, write_self_config_invalid_audit_payload,
+    write_source_validation_failure_audit_payload, write_rsi_abort_transaction_request_frame,
+    write_rsi_begin_transaction_request_frame, write_rsi_commit_transaction_request_frame,
     write_rsi_create_entry_request_frame, write_rsi_create_key_request_frame,
     write_rsi_delete_entry_request_frame, write_rsi_delete_layer_request_frame,
     write_rsi_delete_value_entry_request_frame, write_rsi_enum_children_request_frame,
-    write_rsi_drop_key_request_frame,
-    write_rsi_flush_request_frame, write_rsi_hide_entry_request_frame,
-    write_rsi_lookup_request_frame, write_rsi_query_values_request_frame,
-    write_rsi_read_key_request_frame, write_rsi_set_blanket_tombstone_request_frame,
-    write_rsi_set_value_request_frame, write_rsi_write_key_request_frame,
-    BackupLayerManifestPayload, BackupRestoreFdOperation, BlanketTombstoneEntry,
-    CurrentUserRewrite, ValidatedValueType,
-    HiveRouteOutcome, HiveView, KeyFdOpenView, KeyGuidAssignmentRequest, KeyWatchState,
-    LayerOwnerSelectionInput, LayerOwnerSource, LayerPublicationInput, LayerResolutionContext,
-    LayerTargetAdmissionInput, LayerView,
-    LCS_CONFIG_ROOT_PATH, LcsAuditEventKind, LcsCallerTokenSummary, LcsError,
+    write_rsi_drop_key_request_frame, write_rsi_flush_request_frame,
+    write_rsi_hide_entry_request_frame, write_rsi_lookup_request_frame,
+    write_rsi_query_values_request_frame, write_rsi_read_key_request_frame,
+    write_rsi_set_blanket_tombstone_request_frame, write_rsi_set_value_request_frame,
+    write_rsi_write_key_request_frame, BackupLayerManifestPayload, BackupRestoreFdOperation,
+    BlanketTombstoneEntry, CurrentUserRewrite, ValidatedValueType, HiveRouteOutcome, HiveView,
+    KeyFdOpenView, KeyGuidAssignmentRequest, KeyWatchState, LayerOwnerSelectionInput,
+    LayerOwnerSource, LayerPublicationInput, LayerResolutionContext, LayerTargetAdmissionInput,
+    LayerView, LCS_CONFIG_ROOT_PATH, LcsAuditEventKind, LcsCallerTokenSummary, LcsError,
     LCS_CONFIG_RANGES, LcsKeyOpenAuditDecision, LcsLimits, LcsSelfConfigInvalidAuditRecord,
     LcsSelfConfigReceivedValue, LinuxErrno, NamedPathEntry, NamedPathResolution, NamedValueEntry,
     PathKind, PathTarget, RegisteredHiveIdentity, RegistryIoctlAccessRequirement,
     RegistryKeyOpenAccessInput, RegistryOpenAccessDecision, RegistryOpenPreResolutionAccessPlan,
     RsiReadPlan, RsiRetainedRequest, RsiTransactionMode, RsiSourceDataValidationFailure,
-    SelfConfigRetentionReason, SelfConfigValue, SourceRegistrationDecision, SourceRegistrationHive, SourceRegistrationRequest,
-    SourceSlotStatus, SourceSlotView, ValueEntry, ValueLayerAdmissionInput, ValueResolution,
-    EffectiveValueWatchEvent, EnumeratedValue, WatchEventRecordPlan,
-    WatchEventRecordRequest,
-    WatchEventRecordWritePlan, WatchNotifyArgs, WatchNotifyPlan, REG_BINARY, REG_DWORD, REG_QWORD,
-    REG_TOMBSTONE,
-    RSI_DELETE_LAYER, RSI_ENUM_CHILDREN, RSI_LOOKUP, RSI_QUERY_VALUES, RSI_READ_KEY,
-    select_layer_owner, write_watch_event_record,
-    key_audit_payload_len, registry_security_info_required_access,
+    SelfConfigRetentionReason, SelfConfigValue, SourceRegistrationDecision, SourceRegistrationHive,
+    SourceRegistrationRequest, SourceSlotStatus, SourceSlotView, ValueEntry,
+    ValueLayerAdmissionInput, ValueResolution, EffectiveValueWatchEvent, EnumeratedValue,
+    WatchEventRecordPlan, WatchEventRecordRequest, WatchEventRecordWritePlan, WatchNotifyArgs,
+    WatchNotifyPlan, REG_BINARY, REG_DWORD, REG_QWORD, REG_TOMBSTONE, RSI_DELETE_LAYER,
+    RSI_ENUM_CHILDREN, RSI_LOOKUP, RSI_QUERY_VALUES, RSI_READ_KEY, select_layer_owner,
+    write_watch_event_record, key_audit_payload_len, registry_security_info_required_access,
     transaction_committed_audit_payload_len, write_key_audit_payload,
     write_transaction_committed_audit_payload, LcsKeyAuditAccess, LcsKeyAuditDetail,
     LcsKeyAuditRecord, LcsSdAuditSummary, LcsTransactionAuditReason, LcsTransactionAuditState,
@@ -777,9 +767,7 @@ fn empty_self_config_apply_plan() -> PkmLcsSelfConfigApplyPlanCopy {
     }
 }
 
-fn self_config_entry_name<'a>(
-    entry: &'a PkmLcsSelfConfigEntryCopy,
-) -> Result<&'a str, LinuxErrno> {
+fn self_config_entry_name<'a>(entry: &'a PkmLcsSelfConfigEntryCopy) -> Result<&'a str, LinuxErrno> {
     if entry.name_len == 0 {
         return Ok("");
     }
@@ -869,9 +857,7 @@ fn effective_value_to_self_config(value: EnumeratedValue<'_>) -> SelfConfigValue
     let data = value.value.data;
 
     if actual_type == REG_DWORD && data.len() == core::mem::size_of::<u32>() {
-        return SelfConfigValue::Dword(u32::from_le_bytes([
-            data[0], data[1], data[2], data[3],
-        ]));
+        return SelfConfigValue::Dword(u32::from_le_bytes([data[0], data[1], data[2], data[3]]));
     }
 
     SelfConfigValue::WrongType { actual_type }
@@ -1147,7 +1133,9 @@ fn apply_kmes_config_value(
 ) -> Result<(), LinuxErrno> {
     match range.name {
         "BufferCapacity" => config.buffer_capacity = value,
-        "MaxEventSize" => config.max_event_size = value.try_into().map_err(|_| LinuxErrno::Erange)?,
+        "MaxEventSize" => {
+            config.max_event_size = value.try_into().map_err(|_| LinuxErrno::Erange)?
+        }
         "MaxNestingDepth" => {
             config.max_nesting_depth = value.try_into().map_err(|_| LinuxErrno::Erange)?
         }
@@ -1216,9 +1204,7 @@ fn effective_value_to_kmes_config(value: EnumeratedValue<'_>) -> KmesConfigValue
     let data = value.value.data;
 
     if actual_type == REG_DWORD && data.len() == core::mem::size_of::<u32>() {
-        return KmesConfigValue::Dword(u32::from_le_bytes([
-            data[0], data[1], data[2], data[3],
-        ]));
+        return KmesConfigValue::Dword(u32::from_le_bytes([data[0], data[1], data[2], data[3]]));
     }
     if actual_type == REG_QWORD && data.len() == core::mem::size_of::<u64>() {
         return KmesConfigValue::Qword(u64::from_le_bytes([
@@ -1240,8 +1226,7 @@ fn write_kmes_config_plan_from_observed(
     let mut retained_invalid_count = 0u32;
     let mut ignored_unknown_count = 0u32;
     let mut audit_count = 0usize;
-    let mut audits =
-        [PkmKmesSelfConfigAuditIntentCopy::ZERO; PKM_KMES_SELF_CONFIG_MAX_AUDITS];
+    let mut audits = [PkmKmesSelfConfigAuditIntentCopy::ZERO; PKM_KMES_SELF_CONFIG_MAX_AUDITS];
 
     for entry in observed_values {
         if find_kmes_config_range(entry.name).is_none() {
@@ -1368,11 +1353,11 @@ fn key_open_access_error_return(err: LcsError) -> c_int {
 }
 
 fn key_open_audit_error_return(err: LcsError) -> c_int {
-	match err {
-		LcsError::AuditPayloadOutputBufferTooSmall { .. } => LinuxErrno::Erange,
-		_ => LinuxErrno::Eio,
-	}
-	.negated_return() as c_int
+    match err {
+        LcsError::AuditPayloadOutputBufferTooSmall { .. } => LinuxErrno::Erange,
+        _ => LinuxErrno::Eio,
+    }
+    .negated_return() as c_int
 }
 
 fn backup_audit_error_return(err: LcsError) -> c_int {
@@ -1405,10 +1390,7 @@ fn backup_restore_reader_error_return(_err: LcsError) -> c_int {
     LinuxErrno::Einval.negated_return() as c_int
 }
 
-unsafe fn backup_writer_dst<'a>(
-    dst: *mut u8,
-    dst_len: usize,
-) -> Result<&'a mut [u8], LinuxErrno> {
+unsafe fn backup_writer_dst<'a>(dst: *mut u8, dst_len: usize) -> Result<&'a mut [u8], LinuxErrno> {
     if dst.is_null() {
         if dst_len != 0 {
             return Err(LinuxErrno::Einval);
@@ -1421,13 +1403,9 @@ unsafe fn backup_writer_dst<'a>(
 
 fn retained_frame_slice_offset(frame: &[u8], field: &[u8]) -> Result<(u32, u32), LinuxErrno> {
     let base = frame.as_ptr() as usize;
-    let end = base
-        .checked_add(frame.len())
-        .ok_or(LinuxErrno::Eoverflow)?;
+    let end = base.checked_add(frame.len()).ok_or(LinuxErrno::Eoverflow)?;
     let ptr = field.as_ptr() as usize;
-    let field_end = ptr
-        .checked_add(field.len())
-        .ok_or(LinuxErrno::Eoverflow)?;
+    let field_end = ptr.checked_add(field.len()).ok_or(LinuxErrno::Eoverflow)?;
 
     if ptr < base || ptr > end || field_end > end {
         return Err(LinuxErrno::Eio);
@@ -1610,10 +1588,9 @@ fn set_security_merge_error_return(err: LcsError) -> c_int {
 
 fn get_security_plan_error_return(err: LcsError) -> c_int {
     match err {
-        LcsError::ZeroSecurityInfo | LcsError::UnknownSecurityInfoFlags { .. }
-        | LcsError::ConflictingSecurityInfoFlags { .. } => {
-            LinuxErrno::Einval
-        }
+        LcsError::ZeroSecurityInfo
+        | LcsError::UnknownSecurityInfoFlags { .. }
+        | LcsError::ConflictingSecurityInfoFlags { .. } => LinuxErrno::Einval,
         LcsError::MalformedSecurityDescriptor { .. }
         | LcsError::SecurityDescriptorConstructionFailed { .. }
         | LcsError::MaximumAllowedInAce(_)
@@ -1636,9 +1613,7 @@ fn public_set_value_validation_error_return(err: LcsError) -> c_int {
     value_type_validation_linux_errno(&err)
         .or_else(|| value_data_len_linux_errno(&err))
         .unwrap_or_else(|| match err {
-            LcsError::NameTooLong { .. } | LcsError::PathTooLong { .. } => {
-                LinuxErrno::Enametoolong
-            }
+            LcsError::NameTooLong { .. } | LcsError::PathTooLong { .. } => LinuxErrno::Enametoolong,
             LcsError::NilKeyGuid => LinuxErrno::Einval,
             _ => LinuxErrno::Einval,
         })
@@ -1790,11 +1765,10 @@ pub unsafe extern "C" fn lcs_rust_plan_key_guid_assignment(
     let Some(candidate_guid) = (unsafe { candidate_guid.as_ref() }) else {
         return LinuxErrno::Einval.negated_return() as c_int;
     };
-    let active_key_guids =
-        match parse_key_guid_tracker(active_key_guids, active_key_guid_count) {
-            Ok(guids) => guids,
-            Err(errno) => return errno.negated_return() as c_int,
-        };
+    let active_key_guids = match parse_key_guid_tracker(active_key_guids, active_key_guid_count) {
+        Ok(guids) => guids,
+        Err(errno) => return errno.negated_return() as c_int,
+    };
 
     match plan_key_guid_assignment(KeyGuidAssignmentRequest {
         candidate_guid: *candidate_guid,
@@ -1968,7 +1942,10 @@ pub unsafe extern "C" fn lcs_rust_validate_layer_publication(
     let mut guid = [0u8; 16];
     guid.copy_from_slice(unsafe { slice::from_raw_parts(metadata_key_guid, 16) });
     let sd = unsafe {
-        slice::from_raw_parts(metadata_security_descriptor, metadata_security_descriptor_len)
+        slice::from_raw_parts(
+            metadata_security_descriptor,
+            metadata_security_descriptor_len,
+        )
     };
 
     match plan_layer_publication(
@@ -2024,8 +2001,7 @@ pub unsafe extern "C" fn lcs_rust_security_descriptor_owner_sid(
     if security_descriptor.is_null() || security_descriptor_len == 0 {
         return LinuxErrno::Einval.negated_return() as c_int;
     }
-    let bytes =
-        unsafe { slice::from_raw_parts(security_descriptor, security_descriptor_len) };
+    let bytes = unsafe { slice::from_raw_parts(security_descriptor, security_descriptor_len) };
     let sd = match SecurityDescriptor::parse(bytes) {
         Ok(value) => value,
         Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
@@ -2075,11 +2051,11 @@ pub unsafe extern "C" fn lcs_rust_select_layer_owner(
         Ok(value) => value,
         Err(errno) => return errno.negated_return() as c_int,
     };
-    let creator_sid = match optional_layer_owner_slice(creator_sid, creator_sid_len, creator_present)
-    {
-        Ok(value) => value,
-        Err(errno) => return errno.negated_return() as c_int,
-    };
+    let creator_sid =
+        match optional_layer_owner_slice(creator_sid, creator_sid_len, creator_present) {
+            Ok(value) => value,
+            Err(errno) => return errno.negated_return() as c_int,
+        };
     let previous_known_good_owner_sid = match optional_layer_owner_slice(
         previous_owner_sid,
         previous_owner_sid_len,
@@ -2483,7 +2459,11 @@ const PKM_LCS_KEY_AUDIT_DESCRIPTOR_CHANGED: u32 = 7;
 
 /// A byte range from C as text: `None` when absent, `Some("")` for an empty
 /// name, which is a legal value name.
-fn key_audit_str<'a>(ptr: *const u8, len: u32, present: bool) -> Result<Option<&'a str>, LinuxErrno> {
+fn key_audit_str<'a>(
+    ptr: *const u8,
+    len: u32,
+    present: bool,
+) -> Result<Option<&'a str>, LinuxErrno> {
     if !present {
         return Ok(None);
     }
@@ -3192,9 +3172,7 @@ pub unsafe extern "C" fn lcs_rust_plan_backup_restore_layer_precedence_gate(
             }
             0
         }
-        Err(LcsError::MissingLayerPrecedenceTcb) => {
-            LinuxErrno::Eperm.negated_return() as c_int
-        }
+        Err(LcsError::MissingLayerPrecedenceTcb) => LinuxErrno::Eperm.negated_return() as c_int,
         Err(_) => LinuxErrno::Einval.negated_return() as c_int,
     }
 }
@@ -3530,8 +3508,7 @@ pub unsafe extern "C" fn lcs_rust_write_backup_layer_manifest_record_frame(
         return LinuxErrno::Einval.negated_return() as c_int;
     };
     *written_out_ref = 0;
-    if name.is_null() || name_len == 0 || owner_sid.is_null() || owner_sid_len == 0 || enabled > 1
-    {
+    if name.is_null() || name_len == 0 || owner_sid.is_null() || owner_sid_len == 0 || enabled > 1 {
         return LinuxErrno::Einval.negated_return() as c_int;
     }
 
@@ -3621,16 +3598,16 @@ pub unsafe extern "C" fn lcs_rust_write_backup_path_entry_record_frame(
         child_guid_copy.copy_from_slice(unsafe { slice::from_raw_parts(child_guid, 16) });
         PathTarget::Guid(child_guid_copy)
     };
-    let child_name = match str::from_utf8(unsafe { slice::from_raw_parts(child_name, child_name_len) })
-    {
-        Ok(value) => value,
-        Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
-    };
-    let layer_name = match str::from_utf8(unsafe { slice::from_raw_parts(layer_name, layer_name_len) })
-    {
-        Ok(value) => value,
-        Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
-    };
+    let child_name =
+        match str::from_utf8(unsafe { slice::from_raw_parts(child_name, child_name_len) }) {
+            Ok(value) => value,
+            Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
+        };
+    let layer_name =
+        match str::from_utf8(unsafe { slice::from_raw_parts(layer_name, layer_name_len) }) {
+            Ok(value) => value,
+            Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
+        };
 
     match write_backup_path_entry_record_frame(
         &limits,
@@ -3705,11 +3682,11 @@ pub unsafe extern "C" fn lcs_rust_write_backup_value_record_frame(
     } else {
         unsafe { slice::from_raw_parts(data, data_len) }
     };
-    let layer_name = match str::from_utf8(unsafe { slice::from_raw_parts(layer_name, layer_name_len) })
-    {
-        Ok(value) => value,
-        Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
-    };
+    let layer_name =
+        match str::from_utf8(unsafe { slice::from_raw_parts(layer_name, layer_name_len) }) {
+            Ok(value) => value,
+            Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
+        };
 
     match write_backup_value_record_frame(
         &limits,
@@ -3762,11 +3739,11 @@ pub unsafe extern "C" fn lcs_rust_write_backup_blanket_tombstone_record_frame(
     };
     let mut key_guid_copy = [0u8; 16];
     key_guid_copy.copy_from_slice(unsafe { slice::from_raw_parts(key_guid, 16) });
-    let layer_name = match str::from_utf8(unsafe { slice::from_raw_parts(layer_name, layer_name_len) })
-    {
-        Ok(value) => value,
-        Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
-    };
+    let layer_name =
+        match str::from_utf8(unsafe { slice::from_raw_parts(layer_name, layer_name_len) }) {
+            Ok(value) => value,
+            Err(_) => return LinuxErrno::Einval.negated_return() as c_int,
+        };
 
     match write_backup_blanket_tombstone_record_frame(
         &limits,
@@ -5073,7 +5050,7 @@ pub unsafe extern "C" fn lcs_rust_write_rsi_query_values_request_frame(
 
 #[no_mangle]
 pub unsafe extern "C" fn lcs_rust_validate_set_value_user_shape(
-	guid: *const u8,
+    guid: *const u8,
     value_name: *const u8,
     value_name_len: u32,
     layer_name: *const u8,
@@ -5082,10 +5059,7 @@ pub unsafe extern "C" fn lcs_rust_validate_set_value_user_shape(
     data_len: usize,
     limits: *const PkmLcsRuntimeLimitsCopy,
 ) -> c_int {
-    if guid.is_null()
-        || (value_name_len != 0 && value_name.is_null())
-        || layer_name.is_null()
-    {
+    if guid.is_null() || (value_name_len != 0 && value_name.is_null()) || layer_name.is_null() {
         return LinuxErrno::Einval.negated_return() as c_int;
     }
     let limits = match lcs_limits_from_copy(limits) {
@@ -5130,10 +5104,7 @@ pub unsafe extern "C" fn lcs_rust_validate_delete_value_user_shape(
     layer_name_len: u32,
     limits: *const PkmLcsRuntimeLimitsCopy,
 ) -> c_int {
-    if guid.is_null()
-        || (value_name_len != 0 && value_name.is_null())
-        || layer_name.is_null()
-    {
+    if guid.is_null() || (value_name_len != 0 && value_name.is_null()) || layer_name.is_null() {
         return LinuxErrno::Einval.negated_return() as c_int;
     }
     let limits = match lcs_limits_from_copy(limits) {
@@ -5184,10 +5155,7 @@ pub unsafe extern "C" fn lcs_rust_plan_set_value_layer_admission(
         _pad: [0; 3],
     };
 
-    if frame.is_null()
-        || (value_name_len != 0 && value_name.is_null())
-        || layer_name.is_null()
-    {
+    if frame.is_null() || (value_name_len != 0 && value_name.is_null()) || layer_name.is_null() {
         return LinuxErrno::Einval.negated_return() as c_int;
     }
     let limits = match lcs_limits_from_copy(limits) {
@@ -5224,9 +5192,7 @@ pub unsafe extern "C" fn lcs_rust_plan_set_value_layer_admission(
     if let Err(err) = validate_rsi_query_values_response_names(&payload, &limits) {
         return rsi_query_values_response_error_return(err);
     }
-    if let Err(err) =
-        validate_rsi_query_values_response_value_payloads(&payload, &limits)
-    {
+    if let Err(err) = validate_rsi_query_values_response_value_payloads(&payload, &limits) {
         return rsi_query_values_response_error_return(err);
     }
     if let Err(err) = validate_rsi_query_values_response_sequences(&payload, next_sequence) {
@@ -5241,28 +5207,26 @@ pub unsafe extern "C" fn lcs_rust_plan_set_value_layer_admission(
     let mut allocation_failed = false;
     let mut malformed = false;
 
-    if let Err(err) =
-        for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
-            if !casefold_eq(entry.name, requested_name) {
+    if let Err(err) = for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
+        if !casefold_eq(entry.name, requested_name) {
+            malformed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        for existing in distinct_layers.as_slice() {
+            if casefold_eq(*existing, entry.entry.layer) {
                 malformed = true;
                 return Err(LcsError::RsiPayloadLengthOverflow);
             }
-            for existing in distinct_layers.as_slice() {
-                if casefold_eq(*existing, entry.entry.layer) {
-                    malformed = true;
-                    return Err(LcsError::RsiPayloadLengthOverflow);
-                }
-            }
-            if casefold_eq(entry.entry.layer, target_layer) {
-                replacing_existing_layer_entry = true;
-            }
-            if distinct_layers.push(entry.entry.layer).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+        }
+        if casefold_eq(entry.entry.layer, target_layer) {
+            replacing_existing_layer_entry = true;
+        }
+        if distinct_layers.push(entry.entry.layer).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -6027,12 +5991,8 @@ pub unsafe extern "C" fn lcs_rust_write_rsi_commit_transaction_request_frame(
     }
 
     let dst_bytes = unsafe { slice::from_raw_parts_mut(dst, dst_len) };
-    match write_rsi_commit_transaction_request_frame(
-        dst_bytes,
-        request_id,
-        txn_id,
-        transaction_id,
-    ) {
+    match write_rsi_commit_transaction_request_frame(dst_bytes, request_id, txn_id, transaction_id)
+    {
         Ok(built) => {
             unsafe {
                 *built_out = PkmLcsRsiBuiltRequestCopy {
@@ -6077,12 +6037,7 @@ pub unsafe extern "C" fn lcs_rust_write_rsi_abort_transaction_request_frame(
     }
 
     let dst_bytes = unsafe { slice::from_raw_parts_mut(dst, dst_len) };
-    match write_rsi_abort_transaction_request_frame(
-        dst_bytes,
-        request_id,
-        txn_id,
-        transaction_id,
-    ) {
+    match write_rsi_abort_transaction_request_frame(dst_bytes, request_id, txn_id, transaction_id) {
         Ok(built) => {
             unsafe {
                 *built_out = PkmLcsRsiBuiltRequestCopy {
@@ -6360,8 +6315,7 @@ pub unsafe extern "C" fn lcs_rust_validate_rsi_lookup_response_frame(
     if let Err(err) = validate_rsi_lookup_metadata_completeness(&payload) {
         if let Some(failure) = source_validation_failure_for_key_metadata_error(&err) {
             unsafe {
-                (*summary_out).source_validation_failure =
-                    source_validation_failure_code(failure);
+                (*summary_out).source_validation_failure = source_validation_failure_code(failure);
                 (*summary_out).source_validation_failure_present = 1;
             }
         }
@@ -6472,13 +6426,10 @@ pub unsafe extern "C" fn lcs_rust_validate_rsi_query_values_response_frame(
         }
         return rsi_query_values_response_error_return(err);
     }
-    if let Err(err) =
-        validate_rsi_query_values_response_value_payloads(&payload, &limits)
-    {
+    if let Err(err) = validate_rsi_query_values_response_value_payloads(&payload, &limits) {
         if let Some(failure) = source_validation_failure_for_value_payload_error(&err) {
             unsafe {
-                (*summary_out).source_validation_failure =
-                    source_validation_failure_code(failure);
+                (*summary_out).source_validation_failure = source_validation_failure_code(failure);
                 (*summary_out).source_validation_failure_present = 1;
             }
         }
@@ -6575,8 +6526,7 @@ pub unsafe extern "C" fn lcs_rust_validate_rsi_delete_layer_response_frame(
     if let Err(err) = validate_rsi_delete_layer_orphaned_guids(&payload) {
         if let Some(failure) = source_validation_failure_for_delete_layer_orphan_error(&err) {
             unsafe {
-                (*summary_out).source_validation_failure =
-                    source_validation_failure_code(failure);
+                (*summary_out).source_validation_failure = source_validation_failure_code(failure);
                 (*summary_out).source_validation_failure_present = 1;
             }
         }
@@ -6665,8 +6615,7 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_enum_children_info_summary(
     if let Err(err) = validate_rsi_enum_children_metadata_completeness(&payload) {
         if let Some(failure) = source_validation_failure_for_key_metadata_error(&err) {
             unsafe {
-                (*result_out).source_validation_failure =
-                    source_validation_failure_code(failure);
+                (*result_out).source_validation_failure = source_validation_failure_code(failure);
                 (*result_out).source_validation_failure_present = 1;
             }
         }
@@ -6711,13 +6660,12 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_enum_children_info_summary(
         };
     let mut allocation_failed = false;
     if let Err(err) = for_each_rsi_enum_children_source_path_entry(&payload, &limits, |entry| {
-            if path_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+        if path_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -6957,13 +6905,12 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_enum_subkey_response(
         };
     let mut allocation_failed = false;
     if let Err(err) = for_each_rsi_enum_children_source_path_entry(&payload, &limits, |entry| {
-            if path_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+        if path_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -7124,29 +7071,25 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_query_values_info_summary(
         };
 
     let mut allocation_failed = false;
-    if let Err(err) =
-        for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
-            if value_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
+        if value_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
         return rsi_query_values_response_error_return(err);
     }
-    if let Err(err) =
-        for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
-            if blanket_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
+        if blanket_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -7279,52 +7222,47 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_query_values_backup_entries(
     };
 
     let mut value_index = 0usize;
-    if let Err(err) =
-        for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
-            let (name_offset, name_len) =
-                retained_frame_slice_offset(frame_bytes, entry.name.as_bytes())
-                    .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
-            let (data_offset, data_len) =
-                retained_frame_slice_offset(frame_bytes, entry.entry.data)
-                    .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
-            let (layer_offset, layer_len) =
-                retained_frame_slice_offset(frame_bytes, entry.entry.layer.as_bytes())
-                    .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
-            value_entries[value_index] = PkmLcsRsiBackupValueEntryCopy {
-                name_offset,
-                name_len,
-                data_offset,
-                data_len,
-                layer_offset,
-                layer_len,
-                value_type: entry.entry.value_type,
-                _pad: 0,
-                sequence: entry.entry.sequence,
-            };
-            value_index += 1;
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
+        let (name_offset, name_len) =
+            retained_frame_slice_offset(frame_bytes, entry.name.as_bytes())
+                .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
+        let (data_offset, data_len) = retained_frame_slice_offset(frame_bytes, entry.entry.data)
+            .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
+        let (layer_offset, layer_len) =
+            retained_frame_slice_offset(frame_bytes, entry.entry.layer.as_bytes())
+                .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
+        value_entries[value_index] = PkmLcsRsiBackupValueEntryCopy {
+            name_offset,
+            name_len,
+            data_offset,
+            data_len,
+            layer_offset,
+            layer_len,
+            value_type: entry.entry.value_type,
+            _pad: 0,
+            sequence: entry.entry.sequence,
+        };
+        value_index += 1;
+        Ok(())
+    }) {
         return rsi_query_values_response_error_return(err);
     }
 
     let mut blanket_index = 0usize;
-    if let Err(err) =
-        for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
-            let (layer_offset, layer_len) =
-                retained_frame_slice_offset(frame_bytes, entry.layer.as_bytes())
-                    .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
-            blanket_entries[blanket_index] = PkmLcsRsiBackupBlanketEntryCopy {
-                layer_offset,
-                layer_len,
-                _pad0: 0,
-                _pad1: 0,
-                sequence: entry.sequence,
-            };
-            blanket_index += 1;
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
+        let (layer_offset, layer_len) =
+            retained_frame_slice_offset(frame_bytes, entry.layer.as_bytes())
+                .map_err(|_| LcsError::RsiPayloadLengthOverflow)?;
+        blanket_entries[blanket_index] = PkmLcsRsiBackupBlanketEntryCopy {
+            layer_offset,
+            layer_len,
+            _pad0: 0,
+            _pad1: 0,
+            sequence: entry.sequence,
+        };
+        blanket_index += 1;
+        Ok(())
+    }) {
         return rsi_query_values_response_error_return(err);
     }
 
@@ -7420,29 +7358,25 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_query_values_batch_response(
         };
 
     let mut allocation_failed = false;
-    if let Err(err) =
-        for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
-            if value_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
+        if value_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
         return rsi_query_values_response_error_return(err);
     }
-    if let Err(err) =
-        for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
-            if blanket_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
+        if blanket_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -7469,9 +7403,7 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_query_values_batch_response(
             required_len = required_len
                 .checked_add(record_len)
                 .ok_or(LcsError::OutputSizeOverflow)?;
-            count = count
-                .checked_add(1)
-                .ok_or(LcsError::OutputSizeOverflow)?;
+            count = count.checked_add(1).ok_or(LcsError::OutputSizeOverflow)?;
             Ok(())
         },
     ) {
@@ -7583,29 +7515,25 @@ fn materialize_effective_value_watch_snapshot<'a>(
             .map_err(|_| LinuxErrno::Enomem.negated_return() as c_int)?;
 
     let mut allocation_failed = false;
-    if let Err(err) =
-        for_each_rsi_query_values_source_value_entry(&payload, limits, |entry| {
-            if value_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_value_entry(&payload, limits, |entry| {
+        if value_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return Err(LinuxErrno::Enomem.negated_return() as c_int);
         }
         return Err(rsi_query_values_response_error_return(err));
     }
-    if let Err(err) =
-        for_each_rsi_query_values_source_blanket_entry(&payload, limits, |entry| {
-            if blanket_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_blanket_entry(&payload, limits, |entry| {
+        if blanket_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return Err(LinuxErrno::Enomem.negated_return() as c_int);
         }
@@ -7618,9 +7546,8 @@ fn materialize_effective_value_watch_snapshot<'a>(
         limits,
         next_sequence,
     };
-    let mut effective =
-        PkmVec::<EnumeratedValue<'a>>::with_capacity(value_storage.len())
-            .map_err(|_| LinuxErrno::Enomem.negated_return() as c_int)?;
+    let mut effective = PkmVec::<EnumeratedValue<'a>>::with_capacity(value_storage.len())
+        .map_err(|_| LinuxErrno::Enomem.negated_return() as c_int)?;
 
     allocation_failed = false;
     if let Err(err) = for_each_effective_value(
@@ -7753,9 +7680,7 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_query_values_watch_events(
             required_len = required_len
                 .checked_add(record_len)
                 .ok_or(LcsError::OutputSizeOverflow)?;
-            count = count
-                .checked_add(1)
-                .ok_or(LcsError::OutputSizeOverflow)?;
+            count = count.checked_add(1).ok_or(LcsError::OutputSizeOverflow)?;
             Ok(())
         },
     ) {
@@ -7929,18 +7854,15 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_lookup_child(
             Err(_) => return LinuxErrno::Enomem.negated_return() as c_int,
         };
     let mut path_storage_allocation_failed = false;
-    if let Err(err) = for_each_rsi_lookup_source_path_entry(
-        &payload,
-        &limits,
-        child_component,
-        |entry| {
+    if let Err(err) =
+        for_each_rsi_lookup_source_path_entry(&payload, &limits, child_component, |entry| {
             if path_storage.push(entry).is_err() {
                 path_storage_allocation_failed = true;
                 return Err(LcsError::RsiPayloadLengthOverflow);
             }
             Ok(())
-        },
-    ) {
+        })
+    {
         if path_storage_allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -8032,9 +7954,15 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_lookup_guid_entry(
     target.copy_from_slice(unsafe { slice::from_raw_parts(target_guid, 16) });
     unsafe {
         materialize_rsi_lookup_entry(
-            frame, frame_len, request_id, next_sequence, child_name, child_name_len,
+            frame,
+            frame_len,
+            request_id,
+            next_sequence,
+            child_name,
+            child_name_len,
             |entry| matches!(entry.entry.target, PathTarget::Guid(guid) if guid == target),
-            limits, result_out,
+            limits,
+            result_out,
         )
     }
 }
@@ -8066,10 +7994,18 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_lookup_layer_entry(
     };
     unsafe {
         materialize_rsi_lookup_entry(
-            frame, frame_len, request_id, next_sequence, child_name, child_name_len,
-            |entry| matches!(entry.entry.target, PathTarget::Guid(_))
-                && casefold_eq(entry.entry.layer, layer),
-            limits, result_out,
+            frame,
+            frame_len,
+            request_id,
+            next_sequence,
+            child_name,
+            child_name_len,
+            |entry| {
+                matches!(entry.entry.target, PathTarget::Guid(_))
+                    && casefold_eq(entry.entry.layer, layer)
+            },
+            limits,
+            result_out,
         )
     }
 }
@@ -8148,11 +8084,8 @@ where
 
     let mut source_path_entry_count = 0usize;
     let mut present = false;
-    if let Err(err) = for_each_rsi_lookup_source_path_entry(
-        &payload,
-        &limits,
-        child_component,
-        |entry| {
+    if let Err(err) =
+        for_each_rsi_lookup_source_path_entry(&payload, &limits, child_component, |entry| {
             source_path_entry_count = source_path_entry_count
                 .checked_add(1)
                 .ok_or(LcsError::RsiPayloadLengthOverflow)?;
@@ -8160,8 +8093,8 @@ where
                 present = true;
             }
             Ok(())
-        },
-    ) {
+        })
+    {
         return rsi_lookup_response_error_return(err);
     }
     if source_path_entry_count > u32::MAX as usize {
@@ -8488,29 +8421,25 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_enum_value_response(
         };
 
     let mut allocation_failed = false;
-    if let Err(err) =
-        for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
-            if value_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_value_entry(&payload, &limits, |entry| {
+        if value_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
         return rsi_query_values_response_error_return(err);
     }
-    if let Err(err) =
-        for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
-            if blanket_storage.push(entry).is_err() {
-                allocation_failed = true;
-                return Err(LcsError::RsiPayloadLengthOverflow);
-            }
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_rsi_query_values_source_blanket_entry(&payload, &limits, |entry| {
+        if blanket_storage.push(entry).is_err() {
+            allocation_failed = true;
+            return Err(LcsError::RsiPayloadLengthOverflow);
+        }
+        Ok(())
+    }) {
         if allocation_failed {
             return LinuxErrno::Enomem.negated_return() as c_int;
         }
@@ -8679,11 +8608,11 @@ pub unsafe extern "C" fn lcs_rust_materialize_rsi_read_key_response(
         return rsi_read_key_response_error_return(err);
     }
 
-    let (name_offset, name_len) =
-        match retained_frame_slice_offset(frame_bytes, payload.name.data) {
-            Ok(value) => value,
-            Err(errno) => return errno.negated_return() as c_int,
-        };
+    let (name_offset, name_len) = match retained_frame_slice_offset(frame_bytes, payload.name.data)
+    {
+        Ok(value) => value,
+        Err(errno) => return errno.negated_return() as c_int,
+    };
 
     let base = frame_bytes.as_ptr() as usize;
     let end = base.saturating_add(frame_len);
@@ -8807,8 +8736,7 @@ pub unsafe extern "C" fn lcs_rust_backup_restore_fd_mode_gate(
         _ => return LinuxErrno::Einval.negated_return() as c_int,
     };
 
-    let plan =
-        plan_backup_restore_fd_mode(operation, fd_readable != 0, fd_writable != 0);
+    let plan = plan_backup_restore_fd_mode(operation, fd_readable != 0, fd_writable != 0);
     match backup_restore_fd_mode_linux_errno(&plan) {
         Some(errno) => errno.negated_return() as c_int,
         None => 0,
@@ -9086,8 +9014,7 @@ fn parse_backup_layer_manifest_views<'a>(
         }
 
         let name_bytes = unsafe { slice::from_raw_parts(raw.name, raw.name_len as usize) };
-        let owner_sid =
-            unsafe { slice::from_raw_parts(raw.owner_sid, raw.owner_sid_len as usize) };
+        let owner_sid = unsafe { slice::from_raw_parts(raw.owner_sid, raw.owner_sid_len as usize) };
         let name = str::from_utf8(name_bytes).map_err(|_| LinuxErrno::Einval)?;
         let enabled = match raw.enabled {
             0 => false,
@@ -9265,11 +9192,7 @@ pub unsafe extern "C" fn lcs_rust_validate_source_registration(
         max_sequence,
         caller_has_tcb,
     };
-    let plan = match validate_source_registration(
-        &limits,
-        existing_slots.as_slice(),
-        &request,
-    ) {
+    let plan = match validate_source_registration(&limits, existing_slots.as_slice(), &request) {
         Ok(plan) => plan,
         Err(err) => return source_registration_error_return(err),
     };
@@ -9401,12 +9324,7 @@ pub unsafe extern "C" fn lcs_rust_route_hive_from_source_slots(
         }
     }
 
-    let route = match route_hive(
-        &limits,
-        hive_views.as_slice(),
-        hive_name,
-        scope_guids,
-    ) {
+    let route = match route_hive(&limits, hive_views.as_slice(), hive_name, scope_guids) {
         Ok(route) => route,
         Err(err) => return source_registration_error_return(err),
     };
@@ -9596,11 +9514,11 @@ pub unsafe extern "C" fn lcs_rust_route_absolute_path_from_source_slots_with_tok
     }
 
     let sid_bytes = unsafe { slice::from_raw_parts(current_user_sid, current_user_sid_len) };
-    let sid_component =
-        match current_user_sid_component_from_binary_sid(&parsed_limits, sid_bytes) {
-            Ok(component) => component,
-            Err(err) => return absolute_route_error_return(err),
-        };
+    let sid_component = match current_user_sid_component_from_binary_sid(&parsed_limits, sid_bytes)
+    {
+        Ok(component) => component,
+        Err(err) => return absolute_route_error_return(err),
+    };
     let sid_component = sid_component.as_str();
     unsafe {
         lcs_rust_route_absolute_path_from_source_slots(
@@ -9792,24 +9710,21 @@ pub unsafe extern "C" fn lcs_rust_materialize_absolute_path_components_with_toke
 
     let mut component_count = 0usize;
     let mut string_bytes = 0usize;
-    if let Err(err) =
-        for_each_routable_path_component(&limits, path, rewrite, |component| {
-            component_count = component_count
-                .checked_add(1)
-                .ok_or(LcsError::KeyDepthExceeded {
-                    depth: usize::MAX,
-                    max: limits.max_key_depth,
-                })?;
-            string_bytes =
-                string_bytes
-                    .checked_add(component.len())
-                    .ok_or(LcsError::PathTooLong {
-                        len: usize::MAX,
-                        max: limits.max_total_path_length,
-                    })?;
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_routable_path_component(&limits, path, rewrite, |component| {
+        component_count = component_count
+            .checked_add(1)
+            .ok_or(LcsError::KeyDepthExceeded {
+                depth: usize::MAX,
+                max: limits.max_key_depth,
+            })?;
+        string_bytes = string_bytes
+            .checked_add(component.len())
+            .ok_or(LcsError::PathTooLong {
+                len: usize::MAX,
+                max: limits.max_total_path_length,
+            })?;
+        Ok(())
+    }) {
         return absolute_route_error_return(err);
     }
 
@@ -9842,18 +9757,16 @@ pub unsafe extern "C" fn lcs_rust_materialize_absolute_path_components_with_toke
     let string_out = unsafe { slice::from_raw_parts_mut(string_buf, string_capacity) };
     let mut index = 0usize;
     let mut offset = 0usize;
-    if let Err(err) =
-        for_each_routable_path_component(&limits, path, rewrite, |component| {
-            let bytes = component.as_bytes();
-            let end = offset + bytes.len();
-            string_out[offset..end].copy_from_slice(bytes);
-            component_out[index].name = unsafe { string_buf.add(offset) as *const u8 };
-            component_out[index].name_len = bytes.len() as u32;
-            index += 1;
-            offset = end;
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_routable_path_component(&limits, path, rewrite, |component| {
+        let bytes = component.as_bytes();
+        let end = offset + bytes.len();
+        string_out[offset..end].copy_from_slice(bytes);
+        component_out[index].name = unsafe { string_buf.add(offset) as *const u8 };
+        component_out[index].name_len = bytes.len() as u32;
+        index += 1;
+        offset = end;
+        Ok(())
+    }) {
         return absolute_route_error_return(err);
     }
     0
@@ -9894,24 +9807,21 @@ pub unsafe extern "C" fn lcs_rust_materialize_symlink_target_components(
 
     let mut component_count = 0usize;
     let mut string_bytes = 0usize;
-    if let Err(err) =
-        for_each_routable_path_component(&limits, path, rewrite, |component| {
-            component_count = component_count
-                .checked_add(1)
-                .ok_or(LcsError::KeyDepthExceeded {
-                    depth: usize::MAX,
-                    max: limits.max_key_depth,
-                })?;
-            string_bytes =
-                string_bytes
-                    .checked_add(component.len())
-                    .ok_or(LcsError::PathTooLong {
-                        len: usize::MAX,
-                        max: limits.max_total_path_length,
-                    })?;
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_routable_path_component(&limits, path, rewrite, |component| {
+        component_count = component_count
+            .checked_add(1)
+            .ok_or(LcsError::KeyDepthExceeded {
+                depth: usize::MAX,
+                max: limits.max_key_depth,
+            })?;
+        string_bytes = string_bytes
+            .checked_add(component.len())
+            .ok_or(LcsError::PathTooLong {
+                len: usize::MAX,
+                max: limits.max_total_path_length,
+            })?;
+        Ok(())
+    }) {
         return symlink_target_error_return(err);
     }
 
@@ -9944,18 +9854,16 @@ pub unsafe extern "C" fn lcs_rust_materialize_symlink_target_components(
     let string_out = unsafe { slice::from_raw_parts_mut(string_buf, string_capacity) };
     let mut index = 0usize;
     let mut offset = 0usize;
-    if let Err(err) =
-        for_each_routable_path_component(&limits, path, rewrite, |component| {
-            let bytes = component.as_bytes();
-            let end = offset + bytes.len();
-            string_out[offset..end].copy_from_slice(bytes);
-            component_out[index].name = unsafe { string_buf.add(offset) as *const u8 };
-            component_out[index].name_len = bytes.len() as u32;
-            index += 1;
-            offset = end;
-            Ok(())
-        })
-    {
+    if let Err(err) = for_each_routable_path_component(&limits, path, rewrite, |component| {
+        let bytes = component.as_bytes();
+        let end = offset + bytes.len();
+        string_out[offset..end].copy_from_slice(bytes);
+        component_out[index].name = unsafe { string_buf.add(offset) as *const u8 };
+        component_out[index].name_len = bytes.len() as u32;
+        index += 1;
+        offset = end;
+        Ok(())
+    }) {
         return symlink_target_error_return(err);
     }
     0

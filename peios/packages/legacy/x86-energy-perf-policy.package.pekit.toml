@@ -1,0 +1,19 @@
+# x86_energy_perf_policy — read/set the IA32_ENERGY_PERF_BIAS MSR (perf/energy
+# bias hint). Built from tools/power/x86/x86_energy_perf_policy (build.tools).
+#
+# Runtime ELF dependencies are derived from the staged binary.
+
+# PSPU §5.24: a payload carrying man pages SHOULD declare man-db, so that
+# `man -k` and `apropos` find them instead of falling back to a filesystem
+# scan. Top-level, not inside a table -- TOML would otherwise scope it to
+# whichever table precedes it.
+side_effects = ["man-db"]
+
+[package]
+name = "dev.peios.x86-energy-perf-policy"
+description = "Set the x86 CPU energy/performance bias (from Linux 7.0.9 tools/power/x86)"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.x86-energy-perf-policy/COPYING"
+"tools:usr/bin/x86_energy_perf_policy" = "usr/bin/x86_energy_perf_policy"
+"tools:usr/share/man/man8/x86_energy_perf_policy.8.gz" = "usr/share/man/man8/x86_energy_perf_policy.8.gz"

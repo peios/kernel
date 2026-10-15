@@ -26,11 +26,11 @@ struct pkm_kacs_mntns_security;
  * (tmpfs, proc and stratafs, whose parsers take no untrusted image); OTHER
  * always needs the privilege.
  */
-#define PKM_KACS_MNTNS_OP_OTHER		0U
-#define PKM_KACS_MNTNS_OP_BIND		1U
-#define PKM_KACS_MNTNS_OP_UMOUNT	2U
-#define PKM_KACS_MNTNS_OP_PIVOT_ROOT	3U
-#define PKM_KACS_MNTNS_OP_NEW_FS	4U
+#define PKM_KACS_MNTNS_OP_OTHER 0U
+#define PKM_KACS_MNTNS_OP_BIND 1U
+#define PKM_KACS_MNTNS_OP_UMOUNT 2U
+#define PKM_KACS_MNTNS_OP_PIVOT_ROOT 3U
+#define PKM_KACS_MNTNS_OP_NEW_FS 4U
 
 #ifdef CONFIG_SECURITY_PKM
 /*
@@ -63,8 +63,8 @@ pkm_kacs_mntns_security_create(void)
 	return NULL;
 }
 
-static inline void pkm_kacs_mntns_security_free(
-	struct pkm_kacs_mntns_security *sec)
+static inline void
+pkm_kacs_mntns_security_free(struct pkm_kacs_mntns_security *sec)
 {
 }
 
@@ -73,9 +73,9 @@ static inline bool pkm_kacs_mntns_creator_privileged(void)
 	return true;
 }
 
-static inline bool pkm_kacs_may_mount_op(
-	const struct pkm_kacs_mntns_security *sec, unsigned int op,
-	const char *fstype)
+static inline bool
+pkm_kacs_may_mount_op(const struct pkm_kacs_mntns_security *sec,
+		      unsigned int op, const char *fstype)
 {
 	return false;
 }

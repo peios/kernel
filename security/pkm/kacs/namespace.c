@@ -99,14 +99,14 @@ int pkm_kacs_stratafs_begin_supersede(const struct dentry *outer_target)
 	return 0;
 }
 
-int pkm_kacs_stratafs_bind_supersede_file(
-	const struct dentry *outer_source, const struct dentry *outer_target,
-	const struct file *outer_file)
+int pkm_kacs_stratafs_bind_supersede_file(const struct dentry *outer_source,
+					  const struct dentry *outer_target,
+					  const struct file *outer_file)
 {
 	struct pkm_kacs_task_security *task_sec;
 
-	if (!outer_file || !pkm_kacs_stratafs_supersede_active(
-				 outer_source, outer_target) ||
+	if (!outer_file ||
+	    !pkm_kacs_stratafs_supersede_active(outer_source, outer_target) ||
 	    file_dentry((struct file *)outer_file) == NULL ||
 	    file_inode((struct file *)outer_file) == NULL ||
 	    file_inode((struct file *)outer_file)->i_sb != outer_source->d_sb)
@@ -118,8 +118,9 @@ int pkm_kacs_stratafs_bind_supersede_file(
 	return 0;
 }
 
-const struct file *pkm_kacs_stratafs_supersede_file(
-	const struct dentry *outer_source, const struct dentry *outer_target)
+const struct file *
+pkm_kacs_stratafs_supersede_file(const struct dentry *outer_source,
+				 const struct dentry *outer_target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -129,8 +130,8 @@ const struct file *pkm_kacs_stratafs_supersede_file(
 	return task_sec->stratafs_supersede_file;
 }
 
-int pkm_kacs_stratafs_bind_supersede_source(
-	const struct dentry *outer_target, const struct dentry *outer_source)
+int pkm_kacs_stratafs_bind_supersede_source(const struct dentry *outer_target,
+					    const struct dentry *outer_source)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -140,20 +141,20 @@ int pkm_kacs_stratafs_bind_supersede_source(
 	task_sec = pkm_kacs_task(current);
 	if (task_sec->stratafs_supersede_state != 1 ||
 	    task_sec->stratafs_supersede_subject !=
-		pkm_kacs_current_effective_token_ptr() ||
+		    pkm_kacs_current_effective_token_ptr() ||
 	    task_sec->stratafs_supersede_target != outer_target ||
-	    task_sec->stratafs_supersede_target_inode != d_inode(outer_target) ||
+	    task_sec->stratafs_supersede_target_inode !=
+		    d_inode(outer_target) ||
 	    outer_source->d_sb != outer_target->d_sb)
 		return -EACCES;
 	task_sec->stratafs_supersede_source = outer_source;
 	task_sec->stratafs_supersede_source_inode = d_inode(outer_source);
-	task_sec->stratafs_supersede_state =
-		PKM_KACS_STRATAFS_SUPERSEDE_BOUND;
+	task_sec->stratafs_supersede_state = PKM_KACS_STRATAFS_SUPERSEDE_BOUND;
 	return 0;
 }
 
-bool pkm_kacs_stratafs_supersede_active(
-	const struct dentry *outer_source, const struct dentry *outer_target)
+bool pkm_kacs_stratafs_supersede_active(const struct dentry *outer_source,
+					const struct dentry *outer_target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -173,8 +174,8 @@ bool pkm_kacs_stratafs_supersede_active(
 		       d_inode(outer_target);
 }
 
-int pkm_kacs_stratafs_begin_supersede_unlink(
-	const struct inode *parent, const struct dentry *target)
+int pkm_kacs_stratafs_begin_supersede_unlink(const struct inode *parent,
+					     const struct dentry *target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -192,14 +193,14 @@ int pkm_kacs_stratafs_begin_supersede_unlink(
 	task_sec->stratafs_supersede_old_parent = parent;
 	task_sec->stratafs_supersede_old_dentry = target;
 	task_sec->stratafs_supersede_old_inode = d_inode(target);
-	task_sec->stratafs_supersede_phase =
-		PKM_KACS_STRATAFS_SUPERSEDE_UNLINK;
+	task_sec->stratafs_supersede_phase = PKM_KACS_STRATAFS_SUPERSEDE_UNLINK;
 	return 0;
 }
 
-int pkm_kacs_stratafs_begin_supersede_rename(
-	const struct inode *old_parent, const struct dentry *old_dentry,
-	const struct inode *new_parent, const struct dentry *new_dentry)
+int pkm_kacs_stratafs_begin_supersede_rename(const struct inode *old_parent,
+					     const struct dentry *old_dentry,
+					     const struct inode *new_parent,
+					     const struct dentry *new_dentry)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -224,13 +225,13 @@ int pkm_kacs_stratafs_begin_supersede_rename(
 	task_sec->stratafs_supersede_new_parent = new_parent;
 	task_sec->stratafs_supersede_new_dentry = new_dentry;
 	task_sec->stratafs_supersede_new_inode = d_inode(new_dentry);
-	task_sec->stratafs_supersede_phase =
-		PKM_KACS_STRATAFS_SUPERSEDE_RENAME;
+	task_sec->stratafs_supersede_phase = PKM_KACS_STRATAFS_SUPERSEDE_RENAME;
 	return 0;
 }
 
-static bool pkm_kacs_stratafs_supersede_allows_unlink(
-	const struct inode *parent, const struct dentry *target)
+static bool
+pkm_kacs_stratafs_supersede_allows_unlink(const struct inode *parent,
+					  const struct dentry *target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -242,7 +243,7 @@ static bool pkm_kacs_stratafs_supersede_allows_unlink(
 	       task_sec->stratafs_supersede_state ==
 		       PKM_KACS_STRATAFS_SUPERSEDE_BOUND &&
 	       task_sec->stratafs_supersede_subject ==
-			       pkm_kacs_current_effective_token_ptr() &&
+		       pkm_kacs_current_effective_token_ptr() &&
 	       task_sec->stratafs_supersede_old_parent == parent &&
 	       task_sec->stratafs_supersede_old_dentry == target &&
 	       task_sec->stratafs_supersede_old_inode == d_inode(target);
@@ -262,7 +263,7 @@ static bool pkm_kacs_stratafs_supersede_allows_rename(
 	       task_sec->stratafs_supersede_state ==
 		       PKM_KACS_STRATAFS_SUPERSEDE_BOUND &&
 	       task_sec->stratafs_supersede_subject ==
-			       pkm_kacs_current_effective_token_ptr() &&
+		       pkm_kacs_current_effective_token_ptr() &&
 	       task_sec->stratafs_supersede_old_parent == old_parent &&
 	       task_sec->stratafs_supersede_old_dentry == old_dentry &&
 	       task_sec->stratafs_supersede_old_inode == d_inode(old_dentry) &&
@@ -320,8 +321,8 @@ bool pkm_kacs_stratafs_created_cleanup_active(const struct dentry *outer)
 		       pkm_kacs_current_effective_token_ptr();
 }
 
-int pkm_kacs_stratafs_begin_created_cleanup(
-	const struct inode *parent, const struct dentry *target)
+int pkm_kacs_stratafs_begin_created_cleanup(const struct inode *parent,
+					    const struct dentry *target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -349,8 +350,9 @@ int pkm_kacs_stratafs_begin_created_cleanup(
 	return 0;
 }
 
-static bool pkm_kacs_stratafs_created_cleanup_allows(
-	const struct inode *parent, const struct dentry *target)
+static bool
+pkm_kacs_stratafs_created_cleanup_allows(const struct inode *parent,
+					 const struct dentry *target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -358,7 +360,7 @@ static bool pkm_kacs_stratafs_created_cleanup_allows(
 		return false;
 	task_sec = pkm_kacs_task(current);
 	return task_sec->stratafs_cleanup_subject ==
-			       pkm_kacs_current_effective_token_ptr() &&
+		       pkm_kacs_current_effective_token_ptr() &&
 	       task_sec->stratafs_cleanup_parent == parent &&
 	       task_sec->stratafs_cleanup_dentry == target &&
 	       task_sec->stratafs_cleanup_inode == d_inode(target);
@@ -389,8 +391,9 @@ static bool pkm_kacs_inode_permission_is_traverse(struct inode *inode, int mask)
 	return true;
 }
 
-static bool pkm_kacs_inode_permission_is_pathname_socket_write(
-	struct inode *inode, int mask)
+static bool
+pkm_kacs_inode_permission_is_pathname_socket_write(struct inode *inode,
+						   int mask)
 {
 	int permission_mask = mask & ~MAY_NOT_BLOCK;
 
@@ -404,9 +407,10 @@ static bool pkm_kacs_inode_permission_is_pathname_socket_write(
 	return true;
 }
 
-static long pkm_kacs_authorize_inode_file_access_core(
-	const void *subject_token, struct inode *inode, struct dentry *dentry,
-	u32 desired_access)
+static long pkm_kacs_authorize_inode_file_access_core(const void *subject_token,
+						      struct inode *inode,
+						      struct dentry *dentry,
+						      u32 desired_access)
 {
 	struct vfsmount mnt = {};
 	struct dentry *alias = NULL;
@@ -429,8 +433,7 @@ static long pkm_kacs_authorize_inode_file_access_core(
 	if (!inode->i_security) {
 		pr_debug(
 			"kacs: deny inode_file_access NO_SEC ino=%lu sb_magic=0x%lx desired=0x%x comm=%s pid=%d\n",
-			inode->i_ino,
-			(unsigned long)inode->i_sb->s_magic,
+			inode->i_ino, (unsigned long)inode->i_sb->s_magic,
 			desired_access, current->comm, current->pid);
 		trace_kacs_inode_file_access(inode, desired_access, -EACCES,
 					     KACS_TR_NO_ISEC);
@@ -474,9 +477,10 @@ static long pkm_kacs_authorize_inode_file_access_core(
 	return ret;
 }
 
-long pkm_kacs_check_inode_permission_live_for_subject(
-	const void *subject_token, struct inode *inode, struct dentry *dentry,
-	int mask)
+long pkm_kacs_check_inode_permission_live_for_subject(const void *subject_token,
+						      struct inode *inode,
+						      struct dentry *dentry,
+						      int mask)
 {
 	bool explicit_chdir;
 	u32 desired_access = 0;
@@ -529,9 +533,8 @@ long pkm_kacs_check_inode_permission_live_for_subject(
 
 bool pkm_kacs_inode_on_unmanaged_mount(const struct inode *inode)
 {
-	return inode &&
-	       pkm_kacs_superblock_mount_policy(inode->i_sb) ==
-		       KACS_MOUNT_POLICY_UNMANAGED;
+	return inode && pkm_kacs_superblock_mount_policy(inode->i_sb) ==
+				KACS_MOUNT_POLICY_UNMANAGED;
 }
 
 bool pkm_kacs_inode_on_sysfs_mount(const struct inode *inode)
@@ -539,8 +542,9 @@ bool pkm_kacs_inode_on_sysfs_mount(const struct inode *inode)
 	return inode && inode->i_sb && inode->i_sb->s_magic == SYSFS_MAGIC;
 }
 
-static struct dentry *pkm_kacs_parent_dentry_for_inode(
-	struct inode *parent_inode, struct dentry *child_dentry)
+static struct dentry *
+pkm_kacs_parent_dentry_for_inode(struct inode *parent_inode,
+				 struct dentry *child_dentry)
 {
 	struct dentry *parent_dentry;
 
@@ -565,8 +569,7 @@ long pkm_kacs_authorize_inode_namespace_access_for_subject(
 	if (!subject_token) {
 		pr_debug(
 			"kacs: deny ns_access NO_TOKEN ino=%lu sb_magic=0x%lx desired=0x%x comm=%s pid=%d\n",
-			inode->i_ino,
-			(unsigned long)inode->i_sb->s_magic,
+			inode->i_ino, (unsigned long)inode->i_sb->s_magic,
 			desired_access, current->comm, current->pid);
 		return -EACCES;
 	}
@@ -588,12 +591,15 @@ static long pkm_kacs_authorize_parent_namespace_access_for_subject(
 	if (current && current->security) {
 		task_sec = pkm_kacs_task(current);
 		if (task_sec->stratafs_create_state == 2) {
-			preauthorized =
-				task_sec->stratafs_create_subject == subject_token &&
-				task_sec->stratafs_create_parent == parent_inode &&
-				(!task_sec->stratafs_create_dentry ||
-				 task_sec->stratafs_create_dentry == child_dentry) &&
-				task_sec->stratafs_create_access == desired_access;
+			preauthorized = task_sec->stratafs_create_subject ==
+						subject_token &&
+					task_sec->stratafs_create_parent ==
+						parent_inode &&
+					(!task_sec->stratafs_create_dentry ||
+					 task_sec->stratafs_create_dentry ==
+						 child_dentry) &&
+					task_sec->stratafs_create_access ==
+						desired_access;
 			pkm_kacs_stratafs_end_create_decision();
 			if (preauthorized)
 				return 0;
@@ -602,8 +608,8 @@ static long pkm_kacs_authorize_parent_namespace_access_for_subject(
 	if (pkm_kacs_inode_on_unmanaged_mount(parent_inode))
 		return 0;
 
-	parent_dentry = pkm_kacs_parent_dentry_for_inode(parent_inode,
-							  child_dentry);
+	parent_dentry =
+		pkm_kacs_parent_dentry_for_inode(parent_inode, child_dentry);
 	return pkm_kacs_authorize_inode_namespace_access_for_subject(
 		subject_token, parent_inode, parent_dentry, desired_access);
 }
@@ -663,9 +669,10 @@ long pkm_kacs_authorize_namespace_symlink_for_subject(
 		subject_token, KACS_SE_CREATE_SYMBOLIC_LINK_PRIVILEGE);
 }
 
-long pkm_kacs_authorize_namespace_link_for_subject(
-	const void *subject_token, struct dentry *old_dentry, struct inode *dir,
-	struct dentry *new_dentry)
+long pkm_kacs_authorize_namespace_link_for_subject(const void *subject_token,
+						   struct dentry *old_dentry,
+						   struct inode *dir,
+						   struct dentry *new_dentry)
 {
 	struct inode *source_inode;
 	struct pkm_kacs_task_security *task_sec;
@@ -677,13 +684,16 @@ long pkm_kacs_authorize_namespace_link_for_subject(
 
 	if (current && current->security) {
 		task_sec = pkm_kacs_task(current);
-		unnamed_link = task_sec->stratafs_create_state == 2 &&
+		unnamed_link =
+			task_sec->stratafs_create_state == 2 &&
 			task_sec->stratafs_create_subject == subject_token &&
 			task_sec->stratafs_create_parent == dir &&
 			task_sec->stratafs_create_dentry == new_dentry &&
-			task_sec->stratafs_create_access == KACS_FILE_ADD_FILE &&
+			task_sec->stratafs_create_access ==
+				KACS_FILE_ADD_FILE &&
 			task_sec->stratafs_create_link_source == old_dentry &&
-			task_sec->stratafs_create_link_inode == d_inode(old_dentry);
+			task_sec->stratafs_create_link_inode ==
+				d_inode(old_dentry);
 	}
 	ret = pkm_kacs_authorize_parent_namespace_access_for_subject(
 		subject_token, dir, new_dentry, KACS_FILE_ADD_FILE);
@@ -705,10 +715,11 @@ long pkm_kacs_authorize_namespace_link_for_subject(
 	return ret;
 }
 
-long pkm_kacs_authorize_namespace_rename_for_subject(
-	const void *subject_token, struct inode *old_dir,
-	struct dentry *old_dentry, struct inode *new_dir,
-	struct dentry *new_dentry)
+long pkm_kacs_authorize_namespace_rename_for_subject(const void *subject_token,
+						     struct inode *old_dir,
+						     struct dentry *old_dentry,
+						     struct inode *new_dir,
+						     struct dentry *new_dentry)
 {
 	struct inode *source_inode;
 	u32 add_access;
@@ -733,8 +744,8 @@ long pkm_kacs_authorize_namespace_rename_for_subject(
 			     KACS_FILE_ADD_FILE;
 	ret = pkm_kacs_authorize_parent_namespace_access_for_subject(
 		subject_token, new_dir, new_dentry, add_access);
-	trace_kacs_inode_rename(new_dir, source_inode, add_access,
-				KACS_NS_DEST, ret);
+	trace_kacs_inode_rename(new_dir, source_inode, add_access, KACS_NS_DEST,
+				ret);
 	if (ret)
 		return ret;
 
@@ -797,8 +808,7 @@ out:
 int pkm_kacs_inode_rename_flags(struct inode *old_dir,
 				struct dentry *old_dentry,
 				struct inode *new_dir,
-				struct dentry *new_dentry,
-				unsigned int flags)
+				struct dentry *new_dentry, unsigned int flags)
 {
 	if (old_dir && old_dir->i_sb &&
 	    old_dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
@@ -847,8 +857,7 @@ int pkm_kacs_inode_create(struct inode *dir, struct dentry *dentry,
 	return (int)ret;
 }
 
-int pkm_kacs_inode_mkdir(struct inode *dir, struct dentry *dentry,
-			 umode_t mode)
+int pkm_kacs_inode_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	long ret;
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
@@ -860,12 +869,13 @@ int pkm_kacs_inode_mkdir(struct inode *dir, struct dentry *dentry,
 	ret = pkm_kacs_authorize_namespace_create_for_subject(
 		pkm_kacs_current_effective_token_ptr(), dir, dentry, true);
 	trace_kacs_inode_mkdir(dir, dentry ? d_inode(dentry) : NULL,
-			       KACS_FILE_ADD_SUBDIRECTORY, KACS_NS_PRIMARY, ret);
+			       KACS_FILE_ADD_SUBDIRECTORY, KACS_NS_PRIMARY,
+			       ret);
 	return (int)ret;
 }
 
-int pkm_kacs_inode_mknod(struct inode *dir, struct dentry *dentry,
-			 umode_t mode, dev_t dev)
+int pkm_kacs_inode_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
+			 dev_t dev)
 {
 	long ret;
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
@@ -927,7 +937,8 @@ int pkm_kacs_inode_unlink(struct inode *dir, struct dentry *dentry)
 	if (pkm_kacs_copy_up_allows_unlink(dir, dentry, false))
 		return 0;
 	if (current && current->security) {
-		struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
+		struct pkm_kacs_task_security *task_sec =
+			pkm_kacs_task(current);
 		const struct file *file = task_sec->delete_on_close_file;
 
 		if (file &&
@@ -963,16 +974,14 @@ int pkm_kacs_inode_rmdir(struct inode *dir, struct dentry *dentry)
 	return (int)ret;
 }
 
-int pkm_kacs_inode_rename(struct inode *old_dir,
-			  struct dentry *old_dentry,
-			  struct inode *new_dir,
-			  struct dentry *new_dentry)
+int pkm_kacs_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
+			  struct inode *new_dir, struct dentry *new_dentry)
 {
 	if (old_dir && old_dir->i_sb &&
 	    old_dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
-	if (pkm_kacs_stratafs_supersede_allows_rename(
-		    old_dir, old_dentry, new_dir, new_dentry))
+	if (pkm_kacs_stratafs_supersede_allows_rename(old_dir, old_dentry,
+						      new_dir, new_dentry))
 		return 0;
 	if (pkm_kacs_copy_up_allows_rename(old_dir, old_dentry, new_dir,
 					   new_dentry))
@@ -1223,8 +1232,7 @@ int pkm_kacs_dentry_create_files_as(struct dentry *dentry, int mode,
 }
 
 int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
-				 const struct qstr *qstr,
-				 struct xattr *xattrs,
+				 const struct qstr *qstr, struct xattr *xattrs,
 				 int *xattr_count)
 {
 	struct xattr *xattr;
@@ -1245,8 +1253,8 @@ int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
 		return -EOPNOTSUPP;
 	if (pkm_kacs_inode_is_ntfs(inode))
 		return -EOPNOTSUPP;
-	copy_up_match = pkm_kacs_copy_up_init_security(
-		inode, dir, qstr, &sd_bytes, &sd_len);
+	copy_up_match = pkm_kacs_copy_up_init_security(inode, dir, qstr,
+						       &sd_bytes, &sd_len);
 	if (copy_up_match < 0)
 		return copy_up_match;
 	if (copy_up_match > 0) {
@@ -1264,16 +1272,15 @@ int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
 		 */
 		cred_sd = true;
 	} else if (!pkm_kacs_current_native_create_request_matches(
-		    dir, S_ISDIR(inode->i_mode), &sd_bytes, &sd_len)) {
+			   dir, S_ISDIR(inode->i_mode), &sd_bytes, &sd_len)) {
 		subject_token = pkm_kacs_current_effective_token_ptr();
 		if (!subject_token) {
 			pr_debug(
 				"kacs: deny inode_init_security NO_TOKEN dir_ino=%lu sb_magic=0x%lx mode=0%o comm=%s pid=%d\n",
-				dir->i_ino,
-				(unsigned long)dir->i_sb->s_magic,
+				dir->i_ino, (unsigned long)dir->i_sb->s_magic,
 				inode->i_mode, current->comm, current->pid);
-			trace_kacs_inode_init_security(dir, inode, 0,
-						       KACS_NS_PRIMARY, -EACCES);
+			trace_kacs_inode_init_security(
+				dir, inode, 0, KACS_NS_PRIMARY, -EACCES);
 			return -EACCES;
 		}
 		ret = pkm_kacs_build_legacy_created_file_sd_for_subject(
@@ -1282,9 +1289,9 @@ int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
 		if (ret) {
 			pr_debug(
 				"kacs: deny inode_init_security BUILD_FAIL dir_ino=%lu sb_magic=0x%lx mode=0%o comm=%s pid=%d ret=%ld\n",
-				dir->i_ino,
-				(unsigned long)dir->i_sb->s_magic,
-				inode->i_mode, current->comm, current->pid, ret);
+				dir->i_ino, (unsigned long)dir->i_sb->s_magic,
+				inode->i_mode, current->comm, current->pid,
+				ret);
 			trace_kacs_inode_init_security(dir, inode, 0,
 						       KACS_NS_PRIMARY, ret);
 			return ret;
@@ -1295,8 +1302,7 @@ int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
 		if (allocated_sd)
 			pr_debug(
 				"kacs: deny inode_init_security NO_SD_BYTES dir_ino=%lu sb_magic=0x%lx mode=0%o comm=%s pid=%d\n",
-				dir->i_ino,
-				(unsigned long)dir->i_sb->s_magic,
+				dir->i_ino, (unsigned long)dir->i_sb->s_magic,
 				inode->i_mode, current->comm, current->pid);
 		trace_kacs_inode_init_security(dir, inode, 0, KACS_NS_PRIMARY,
 					       allocated_sd ? -EACCES :
@@ -1349,9 +1355,11 @@ int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-static void pkm_kacs_kunit_init_namespace_dentry(
-	struct dentry *dentry, struct super_block *sb, struct inode *inode,
-	struct dentry *parent, const char *name)
+static void pkm_kacs_kunit_init_namespace_dentry(struct dentry *dentry,
+						 struct super_block *sb,
+						 struct inode *inode,
+						 struct dentry *parent,
+						 const char *name)
 {
 	struct qstr *qstr;
 
@@ -1414,69 +1422,75 @@ static void pkm_kunit_stratafs_supersede_scope_is_exact(struct kunit *test)
 	KUNIT_ASSERT_EQ(test, task_sec->stratafs_supersede_state, (u8)0);
 	pkm_kacs_kunit_init_namespace_dentry(
 		&outer_parent, &outer_sb, &outer_parent_inode, NULL, "outer");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&outer_source, &outer_sb, &outer_source_inode, &outer_parent,
-		"source");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&outer_target, &outer_sb, &outer_target_inode, &outer_parent,
-		"target");
+	pkm_kacs_kunit_init_namespace_dentry(&outer_source, &outer_sb,
+					     &outer_source_inode, &outer_parent,
+					     "source");
+	pkm_kacs_kunit_init_namespace_dentry(&outer_target, &outer_sb,
+					     &outer_target_inode, &outer_parent,
+					     "target");
 	pkm_kacs_kunit_init_namespace_dentry(
 		&lower_parent, &lower_sb, &lower_parent_inode, NULL, "lower");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&lower_source, &lower_sb, &lower_source_inode, &lower_parent,
-		"stage");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&lower_target, &lower_sb, &lower_target_inode, &lower_parent,
-		"victim");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&lower_destination, &lower_sb, NULL, &lower_parent, "published");
+	pkm_kacs_kunit_init_namespace_dentry(&lower_source, &lower_sb,
+					     &lower_source_inode, &lower_parent,
+					     "stage");
+	pkm_kacs_kunit_init_namespace_dentry(&lower_target, &lower_sb,
+					     &lower_target_inode, &lower_parent,
+					     "victim");
+	pkm_kacs_kunit_init_namespace_dentry(&lower_destination, &lower_sb,
+					     NULL, &lower_parent, "published");
 
+	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_begin_supersede(&outer_target),
+			0);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_stratafs_begin_supersede(&outer_target),
+			-EBUSY);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_begin_supersede(&outer_target), 0);
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_begin_supersede(&outer_target), -EBUSY);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_bind_supersede_source(
-			&outer_target, &outer_source), 0);
+			pkm_kacs_stratafs_bind_supersede_source(&outer_target,
+								&outer_source),
+			0);
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_stratafs_supersede_active(
-		&outer_source, &outer_target));
+					&outer_source, &outer_target));
 
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_begin_supersede_unlink(
-			&lower_parent_inode, &lower_target), 0);
+			pkm_kacs_stratafs_begin_supersede_unlink(
+				&lower_parent_inode, &lower_target),
+			0);
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_stratafs_supersede_allows_unlink(
-		&lower_parent_inode, &lower_target));
+					&lower_parent_inode, &lower_target));
 	lower_target.d_inode = &replacement_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_supersede_allows_unlink(
-		&lower_parent_inode, &lower_target));
+					 &lower_parent_inode, &lower_target));
 	lower_target.d_inode = &lower_target_inode;
 	subject = task_sec->stratafs_supersede_subject;
 	task_sec->stratafs_supersede_subject = &replacement_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_supersede_allows_unlink(
-		&lower_parent_inode, &lower_target));
+					 &lower_parent_inode, &lower_target));
 	task_sec->stratafs_supersede_subject = subject;
 	pkm_kacs_stratafs_end_supersede_phase();
 
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_begin_supersede_rename(
-			&lower_parent_inode, &lower_source,
-			&lower_parent_inode, &lower_destination), 0);
-	KUNIT_EXPECT_TRUE(test, pkm_kacs_stratafs_supersede_allows_rename(
-		&lower_parent_inode, &lower_source,
-		&lower_parent_inode, &lower_destination));
+			pkm_kacs_stratafs_begin_supersede_rename(
+				&lower_parent_inode, &lower_source,
+				&lower_parent_inode, &lower_destination),
+			0);
+	KUNIT_EXPECT_TRUE(test,
+			  pkm_kacs_stratafs_supersede_allows_rename(
+				  &lower_parent_inode, &lower_source,
+				  &lower_parent_inode, &lower_destination));
 	lower_destination.d_inode = &replacement_inode;
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_supersede_allows_rename(
-		&lower_parent_inode, &lower_source,
-		&lower_parent_inode, &lower_destination));
+	KUNIT_EXPECT_FALSE(test,
+			   pkm_kacs_stratafs_supersede_allows_rename(
+				   &lower_parent_inode, &lower_source,
+				   &lower_parent_inode, &lower_destination));
 	lower_destination.d_inode = NULL;
 	lower_source.d_inode = &replacement_inode;
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_supersede_allows_rename(
-		&lower_parent_inode, &lower_source,
-		&lower_parent_inode, &lower_destination));
+	KUNIT_EXPECT_FALSE(test,
+			   pkm_kacs_stratafs_supersede_allows_rename(
+				   &lower_parent_inode, &lower_source,
+				   &lower_parent_inode, &lower_destination));
 	lower_source.d_inode = &lower_source_inode;
 	pkm_kacs_stratafs_end_supersede();
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_supersede_active(
-		&outer_source, &outer_target));
+					 &outer_source, &outer_target));
 	KUNIT_EXPECT_EQ(test, task_sec->stratafs_supersede_state, (u8)0);
 }
 
@@ -1502,42 +1516,42 @@ static void pkm_kunit_stratafs_cleanup_scope_is_exact(struct kunit *test)
 
 	KUNIT_ASSERT_NOT_NULL(test, current->security);
 	KUNIT_ASSERT_NULL(test, task_sec->stratafs_cleanup_subject);
-	pkm_kacs_kunit_init_namespace_dentry(
-		&outer, &outer_sb, &outer_inode, NULL, "outer");
+	pkm_kacs_kunit_init_namespace_dentry(&outer, &outer_sb, &outer_inode,
+					     NULL, "outer");
 	pkm_kacs_kunit_init_namespace_dentry(
 		&lower_parent, &lower_sb, &lower_parent_inode, NULL, "parent");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&lower, &lower_sb, &lower_inode, &lower_parent, "created");
+	pkm_kacs_kunit_init_namespace_dentry(&lower, &lower_sb, &lower_inode,
+					     &lower_parent, "created");
 
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_arm_created_cleanup(&outer), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_arm_created_cleanup(&outer), 0);
 	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_stratafs_created_cleanup_active(&outer));
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_arm_created_cleanup(&outer), -EBUSY);
+			  pkm_kacs_stratafs_created_cleanup_active(&outer));
+	KUNIT_EXPECT_EQ(test, pkm_kacs_stratafs_arm_created_cleanup(&outer),
+			-EBUSY);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_begin_created_cleanup(
-			&lower_parent_inode, &lower), 0);
+			pkm_kacs_stratafs_begin_created_cleanup(
+				&lower_parent_inode, &lower),
+			0);
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_stratafs_created_cleanup_allows(
-		&lower_parent_inode, &lower));
+					&lower_parent_inode, &lower));
 	lower.d_inode = &replacement_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_created_cleanup_allows(
-		&lower_parent_inode, &lower));
+					 &lower_parent_inode, &lower));
 	lower.d_inode = &lower_inode;
 	subject = task_sec->stratafs_cleanup_subject;
 	task_sec->stratafs_cleanup_subject = &replacement_inode;
 	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_stratafs_created_cleanup_active(&outer));
+			   pkm_kacs_stratafs_created_cleanup_active(&outer));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_stratafs_created_cleanup_allows(
-		&lower_parent_inode, &lower));
+					 &lower_parent_inode, &lower));
 	task_sec->stratafs_cleanup_subject = subject;
 	pkm_kacs_stratafs_end_created_cleanup();
 	KUNIT_EXPECT_NULL(test, task_sec->stratafs_cleanup_subject);
 	KUNIT_EXPECT_NULL(test, task_sec->stratafs_cleanup_inode);
 }
 
-static void pkm_kunit_stratafs_create_preauthorization_is_one_shot(
-	struct kunit *test)
+static void
+pkm_kunit_stratafs_create_preauthorization_is_one_shot(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct super_block sb = { .s_magic = TMPFS_MAGIC };
@@ -1550,10 +1564,10 @@ static void pkm_kunit_stratafs_create_preauthorization_is_one_shot(
 
 	KUNIT_ASSERT_NOT_NULL(test, current->security);
 	KUNIT_ASSERT_EQ(test, task_sec->stratafs_create_state, (u8)0);
-	pkm_kacs_kunit_init_namespace_dentry(
-		&parent, &sb, &parent_inode, NULL, "parent");
-	pkm_kacs_kunit_init_namespace_dentry(
-		&target, &sb, NULL, &parent, "target");
+	pkm_kacs_kunit_init_namespace_dentry(&parent, &sb, &parent_inode, NULL,
+					     "parent");
+	pkm_kacs_kunit_init_namespace_dentry(&target, &sb, NULL, &parent,
+					     "target");
 	mnt.mnt_root = &parent;
 	mnt.mnt_idmap = &nop_mnt_idmap;
 	authority = (struct path){ .mnt = &mnt, .dentry = &parent };
@@ -1561,13 +1575,18 @@ static void pkm_kunit_stratafs_create_preauthorization_is_one_shot(
 	KUNIT_ASSERT_NOT_NULL(test, subject);
 
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_set_native_create_decision(
-			&authority, KACS_FILE_ADD_FILE), 0);
+			pkm_kacs_stratafs_set_native_create_decision(
+				&authority, KACS_FILE_ADD_FILE),
+			0);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_bind_create_decision(&parent_inode, &target), 0);
+			pkm_kacs_stratafs_bind_create_decision(&parent_inode,
+							       &target),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_authorize_parent_namespace_access_for_subject(
-			subject, &parent_inode, &target, KACS_FILE_ADD_FILE), 0L);
+			pkm_kacs_authorize_parent_namespace_access_for_subject(
+				subject, &parent_inode, &target,
+				KACS_FILE_ADD_FILE),
+			0L);
 	KUNIT_EXPECT_EQ(test, task_sec->stratafs_create_state, (u8)0);
 	KUNIT_EXPECT_NULL(test, task_sec->stratafs_create_subject);
 }

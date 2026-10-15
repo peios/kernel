@@ -1,0 +1,67 @@
+# kernel — the bootable Peios kernel: the monolithic bzImage plus the matching
+# config and System.map. Monolithic (all drivers built in) is a temporary
+# early-development simplification, not the production shape; while it holds there
+# is no kernel-core / kernel-modules split. Carved straight from build.kernel's
+# output; files named by the kernel release (uname), package by the Peios version.
+
+[package]
+name = "dev.peios.kernel"
+description = "Peios Kernel - bootable image (based on Linux 7.0.9)"
+
+# The Linux version this kernel is built from, as a qualified versioned virtual
+# name —
+# the same treatment kernel-headers gives its UAPI, and for the same reason:
+# the package version is pkm's SemVer against the PKM UAPI / KACS ABI, so it
+# cannot answer "which Linux is this?". Anything gated on a Linux feature or
+# syscall asks for dev.peios.linux-kernel instead.
+#
+# MUST equal [env] KERNEL_VERSION in the recipe, without the leading "v";
+# build.kernel asserts it.
+[provides]
+"dev.peios.linux-kernel" = "7.0.9"
+
+# The kernel image ships beside its own modules, under the release-named
+# directory: with UKIs nothing boots from a firmware-visible path, so the
+# kernel is ordinary package content rather than something /boot must hold.
+# Filenames keep the release suffix, so a tree carrying two kernels stays
+# self-describing and the `vmlinuz-*` globs that locate it still work.
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.kernel/COPYING"
+"kernel:arch/x86/boot/bzImage" = "usr/lib/modules/7.0.9-peios-{{version}}/vmlinuz-7.0.9-peios-{{version}}"
+"kernel:System.map"            = "usr/lib/modules/7.0.9-peios-{{version}}/System.map-7.0.9-peios-{{version}}"
+"kernel:.config"               = "usr/lib/modules/7.0.9-peios-{{version}}/config-7.0.9-peios-{{version}}"
+# Registry seed for port reservations (<pkm/net.h>) — inert until an image
+# names it in [registry] autoapply. Regenerate with
+# tools/gen-port-reservations-seed.py.
+"@source:regim/port-reservations.reg" = "usr/share/regim/port-reservations.reg"
+# PNP dev-baseline packet policy (PEI-598) — applying it flips NTFE
+# enforcement on at boot (generation 1). Inert until an image names it in
+# [registry] autoapply.
+"@source:regim/pnp-rules.reg" = "usr/share/regim/pnp-rules.reg"
+# The event emission policy root, Machine\Generic\Events (PGSS §6.9,
+# PEI-1281): the key, with no Enabled (the tiers decide), carrying a SACL
+# that audits writes to the policy. Needs a reg whose batch document knows
+# a key's "descriptor" (peiosutils libreg). Inert until an image names it
+# in [registry] autoapply; until then every emitter decides by tier and
+# the kernel keeps its machine-root fallback watch armed for the key.
+"@source:regim/event-policy.reg" = "usr/share/regim/event-policy.reg"
+# regman documentation for the five registry roots the kernel reads
+# (lcs/source_bootstrap.c). The seeds above put values in the registry; these
+# are what `regman <path>` answers with when somebody asks what one means.
+# One fragment per subsystem, each named for its provider. See regman/README.md.
+"@source:regman/lcs.regman"   = "usr/share/regman/lcs.regman"
+"@source:regman/kmes.regman"  = "usr/share/regman/kmes.regman"
+"@source:regman/net.regman"   = "usr/share/regman/net.regman"
+"@source:regman/pnp.regman"   = "usr/share/regman/pnp.regman"
+# evman documentation for every event the kernel writes and every field it
+# defines (PGSS §6.10). kernel.evman is the platform fragment, defining the
+# header fields and the generic roots every other fragment builds on; the
+# rest are one per subsystem, named for the root they own. The catalogue is
+# the definition of what may be emitted, not only its manual. See
+# evman/README.md.
+"@source:evman/kernel.evman"   = "usr/share/evman/kernel.evman"
+"@source:evman/kacs.evman"     = "usr/share/evman/kacs.evman"
+"@source:evman/kmes.evman"     = "usr/share/evman/kmes.evman"
+"@source:evman/lcs.evman"      = "usr/share/evman/lcs.evman"
+"@source:evman/ntfe.evman"     = "usr/share/evman/ntfe.evman"
+"@source:evman/stratafs.evman" = "usr/share/evman/stratafs.evman"

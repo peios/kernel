@@ -48,12 +48,12 @@
 #include "ntfe.h"
 
 /* Registry value type codes (uapi/pkm/lcs.h). */
-#define NTFE_REG_SZ			1U
-#define NTFE_REG_EXPAND_SZ		2U
-#define NTFE_REG_DWORD			4U
-#define NTFE_REG_DWORD_BIG_ENDIAN	5U
-#define NTFE_REG_MULTI_SZ		7U
-#define NTFE_REG_QWORD			11U
+#define NTFE_REG_SZ 1U
+#define NTFE_REG_EXPAND_SZ 2U
+#define NTFE_REG_DWORD 4U
+#define NTFE_REG_DWORD_BIG_ENDIAN 5U
+#define NTFE_REG_MULTI_SZ 7U
+#define NTFE_REG_QWORD 11U
 
 struct peios_ntfe_walk {
 	u32 source_id;
@@ -185,11 +185,11 @@ static long ntfe_refuse_feed(struct peios_ntfe_walk *walk, long err)
 			   err == -ENOMEM ? "out-of-memory" : "not-utf8", true);
 }
 
-#define NTFE_FNV_OFFSET	0xcbf29ce484222325ULL
-#define NTFE_FNV_PRIME	0x100000001b3ULL
+#define NTFE_FNV_OFFSET 0xcbf29ce484222325ULL
+#define NTFE_FNV_PRIME 0x100000001b3ULL
 
 static void ntfe_digest_bytes(struct peios_ntfe_walk *walk, const void *data,
-			     size_t len)
+			      size_t len)
 {
 	const u8 *p = data;
 	u64 h = walk->digest;
@@ -209,10 +209,9 @@ static void ntfe_digest_u32(struct peios_ntfe_walk *walk, u32 v)
 	ntfe_digest_bytes(walk, &v, sizeof(v));
 }
 
-long peios_ntfe_network_root_discover_from_machine_hive(u32 source_id,
-						       const u8 machine_root_guid[16],
-						       bool *present_out,
-						       u8 network_guid_out[16])
+long peios_ntfe_network_root_discover_from_machine_hive(
+	u32 source_id, const u8 machine_root_guid[16], bool *present_out,
+	u8 network_guid_out[16])
 {
 	/* Absolute path: the leading hive component ("Machine") is resolved
 	 * locally against the hive root, not round-tripped.
@@ -222,8 +221,8 @@ long peios_ntfe_network_root_discover_from_machine_hive(u32 source_id,
 		{ .name = "System", .name_len = sizeof("System") - 1 },
 		{ .name = "Network", .name_len = sizeof("Network") - 1 },
 	};
-	struct pkm_lcs_resolved_key_path key = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_resolved_key_path key = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	long ret;
 
 	if (present_out)
@@ -267,7 +266,7 @@ static u32 ntfe_str_trim(const u8 *data, u32 len)
 }
 
 static long ntfe_feed_value(struct peios_ntfe_walk *walk, const char *name,
-			   u32 name_len, u32 type, const u8 *data, u32 len)
+			    u32 name_len, u32 type, const u8 *data, u32 len)
 {
 	ntfe_digest_bytes(walk, name, name_len);
 	ntfe_digest_u32(walk, type);
@@ -275,36 +274,40 @@ static long ntfe_feed_value(struct peios_ntfe_walk *walk, const char *name,
 	switch (type) {
 	case NTFE_REG_SZ:
 	case NTFE_REG_EXPAND_SZ:
-		return ntfe_refuse_feed(walk, ntfe_rust_builder_value_str(
-			walk->builder, name, name_len, data,
-			ntfe_str_trim(data, len)));
+		return ntfe_refuse_feed(
+			walk, ntfe_rust_builder_value_str(
+				      walk->builder, name, name_len, data,
+				      ntfe_str_trim(data, len)));
 	case NTFE_REG_DWORD:
 		if (len != 4)
 			return ntfe_refuse(walk, -EINVAL, "bad-value-length",
 					   true);
-		return ntfe_refuse_feed(walk, ntfe_rust_builder_value_int(
-			walk->builder, name, name_len,
-			get_unaligned_le32(data)));
+		return ntfe_refuse_feed(walk,
+					ntfe_rust_builder_value_int(
+						walk->builder, name, name_len,
+						get_unaligned_le32(data)));
 	case NTFE_REG_DWORD_BIG_ENDIAN:
 		if (len != 4)
 			return ntfe_refuse(walk, -EINVAL, "bad-value-length",
 					   true);
-		return ntfe_refuse_feed(walk, ntfe_rust_builder_value_int(
-			walk->builder, name, name_len,
-			get_unaligned_be32(data)));
+		return ntfe_refuse_feed(walk,
+					ntfe_rust_builder_value_int(
+						walk->builder, name, name_len,
+						get_unaligned_be32(data)));
 	case NTFE_REG_QWORD:
 		if (len != 8)
 			return ntfe_refuse(walk, -EINVAL, "bad-value-length",
 					   true);
-		return ntfe_refuse_feed(walk, ntfe_rust_builder_value_int(
-			walk->builder, name, name_len,
-			(s64)get_unaligned_le64(data)));
+		return ntfe_refuse_feed(walk,
+					ntfe_rust_builder_value_int(
+						walk->builder, name, name_len,
+						(s64)get_unaligned_le64(data)));
 	case NTFE_REG_MULTI_SZ: {
 		u32 start = 0, i;
 		long ret;
 
 		ret = ntfe_rust_builder_value_list_begin(walk->builder, name,
-							name_len);
+							 name_len);
 		if (ret)
 			return ntfe_refuse_feed(walk, ret);
 		len = ntfe_str_trim(data, len);
@@ -322,8 +325,8 @@ static long ntfe_feed_value(struct peios_ntfe_walk *walk, const char *name,
 				start = i + 1;
 			}
 		}
-		return ntfe_refuse_feed(walk,
-			ntfe_rust_builder_value_list_end(walk->builder));
+		return ntfe_refuse_feed(
+			walk, ntfe_rust_builder_value_list_end(walk->builder));
 	}
 	default:
 		/*
@@ -336,23 +339,23 @@ static long ntfe_feed_value(struct peios_ntfe_walk *walk, const char *name,
 }
 
 typedef long (*ntfe_value_cb)(struct peios_ntfe_walk *walk, void *ctx,
-			     const char *name, u32 name_len, u32 type,
-			     const u8 *data, u32 len);
+			      const char *name, u32 name_len, u32 type,
+			      const u8 *data, u32 len);
 
 static long ntfe_feed_value_cb(struct peios_ntfe_walk *walk, void *ctx,
-			      const char *name, u32 name_len, u32 type,
-			      const u8 *data, u32 len)
+			       const char *name, u32 name_len, u32 type,
+			       const u8 *data, u32 len)
 {
 	return ntfe_feed_value(walk, name, name_len, type, data, len);
 }
 
 /* One RSI_QUERY_VALUES round trip: this key's effective values -> cb. */
 static long ntfe_for_each_value(struct peios_ntfe_walk *walk, const u8 guid[16],
-			       ntfe_value_cb cb, void *ctx)
+				ntfe_value_cb cb, void *ctx)
 {
-	struct pkm_lcs_rsi_query_values_batch_result batch = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_rsi_query_values_batch_result batch = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
 	u8 *records = NULL;
 	size_t off = 0;
 	u32 i;
@@ -367,10 +370,9 @@ static long ntfe_for_each_value(struct peios_ntfe_walk *walk, const u8 guid[16],
 
 	/* Two passes: size, then materialize the layering-resolved batch. */
 	ret = pkm_lcs_rsi_materialize_query_values_batch_response(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits, NULL, 0,
-		&batch);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, NULL, 0, &batch);
 	if (ret)
 		goto out;
 	if (!batch.count)
@@ -382,10 +384,9 @@ static long ntfe_for_each_value(struct peios_ntfe_walk *walk, const u8 guid[16],
 		goto out;
 	}
 	ret = pkm_lcs_rsi_materialize_query_values_batch_response(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits, records,
-		batch.required_len, &batch);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, records, batch.required_len, &batch);
 	if (ret)
 		goto out;
 
@@ -445,11 +446,11 @@ static long ntfe_walk_values(struct peios_ntfe_walk *walk, const u8 guid[16])
  * everything fires — quietness ships as a visible value. Out-of-range
  * values are refused whole, like any other malformed policy.
  */
-#define NTFE_REPORTING_LEVEL_NAME	"CurrentReportingLevel"
+#define NTFE_REPORTING_LEVEL_NAME "CurrentReportingLevel"
 
 static long ntfe_reporting_level_cb(struct peios_ntfe_walk *walk, void *ctx,
-				   const char *name, u32 name_len, u32 type,
-				   const u8 *data, u32 len)
+				    const char *name, u32 name_len, u32 type,
+				    const u8 *data, u32 len)
 {
 	u8 *level = ctx;
 	s64 v;
@@ -486,11 +487,11 @@ bad:
 
 /* Walk one rule key: values, then children as exceptions, recursively. */
 static long ntfe_walk_rule(struct peios_ntfe_walk *walk, const u8 guid[16],
-			  const char *name, u32 name_len, u32 depth)
+			   const char *name, u32 name_len, u32 depth)
 {
-	struct pkm_lcs_rsi_enum_children_info_summary summary = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_rsi_enum_children_info_summary summary = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
 	u32 i, saved_path;
 	long ret;
 
@@ -507,7 +508,7 @@ static long ntfe_walk_rule(struct peios_ntfe_walk *walk, const u8 guid[16],
 	ntfe_digest_u32(walk, depth);
 	ntfe_digest_bytes(walk, name, name_len);
 	ret = ntfe_refuse_feed(walk, ntfe_rust_builder_rule_begin(
-		walk->builder, name, name_len));
+					     walk->builder, name, name_len));
 	if (ret)
 		goto out_path;
 	ret = ntfe_walk_values(walk, guid);
@@ -521,15 +522,14 @@ static long ntfe_walk_rule(struct peios_ntfe_walk *walk, const u8 guid[16],
 	if (ret)
 		goto out;
 	ret = pkm_lcs_rsi_materialize_enum_children_info_summary(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits,
-		&summary);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, &summary);
 	if (ret)
 		goto out;
 
 	for (i = 0; i < summary.subkey_count; i++) {
-		struct pkm_lcs_rsi_enum_subkey_result subkey = { };
+		struct pkm_lcs_rsi_enum_subkey_result subkey = {};
 		char *child_name;
 
 		ret = pkm_lcs_rsi_materialize_enum_subkey_response(
@@ -554,7 +554,7 @@ static long ntfe_walk_rule(struct peios_ntfe_walk *walk, const u8 guid[16],
 			goto out;
 		}
 		ret = ntfe_walk_rule(walk, subkey.child_guid, child_name,
-				    subkey.name_len, depth + 1);
+				     subkey.name_len, depth + 1);
 		kfree(child_name);
 		if (ret)
 			goto out;
@@ -569,18 +569,19 @@ out_path:
 	if (ret)
 		ntfe_refuse(walk, ret,
 			    ret == -ENOMEM ? "out-of-memory" :
-					     "registry-read-failed", true);
+					     "registry-read-failed",
+			    true);
 	walk->path_len = saved_path;
 	return ret;
 }
 
 /* Builds one layer's forest from its layer key, or NULL when absent. */
 static long ntfe_build_layer(struct peios_ntfe_walk *walk, bool present,
-			    const u8 guid[16], u8 layer, void **forest_out)
+			     const u8 guid[16], u8 layer, void **forest_out)
 {
-	struct pkm_lcs_rsi_enum_children_info_summary summary = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_rsi_enum_children_info_summary summary = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
 	u32 i;
 	long ret;
 
@@ -603,15 +604,14 @@ static long ntfe_build_layer(struct peios_ntfe_walk *walk, bool present,
 	if (ret)
 		goto out_builder;
 	ret = pkm_lcs_rsi_materialize_enum_children_info_summary(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits,
-		&summary);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, &summary);
 	if (ret)
 		goto out_builder;
 
 	for (i = 0; i < summary.subkey_count; i++) {
-		struct pkm_lcs_rsi_enum_subkey_result subkey = { };
+		struct pkm_lcs_rsi_enum_subkey_result subkey = {};
 		char *name;
 
 		ret = pkm_lcs_rsi_materialize_enum_subkey_response(
@@ -636,7 +636,7 @@ static long ntfe_build_layer(struct peios_ntfe_walk *walk, bool present,
 			goto out_builder;
 		}
 		ret = ntfe_walk_rule(walk, subkey.child_guid, name,
-				    subkey.name_len, 0);
+				     subkey.name_len, 0);
 		kfree(name);
 		if (ret)
 			goto out_builder;
@@ -664,15 +664,15 @@ out_builder:
  * for the callback; nested round trips take their own frames).
  */
 typedef long (*ntfe_child_cb)(struct peios_ntfe_walk *walk, void *ctx,
-			     const u8 child_guid[16], const u8 *name,
-			     u32 name_len);
+			      const u8 child_guid[16], const u8 *name,
+			      u32 name_len);
 
 static long ntfe_for_each_child(struct peios_ntfe_walk *walk, const u8 guid[16],
-			       ntfe_child_cb cb, void *ctx)
+				ntfe_child_cb cb, void *ctx)
 {
-	struct pkm_lcs_rsi_enum_children_info_summary summary = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_rsi_enum_children_info_summary summary = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
 	u32 i;
 	long ret;
 
@@ -683,14 +683,14 @@ static long ntfe_for_each_child(struct peios_ntfe_walk *walk, const u8 guid[16],
 	if (ret)
 		goto out;
 	ret = pkm_lcs_rsi_materialize_enum_children_info_summary(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits, &summary);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, &summary);
 	if (ret)
 		goto out;
 
 	for (i = 0; i < summary.subkey_count; i++) {
-		struct pkm_lcs_rsi_enum_subkey_result subkey = { };
+		struct pkm_lcs_rsi_enum_subkey_result subkey = {};
 
 		ret = pkm_lcs_rsi_materialize_enum_subkey_response(
 			frame.data, frame.len, response.request_id,
@@ -730,8 +730,8 @@ struct ntfe_rules_children {
 };
 
 static long ntfe_rules_child_cb(struct peios_ntfe_walk *walk, void *ctx,
-			       const u8 child_guid[16], const u8 *name,
-			       u32 name_len)
+				const u8 child_guid[16], const u8 *name,
+				u32 name_len)
 {
 	struct ntfe_rules_children *c = ctx;
 
@@ -756,9 +756,9 @@ static long ntfe_rules_child_cb(struct peios_ntfe_walk *walk, void *ctx,
  * the walk fed the builder exactly what the last published walk did.
  */
 static long ntfe_refresh_rules(struct peios_ntfe_walk *walk,
-			      const u8 rules_guid[16])
+			       const u8 rules_guid[16])
 {
-	struct ntfe_rules_children c = { };
+	struct ntfe_rules_children c = {};
 	void *packet_forest = NULL, *raw_forest = NULL, *flow_forest = NULL;
 	u8 reporting_level = 1;
 	long ret;
@@ -772,7 +772,7 @@ static long ntfe_refresh_rules(struct peios_ntfe_walk *walk,
 	walk->layer = PEIOS_NTFE_WHY_NO_LAYER;
 
 	ret = ntfe_for_each_value(walk, rules_guid, ntfe_reporting_level_cb,
-				 &reporting_level);
+				  &reporting_level);
 	if (ret)
 		goto out;
 	ntfe_digest_u32(walk, reporting_level);
@@ -783,17 +783,17 @@ static long ntfe_refresh_rules(struct peios_ntfe_walk *walk,
 		goto out;
 
 	ret = ntfe_build_layer(walk, c.packet_present, c.packet_guid,
-			      PEIOS_NTFE_LAYER_PACKET, &packet_forest);
+			       PEIOS_NTFE_LAYER_PACKET, &packet_forest);
 	if (ret)
 		goto out;
 	walk->rules_seen = 0;
 	ret = ntfe_build_layer(walk, c.raw_present, c.raw_guid,
-			      PEIOS_NTFE_LAYER_RAWPACKET, &raw_forest);
+			       PEIOS_NTFE_LAYER_RAWPACKET, &raw_forest);
 	if (ret)
 		goto out;
 	walk->rules_seen = 0;
 	ret = ntfe_build_layer(walk, c.flow_present, c.flow_guid,
-			      PEIOS_NTFE_LAYER_FLOW, &flow_forest);
+			       PEIOS_NTFE_LAYER_FLOW, &flow_forest);
 	if (ret)
 		goto out;
 	walk->layer = PEIOS_NTFE_WHY_NO_LAYER;
@@ -827,7 +827,8 @@ out:
 		 */
 		ntfe_refuse(walk, ret,
 			    ret == -ENOMEM ? "out-of-memory" :
-					     "registry-read-failed", false);
+					     "registry-read-failed",
+			    false);
 		pr_warn("ntfe: rules refresh failed (%ld, %s); keeping the previous generation\n",
 			ret, ntfe_walk_why.reason);
 		ntfe_note_refusal(walk->digest, ret, &ntfe_walk_why);
@@ -851,7 +852,7 @@ struct ntfe_network_record {
 	char trust[PEIOS_NTFE_NETWORK_TRUST_LEN];
 };
 
-#define NTFE_MAX_NETWORK_RECORDS	256U
+#define NTFE_MAX_NETWORK_RECORDS 256U
 
 struct ntfe_networks {
 	struct ntfe_network_record *records;
@@ -860,12 +861,13 @@ struct ntfe_networks {
 
 /* Copies a registry string into a bounded buffer; confesses truncation. */
 static void ntfe_copy_str(char *dst, size_t dst_len, const u8 *data, u32 len,
-			 const char *what)
+			  const char *what)
 {
 	len = ntfe_str_trim(data, len);
 	if (len >= dst_len) {
-		pr_warn_once("ntfe: network context: %s longer than %zu bytes; truncated\n",
-			     what, dst_len - 1);
+		pr_warn_once(
+			"ntfe: network context: %s longer than %zu bytes; truncated\n",
+			what, dst_len - 1);
 		len = dst_len - 1;
 	}
 	memcpy(dst, data, len);
@@ -873,8 +875,8 @@ static void ntfe_copy_str(char *dst, size_t dst_len, const u8 *data, u32 len,
 }
 
 static long ntfe_network_value_cb(struct peios_ntfe_walk *walk, void *ctx,
-				 const char *name, u32 name_len, u32 type,
-				 const u8 *data, u32 len)
+				  const char *name, u32 name_len, u32 type,
+				  const u8 *data, u32 len)
 {
 	struct ntfe_network_record *rec = ctx;
 
@@ -882,28 +884,30 @@ static long ntfe_network_value_cb(struct peios_ntfe_walk *walk, void *ctx,
 		return 0;
 	if (ntfe_name_is(name, name_len, "Name"))
 		ntfe_copy_str(rec->name, sizeof(rec->name), data, len,
-			     "a network's Name");
+			      "a network's Name");
 	else if (ntfe_name_is(name, name_len, "Trust"))
 		ntfe_copy_str(rec->trust, sizeof(rec->trust), data, len,
-			     "a network's Trust");
+			      "a network's Trust");
 	return 0;
 }
 
 static long ntfe_network_child_cb(struct peios_ntfe_walk *walk, void *ctx,
-				 const u8 child_guid[16], const u8 *name,
-				 u32 name_len)
+				  const u8 child_guid[16], const u8 *name,
+				  u32 name_len)
 {
 	struct ntfe_networks *nets = ctx;
 	struct ntfe_network_record *rec;
 	long ret;
 
 	if (name_len >= PEIOS_NTFE_NETWORK_ID_LEN) {
-		pr_warn_once("ntfe: network context: a Networks record name is not a UUID; ignored\n");
+		pr_warn_once(
+			"ntfe: network context: a Networks record name is not a UUID; ignored\n");
 		return 0;
 	}
 	if (nets->count >= NTFE_MAX_NETWORK_RECORDS) {
-		pr_warn_once("ntfe: network context: more than %u network records; the rest are ignored\n",
-			     NTFE_MAX_NETWORK_RECORDS);
+		pr_warn_once(
+			"ntfe: network context: more than %u network records; the rest are ignored\n",
+			NTFE_MAX_NETWORK_RECORDS);
 		return 0;
 	}
 	rec = &nets->records[nets->count];
@@ -927,8 +931,8 @@ struct ntfe_status_values {
 };
 
 static long ntfe_status_value_cb(struct peios_ntfe_walk *walk, void *ctx,
-				const char *name, u32 name_len, u32 type,
-				const u8 *data, u32 len)
+				 const char *name, u32 name_len, u32 type,
+				 const u8 *data, u32 len)
 {
 	struct ntfe_status_values *v = ctx;
 
@@ -936,10 +940,10 @@ static long ntfe_status_value_cb(struct peios_ntfe_walk *walk, void *ctx,
 		return 0;
 	if (ntfe_name_is(name, name_len, "Name"))
 		ntfe_copy_str(v->ifname, sizeof(v->ifname), data, len,
-			     "an interface's Name");
+			      "an interface's Name");
 	else if (ntfe_name_is(name, name_len, "Network"))
 		ntfe_copy_str(v->network_id, sizeof(v->network_id), data, len,
-			     "an interface's Network");
+			      "an interface's Network");
 	return 0;
 }
 
@@ -950,11 +954,11 @@ struct ntfe_context_build {
 
 /* Under an interface key: only its Status subkey is read. */
 static long ntfe_interface_status_cb(struct peios_ntfe_walk *walk, void *ctx,
-				    const u8 child_guid[16], const u8 *name,
-				    u32 name_len)
+				     const u8 child_guid[16], const u8 *name,
+				     u32 name_len)
 {
 	struct ntfe_context_build *b = ctx;
-	struct ntfe_status_values v = { };
+	struct ntfe_status_values v = {};
 	struct peios_ntfe_context_entry *e;
 	u32 i;
 	long ret;
@@ -971,8 +975,9 @@ static long ntfe_interface_status_cb(struct peios_ntfe_walk *walk, void *ctx,
 	if (!v.ifname[0] || !v.network_id[0])
 		return 0;
 	if (b->table->count >= PEIOS_NTFE_MAX_CONTEXTS) {
-		pr_warn_once("ntfe: network context: more than %u interfaces; the rest carry no context\n",
-			     PEIOS_NTFE_MAX_CONTEXTS);
+		pr_warn_once(
+			"ntfe: network context: more than %u interfaces; the rest carry no context\n",
+			PEIOS_NTFE_MAX_CONTEXTS);
 		return 0;
 	}
 	e = &b->table->entries[b->table->count++];
@@ -991,13 +996,13 @@ static long ntfe_interface_status_cb(struct peios_ntfe_walk *walk, void *ctx,
 }
 
 static long ntfe_interface_child_cb(struct peios_ntfe_walk *walk, void *ctx,
-				   const u8 child_guid[16], const u8 *name,
-				   u32 name_len)
+				    const u8 child_guid[16], const u8 *name,
+				    u32 name_len)
 {
 	long ret;
 
 	ret = ntfe_for_each_child(walk, child_guid, ntfe_interface_status_cb,
-				 ctx);
+				  ctx);
 	/* An interface key that cannot be listed is an interface without
 	 * a context, not a failed table (PEI-1306).
 	 */
@@ -1014,12 +1019,12 @@ static long ntfe_interface_child_cb(struct peios_ntfe_walk *walk, void *ctx,
  * published with whatever was readable.
  */
 static long ntfe_refresh_context(struct peios_ntfe_walk *walk,
-				bool interfaces_present,
-				const u8 interfaces_guid[16],
-				bool networks_present,
-				const u8 networks_guid[16])
+				 bool interfaces_present,
+				 const u8 interfaces_guid[16],
+				 bool networks_present,
+				 const u8 networks_guid[16])
 {
-	struct ntfe_networks nets = { };
+	struct ntfe_networks nets = {};
 	struct ntfe_context_build b = { .nets = &nets };
 	long ret = 0;
 
@@ -1041,13 +1046,13 @@ static long ntfe_refresh_context(struct peios_ntfe_walk *walk,
 		 * rule that names them. Only a single record is skipped.
 		 */
 		ret = ntfe_for_each_child(walk, networks_guid,
-					 ntfe_network_child_cb, &nets);
+					  ntfe_network_child_cb, &nets);
 		if (ret)
 			goto out;
 	}
 	if (interfaces_present) {
 		ret = ntfe_for_each_child(walk, interfaces_guid,
-					 ntfe_interface_child_cb, &b);
+					  ntfe_interface_child_cb, &b);
 		if (ret)
 			goto out;
 	}
@@ -1072,8 +1077,8 @@ struct ntfe_network_children {
 };
 
 static long ntfe_network_child_key_cb(struct peios_ntfe_walk *walk, void *ctx,
-				     const u8 child_guid[16], const u8 *name,
-				     u32 name_len)
+				      const u8 child_guid[16], const u8 *name,
+				      u32 name_len)
 {
 	struct ntfe_network_children *c = ctx;
 
@@ -1092,10 +1097,10 @@ static long ntfe_network_child_key_cb(struct peios_ntfe_walk *walk, void *ctx,
 }
 
 long peios_ntfe_network_refresh_from_key(u32 source_id,
-					const u8 network_guid[16])
+					 const u8 network_guid[16])
 {
 	struct peios_ntfe_walk walk = { .source_id = source_id };
-	struct ntfe_network_children c = { };
+	struct ntfe_network_children c = {};
 	long ret, context_ret;
 
 	if (!source_id || !network_guid)
@@ -1112,8 +1117,8 @@ long peios_ntfe_network_refresh_from_key(u32 source_id,
 	if (ret)
 		goto out_unlock;
 
-	ret = ntfe_for_each_child(&walk, network_guid, ntfe_network_child_key_cb,
-				 &c);
+	ret = ntfe_for_each_child(&walk, network_guid,
+				  ntfe_network_child_key_cb, &c);
 	if (ret)
 		goto out;
 
@@ -1123,7 +1128,8 @@ long peios_ntfe_network_refresh_from_key(u32 source_id,
 	if (c.rules_present) {
 		ret = ntfe_refresh_rules(&walk, c.rules_guid);
 	} else {
-		pr_info_once("ntfe: no Rules key; keeping the previous generation\n");
+		pr_info_once(
+			"ntfe: no Rules key; keeping the previous generation\n");
 		/* Recorded once per absence, not once per walk: an inventory
 		 * write walks again, and finds the same nothing.
 		 */
@@ -1135,8 +1141,8 @@ long peios_ntfe_network_refresh_from_key(u32 source_id,
 
 	/* The context, whatever the rules did: the two are independent. */
 	context_ret = ntfe_refresh_context(&walk, c.interfaces_present,
-					  c.interfaces_guid,
-					  c.networks_present, c.networks_guid);
+					   c.interfaces_guid,
+					   c.networks_present, c.networks_guid);
 	if (!ret)
 		ret = context_ret;
 out:
@@ -1150,7 +1156,7 @@ out_unlock:
 /* --- change-notification coalescing ---------------------------------- */
 
 /* Quiet time after the last change before the re-walk runs. */
-#define PEIOS_NTFE_REFRESH_DEBOUNCE_MS	50
+#define PEIOS_NTFE_REFRESH_DEBOUNCE_MS 50
 
 static void peios_ntfe_refresh_workfn(struct work_struct *work);
 
@@ -1214,7 +1220,7 @@ static void peios_ntfe_refresh_workfn(struct work_struct *work)
 }
 
 void peios_ntfe_network_registry_changed(u32 source_id,
-					const u8 network_guid[16])
+					 const u8 network_guid[16])
 {
 	if (!source_id || !network_guid)
 		return;

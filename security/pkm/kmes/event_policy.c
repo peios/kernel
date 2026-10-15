@@ -53,7 +53,7 @@
 #include "event_policy.h"
 
 /* Quiet time after the first change of a burst before the re-walk runs. */
-#define PKM_KMES_EVENT_POLICY_DEBOUNCE_MS	50
+#define PKM_KMES_EVENT_POLICY_DEBOUNCE_MS 50
 
 static const char pkm_kmes_event_policy_enabled_name[] = "Enabled";
 
@@ -98,8 +98,8 @@ s8 pkm_kmes_event_policy_read_enabled(u32 type, const u8 *data, u32 len,
 }
 
 u64 pkm_kmes_event_policy_resolve(
-	s8 root_setting,
-	const struct pkm_kmes_event_policy_node_state *nodes, u32 node_count)
+	s8 root_setting, const struct pkm_kmes_event_policy_node_state *nodes,
+	u32 node_count)
 {
 	s8 effective[PKM_KMES_EV_NODE_COUNT];
 	bool present[PKM_KMES_EV_NODE_COUNT];
@@ -219,13 +219,13 @@ static bool pkm_kmes_event_policy_ends_branch(long ret)
 }
 
 /* One RSI_QUERY_VALUES round trip: the setting @guid's Enabled gives. */
-static long pkm_kmes_event_policy_query_enabled(
-	struct pkm_kmes_event_policy_walk *walk, const u8 guid[16],
-	s8 *setting_out)
+static long
+pkm_kmes_event_policy_query_enabled(struct pkm_kmes_event_policy_walk *walk,
+				    const u8 guid[16], s8 *setting_out)
 {
-	struct pkm_lcs_rsi_query_values_batch_result batch = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_rsi_query_values_batch_result batch = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
 	u8 *records = NULL;
 	size_t off = 0;
 	u32 i;
@@ -241,10 +241,9 @@ static long pkm_kmes_event_policy_query_enabled(
 
 	/* Two passes: size, then materialize the layering-resolved batch. */
 	ret = pkm_lcs_rsi_materialize_query_values_batch_response(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits, NULL, 0,
-		&batch);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, NULL, 0, &batch);
 	if (ret || !batch.count)
 		goto out;
 
@@ -254,10 +253,9 @@ static long pkm_kmes_event_policy_query_enabled(
 		goto out;
 	}
 	ret = pkm_lcs_rsi_materialize_query_values_batch_response(
-		frame.data, frame.len, response.request_id,
-		walk->next_sequence, walk->layers.layers,
-		walk->layers.layer_count, NULL, 0, &response.limits, records,
-		batch.required_len, &batch);
+		frame.data, frame.len, response.request_id, walk->next_sequence,
+		walk->layers.layers, walk->layers.layer_count, NULL, 0,
+		&response.limits, records, batch.required_len, &batch);
 	if (ret)
 		goto out;
 
@@ -315,10 +313,11 @@ out:
 }
 
 /* One RSI lookup: the guid of @parent_guid's child @segment. */
-static long pkm_kmes_event_policy_lookup_child(
-	struct pkm_kmes_event_policy_walk *walk, const u8 parent_guid[16],
-	const char *parent_name, const char *segment, u32 segment_len,
-	u8 child_guid_out[16])
+static long
+pkm_kmes_event_policy_lookup_child(struct pkm_kmes_event_policy_walk *walk,
+				   const u8 parent_guid[16],
+				   const char *parent_name, const char *segment,
+				   u32 segment_len, u8 child_guid_out[16])
 {
 	/*
 	 * A two-component walk rooted at the parent: the first component
@@ -329,7 +328,7 @@ static long pkm_kmes_event_policy_lookup_child(
 		{ .name = parent_name, .name_len = (u32)strlen(parent_name) },
 		{ .name = segment, .name_len = segment_len },
 	};
-	struct pkm_lcs_resolved_key_path key = { };
+	struct pkm_lcs_resolved_key_path key = {};
 	long ret;
 
 	ret = pkm_lcs_walk_absolute_components(
@@ -381,7 +380,8 @@ static long pkm_kmes_event_policy_walk_tree(
 			parent_name = "Events";
 		} else {
 			parent_guid = state->guids[node->parent];
-			parent_name = pkm_kmes_event_nodes[node->parent].segment;
+			parent_name =
+				pkm_kmes_event_nodes[node->parent].segment;
 		}
 
 		ret = pkm_kmes_event_policy_lookup_child(
@@ -476,8 +476,8 @@ long pkm_kmes_event_policy_root_discover_from_machine_hive(
 		{ .name = "Generic", .name_len = sizeof("Generic") - 1 },
 		{ .name = "Events", .name_len = sizeof("Events") - 1 },
 	};
-	struct pkm_lcs_resolved_key_path key = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_resolved_key_path key = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	long ret;
 
 	if (present_out)

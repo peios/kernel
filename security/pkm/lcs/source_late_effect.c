@@ -58,8 +58,8 @@ long pkm_lcs_source_late_effect_copy_restore(
 				     sizeof(*dst->resolved_path), GFP_KERNEL);
 	if (!dst->resolved_path)
 		return -ENOMEM;
-	dst->ancestor_guids = kmemdup(input->ancestor_guids, guid_bytes,
-				      GFP_KERNEL);
+	dst->ancestor_guids =
+		kmemdup(input->ancestor_guids, guid_bytes, GFP_KERNEL);
 	if (!dst->ancestor_guids) {
 		pkm_lcs_source_late_effect_destroy(dst);
 		return -ENOMEM;
@@ -70,8 +70,8 @@ long pkm_lcs_source_late_effect_copy_restore(
 			pkm_lcs_source_late_effect_destroy(dst);
 			return -EINVAL;
 		}
-		dst->resolved_path[i] = kstrdup(input->resolved_path[i],
-						GFP_KERNEL);
+		dst->resolved_path[i] =
+			kstrdup(input->resolved_path[i], GFP_KERNEL);
 		if (!dst->resolved_path[i]) {
 			pkm_lcs_source_late_effect_destroy(dst);
 			return -ENOMEM;
@@ -99,11 +99,10 @@ long pkm_lcs_source_late_effect_copy_key_mutation(
 	if (input->path_component_count > PKM_LCS_MAX_KEY_DEPTH_HARD ||
 	    input->name_len > PKM_LCS_MAX_TOTAL_PATH_BYTES_HARD)
 		return -EINVAL;
-	if (!(input->flags &
-	      (PKM_LCS_SOURCE_LATE_EFFECT_RECORD_GENERATION |
-	       PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_WATCH |
-	       PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_OVERFLOW |
-	       PKM_LCS_SOURCE_LATE_EFFECT_LAYER_RECOVERY)))
+	if (!(input->flags & (PKM_LCS_SOURCE_LATE_EFFECT_RECORD_GENERATION |
+			      PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_WATCH |
+			      PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_OVERFLOW |
+			      PKM_LCS_SOURCE_LATE_EFFECT_LAYER_RECOVERY)))
 		return -EINVAL;
 	if (check_mul_overflow((size_t)input->path_component_count,
 			       sizeof(*dst->ancestor_guids), &guid_bytes))
@@ -113,8 +112,8 @@ long pkm_lcs_source_late_effect_copy_key_mutation(
 				     sizeof(*dst->resolved_path), GFP_KERNEL);
 	if (!dst->resolved_path)
 		return -ENOMEM;
-	dst->ancestor_guids = kmemdup(input->ancestor_guids, guid_bytes,
-				      GFP_KERNEL);
+	dst->ancestor_guids =
+		kmemdup(input->ancestor_guids, guid_bytes, GFP_KERNEL);
 	if (!dst->ancestor_guids) {
 		pkm_lcs_source_late_effect_destroy(dst);
 		return -ENOMEM;
@@ -132,8 +131,8 @@ long pkm_lcs_source_late_effect_copy_key_mutation(
 			pkm_lcs_source_late_effect_destroy(dst);
 			return -EINVAL;
 		}
-		dst->resolved_path[i] = kstrdup(input->resolved_path[i],
-						GFP_KERNEL);
+		dst->resolved_path[i] =
+			kstrdup(input->resolved_path[i], GFP_KERNEL);
 		if (!dst->resolved_path[i]) {
 			pkm_lcs_source_late_effect_destroy(dst);
 			return -ENOMEM;

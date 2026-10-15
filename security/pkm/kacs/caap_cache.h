@@ -26,9 +26,11 @@ size_t pkm_kacs_caap_cache_len(void);
 int pkm_kacs_kunit_set_caap_for_token(const void *token, const void *policy_sid,
 				      u32 policy_sid_len, const void *spec,
 				      u32 spec_len);
-long pkm_kacs_kunit_set_caap_user_for_token(
-	const void *token, const void __user *policy_sid, u32 policy_sid_len,
-	const void __user *spec, u32 spec_len);
+long pkm_kacs_kunit_set_caap_user_for_token(const void *token,
+					    const void __user *policy_sid,
+					    u32 policy_sid_len,
+					    const void __user *spec,
+					    u32 spec_len);
 #endif
 
 #endif /* _SECURITY_PKM_KACS_CAAP_CACHE_H */

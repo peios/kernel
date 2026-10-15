@@ -14,12 +14,12 @@ void pkm_kmes_rate_bucket_refund(struct pkm_kmes_rate_bucket *bucket,
 				 u32 count);
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-int pkm_kmes_rate_bucket_kunit_set_tokens(
-	struct pkm_kmes_rate_bucket *bucket, u32 tokens);
+int pkm_kmes_rate_bucket_kunit_set_tokens(struct pkm_kmes_rate_bucket *bucket,
+					  u32 tokens);
 int pkm_kmes_rate_bucket_kunit_set_refill_frozen(
 	struct pkm_kmes_rate_bucket *bucket, bool frozen);
-int pkm_kmes_rate_bucket_kunit_get_tokens(
-	struct pkm_kmes_rate_bucket *bucket, u32 *tokens_out);
+int pkm_kmes_rate_bucket_kunit_get_tokens(struct pkm_kmes_rate_bucket *bucket,
+					  u32 *tokens_out);
 #endif
 
 #endif /* PKM_KACS_KMES_RATE_H */

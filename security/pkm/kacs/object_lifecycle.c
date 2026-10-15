@@ -152,10 +152,10 @@ int pkm_kacs_mmap_backing_file(struct vm_area_struct *vma,
 	if (!backing_sec->managed || !file_sec->managed || !user_sec->managed ||
 	    backing_sec->granted_access != file_sec->granted_access ||
 	    backing_sec->continuous_audit_mask !=
-		file_sec->continuous_audit_mask ||
+		    file_sec->continuous_audit_mask ||
 	    backing_sec->granted_access != user_sec->granted_access ||
 	    backing_sec->continuous_audit_mask !=
-		user_sec->continuous_audit_mask)
+		    user_sec->continuous_audit_mask)
 		return -EACCES;
 	return 0;
 }
@@ -209,8 +209,7 @@ int pkm_kacs_file_receive(struct file *file)
 	 * cached grant on the file security blob rather than re-authorizing the
 	 * receiver as a fresh open.
 	 */
-	if (file && file->f_security &&
-	    pkm_kacs_file(file)->copy_up_context)
+	if (file && file->f_security && pkm_kacs_file(file)->copy_up_context)
 		return -EACCES;
 	return 0;
 }

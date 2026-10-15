@@ -1,6 +1,4 @@
-use crate::access_check::{
-    access_check_core, AccessCheckMode, CaapDiagnosticEvent, PrivilegeUseEvent,
-};
+use crate::access_check::{access_check_core, AccessCheckMode, CaapDiagnosticEvent, PrivilegeUseEvent};
 use crate::access_mask::GenericMapping;
 use crate::audit::AuditEvent;
 use crate::caap::CaapPolicyEntry;
@@ -18,11 +16,13 @@ use crate::token::{AccessCheckToken, SidAndAttributes};
 
 /// Full size of the current fixed-width `kacs_access_check_args` buffer copied
 /// by the ABI parser.
-pub const KACS_ACCESS_CHECK_ARGS_SIZE: usize = crate::peios_uapi::KACS_ACCESS_CHECK_ARGS_SIZE as usize;
+pub const KACS_ACCESS_CHECK_ARGS_SIZE: usize =
+    crate::peios_uapi::KACS_ACCESS_CHECK_ARGS_SIZE as usize;
 /// Minimum accepted caller-provided size for v0.20 AccessCheck args.
 pub const KACS_ACCESS_CHECK_ARGS_V1_SIZE: u32 = crate::peios_uapi::KACS_ACCESS_CHECK_ARGS_V1_SIZE;
 /// Size of one flat object-type entry in the ABI array.
-pub const KACS_OBJECT_TYPE_ENTRY_SIZE: usize = crate::peios_uapi::KACS_OBJECT_TYPE_ENTRY_SIZE as usize;
+pub const KACS_OBJECT_TYPE_ENTRY_SIZE: usize =
+    crate::peios_uapi::KACS_OBJECT_TYPE_ENTRY_SIZE as usize;
 /// Maximum accepted object-audit context length in bytes.
 pub const KACS_ACCESS_CHECK_MAX_AUDIT_CONTEXT_LEN: u32 =
     crate::peios_uapi::KACS_ACCESS_CHECK_MAX_AUDIT_CONTEXT_LEN;
@@ -1139,7 +1139,9 @@ mod tests {
             &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa3, b'J', b'o', b'b'],
             &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa3, b'a', b'.', b'b'],
             &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa2, b'a', b'-'],
-            &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa4, b'a', b'-', b'-', b'b'],
+            &[
+                0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa4, b'a', b'-', b'-', b'b',
+            ],
             &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa2, b'1', b'a'],
             // Kind that is not a string.
             &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0x01],
@@ -1174,7 +1176,9 @@ mod tests {
                 b'd', 0xa3, b'j', b'o', b'b',
             ],
             // Trailing bytes, and a truncated body.
-            &[0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa3, b'j', b'o', b'b', 0xc0],
+            &[
+                0x81, 0xa4, b'k', b'i', b'n', b'd', 0xa3, b'j', b'o', b'b', 0xc0,
+            ],
             &[
                 0x82, 0xa4, b'k', b'i', b'n', b'd', 0xa3, b'j', b'o', b'b', 0xa3, b'j', b'o', b'b',
                 0x81, 0xa1, b'a', 0xdc, 0xff, 0xff,

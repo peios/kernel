@@ -1,0 +1,17 @@
+{
+  "task": "PEI-1506",
+  "central_snapshot": {
+    "configs/ruff.toml": "8fdbf0357c246af7fb8a55391e5e5751131e39f4425c65549aa24cb535cfe079",
+    "configs/mypy.ini": "11d40b0af5adb7076b142134203d87c344c24ff2e78c91f90268a0e1dc8cf528",
+    "configs/rustfmt.toml": "2bd486a80ad1e34d40a2d46a7c1a15f427a12c7b9898b679f3005703a1f03daf",
+    "requirements.lock": "56378ba2ac4367a7a951416f598797d84a8da7588769e53139ca98f4c83bf4b0",
+    "binary-tools.lock.json": "c46dbdafb565918ba8be4b8ebb63eaf9747666b8442c91db8cd8e473975aae4c"
+  },
+  "adaptations": [
+    "Kernel-only tool subset; no Node, Go or clang-tidy dependency.",
+    "Python wrappers target 3.11; mypy resolves their package-local imports.",
+    "Host Rust edition 2024; core Cargo entry points declare edition 2021.",
+    "Peios Rust preserves module and import order, including kernel source.",
+    "Exact dependency/runtime pins retained from qualified central bundle."
+  ]
+}

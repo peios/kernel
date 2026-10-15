@@ -9,8 +9,7 @@
 
 #include "stratafs.h"
 
-bool stratafs_stratum_accepts(const struct super_block *sb,
-			      unsigned int index,
+bool stratafs_stratum_accepts(const struct super_block *sb, unsigned int index,
 			      const struct path *provider)
 {
 	struct stratafs_sb_info *sbi = STRATAFS_SB(sb);
@@ -26,9 +25,8 @@ bool stratafs_stratum_accepts(const struct super_block *sb,
 	return true;
 }
 
-void stratafs_audit_refusal(const struct dentry *dentry,
-			    const char *operation, int provider_index,
-			    int result, bool deferred)
+void stratafs_audit_refusal(const struct dentry *dentry, const char *operation,
+			    int provider_index, int result, bool deferred)
 {
 	const struct stratafs_dentry_info *dinfo;
 	struct stratafs_inode_info *iinfo;
@@ -67,13 +65,13 @@ void stratafs_audit_refusal(const struct dentry *dentry,
 	}
 	if (relative_copy)
 		relative = relative_copy;
-	if (provider_index >= 0 &&
-	    (unsigned int)provider_index < sbi->count)
+	if (provider_index >= 0 && (unsigned int)provider_index < sbi->count)
 		provider = sbi->strata[provider_index].path;
 	else
 		provider_index = -1;
-	pkm_kacs_stratafs_audit_mutation_refused(
-		relative, operation, provider_index, provider, result, deferred);
+	pkm_kacs_stratafs_audit_mutation_refused(relative, operation,
+						 provider_index, provider,
+						 result, deferred);
 	kfree(relative_copy);
 }
 
@@ -101,7 +99,7 @@ int stratafs_route_existing(const struct super_block *sb,
 
 static struct backing_file_ctx stratafs_backing_ctx(struct file *file)
 {
-	return (struct backing_file_ctx) {
+	return (struct backing_file_ctx){
 		.cred = file->f_cred,
 	};
 }
@@ -120,10 +118,9 @@ static int stratafs_open(struct inode *inode, struct file *file)
 	if (ret)
 		return ret;
 	route = stratafs_route_existing(inode->i_sb, index, &provider,
-					 S_ISREG(inode->i_mode));
+					S_ISREG(inode->i_mode));
 	open_flags = file->f_flags;
-	if (S_ISREG(inode->i_mode) &&
-	    route != STRATAFS_ROUTE_IN_PLACE &&
+	if (S_ISREG(inode->i_mode) && route != STRATAFS_ROUTE_IN_PLACE &&
 	    (file->f_mode & FMODE_WRITE)) {
 		open_flags &= ~(O_ACCMODE | O_APPEND);
 		open_flags |= O_RDONLY;
@@ -157,7 +154,8 @@ static int stratafs_open(struct inode *inode, struct file *file)
 		if (route == STRATAFS_ROUTE_READ_ONLY) {
 			ret = -EROFS;
 			stratafs_audit_refusal(file->f_path.dentry, "truncate",
-						 info->provider_index, ret, false);
+					       info->provider_index, ret,
+					       false);
 			goto fail_info;
 		}
 		if (route == STRATAFS_ROUTE_COPY_UP) {
@@ -237,8 +235,8 @@ static ssize_t stratafs_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 	mutex_lock(&info->mutation_lock);
 	if (S_ISREG(file_inode(file)->i_mode)) {
 		ret = stratafs_route_existing(file_inode(file)->i_sb,
-					       info->provider_index,
-					       &info->provider, true);
+					      info->provider_index,
+					      &info->provider, true);
 		if (ret == STRATAFS_ROUTE_READ_ONLY)
 			goto read_only;
 		if (ret == STRATAFS_ROUTE_COPY_UP) {
@@ -250,7 +248,7 @@ static ssize_t stratafs_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 	}
 
 	ret = backing_file_write_iter(info->real, iter, iocb, iocb->ki_flags,
-				       &ctx);
+				      &ctx);
 	if (ret >= 0)
 		stratafs_refresh_inode(file_inode(file), &info->provider);
 out:
@@ -259,7 +257,7 @@ out:
 read_only:
 	ret = -EROFS;
 	stratafs_audit_refusal(file->f_path.dentry, "write",
-				 info->provider_index, ret, false);
+			       info->provider_index, ret, false);
 	goto out;
 }
 
@@ -283,11 +281,11 @@ static int stratafs_mmap(struct file *file, struct vm_area_struct *vma)
 	int ret;
 
 	mutex_lock(&info->mutation_lock);
-	if (S_ISREG(file_inode(file)->i_mode) &&
-	    (vma->vm_flags & VM_SHARED) && (vma->vm_flags & VM_MAYWRITE)) {
+	if (S_ISREG(file_inode(file)->i_mode) && (vma->vm_flags & VM_SHARED) &&
+	    (vma->vm_flags & VM_MAYWRITE)) {
 		route = stratafs_route_existing(file_inode(file)->i_sb,
-						 info->provider_index,
-						 &info->provider, true);
+						info->provider_index,
+						&info->provider, true);
 		if (route == STRATAFS_ROUTE_READ_ONLY)
 			goto read_only;
 		if (route == STRATAFS_ROUTE_COPY_UP) {
@@ -304,7 +302,7 @@ out:
 read_only:
 	ret = -EROFS;
 	stratafs_audit_refusal(file->f_path.dentry, "mmap",
-				 info->provider_index, ret, false);
+			       info->provider_index, ret, false);
 	goto out;
 }
 
@@ -317,7 +315,8 @@ static long stratafs_fallocate(struct file *file, int mode, loff_t offset,
 
 	mutex_lock(&info->mutation_lock);
 	route = stratafs_route_existing(file_inode(file)->i_sb,
-					 info->provider_index, &info->provider, true);
+					info->provider_index, &info->provider,
+					true);
 	if (route == STRATAFS_ROUTE_READ_ONLY)
 		goto read_only;
 	if (route == STRATAFS_ROUTE_COPY_UP) {
@@ -335,7 +334,7 @@ out:
 read_only:
 	ret = -EROFS;
 	stratafs_audit_refusal(file->f_path.dentry, "fallocate",
-				 info->provider_index, ret, false);
+			       info->provider_index, ret, false);
 	goto out;
 }
 
@@ -369,8 +368,8 @@ static int stratafs_flush(struct file *file, fl_owner_t id)
 }
 
 static ssize_t stratafs_splice_read(struct file *in, loff_t *ppos,
-				    struct pipe_inode_info *pipe,
-				    size_t len, unsigned int flags)
+				    struct pipe_inode_info *pipe, size_t len,
+				    unsigned int flags)
 {
 	struct stratafs_file_info *info = in->private_data;
 	struct backing_file_ctx ctx = stratafs_backing_ctx(in);
@@ -389,8 +388,8 @@ static ssize_t stratafs_splice_read(struct file *in, loff_t *ppos,
 }
 
 static ssize_t stratafs_splice_write(struct pipe_inode_info *pipe,
-				     struct file *out, loff_t *ppos,
-				     size_t len, unsigned int flags)
+				     struct file *out, loff_t *ppos, size_t len,
+				     unsigned int flags)
 {
 	struct stratafs_file_info *info = out->private_data;
 	struct backing_file_ctx ctx = stratafs_backing_ctx(out);
@@ -400,8 +399,8 @@ static ssize_t stratafs_splice_write(struct pipe_inode_info *pipe,
 	mutex_lock(&info->mutation_lock);
 	if (S_ISREG(file_inode(out)->i_mode)) {
 		ret = stratafs_route_existing(file_inode(out)->i_sb,
-					       info->provider_index,
-					       &info->provider, true);
+					      info->provider_index,
+					      &info->provider, true);
 		if (ret == STRATAFS_ROUTE_READ_ONLY)
 			goto read_only;
 		if (ret == STRATAFS_ROUTE_COPY_UP) {
@@ -426,7 +425,7 @@ out:
 read_only:
 	ret = -EROFS;
 	stratafs_audit_refusal(out->f_path.dentry, "splice-write",
-				 info->provider_index, ret, false);
+			       info->provider_index, ret, false);
 	goto out;
 }
 
@@ -443,8 +442,8 @@ static int stratafs_fadvise(struct file *file, loff_t offset, loff_t len,
 }
 
 int stratafs_copy_up_metadata_file(struct file *file, struct dentry *dentry,
-				    struct path *provider,
-				    unsigned int *provider_index)
+				   struct path *provider,
+				   unsigned int *provider_index)
 {
 	struct stratafs_file_info *info;
 	int route;
@@ -457,7 +456,8 @@ int stratafs_copy_up_metadata_file(struct file *file, struct dentry *dentry,
 	mutex_lock(&info->mutation_lock);
 	/* The descriptor may have been rebound after the caller routed by path. */
 	route = stratafs_route_existing(file_inode(file)->i_sb,
-					info->provider_index, &info->provider, true);
+					info->provider_index, &info->provider,
+					true);
 	if (route == STRATAFS_ROUTE_READ_ONLY)
 		ret = -EROFS;
 	else if (route == STRATAFS_ROUTE_COPY_UP)
@@ -489,8 +489,8 @@ static ssize_t stratafs_copy_file_range(struct file *file_in, loff_t pos_in,
 	mutex_unlock(&in_info->mutation_lock);
 	mutex_lock(&out_info->mutation_lock);
 	ret = stratafs_route_existing(file_inode(file_out)->i_sb,
-				       out_info->provider_index,
-				       &out_info->provider, true);
+				      out_info->provider_index,
+				      &out_info->provider, true);
 	if (ret == STRATAFS_ROUTE_READ_ONLY)
 		goto read_only;
 	if (ret == STRATAFS_ROUTE_COPY_UP) {
@@ -505,10 +505,11 @@ static ssize_t stratafs_copy_file_range(struct file *file_in, loff_t pos_in,
 		real_in = get_file(out_info->real);
 	}
 
-	ret = vfs_copy_file_range(real_in, pos_in, out_info->real,
-				  pos_out, len, flags);
+	ret = vfs_copy_file_range(real_in, pos_in, out_info->real, pos_out, len,
+				  flags);
 	if (ret >= 0)
-		stratafs_refresh_inode(file_inode(file_out), &out_info->provider);
+		stratafs_refresh_inode(file_inode(file_out),
+				       &out_info->provider);
 out:
 	mutex_unlock(&out_info->mutation_lock);
 	fput(real_in);
@@ -516,7 +517,7 @@ out:
 read_only:
 	ret = -EROFS;
 	stratafs_audit_refusal(file_out->f_path.dentry, "copy-file-range",
-				 out_info->provider_index, ret, false);
+			       out_info->provider_index, ret, false);
 	goto out;
 }
 
@@ -536,8 +537,8 @@ static loff_t stratafs_remap_file_range(struct file *file_in, loff_t pos_in,
 	mutex_unlock(&in_info->mutation_lock);
 	mutex_lock(&out_info->mutation_lock);
 	ret = stratafs_route_existing(file_inode(file_out)->i_sb,
-				       out_info->provider_index,
-				       &out_info->provider, true);
+				      out_info->provider_index,
+				      &out_info->provider, true);
 	if (ret == STRATAFS_ROUTE_READ_ONLY)
 		goto read_only;
 	if (ret == STRATAFS_ROUTE_COPY_UP) {
@@ -553,15 +554,14 @@ static loff_t stratafs_remap_file_range(struct file *file_in, loff_t pos_in,
 	}
 
 	if (remap_flags & REMAP_FILE_DEDUP)
-		ret = vfs_dedupe_file_range_one(real_in, pos_in,
-						out_info->real, pos_out, len,
-						remap_flags);
+		ret = vfs_dedupe_file_range_one(real_in, pos_in, out_info->real,
+						pos_out, len, remap_flags);
 	else
-		ret = vfs_clone_file_range(real_in, pos_in,
-					   out_info->real, pos_out, len,
-					   remap_flags);
+		ret = vfs_clone_file_range(real_in, pos_in, out_info->real,
+					   pos_out, len, remap_flags);
 	if (ret >= 0)
-		stratafs_refresh_inode(file_inode(file_out), &out_info->provider);
+		stratafs_refresh_inode(file_inode(file_out),
+				       &out_info->provider);
 out:
 	mutex_unlock(&out_info->mutation_lock);
 	fput(real_in);
@@ -569,7 +569,7 @@ out:
 read_only:
 	ret = -EROFS;
 	stratafs_audit_refusal(file_out->f_path.dentry, "remap-file-range",
-				 out_info->provider_index, ret, false);
+			       out_info->provider_index, ret, false);
 	goto out;
 }
 
@@ -638,8 +638,7 @@ static int stratafs_flock(struct file *file, int cmd, struct file_lock *lock)
 		retired_lock.c.flc_file = retired;
 		retired_lock.c.flc_owner = retired;
 		if (retired->f_op->flock)
-			ret = retired->f_op->flock(retired, cmd,
-						   &retired_lock);
+			ret = retired->f_op->flock(retired, cmd, &retired_lock);
 		else
 			ret = locks_lock_file_wait(retired, &retired_lock);
 		retired_lock.c.flc_owner = outer_owner;
@@ -688,9 +687,8 @@ static int stratafs_setlease(struct file *file, int arg,
 		target = real;
 		if (retired && lease && *lease) {
 			flavor = (*lease)->c.flc_flags;
-			lease_type = kernel_getlease(retired,
-						      (*lease)->c.flc_file,
-						      flavor);
+			lease_type = kernel_getlease(
+				retired, (*lease)->c.flc_file, flavor);
 			if (lease_type < 0) {
 				ret = lease_type;
 				goto out;

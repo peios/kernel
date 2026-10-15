@@ -1,0 +1,9 @@
+{
+  "image": "sha256:a70b0e64e2a74f00f382ab69e42c7287437ab01edf7cea83670b3b19aaff296c",
+  "rust": "1.83.0",
+  "bindgen": "0.65.1",
+  "llvm": "-18",
+  "source_date_epoch": 1735689600,
+  "localversion": "-peios-dev",
+  "jobs": 4
+}

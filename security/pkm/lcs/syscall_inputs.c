@@ -10,11 +10,12 @@
 
 #include "source_device.h"
 
-extern int lcs_rust_admit_layer_target(
-	const u8 *layer_name, u32 layer_name_len,
-	const struct pkm_lcs_rsi_layer_view *layers, size_t layer_count,
-	const struct pkm_lcs_runtime_limits *limits,
-	struct pkm_lcs_layer_target_admission_plan *plan);
+extern int
+lcs_rust_admit_layer_target(const u8 *layer_name, u32 layer_name_len,
+			    const struct pkm_lcs_rsi_layer_view *layers,
+			    size_t layer_count,
+			    const struct pkm_lcs_runtime_limits *limits,
+			    struct pkm_lcs_layer_target_admission_plan *plan);
 
 static bool pkm_lcs_default_copy_from_user(void *ctx, void *dst,
 					   const void __user *src, size_t len)
@@ -24,8 +25,8 @@ static bool pkm_lcs_default_copy_from_user(void *ctx, void *dst,
 	return copy_from_user(dst, src, len) == 0;
 }
 
-static size_t pkm_lcs_default_strnlen_user(void *ctx,
-					   const char __user *src, size_t max)
+static size_t pkm_lcs_default_strnlen_user(void *ctx, const char __user *src,
+					   size_t max)
 {
 	(void)ctx;
 
@@ -60,9 +61,9 @@ void pkm_lcs_syscall_path_copy_destroy(struct pkm_lcs_syscall_path_copy *copy)
 	memset(copy, 0, sizeof(*copy));
 }
 
-long pkm_lcs_syscall_path_copy_from_user(
-	const struct pkm_lcs_usercopy_ops *ops, const char __user *upath,
-	struct pkm_lcs_syscall_path_copy *out)
+long pkm_lcs_syscall_path_copy_from_user(const struct pkm_lcs_usercopy_ops *ops,
+					 const char __user *upath,
+					 struct pkm_lcs_syscall_path_copy *out)
 {
 	char *path;
 	size_t path_len;
@@ -182,15 +183,16 @@ long pkm_lcs_create_layer_target_admit_with_limits(
 		return -EINVAL;
 	memset(plan, 0, sizeof(*plan));
 
-	ret = pkm_lcs_normalize_layer_inputs(
-		&active_layers, &active_layer_count, &private_layers,
-		&private_layer_count);
+	ret = pkm_lcs_normalize_layer_inputs(&active_layers,
+					     &active_layer_count,
+					     &private_layers,
+					     &private_layer_count);
 	if (ret)
 		return ret;
 
-	return lcs_rust_admit_layer_target(
-		(const u8 *)target->name, target->name_len, active_layers,
-		active_layer_count, limits, plan);
+	return lcs_rust_admit_layer_target((const u8 *)target->name,
+					   target->name_len, active_layers,
+					   active_layer_count, limits, plan);
 }
 
 long pkm_lcs_create_layer_target_prepare(

@@ -22,6 +22,8 @@
 #include <pkm/trace.h>
 
 /* ---- kmes_drop: ring/machinery event-loss taxonomy ---- */
+/* Preserve the trace macro tables and field/assignment layout. */
+/* clang-format off */
 #define kmes_drop_reason_symbols					\
 	{ KMES_DROP_RING_FULL,			"ring-full" },		\
 	{ KMES_DROP_TAIL_RESYNC,		"tail-resync" },	\
@@ -339,6 +341,7 @@ DECLARE_EVENT_CLASS(kmes_kacs_emit_class,
 DEFINE_EVENT(kmes_kacs_emit_class, kmes_kacs_emit,
 	TP_PROTO(u8 origin, u32 type_len, u32 payload_len, long ret),
 	TP_ARGS(origin, type_len, payload_len, ret));
+/* clang-format on */
 
 #endif /* _TRACE_KMES_H */
 

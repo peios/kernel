@@ -71,7 +71,8 @@ struct pkm_kacs_process_sd *pkm_kacs_mntns_sd_alloc(const void *token)
 	}
 
 	sd = pkm_kacs_process_sd_wrap_bytes(bytes, len);
-	trace_kacs_mntns(0, 0, sd ? KACS_MNTNS_SD_ALLOC : KACS_MNTNS_SD_ALLOC_FAIL,
+	trace_kacs_mntns(0, 0,
+			 sd ? KACS_MNTNS_SD_ALLOC : KACS_MNTNS_SD_ALLOC_FAIL,
 			 sd ? 0 : -ENOMEM);
 	return sd;
 }
@@ -172,8 +173,8 @@ bool pkm_kacs_may_mount_op_for_token(const void *subject_token,
 	 */
 	if (kacs_rust_token_enabled_privileges_in_mask(
 		    subject_token, PKM_KACS_MNTNS_PRIVILEGE_MASK)) {
-		bool allowed = pkm_kacs_may_manage_volumes_for_token(
-			subject_token);
+		bool allowed =
+			pkm_kacs_may_manage_volumes_for_token(subject_token);
 
 		trace_kacs_mntns(op, 0, KACS_MNTNS_GATE_PRIVILEGE,
 				 allowed ? 0 : -EPERM);
@@ -186,27 +187,30 @@ bool pkm_kacs_may_mount_op_for_token(const void *subject_token,
 	}
 
 	if (!pkm_kacs_mntns_op_admissible(op)) {
-		trace_kacs_mntns(op, 0, KACS_MNTNS_GATE_OP_NOT_ADMITTED, -EPERM);
+		trace_kacs_mntns(op, 0, KACS_MNTNS_GATE_OP_NOT_ADMITTED,
+				 -EPERM);
 		return false;
 	}
 
 	if (op == PKM_KACS_MNTNS_OP_NEW_FS &&
 	    !pkm_kacs_mntns_fs_type_admissible(fstype)) {
-		trace_kacs_mntns(op, 0, KACS_MNTNS_GATE_FS_NOT_ADMITTED, -EPERM);
+		trace_kacs_mntns(op, 0, KACS_MNTNS_GATE_FS_NOT_ADMITTED,
+				 -EPERM);
 		return false;
 	}
 
 	ret = pkm_kacs_current_pip_context(&pip_type, &pip_trust);
 	if (ret) {
-		trace_kacs_mntns(op, KACS_MNTNS_MOUNT, KACS_MNTNS_GATE_PIP_CONTEXT,
-				 ret);
+		trace_kacs_mntns(op, KACS_MNTNS_MOUNT,
+				 KACS_MNTNS_GATE_PIP_CONTEXT, ret);
 		return false;
 	}
 
 	ret = kacs_rust_check_mnt_ns_sd(subject_token, sd->bytes, sd->len,
 					KACS_MNTNS_MOUNT, pip_type, pip_trust,
 					&granted);
-	trace_kacs_mntns(op, KACS_MNTNS_MOUNT, KACS_MNTNS_GATE_SD_DECISION, ret);
+	trace_kacs_mntns(op, KACS_MNTNS_MOUNT, KACS_MNTNS_GATE_SD_DECISION,
+			 ret);
 	return ret == 0;
 }
 
@@ -239,7 +243,8 @@ long pkm_kacs_mntns_stamp_superblock_for_token(struct super_block *sb,
 		    token, PKM_KACS_MNTNS_PRIVILEGE_MASK))
 		return 0;
 
-	template_bytes = kacs_rust_create_default_mnt_ns_sd(token, &template_len);
+	template_bytes =
+		kacs_rust_create_default_mnt_ns_sd(token, &template_len);
 	if (!template_bytes || template_len == 0) {
 		trace_kacs_mntns(PKM_KACS_MNTNS_OP_NEW_FS, 0,
 				 KACS_MNTNS_SB_STAMP_FAIL, -ENOMEM);

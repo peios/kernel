@@ -19,7 +19,7 @@ long pkm_lcs_source_device_check_tcb(const void *token)
 		return -EPERM;
 	}
 	if (!kacs_rust_token_has_enabled_privilege(token,
-						  KACS_SE_TCB_PRIVILEGE)) {
+						   KACS_SE_TCB_PRIVILEGE)) {
 		trace_lcs_tcb_check(0, 0, 0, -EPERM);
 		return -EPERM;
 	}
@@ -29,8 +29,7 @@ long pkm_lcs_source_device_check_tcb(const void *token)
 
 long pkm_lcs_source_device_mark_tcb_used(const void *token)
 {
-	if (!kacs_rust_token_mark_privileges_used(token,
-						 KACS_SE_TCB_PRIVILEGE))
+	if (!kacs_rust_token_mark_privileges_used(token, KACS_SE_TCB_PRIVILEGE))
 		return -EPERM;
 
 	return 0;

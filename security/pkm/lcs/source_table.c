@@ -62,8 +62,8 @@ s64 pkm_lcs_source_slot_wait_epoch_snapshot(void)
 	return atomic64_read(&pkm_lcs_source_slot_epoch);
 }
 
-long pkm_lcs_source_slot_wait_epoch_change_interruptible_timeout(
-	s64 epoch, long timeout)
+long pkm_lcs_source_slot_wait_epoch_change_interruptible_timeout(s64 epoch,
+								 long timeout)
 {
 	return wait_event_interruptible_timeout(
 		pkm_lcs_source_slot_wait,
@@ -136,8 +136,8 @@ static u32 pkm_lcs_source_table_occupied_count_locked(void)
 	return count;
 }
 
-static u32 pkm_lcs_source_table_views_locked(
-	struct pkm_lcs_source_slot_view_copy *views)
+static u32
+pkm_lcs_source_table_views_locked(struct pkm_lcs_source_slot_view_copy *views)
 {
 	u32 count = 0;
 	u32 i;
@@ -232,8 +232,8 @@ static long pkm_lcs_source_slot_pending_layer_delete_find_locked(
 	*found = false;
 	list_for_each_entry(entry, &slot->pending_layer_deletes, link) {
 		ret = pkm_lcs_layer_name_casefold_equal_with_limits(
-			entry->name, entry->name_len, layer_name, layer_name_len,
-			limits, found);
+			entry->name, entry->name_len, layer_name,
+			layer_name_len, limits, found);
 		if (ret)
 			return ret;
 		if (*found)
@@ -333,8 +333,7 @@ pkm_lcs_source_slot_hive_find_locked(struct pkm_lcs_source_slot *slot,
 }
 
 long pkm_lcs_source_record_transaction_generation(
-	u32 source_id, const u8 root_guid[RSI_GUID_SIZE],
-	u64 *generation_out)
+	u32 source_id, const u8 root_guid[RSI_GUID_SIZE], u64 *generation_out)
 {
 	struct pkm_lcs_source_registration_hive_copy *hive;
 	struct pkm_lcs_source_slot *slot;
@@ -370,9 +369,9 @@ out_unlock:
 	return ret;
 }
 
-long pkm_lcs_source_hive_name_copy(
-	u32 source_id, const u8 root_guid[RSI_GUID_SIZE],
-	char **name_out, u32 *name_len_out)
+long pkm_lcs_source_hive_name_copy(u32 source_id,
+				   const u8 root_guid[RSI_GUID_SIZE],
+				   char **name_out, u32 *name_len_out)
 {
 	struct pkm_lcs_source_registration_hive_copy *hive;
 	struct pkm_lcs_source_slot *slot;
@@ -402,9 +401,9 @@ out_unlock:
 	return ret;
 }
 
-long pkm_lcs_source_hive_generation_snapshot(
-	u32 source_id, const u8 root_guid[RSI_GUID_SIZE],
-	u64 *generation_out)
+long pkm_lcs_source_hive_generation_snapshot(u32 source_id,
+					     const u8 root_guid[RSI_GUID_SIZE],
+					     u64 *generation_out)
 {
 	struct pkm_lcs_source_registration_hive_copy *hive;
 	struct pkm_lcs_source_slot *slot;
@@ -450,9 +449,8 @@ long pkm_lcs_source_bound_transaction_acquire(u32 source_id, u32 *count_out)
 	}
 	if (slot->bound_transaction_count >= cap) {
 		ret = -EBUSY;
-		trace_lcs_bound_txn_acquire(source_id,
-					    slot->bound_transaction_count, cap,
-					    ret);
+		trace_lcs_bound_txn_acquire(
+			source_id, slot->bound_transaction_count, cap, ret);
 		goto out_unlock;
 	}
 
@@ -529,8 +527,7 @@ out_unlock:
 	return ret;
 }
 
-long pkm_lcs_source_read_only_transaction_acquire(u32 source_id,
-						  u32 *count_out)
+long pkm_lcs_source_read_only_transaction_acquire(u32 source_id, u32 *count_out)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -539,8 +536,7 @@ long pkm_lcs_source_read_only_transaction_acquire(u32 source_id,
 		source_id, &limits, count_out);
 }
 
-long pkm_lcs_source_read_only_transaction_release(u32 source_id,
-						 u32 *count_out)
+long pkm_lcs_source_read_only_transaction_release(u32 source_id, u32 *count_out)
 {
 	struct pkm_lcs_source_slot *slot;
 	long ret = 0;
@@ -552,8 +548,7 @@ long pkm_lcs_source_read_only_transaction_release(u32 source_id,
 
 	pkm_lcs_source_table_lock();
 	slot = pkm_lcs_source_slot_find_locked(source_id);
-	if (!slot || !slot->occupied ||
-	    !slot->read_only_transaction_count) {
+	if (!slot || !slot->occupied || !slot->read_only_transaction_count) {
 		ret = -EIO;
 		goto out_unlock;
 	}
@@ -705,16 +700,16 @@ long pkm_lcs_restore_sequence_gate_acquire(
 }
 
 long pkm_lcs_restore_sequence_gate_validate(
-	const struct pkm_lcs_restore_sequence_gate *gate,
-	u64 backup_sequence, u64 *new_sequence)
+	const struct pkm_lcs_restore_sequence_gate *gate, u64 backup_sequence,
+	u64 *new_sequence)
 {
 	u64 mapped;
 
 	if (!gate || !gate->held || !new_sequence)
 		return -EINVAL;
 	*new_sequence = 0;
-	if (check_add_overflow(gate->restore_sequence_offset,
-			       backup_sequence, &mapped))
+	if (check_add_overflow(gate->restore_sequence_offset, backup_sequence,
+			       &mapped))
 		return -EOVERFLOW;
 	if (mapped == U64_MAX)
 		return -EOVERFLOW;
@@ -724,13 +719,13 @@ long pkm_lcs_restore_sequence_gate_validate(
 }
 
 long pkm_lcs_restore_sequence_gate_record_dispatched(
-	struct pkm_lcs_restore_sequence_gate *gate,
-	u64 backup_sequence, u64 *new_sequence)
+	struct pkm_lcs_restore_sequence_gate *gate, u64 backup_sequence,
+	u64 *new_sequence)
 {
 	long ret;
 
 	ret = pkm_lcs_restore_sequence_gate_validate(gate, backup_sequence,
-						    new_sequence);
+						     new_sequence);
 	if (ret)
 		return ret;
 
@@ -757,9 +752,8 @@ long pkm_lcs_restore_sequence_gate_release_terminal(
 		if (check_add_overflow(gate->max_dispatched_sequence, 1ULL,
 				       &required_next)) {
 			ret = -EOVERFLOW;
-			trace_lcs_restore_sequence(0, 0,
-						   gate->max_dispatched_sequence,
-						   ret);
+			trace_lcs_restore_sequence(
+				0, 0, gate->max_dispatched_sequence, ret);
 			goto out_release;
 		}
 
@@ -788,8 +782,9 @@ void pkm_lcs_kunit_reset_source_table(void)
 	for (i = 0; i < PKM_LCS_MAX_REGISTERED_SOURCES_HARD; i++) {
 		pkm_lcs_source_slot_pending_layer_deletes_destroy(
 			&pkm_lcs_source_slots[i]);
-		pkm_lcs_source_hives_destroy(pkm_lcs_source_slots[i].hives,
-					     pkm_lcs_source_slots[i].hive_count);
+		pkm_lcs_source_hives_destroy(
+			pkm_lcs_source_slots[i].hives,
+			pkm_lcs_source_slots[i].hive_count);
 		memset(&pkm_lcs_source_slots[i], 0,
 		       sizeof(pkm_lcs_source_slots[i]));
 	}
@@ -835,8 +830,7 @@ void pkm_lcs_kunit_source_table_snapshot(
 }
 
 long pkm_lcs_kunit_source_hive_generation_snapshot(
-	u32 source_id, const u8 root_guid[RSI_GUID_SIZE],
-	u64 *generation_out)
+	u32 source_id, const u8 root_guid[RSI_GUID_SIZE], u64 *generation_out)
 {
 	struct pkm_lcs_source_registration_hive_copy *hive;
 	struct pkm_lcs_source_slot *slot;
@@ -863,8 +857,9 @@ out_unlock:
 	return ret;
 }
 
-long pkm_lcs_kunit_source_hive_generation_set(
-	u32 source_id, const u8 root_guid[RSI_GUID_SIZE], u64 generation)
+long pkm_lcs_kunit_source_hive_generation_set(u32 source_id,
+					      const u8 root_guid[RSI_GUID_SIZE],
+					      u64 generation)
 {
 	struct pkm_lcs_source_registration_hive_copy *hive;
 	struct pkm_lcs_source_slot *slot;

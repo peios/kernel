@@ -1,0 +1,43 @@
+# kernel-modules — the loadable kernel modules for one kernel release, with the
+# depmod index that makes them resolvable. Carved from build.kernel's staging
+# root, which `make modules_install` populated (and depmod indexed) against the
+# release it just built.
+#
+# The full set, for the running system. It is not split by hardware class — an
+# installed system may need any driver, and subsetting the real root would only
+# trade image size for a machine that cannot bring up its own hardware.
+#
+# The one carve-out is kernel-modules-irf, which takes the boot-reaching subset
+# into the initramfs root. That is a genuinely different question: the initramfs
+# is loaded whole into RAM and, under UKIs, sits inside a signed image the
+# firmware verifies in one piece, so what it carries is paid for on every boot.
+# The buckets there were measured against a real image rather than guessed — see
+# PEI-218 and build/config/irf-modules.list.
+#
+# The two overlap by design: a module needed to reach root ships in both roots,
+# because the initramfs and the real root share nothing.
+
+# The shipped index is generated at build time and is correct as it stands.
+# This declaration exists for the case the spec intends it for: reindexing
+# after an out-of-tree or DKMS module is added to an installed system.
+# (Top-level, not inside a table — TOML would otherwise scope it to whichever
+# table precedes it.)
+side_effects = ["depmod"]
+
+[package]
+name = "dev.peios.kernel-modules"
+description = "Peios Kernel - loadable modules (based on Linux 7.0.9)"
+
+# Version-locked, not a range. A module tree is bound to the exact vmlinux it
+# was built against by vermagic and symbol CRCs; pairing it with any other
+# kernel build is a boot-time failure, not a degraded mode.
+[dependencies]
+"dev.peios.kernel" = "= {{release}}"
+
+# Everything modules_install produced, including the depmod index. The build/
+# and source/ symlinks it also creates are removed by install-modules.sh —
+# they are absolute paths into a build tree that does not exist on target, and
+# kernel-devel ships the real build/ tree at this same release directory.
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.kernel-modules/COPYING"
+"kernel:modules-root/lib/modules/7.0.9-peios-{{version}}/**" = "usr/lib/modules/7.0.9-peios-{{version}}/"

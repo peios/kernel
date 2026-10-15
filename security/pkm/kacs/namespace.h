@@ -22,8 +22,8 @@ int pkm_kacs_inode_symlink(struct inode *dir, struct dentry *dentry,
 int pkm_kacs_inode_mkdir(struct inode *dir, struct dentry *dentry,
 			 umode_t mode);
 int pkm_kacs_inode_rmdir(struct inode *dir, struct dentry *dentry);
-int pkm_kacs_inode_mknod(struct inode *dir, struct dentry *dentry,
-			 umode_t mode, dev_t dev);
+int pkm_kacs_inode_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
+			 dev_t dev);
 int pkm_kacs_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 			  struct inode *new_dir, struct dentry *new_dentry);
 int pkm_kacs_inode_readlink(struct dentry *dentry);
@@ -33,12 +33,12 @@ int pkm_kacs_inode_init_security(struct inode *inode, struct inode *dir,
 int pkm_kacs_inode_rename_flags(struct inode *old_dir,
 				struct dentry *old_dentry,
 				struct inode *new_dir,
-				struct dentry *new_dentry,
-				unsigned int flags);
+				struct dentry *new_dentry, unsigned int flags);
 
-long pkm_kacs_check_inode_permission_live_for_subject(
-	const void *subject_token, struct inode *inode, struct dentry *dentry,
-	int mask);
+long pkm_kacs_check_inode_permission_live_for_subject(const void *subject_token,
+						      struct inode *inode,
+						      struct dentry *dentry,
+						      int mask);
 long pkm_kacs_authorize_inode_namespace_access_for_subject(
 	const void *subject_token, struct inode *inode, struct dentry *dentry,
 	u32 desired_access);
@@ -51,13 +51,15 @@ long pkm_kacs_authorize_namespace_delete_for_subject(
 long pkm_kacs_authorize_namespace_symlink_for_subject(
 	const void *subject_token, struct inode *parent_inode,
 	struct dentry *child_dentry);
-long pkm_kacs_authorize_namespace_link_for_subject(
-	const void *subject_token, struct dentry *old_dentry, struct inode *dir,
-	struct dentry *new_dentry);
-long pkm_kacs_authorize_namespace_rename_for_subject(
-	const void *subject_token, struct inode *old_dir,
-	struct dentry *old_dentry, struct inode *new_dir,
-	struct dentry *new_dentry);
+long pkm_kacs_authorize_namespace_link_for_subject(const void *subject_token,
+						   struct dentry *old_dentry,
+						   struct inode *dir,
+						   struct dentry *new_dentry);
+long pkm_kacs_authorize_namespace_rename_for_subject(const void *subject_token,
+						     struct inode *old_dir,
+						     struct dentry *old_dentry,
+						     struct inode *new_dir,
+						     struct dentry *new_dentry);
 int pkm_kacs_dentry_create_files_as(struct dentry *dentry, int mode,
 				    const struct qstr *name,
 				    const struct cred *old, struct cred *new);

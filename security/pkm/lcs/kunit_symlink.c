@@ -2,12 +2,11 @@
 
 #include "kunit_common.h"
 
-
 static void pkm_lcs_kunit_symlink_target_materializes_literal_current_user(
 	struct kunit *test)
 {
 	static const char target[] = "CurrentUser\\Software";
-	struct pkm_lcs_materialized_path path = { };
+	struct pkm_lcs_materialized_path path = {};
 
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_materialize_symlink_target_components(
@@ -17,23 +16,18 @@ static void pkm_lcs_kunit_symlink_target_materializes_literal_current_user(
 	KUNIT_ASSERT_NOT_NULL(test, path.components);
 	KUNIT_EXPECT_EQ(test, path.components[0].name_len, 11U);
 	KUNIT_EXPECT_EQ(test,
-			memcmp(path.components[0].name, "CurrentUser", 11),
-			0);
+			memcmp(path.components[0].name, "CurrentUser", 11), 0);
 	KUNIT_EXPECT_EQ(test, path.components[1].name_len, 8U);
-	KUNIT_EXPECT_EQ(test,
-			memcmp(path.components[1].name, "Software", 8),
+	KUNIT_EXPECT_EQ(test, memcmp(path.components[1].name, "Software", 8),
 			0);
 
 	pkm_lcs_materialized_path_destroy(&path);
 }
 
-
-static void pkm_lcs_kunit_symlink_target_resolution_success(
-	struct kunit *test)
+static void pkm_lcs_kunit_symlink_target_resolution_success(struct kunit *test)
 {
 	static const struct pkm_lcs_rsi_layer_view layers[] = {
-		{ .name = "base", .name_len = 4, .precedence = 0,
-		  .enabled = 1 },
+		{ .name = "base", .name_len = 4, .precedence = 0, .enabled = 1 },
 	};
 	static const u8 link_guid[RSI_GUID_SIZE] = {
 		0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8,
@@ -47,22 +41,24 @@ static void pkm_lcs_kunit_symlink_target_resolution_success(
 		.data = target,
 		.data_len = sizeof(target) - 1,
 	};
-	struct pkm_lcs_symlink_target_resolution resolution = { };
+	struct pkm_lcs_symlink_target_resolution resolution = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	long ret;
 	int thread_ret;
 
 	pkm_lcs_kunit_setup_registered_source(test, &file, &token);
 	script.file = &file;
-	task = pkm_lcs_kunit_kthread_run(pkm_lcs_kunit_query_values_source_thread, &script,
-			   "pkm-lcs-kunit-symlink-target");
+	task = pkm_lcs_kunit_kthread_run(
+		pkm_lcs_kunit_query_values_source_thread, &script,
+		"pkm-lcs-kunit-symlink-target");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(task));
 
-	ret = pkm_lcs_resolve_symlink_target_for_key(
-		1, 0, link_guid, NULL, 0, layers, ARRAY_SIZE(layers), NULL,
-		0, NULL, &resolution);
+	ret = pkm_lcs_resolve_symlink_target_for_key(1, 0, link_guid, NULL, 0,
+						     layers, ARRAY_SIZE(layers),
+						     NULL, 0, NULL,
+						     &resolution);
 	thread_ret = pkm_lcs_kunit_kthread_stop(task);
 
 	KUNIT_EXPECT_EQ(test, ret, 0L);
@@ -93,13 +89,11 @@ static void pkm_lcs_kunit_symlink_target_resolution_success(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_symlink_target_resolution_non_link_einval(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_symlink_target_resolution_non_link_einval(struct kunit *test)
 {
 	static const struct pkm_lcs_rsi_layer_view layers[] = {
-		{ .name = "base", .name_len = 4, .precedence = 0,
-		  .enabled = 1 },
+		{ .name = "base", .name_len = 4, .precedence = 0, .enabled = 1 },
 	};
 	static const u8 link_guid[RSI_GUID_SIZE] = {
 		0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8,
@@ -113,22 +107,24 @@ static void pkm_lcs_kunit_symlink_target_resolution_non_link_einval(
 		.data = target,
 		.data_len = sizeof(target) - 1,
 	};
-	struct pkm_lcs_symlink_target_resolution resolution = { };
+	struct pkm_lcs_symlink_target_resolution resolution = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	long ret;
 	int thread_ret;
 
 	pkm_lcs_kunit_setup_registered_source(test, &file, &token);
 	script.file = &file;
-	task = pkm_lcs_kunit_kthread_run(pkm_lcs_kunit_query_values_source_thread, &script,
-			   "pkm-lcs-kunit-symlink-nonlink");
+	task = pkm_lcs_kunit_kthread_run(
+		pkm_lcs_kunit_query_values_source_thread, &script,
+		"pkm-lcs-kunit-symlink-nonlink");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(task));
 
-	ret = pkm_lcs_resolve_symlink_target_for_key(
-		1, 0, link_guid, NULL, 0, layers, ARRAY_SIZE(layers), NULL,
-		0, NULL, &resolution);
+	ret = pkm_lcs_resolve_symlink_target_for_key(1, 0, link_guid, NULL, 0,
+						     layers, ARRAY_SIZE(layers),
+						     NULL, 0, NULL,
+						     &resolution);
 	thread_ret = pkm_lcs_kunit_kthread_stop(task);
 
 	KUNIT_EXPECT_EQ(test, ret, (long)-EINVAL);
@@ -143,13 +139,11 @@ static void pkm_lcs_kunit_symlink_target_resolution_non_link_einval(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_symlink_target_resolution_bad_target_einval(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_symlink_target_resolution_bad_target_einval(struct kunit *test)
 {
 	static const struct pkm_lcs_rsi_layer_view layers[] = {
-		{ .name = "base", .name_len = 4, .precedence = 0,
-		  .enabled = 1 },
+		{ .name = "base", .name_len = 4, .precedence = 0, .enabled = 1 },
 	};
 	static const u8 link_guid[RSI_GUID_SIZE] = {
 		0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8,
@@ -163,22 +157,24 @@ static void pkm_lcs_kunit_symlink_target_resolution_bad_target_einval(
 		.data = target,
 		.data_len = sizeof(target) - 1,
 	};
-	struct pkm_lcs_symlink_target_resolution resolution = { };
+	struct pkm_lcs_symlink_target_resolution resolution = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	long ret;
 	int thread_ret;
 
 	pkm_lcs_kunit_setup_registered_source(test, &file, &token);
 	script.file = &file;
-	task = pkm_lcs_kunit_kthread_run(pkm_lcs_kunit_query_values_source_thread, &script,
-			   "pkm-lcs-kunit-symlink-badtarget");
+	task = pkm_lcs_kunit_kthread_run(
+		pkm_lcs_kunit_query_values_source_thread, &script,
+		"pkm-lcs-kunit-symlink-badtarget");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(task));
 
-	ret = pkm_lcs_resolve_symlink_target_for_key(
-		1, 0, link_guid, NULL, 0, layers, ARRAY_SIZE(layers), NULL,
-		0, NULL, &resolution);
+	ret = pkm_lcs_resolve_symlink_target_for_key(1, 0, link_guid, NULL, 0,
+						     layers, ARRAY_SIZE(layers),
+						     NULL, 0, NULL,
+						     &resolution);
 	thread_ret = pkm_lcs_kunit_kthread_stop(task);
 
 	KUNIT_EXPECT_EQ(test, ret, (long)-EINVAL);
@@ -194,7 +190,8 @@ static void pkm_lcs_kunit_symlink_target_resolution_bad_target_einval(
 }
 
 static struct kunit_case pkm_lcs_kunit_symlink_cases[] = {
-	KUNIT_CASE(pkm_lcs_kunit_symlink_target_materializes_literal_current_user),
+	KUNIT_CASE(
+		pkm_lcs_kunit_symlink_target_materializes_literal_current_user),
 	KUNIT_CASE(pkm_lcs_kunit_symlink_target_resolution_success),
 	KUNIT_CASE(pkm_lcs_kunit_symlink_target_resolution_non_link_einval),
 	KUNIT_CASE(pkm_lcs_kunit_symlink_target_resolution_bad_target_einval),

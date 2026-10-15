@@ -78,10 +78,11 @@ static const struct pkm_lcs_source_copyout_ops pkm_lcs_default_copyout_ops = {
 	.write = pkm_lcs_default_copy_to_user,
 };
 
-extern int lcs_rust_plan_rsi_source_read(
-	bool has_next_request, size_t next_request_len, size_t caller_buffer_len,
-	bool nonblocking, bool fd_closing,
-	struct pkm_lcs_rsi_read_plan_copy *plan);
+extern int
+lcs_rust_plan_rsi_source_read(bool has_next_request, size_t next_request_len,
+			      size_t caller_buffer_len, bool nonblocking,
+			      bool fd_closing,
+			      struct pkm_lcs_rsi_read_plan_copy *plan);
 
 static ssize_t pkm_lcs_source_device_read_file_with_ops(
 	struct file *file, char __user *buf, size_t count, bool nonblocking,
@@ -104,9 +105,10 @@ static ssize_t pkm_lcs_source_device_read_file_with_ops(
 			&source_fd->request_queue,
 			struct pkm_lcs_source_queued_request, link);
 		memset(&plan, 0, sizeof(plan));
-		ret = lcs_rust_plan_rsi_source_read(
-			request != NULL, request ? request->len : 0, count,
-			nonblocking, source_fd->closing, &plan);
+		ret = lcs_rust_plan_rsi_source_read(request != NULL,
+						    request ? request->len : 0,
+						    count, nonblocking,
+						    source_fd->closing, &plan);
 		if (ret) {
 			mutex_unlock(&source_fd->queue_lock);
 			return ret;
@@ -248,8 +250,8 @@ long pkm_lcs_source_accept_response_file(
 			memcpy(result->key_guid, record->key_guid,
 			       sizeof(result->key_guid));
 		if (!record->waiter)
-			pkm_lcs_source_late_effect_move(
-				&result->late_effect, &record->late_effect);
+			pkm_lcs_source_late_effect_move(&result->late_effect,
+							&record->late_effect);
 		result->source_validation_failure = 0;
 		result->malformed_source_data = !status_known;
 		result->source_validation_failure_present = !status_known;
@@ -257,13 +259,14 @@ long pkm_lcs_source_accept_response_file(
 			result->source_validation_failure =
 				PKM_LCS_SOURCE_VALIDATION_UNKNOWN_RSI_STATUS_CODE;
 		result->caller_waiter_attached = record->waiter != NULL;
-		result->caller_waiter_detached =
-			record->waiter_was_attached && !record->waiter;
+		result->caller_waiter_detached = record->waiter_was_attached &&
+						 !record->waiter;
 	}
 
 	if (record->op_code == RSI_BEGIN_TRANSACTION && status != RSI_OK &&
 	    pkm_lcs_rsi_status_known(status))
-		pkm_lcs_source_transaction_begin_failed(record->txn_id, source_fd->session);
+		pkm_lcs_source_transaction_begin_failed(record->txn_id,
+							source_fd->session);
 	if (record->op_code == RSI_COMMIT_TRANSACTION && status == RSI_OK)
 		pkm_lcs_source_transaction_end(record->txn_id);
 	record->response_accepted = true;
@@ -296,8 +299,7 @@ static void pkm_lcs_source_emit_validation_failure_for_result(
 		result->source_id, NULL, 0, false, result->request_id, true,
 		result->request_op_code, true,
 		result->key_guid_present ? result->key_guid : NULL,
-		result->key_guid_present,
-		result->source_validation_failure);
+		result->key_guid_present, result->source_validation_failure);
 }
 
 static bool pkm_lcs_source_late_success_requires_mutation_effects(u16 op_code)
@@ -356,12 +358,10 @@ static long pkm_lcs_source_handle_late_response_effects_file(
 		if (result->status != RSI_OK)
 			return 0;
 		if (!result->source_id || !result->txn_id) {
-			trace_lcs_rsi_response(result->source_id,
-					       result->request_id,
-					       result->txn_id,
-					       result->request_op_code,
-					       result->status,
-					       LCS_RESP_LATE_BEGIN_FAIL, -EIO);
+			trace_lcs_rsi_response(
+				result->source_id, result->request_id,
+				result->txn_id, result->request_op_code,
+				result->status, LCS_RESP_LATE_BEGIN_FAIL, -EIO);
 			pkm_lcs_source_device_mark_down_file(file);
 			return -EIO;
 		}
@@ -370,12 +370,10 @@ static long pkm_lcs_source_handle_late_response_effects_file(
 			result->source_id, result->txn_id, &result->limits,
 			NULL);
 		if (ret) {
-			trace_lcs_rsi_response(result->source_id,
-					       result->request_id,
-					       result->txn_id,
-					       result->request_op_code,
-					       result->status,
-					       LCS_RESP_LATE_BEGIN_FAIL, ret);
+			trace_lcs_rsi_response(
+				result->source_id, result->request_id,
+				result->txn_id, result->request_op_code,
+				result->status, LCS_RESP_LATE_BEGIN_FAIL, ret);
 			pkm_lcs_source_device_mark_down_file(file);
 			return ret;
 		}
@@ -387,20 +385,18 @@ static long pkm_lcs_source_handle_late_response_effects_file(
 				return 0;
 			ret = pkm_lcs_key_fd_publish_restore_commit_effects(
 				result->source_id, result->late_effect.key_guid,
-				(const u8 (*)[PKM_LCS_GUID_BYTES])
+				(const u8(*)[PKM_LCS_GUID_BYTES])
 					result->late_effect.ancestor_guids,
-				(const char * const *)
+				(const char *const *)
 					result->late_effect.resolved_path,
 				result->late_effect.path_component_count,
 				&result->limits);
 			if (ret) {
-				trace_lcs_rsi_response(result->source_id,
-						       result->request_id,
-						       result->txn_id,
-						       result->request_op_code,
-						       result->status,
-						       LCS_RESP_LATE_COMMIT_FAIL,
-						       ret);
+				trace_lcs_rsi_response(
+					result->source_id, result->request_id,
+					result->txn_id, result->request_op_code,
+					result->status,
+					LCS_RESP_LATE_COMMIT_FAIL, ret);
 				pkm_lcs_source_device_mark_down_file(file);
 				return ret;
 			}
@@ -410,12 +406,10 @@ static long pkm_lcs_source_handle_late_response_effects_file(
 			result->source_id, result->txn_id, result->status,
 			&result->limits);
 		if (ret) {
-			trace_lcs_rsi_response(result->source_id,
-					       result->request_id,
-					       result->txn_id,
-					       result->request_op_code,
-					       result->status,
-					       LCS_RESP_LATE_COMMIT_FAIL, ret);
+			trace_lcs_rsi_response(
+				result->source_id, result->request_id,
+				result->txn_id, result->request_op_code,
+				result->status, LCS_RESP_LATE_COMMIT_FAIL, ret);
 			pkm_lcs_source_device_mark_down_file(file);
 			return ret;
 		}
@@ -428,12 +422,11 @@ static long pkm_lcs_source_handle_late_response_effects_file(
 			return 0;
 		if (result->late_effect.kind !=
 		    PKM_LCS_SOURCE_LATE_EFFECT_KEY_MUTATION) {
-			trace_lcs_rsi_response(result->source_id,
-					       result->request_id,
-					       result->txn_id,
-					       result->request_op_code,
-					       result->status,
-					       LCS_RESP_LATE_MUTATION_FAIL, -EIO);
+			trace_lcs_rsi_response(
+				result->source_id, result->request_id,
+				result->txn_id, result->request_op_code,
+				result->status, LCS_RESP_LATE_MUTATION_FAIL,
+				-EIO);
 			pkm_lcs_source_device_mark_down_file(file);
 			return -EIO;
 		}
@@ -441,12 +434,11 @@ static long pkm_lcs_source_handle_late_response_effects_file(
 			result->source_id, &result->late_effect,
 			&result->limits);
 		if (ret) {
-			trace_lcs_rsi_response(result->source_id,
-					       result->request_id,
-					       result->txn_id,
-					       result->request_op_code,
-					       result->status,
-					       LCS_RESP_LATE_MUTATION_FAIL, -EIO);
+			trace_lcs_rsi_response(
+				result->source_id, result->request_id,
+				result->txn_id, result->request_op_code,
+				result->status, LCS_RESP_LATE_MUTATION_FAIL,
+				-EIO);
 			pkm_lcs_source_device_mark_down_file(file);
 			return -EIO;
 		}
@@ -458,12 +450,12 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 	const u8 *frame, size_t frame_len,
 	struct pkm_lcs_source_response_result *result, long *caller_errno)
 {
-	struct pkm_lcs_rsi_lookup_response_summary lookup = { };
-	struct pkm_lcs_rsi_query_values_response_summary query_values = { };
-	struct pkm_lcs_rsi_enum_children_info_summary enum_children = { };
-	struct pkm_lcs_rsi_delete_layer_response_summary delete_layer = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
+	struct pkm_lcs_rsi_lookup_response_summary lookup = {};
+	struct pkm_lcs_rsi_query_values_response_summary query_values = {};
+	struct pkm_lcs_rsi_enum_children_info_summary enum_children = {};
+	struct pkm_lcs_rsi_delete_layer_response_summary delete_layer = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
 	u64 next_sequence;
 	long ret;
 
@@ -488,7 +480,8 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 			if (lookup.source_validation_failure_present) {
 				result->source_validation_failure =
 					lookup.source_validation_failure;
-				result->source_validation_failure_present = true;
+				result->source_validation_failure_present =
+					true;
 			}
 			*caller_errno = -EIO;
 			return 0;
@@ -509,7 +502,8 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 			if (query_values.source_validation_failure_present) {
 				result->source_validation_failure =
 					query_values.source_validation_failure;
-				result->source_validation_failure_present = true;
+				result->source_validation_failure_present =
+					true;
 			}
 			*caller_errno = -EIO;
 			return 0;
@@ -535,7 +529,8 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 			if (enum_children.source_validation_failure_present) {
 				result->source_validation_failure =
 					enum_children.source_validation_failure;
-				result->source_validation_failure_present = true;
+				result->source_validation_failure_present =
+					true;
 			}
 			*caller_errno = -EIO;
 			return 0;
@@ -553,7 +548,8 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 			if (read_key.source_validation_failure_present) {
 				result->source_validation_failure =
 					read_key.source_validation_failure;
-				result->source_validation_failure_present = true;
+				result->source_validation_failure_present =
+					true;
 			}
 			*caller_errno = -EIO;
 			return 0;
@@ -598,7 +594,8 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 			if (delete_layer.source_validation_failure_present) {
 				result->source_validation_failure =
 					delete_layer.source_validation_failure;
-				result->source_validation_failure_present = true;
+				result->source_validation_failure_present =
+					true;
 			}
 			*caller_errno = -EIO;
 			return 0;
@@ -615,8 +612,8 @@ static long pkm_lcs_source_validate_accepted_response_payload(
 
 static long pkm_lcs_source_complete_waiter_file(
 	struct file *file, u64 request_id, long caller_errno,
-	struct pkm_lcs_source_response_result *result,
-	const u8 *frame, size_t frame_len)
+	struct pkm_lcs_source_response_result *result, const u8 *frame,
+	size_t frame_len)
 {
 	struct pkm_lcs_source_in_flight_request *record;
 	struct pkm_lcs_source_response_waiter *waiter;
@@ -678,7 +675,7 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 	const struct pkm_lcs_source_copyin_ops *ops,
 	struct pkm_lcs_source_response_result *result)
 {
-	struct pkm_lcs_source_response_result local_result = { };
+	struct pkm_lcs_source_response_result local_result = {};
 	u8 header[RSI_MIN_RESPONSE_SIZE];
 	u32 total_len;
 	u8 *frame;
@@ -718,7 +715,8 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 	ret = pkm_lcs_source_accept_response_file(file, frame, count, result);
 	if (ret) {
 		if (ret == -EINVAL)
-			pkm_lcs_source_device_mark_malformed_protocol_file(file);
+			pkm_lcs_source_device_mark_malformed_protocol_file(
+				file);
 		goto out_free;
 	}
 #ifdef CONFIG_SECURITY_PKM_KUNIT
@@ -732,16 +730,18 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 		trace_lcs_rsi_response(result->source_id, result->request_id,
 				       result->txn_id, result->request_op_code,
 				       result->status,
-				       LCS_RESP_MALFORMED_PAYLOAD, caller_errno);
+				       LCS_RESP_MALFORMED_PAYLOAD,
+				       caller_errno);
 	if (!ret)
 		pkm_lcs_source_emit_validation_failure_for_result(result);
 	if (ret && result->caller_waiter_attached)
 		pkm_lcs_source_complete_waiter_file(file, result->request_id,
 						    -EIO, result, NULL, 0);
 	if (!ret && result->caller_waiter_attached)
-		ret = pkm_lcs_source_complete_waiter_file(
-			file, result->request_id, caller_errno, result,
-			frame, count);
+		ret = pkm_lcs_source_complete_waiter_file(file,
+							  result->request_id,
+							  caller_errno, result,
+							  frame, count);
 	if (!ret)
 		ret = pkm_lcs_source_handle_late_response_effects_file(file,
 								       result);
@@ -767,9 +767,10 @@ ssize_t pkm_lcs_source_device_read_user(struct file *file, char __user *buf,
 		file, buf, count, nonblocking, &pkm_lcs_default_copyout_ops);
 }
 
-ssize_t pkm_lcs_source_device_write_user(
-	struct file *file, const char __user *buf, size_t count,
-	struct pkm_lcs_source_response_result *result)
+ssize_t
+pkm_lcs_source_device_write_user(struct file *file, const char __user *buf,
+				 size_t count,
+				 struct pkm_lcs_source_response_result *result)
 {
 	return pkm_lcs_source_device_write_file_with_ops(
 		file, buf, count, &pkm_lcs_default_copyin_ops, result);
@@ -799,8 +800,8 @@ static bool pkm_lcs_kunit_copy_from_kernel(void *ctx, void *dst,
 	return true;
 }
 
-ssize_t pkm_lcs_kunit_source_device_read_file(
-	struct file *file, void *buf, size_t count, bool nonblocking)
+ssize_t pkm_lcs_kunit_source_device_read_file(struct file *file, void *buf,
+					      size_t count, bool nonblocking)
 {
 	static const struct pkm_lcs_source_copyout_ops ops = {
 		.write = pkm_lcs_kunit_copy_to_kernel,

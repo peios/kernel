@@ -35,8 +35,8 @@ void pkm_kacs_set_cred_process_state(struct cred *cred,
 	sec->process_state = state ? pkm_kacs_process_state_get(state) : NULL;
 }
 
-struct pkm_kacs_process_sd *pkm_kacs_process_state_get_sd(
-	struct pkm_kacs_process_state *state)
+struct pkm_kacs_process_sd *
+pkm_kacs_process_state_get_sd(struct pkm_kacs_process_state *state)
 {
 	struct pkm_kacs_process_sd *process_sd;
 	unsigned long flags;
@@ -51,7 +51,8 @@ struct pkm_kacs_process_sd *pkm_kacs_process_state_get_sd(
 }
 
 void pkm_kacs_process_state_replace_sd_locked(
-	struct pkm_kacs_process_state *state, struct pkm_kacs_process_sd *new_sd)
+	struct pkm_kacs_process_state *state,
+	struct pkm_kacs_process_sd *new_sd)
 {
 	struct pkm_kacs_process_sd *old_sd;
 	unsigned long flags;
@@ -71,8 +72,8 @@ void pkm_kacs_process_state_replace_sd_locked(
 				 KACS_PST_SD_REPLACE, 0);
 }
 
-void pkm_kacs_process_state_replace_sd(
-	struct pkm_kacs_process_state *state, struct pkm_kacs_process_sd *new_sd)
+void pkm_kacs_process_state_replace_sd(struct pkm_kacs_process_state *state,
+				       struct pkm_kacs_process_sd *new_sd)
 {
 	if (!state || !new_sd)
 		return;
@@ -82,9 +83,9 @@ void pkm_kacs_process_state_replace_sd(
 	mutex_unlock(&state->sd_lock);
 }
 
-struct pkm_kacs_process_state *pkm_kacs_process_state_alloc(
-	const void *primary_token, u32 pip_type, u32 pip_trust,
-	u32 mitigation_bits)
+struct pkm_kacs_process_state *
+pkm_kacs_process_state_alloc(const void *primary_token, u32 pip_type,
+			     u32 pip_trust, u32 mitigation_bits)
 {
 	struct pkm_kacs_process_state *state;
 	struct pkm_kmes_rate_bucket *bucket;
@@ -133,8 +134,8 @@ struct pkm_kacs_process_state *pkm_kacs_process_state_alloc(
 	return state;
 }
 
-struct pkm_kacs_process_state *pkm_kacs_process_state_get(
-	struct pkm_kacs_process_state *state)
+struct pkm_kacs_process_state *
+pkm_kacs_process_state_get(struct pkm_kacs_process_state *state)
 {
 	if (state)
 		refcount_inc(&state->refs);

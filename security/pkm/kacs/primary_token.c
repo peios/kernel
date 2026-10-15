@@ -111,7 +111,8 @@ static long pkm_kacs_prepare_current_primary_install(
 
 	memset(prepared, 0, sizeof(*prepared));
 #if IS_ENABLED(CONFIG_SECURITY_PKM_KUNIT)
-	if (cmpxchg(&pkm_kacs_primary_fail_prepare_task, current, NULL) == current)
+	if (cmpxchg(&pkm_kacs_primary_fail_prepare_task, current, NULL) ==
+	    current)
 		return -ENOMEM;
 #endif
 	task_sec = pkm_kacs_task(current);
@@ -182,7 +183,8 @@ static long pkm_kacs_revert_current_impersonation_for(u32 cause);
 
 static long pkm_kacs_revert_current_impersonation(void)
 {
-	return pkm_kacs_revert_current_impersonation_for(PKM_KACS_REVERT_SILENT);
+	return pkm_kacs_revert_current_impersonation_for(
+		PKM_KACS_REVERT_SILENT);
 }
 
 /*
@@ -205,9 +207,10 @@ static void pkm_kacs_audit_impersonation_reverted(const void *dropped,
 		pip_type = 0;
 		pip_trust = 0;
 	}
-	(void)kacs_rust_emit_impersonation_reverted(
-		subject, dropped, cause, (s32)err, (u64)task_pid_nr(current),
-		pip_type, pip_trust);
+	(void)kacs_rust_emit_impersonation_reverted(subject, dropped, cause,
+						    (s32)err,
+						    (u64)task_pid_nr(current),
+						    pip_type, pip_trust);
 }
 
 static long pkm_kacs_revert_current_impersonation_for(u32 cause)
@@ -232,10 +235,10 @@ static long pkm_kacs_revert_current_impersonation_for(u32 cause)
 		dropped = kacs_rust_token_clone(
 			pkm_kacs_current_effective_token_ptr());
 
-	trace_kacs_primary_install(
-		(u64)(uintptr_t)pkm_kacs_cred(task_sec->impersonation_saved_cred)
-			->token,
-		0, KACS_PRIM_IMPERSONATE_REVERT, 0);
+	trace_kacs_primary_install((u64)(uintptr_t)pkm_kacs_cred(
+					   task_sec->impersonation_saved_cred)
+					   ->token,
+				   0, KACS_PRIM_IMPERSONATE_REVERT, 0);
 	/*
 	 * override_creds() and revert_creds() take and drop no references:
 	 * the impersonation cred's one reference passed to current->cred at
@@ -253,8 +256,8 @@ static long pkm_kacs_revert_current_impersonation_for(u32 cause)
 	return 0;
 }
 
-static void pkm_kacs_free_primary_install_work(
-	struct pkm_kacs_primary_install_work *work)
+static void
+pkm_kacs_free_primary_install_work(struct pkm_kacs_primary_install_work *work)
 {
 	if (!work)
 		return;
@@ -283,9 +286,9 @@ static void pkm_kacs_discard_prepared_primary_installs(
 
 /* Caller holds primary_lock across the epoch check and credential commit. */
 static long pkm_kacs_apply_primary_epoch(struct pkm_kacs_process_state *state,
-					const void *token, u64 epoch)
+					 const void *token, u64 epoch)
 {
-	struct pkm_kacs_primary_install_prepare prepared = { };
+	struct pkm_kacs_primary_install_prepare prepared = {};
 	struct pkm_kacs_task_security *sec = pkm_kacs_task(current);
 	long ret;
 
@@ -306,8 +309,8 @@ static long pkm_kacs_apply_primary_epoch(struct pkm_kacs_process_state *state,
 
 static void pkm_kacs_primary_install_task_work(struct callback_head *twork)
 {
-	struct pkm_kacs_primary_install_work *work =
-		container_of(twork, struct pkm_kacs_primary_install_work, twork);
+	struct pkm_kacs_primary_install_work *work = container_of(
+		twork, struct pkm_kacs_primary_install_work, twork);
 	struct pkm_kacs_process_state *state = pkm_kacs_current_process_state();
 	long ret;
 
@@ -324,7 +327,8 @@ static void pkm_kacs_primary_install_task_work(struct callback_head *twork)
 	if (ret) {
 		trace_kacs_primary_install(0, (u64)(uintptr_t)work->token,
 					   KACS_PRIM_SIBLING_FAILED, ret);
-		pr_warn("pkm: queued primary-token install failed (%ld)\n", ret);
+		pr_warn("pkm: queued primary-token install failed (%ld)\n",
+			ret);
 	}
 
 	pkm_kacs_free_primary_install_work(work);
@@ -337,7 +341,7 @@ static void pkm_kacs_primary_enroll_task_work(struct callback_head *twork)
 
 	mutex_lock(&state->primary_lock);
 	ret = pkm_kacs_apply_primary_epoch(state, state->desired_primary_token,
-					state->primary_epoch);
+					   state->primary_epoch);
 	mutex_unlock(&state->primary_lock);
 	if (ret == -ENOMEM && task_work_add(current, twork, TWA_SIGNAL) == 0)
 		return;
@@ -357,8 +361,10 @@ void pkm_kacs_primary_thread_enroll(struct task_struct *task)
 {
 	struct pkm_kacs_task_security *sec = pkm_kacs_task(task);
 
-	init_task_work(&sec->primary_enroll_work, pkm_kacs_primary_enroll_task_work);
-	WARN_ON_ONCE(task_work_add(task, &sec->primary_enroll_work, TWA_SIGNAL));
+	init_task_work(&sec->primary_enroll_work,
+		       pkm_kacs_primary_enroll_task_work);
+	WARN_ON_ONCE(
+		task_work_add(task, &sec->primary_enroll_work, TWA_SIGNAL));
 }
 
 /*
@@ -407,8 +413,7 @@ void pkm_kacs_primary_exec_committed(void)
 }
 
 static long pkm_kacs_prepare_sibling_primary_installs(
-	const void *token,
-	struct pkm_kacs_primary_install_batch *batch)
+	const void *token, struct pkm_kacs_primary_install_batch *batch)
 {
 	struct task_struct **tasks = NULL;
 	struct task_struct *leader;
@@ -476,7 +481,8 @@ static long pkm_kacs_prepare_sibling_primary_installs(
 			goto out_cleanup_batch;
 		}
 
-		init_task_work(&work->twork, pkm_kacs_primary_install_task_work);
+		init_task_work(&work->twork,
+			       pkm_kacs_primary_install_task_work);
 		work->token = token_ref;
 		work->task = tasks[i];
 		tasks[i] = NULL;
@@ -539,8 +545,8 @@ static void pkm_kacs_queue_prepared_primary_installs(
 
 int pkm_kacs_install_current_primary_token(const void *token)
 {
-	struct pkm_kacs_primary_install_prepare prepared = { };
-	struct pkm_kacs_primary_install_batch sibling_batch = { };
+	struct pkm_kacs_primary_install_prepare prepared = {};
+	struct pkm_kacs_primary_install_batch sibling_batch = {};
 	struct pkm_kacs_process_state *state;
 	struct pkm_kacs_process_sd *new_sd = NULL;
 	const void *old_primary_token;
@@ -574,7 +580,8 @@ int pkm_kacs_install_current_primary_token(const void *token)
 	 * not its still-old local cred, when deciding whether to replace the SD.
 	 */
 	old_primary_token = state->desired_primary_token ?
-		state->desired_primary_token : pkm_kacs_current_primary_token_ptr();
+				    state->desired_primary_token :
+				    pkm_kacs_current_primary_token_ptr();
 	old_id = (u64)(uintptr_t)old_primary_token;
 	ret = pkm_kacs_prepare_sibling_primary_installs(token, &sibling_batch);
 	if (ret)
@@ -591,8 +598,10 @@ int pkm_kacs_install_current_primary_token(const void *token)
 	if (!kacs_rust_token_same_user_sid(old_primary_token, token)) {
 		new_sd = pkm_kacs_process_sd_alloc(token);
 		if (!new_sd) {
-			trace_kacs_primary_install(old_id, (u64)(uintptr_t)token,
-						  KACS_PRIM_SD_ALLOC_FAIL, -ENOMEM);
+			trace_kacs_primary_install(old_id,
+						   (u64)(uintptr_t)token,
+						   KACS_PRIM_SD_ALLOC_FAIL,
+						   -ENOMEM);
 			ret = -ENOMEM;
 			goto out;
 		}
@@ -616,7 +625,7 @@ int pkm_kacs_install_current_primary_token(const void *token)
 	}
 
 	pkm_kacs_queue_prepared_primary_installs(&sibling_batch,
-						state->primary_epoch);
+						 state->primary_epoch);
 	trace_kacs_primary_install(old_id, (u64)(uintptr_t)token,
 				   KACS_PRIM_INSTALL_OK, 0);
 out:
@@ -640,7 +649,8 @@ int pkm_kacs_install_impersonation_token(const void *token)
 		return -EACCES;
 
 	task_sec = pkm_kacs_task(current);
-	ret = pkm_kacs_revert_current_impersonation_for(PKM_KACS_REVERT_REPLACED);
+	ret = pkm_kacs_revert_current_impersonation_for(
+		PKM_KACS_REVERT_REPLACED);
 	if (ret)
 		return ret;
 
@@ -674,7 +684,8 @@ int pkm_kacs_install_impersonation_token(const void *token)
 
 int pkm_kacs_revert_impersonation(void)
 {
-	return pkm_kacs_revert_current_impersonation_for(PKM_KACS_REVERT_SYSCALL);
+	return pkm_kacs_revert_current_impersonation_for(
+		PKM_KACS_REVERT_SYSCALL);
 }
 
 /* The revert exec performs before it commits the new image's creds. */
@@ -715,7 +726,8 @@ static int pkm_kacs_primary_epoch_test_init(struct kunit *test)
 	if (!f)
 		return -ENOMEM;
 	test->priv = f;
-	f->original = kacs_rust_token_clone(pkm_kacs_current_primary_token_ptr());
+	f->original =
+		kacs_rust_token_clone(pkm_kacs_current_primary_token_ptr());
 	f->a = kacs_rust_token_deep_copy(f->original);
 	f->b = kacs_rust_token_deep_copy(f->original);
 	f->initial_epoch = pkm_kacs_task(current)->primary_epoch;
@@ -734,7 +746,8 @@ static void pkm_kacs_primary_epoch_test_exit(struct kunit *test)
 
 	WRITE_ONCE(pkm_kacs_primary_fail_prepare_task, NULL);
 	task_work_run();
-	KUNIT_EXPECT_EQ(test, pkm_kacs_install_current_primary_token(f->original), 0);
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_install_current_primary_token(f->original), 0);
 	kacs_rust_token_drop(f->b);
 	kacs_rust_token_drop(f->a);
 	kacs_rust_token_drop(f->original);
@@ -744,7 +757,7 @@ static void pkm_kacs_primary_epoch_test_exit(struct kunit *test)
 static long pkm_kacs_primary_epoch_lag(struct kunit *test)
 {
 	struct pkm_kacs_primary_epoch_fixture *f = test->priv;
-	struct pkm_kacs_primary_install_prepare prepared = { };
+	struct pkm_kacs_primary_install_prepare prepared = {};
 	long ret;
 
 	ret = pkm_kacs_prepare_current_primary_install(f->original, &prepared);
@@ -809,10 +822,12 @@ static void pkm_kacs_primary_epoch_retry(struct kunit *test, bool supersede)
 	KUNIT_ASSERT_NOT_NULL(test, a);
 	WRITE_ONCE(pkm_kacs_primary_fail_prepare_task, current);
 	pkm_kacs_primary_install_task_work(&a->twork);
-	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(), f->original);
+	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(),
+			    f->original);
 	KUNIT_EXPECT_TRUE(test, task_work_pending(current));
 	if (supersede)
-		KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(f->b), 0);
+		KUNIT_ASSERT_EQ(
+			test, pkm_kacs_install_current_primary_token(f->b), 0);
 	task_work_run();
 	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(),
 			    supersede ? f->b : f->a);
@@ -845,16 +860,19 @@ static void pkm_kacs_primary_epoch_exec(struct kunit *test)
 {
 	struct pkm_kacs_primary_epoch_fixture *f = test->priv;
 	struct pkm_kacs_primary_install_work *a;
-	struct pkm_kacs_primary_install_prepare prepared = { };
+	struct pkm_kacs_primary_install_prepare prepared = {};
 
 	KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(f->a), 0);
-	a = pkm_kacs_primary_epoch_work(f->a,
-		pkm_kacs_current_process_state()->primary_epoch);
+	a = pkm_kacs_primary_epoch_work(
+		f->a, pkm_kacs_current_process_state()->primary_epoch);
 	KUNIT_ASSERT_NOT_NULL(test, a);
 	KUNIT_ASSERT_EQ(test, task_work_add(current, &a->twork, TWA_NONE), 0);
 	/* Exec derives and commits a token without an INSTALL operation. */
-	KUNIT_ASSERT_EQ(test, pkm_kacs_prepare_current_primary_install(f->b, &prepared), 0L);
-	KUNIT_ASSERT_EQ(test, pkm_kacs_apply_current_primary_install(&prepared), 0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_prepare_current_primary_install(f->b, &prepared),
+		0L);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_apply_current_primary_install(&prepared),
+			0L);
 	pkm_kacs_primary_exec_committed();
 	task_work_run();
 	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(), f->b);
@@ -882,7 +900,8 @@ static int pkm_kacs_install_exec_guard_holder(void *data)
 			const struct cred *cred = get_task_cred(f->installer);
 
 			f->blocked = true;
-			f->unchanged = pkm_kacs_cred(cred)->token == f->original;
+			f->unchanged = pkm_kacs_cred(cred)->token ==
+				       f->original;
 			put_cred(cred);
 			break;
 		}
@@ -914,7 +933,8 @@ static void pkm_kacs_primary_install_waits_for_exec(struct kunit *test)
 	holder = kthread_run(pkm_kacs_install_exec_guard_holder, &race,
 			     "pkm-install-exec");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(holder));
-	if (!wait_for_completion_timeout(&race.locked, msecs_to_jiffies(5000))) {
+	if (!wait_for_completion_timeout(&race.locked,
+					 msecs_to_jiffies(5000))) {
 		kthread_stop(holder);
 		KUNIT_FAIL(test, "exec guard holder did not start");
 		return;
@@ -928,7 +948,8 @@ static void pkm_kacs_primary_install_waits_for_exec(struct kunit *test)
 	KUNIT_EXPECT_TRUE(test, debug_locks);
 }
 
-static void pkm_kacs_primary_install_error_releases_exec_guard(struct kunit *test)
+static void
+pkm_kacs_primary_install_error_releases_exec_guard(struct kunit *test)
 {
 	struct pkm_kacs_primary_epoch_fixture *f = test->priv;
 	struct pkm_kacs_process_state *state = pkm_kacs_current_process_state();
@@ -949,7 +970,8 @@ static void pkm_kacs_primary_install_error_releases_exec_guard(struct kunit *tes
 	if (unlocked)
 		mutex_unlock(&current->signal->cred_guard_mutex);
 	KUNIT_ASSERT_TRUE(test, unlocked);
-	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(), f->original);
+	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(),
+			    f->original);
 
 	WRITE_ONCE(pkm_kacs_primary_fail_prepare_task, current);
 	ret = pkm_kacs_install_current_primary_token(f->b);
@@ -959,7 +981,8 @@ static void pkm_kacs_primary_install_error_releases_exec_guard(struct kunit *tes
 		mutex_unlock(&current->signal->cred_guard_mutex);
 	KUNIT_ASSERT_TRUE(test, unlocked);
 	KUNIT_EXPECT_EQ(test, state->primary_epoch, epoch);
-	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(), f->original);
+	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(),
+			    f->original);
 	KUNIT_EXPECT_TRUE(test, debug_locks);
 }
 
@@ -978,7 +1001,8 @@ static void pkm_kacs_primary_exec_selects_pending_install(struct kunit *test)
 
 	KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(f->b), 0);
 	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_epoch_lag(test), 0L);
-	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(), f->original);
+	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(),
+			    f->original);
 	mutex_lock(&current->signal->cred_guard_mutex);
 	selected = pkm_kacs_primary_token_for_exec(&pending);
 	mutex_unlock(&current->signal->cred_guard_mutex);
@@ -1029,7 +1053,8 @@ static long pkm_kacs_primary_exec_derive(const void *subject,
 	return 0;
 }
 
-static void pkm_kacs_primary_exec_pending_install_projects_ids(struct kunit *test)
+static void
+pkm_kacs_primary_exec_pending_install_projects_ids(struct kunit *test)
 {
 	struct pkm_kacs_primary_epoch_fixture *f = test->priv;
 	const void *installed;
@@ -1038,18 +1063,17 @@ static void pkm_kacs_primary_exec_pending_install_projects_ids(struct kunit *tes
 	u32 replaced_uid;
 	bool pending;
 
-	installed =
-		kacs_rust_kunit_create_impersonation_variant_token(PKM_KUNIT_USER_KIND_LOCAL_SERVICE,
-								   KACS_TOKEN_TYPE_PRIMARY,
-								   KACS_IMLEVEL_DELEGATION,
-								   PKM_KUNIT_IL_SYSTEM, 0U, 0ULL);
+	installed = kacs_rust_kunit_create_impersonation_variant_token(
+		PKM_KUNIT_USER_KIND_LOCAL_SERVICE, KACS_TOKEN_TYPE_PRIMARY,
+		KACS_IMLEVEL_DELEGATION, PKM_KUNIT_IL_SYSTEM, 0U, 0ULL);
 	KUNIT_ASSERT_NOT_NULL(test, installed);
 	/* The fixture owns the replacement through all assertion exits. */
 	kacs_rust_token_drop(f->b);
 	f->b = installed;
 	KUNIT_ASSERT_EQ(test, kacs_rust_token_projected_uid(installed), 65534U);
 	KUNIT_ASSERT_EQ(test, kacs_rust_token_projected_gid(installed), 65534U);
-	KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(installed), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(installed),
+			0);
 	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_epoch_lag(test), 0L);
 	replaced_uid = __kuid_val(current_real_cred()->uid);
 	KUNIT_ASSERT_NE(test, replaced_uid, 65534U);
@@ -1062,24 +1086,30 @@ static void pkm_kacs_primary_exec_pending_install_projects_ids(struct kunit *tes
 	kacs_rust_token_drop(selected);
 
 	/* Control: without projection the replaced token's identity survives. */
-	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_exec_derive(installed, installed,
-							   false, 0U, 0U, &new), 0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kacs_primary_exec_derive(installed, installed,
+						     false, 0U, 0U, &new),
+			0L);
 	KUNIT_EXPECT_EQ(test, __kuid_val(new->uid), replaced_uid);
 	KUNIT_EXPECT_EQ(test, new->group_info->ngroups, 1);
 	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_cred(new)->token, installed);
 	abort_creds(new);
 
 	/* A lagging exec runs as the pending token's projection. */
-	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_exec_derive(installed, installed,
-							   true, 0U, 0U, &new), 0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kacs_primary_exec_derive(installed, installed, true,
+						     0U, 0U, &new),
+			0L);
 	pkm_kunit_expect_linux_cred_projection(test, new, 65534U, 65534U);
 	KUNIT_EXPECT_EQ(test, __kuid_val(new->user->uid), 65534U);
 	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_cred(new)->token, installed);
 	abort_creds(new);
 
 	/* A setuid binary's uid applies on top; the rest stays projected. */
-	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_exec_derive(installed, installed,
-							   true, 4242U, 0U, &new), 0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kacs_primary_exec_derive(installed, installed, true,
+						     4242U, 0U, &new),
+			0L);
 	KUNIT_EXPECT_EQ(test, __kuid_val(new->uid), 4242U);
 	KUNIT_EXPECT_EQ(test, __kuid_val(new->euid), 4242U);
 	KUNIT_EXPECT_EQ(test, __kuid_val(new->suid), 4242U);
@@ -1092,8 +1122,10 @@ static void pkm_kacs_primary_exec_pending_install_projects_ids(struct kunit *tes
 	abort_creds(new);
 
 	/* Likewise a setgid binary's gid. */
-	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_exec_derive(installed, installed,
-							   true, 0U, 4343U, &new), 0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kacs_primary_exec_derive(installed, installed, true,
+						     0U, 4343U, &new),
+			0L);
 	KUNIT_EXPECT_EQ(test, __kuid_val(new->uid), 65534U);
 	KUNIT_EXPECT_EQ(test, __kgid_val(new->gid), 4343U);
 	KUNIT_EXPECT_EQ(test, __kgid_val(new->egid), 4343U);
@@ -1118,11 +1150,9 @@ static void pkm_kacs_primary_exec_pending_install_projected_setuid_is_no_change(
 	struct cred *new = NULL;
 	long ret;
 
-	installed =
-		kacs_rust_kunit_create_impersonation_variant_token(PKM_KUNIT_USER_KIND_LOCAL_SERVICE,
-								   KACS_TOKEN_TYPE_PRIMARY,
-								   KACS_IMLEVEL_DELEGATION,
-								   PKM_KUNIT_IL_SYSTEM, 0U, 0ULL);
+	installed = kacs_rust_kunit_create_impersonation_variant_token(
+		PKM_KUNIT_USER_KIND_LOCAL_SERVICE, KACS_TOKEN_TYPE_PRIMARY,
+		KACS_IMLEVEL_DELEGATION, PKM_KUNIT_IL_SYSTEM, 0U, 0ULL);
 	KUNIT_ASSERT_NOT_NULL(test, installed);
 	/* The fixture owns the replacement through all assertion exits. */
 	kacs_rust_token_drop(f->b);
@@ -1155,8 +1185,8 @@ static void pkm_kacs_primary_exec_pending_install_projected_setuid_is_no_change(
 static void pkm_kacs_primary_exec_pending_install_keeps_npm(struct kunit *test)
 {
 	struct pkm_kacs_primary_epoch_fixture *f = test->priv;
-	struct pkm_kacs_kunit_exec_new_process_min_args args = { };
-	struct pkm_kacs_boot_snapshot before = { }, after = { };
+	struct pkm_kacs_kunit_exec_new_process_min_args args = {};
+	struct pkm_kacs_boot_snapshot before = {}, after = {};
 	const void *selected;
 	const void *installed;
 	const u8 *file_sd;
@@ -1165,19 +1195,20 @@ static void pkm_kacs_primary_exec_pending_install_keeps_npm(struct kunit *test)
 	bool pending;
 	long ret;
 
-	installed =
-		kacs_rust_kunit_create_impersonation_variant_token(PKM_KUNIT_USER_KIND_SYSTEM,
-								   KACS_TOKEN_TYPE_PRIMARY,
-								   KACS_IMLEVEL_DELEGATION,
-								   PKM_KUNIT_IL_SYSTEM, 0U, 0ULL);
+	installed = kacs_rust_kunit_create_impersonation_variant_token(
+		PKM_KUNIT_USER_KIND_SYSTEM, KACS_TOKEN_TYPE_PRIMARY,
+		KACS_IMLEVEL_DELEGATION, PKM_KUNIT_IL_SYSTEM, 0U, 0ULL);
 	KUNIT_ASSERT_NOT_NULL(test, installed);
 	/* The fixture owns the replacement through all assertion exits. */
 	kacs_rust_token_drop(f->b);
 	f->b = installed;
-	KUNIT_ASSERT_TRUE(test, kacs_rust_kunit_token_snapshot(installed, &before));
-	KUNIT_ASSERT_TRUE(test, before.mandatory_policy &
-			 KACS_TOKEN_MANDATORY_POLICY_NEW_PROCESS_MIN);
-	KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(installed), 0);
+	KUNIT_ASSERT_TRUE(test,
+			  kacs_rust_kunit_token_snapshot(installed, &before));
+	KUNIT_ASSERT_TRUE(test,
+			  before.mandatory_policy &
+				  KACS_TOKEN_MANDATORY_POLICY_NEW_PROCESS_MIN);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_install_current_primary_token(installed),
+			0);
 	KUNIT_ASSERT_EQ(test, pkm_kacs_primary_epoch_lag(test), 0L);
 	file_sd = kacs_rust_kunit_create_label_sd_subset(PKM_KUNIT_IL_LOW,
 							 &file_sd_len);
@@ -1189,7 +1220,8 @@ static void pkm_kacs_primary_exec_pending_install_keeps_npm(struct kunit *test)
 	args.target_file_sd_ptr = file_sd;
 	args.target_file_sd_len = file_sd_len;
 	args.target_file_sd_state = PKM_KACS_KUNIT_FILE_SD_VALID;
-	ret = pkm_kacs_kunit_check_exec_new_process_min(&args, &after, &changed);
+	ret = pkm_kacs_kunit_check_exec_new_process_min(&args, &after,
+							&changed);
 	mutex_unlock(&current->signal->cred_guard_mutex);
 	KUNIT_EXPECT_PTR_EQ(test, selected, installed);
 	KUNIT_EXPECT_TRUE(test, pending);
@@ -1201,7 +1233,8 @@ static void pkm_kacs_primary_exec_pending_install_keeps_npm(struct kunit *test)
 	KUNIT_EXPECT_NE(test, after.token_id, before.token_id);
 	KUNIT_EXPECT_EQ(test, after.logon_session_id, before.logon_session_id);
 	KUNIT_EXPECT_EQ(test, after.mandatory_policy, before.mandatory_policy);
-	KUNIT_EXPECT_EQ(test, after.privileges_enabled, before.privileges_enabled);
+	KUNIT_EXPECT_EQ(test, after.privileges_enabled,
+			before.privileges_enabled);
 	KUNIT_EXPECT_TRUE(test, debug_locks);
 }
 
@@ -1216,8 +1249,9 @@ static struct kunit_case pkm_kacs_primary_epoch_cases[] = {
 	KUNIT_CASE(pkm_kacs_primary_exec_selects_pending_install),
 	KUNIT_CASE(pkm_kacs_primary_exec_pending_install_keeps_npm),
 	KUNIT_CASE(pkm_kacs_primary_exec_pending_install_projects_ids),
-	KUNIT_CASE(pkm_kacs_primary_exec_pending_install_projected_setuid_is_no_change),
-	{ }
+	KUNIT_CASE(
+		pkm_kacs_primary_exec_pending_install_projected_setuid_is_no_change),
+	{}
 };
 
 static struct kunit_suite pkm_kacs_primary_epoch_suite = {

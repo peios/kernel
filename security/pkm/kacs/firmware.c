@@ -72,10 +72,9 @@ bool pkm_kacs_firmware_sig_enforced(void)
 	return pkm_kacs_fwsig_enforce;
 }
 
-int pkm_kacs_firmware_verdict(
-	int probe_ret, u32 source, int verify_ret,
-	const struct pkm_kacs_signing_trust_result *result, bool enforce,
-	u8 *reason_out)
+int pkm_kacs_firmware_verdict(int probe_ret, u32 source, int verify_ret,
+			      const struct pkm_kacs_signing_trust_result *result,
+			      bool enforce, u8 *reason_out)
 {
 	u8 reason;
 
@@ -145,8 +144,8 @@ static int pkm_kacs_firmware_decide(struct file *file, int probe_ret,
 	if (!probe_ret && material->source != PKM_KACS_SIGNING_SOURCE_NONE)
 		verify_ret = pkm_kacs_signing_verify_builtin(material, &result);
 
-	ret = pkm_kacs_firmware_verdict(probe_ret, material->source,
-					verify_ret, &result, enforce, &reason);
+	ret = pkm_kacs_firmware_verdict(probe_ret, material->source, verify_ret,
+					&result, enforce, &reason);
 
 	trace_kacs_firmware_load(file_len, material->source, result.pip_trust,
 				 enforce, reason, ret);

@@ -20,6 +20,8 @@
 #include <pkm/trace.h>
 
 /* ==== shared op taxonomy (lcs_rsi_request + lcs_rsi_roundtrip) ==== */
+/* Preserve the trace macro tables and field/assignment layout. */
+/* clang-format off */
 #define lcs_op_symbols							\
 	{ LCS_OP_LOOKUP,		"lookup" },			\
 	{ LCS_OP_READ_KEY,		"read-key" },			\
@@ -1105,6 +1107,7 @@ DEFINE_EVENT(lcs_watch, lcs_watch_self_watch,
 	TP_PROTO(u32 source_id, u64 key_guid_hash, u32 event_type,
 		 u32 watch_count, long ret),
 	TP_ARGS(source_id, key_guid_hash, event_type, watch_count, ret));
+/* clang-format on */
 
 #endif /* _TRACE_LCS_H */
 

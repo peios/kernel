@@ -38,11 +38,11 @@
 /* UDP-Lite's socket table (net/ipv4/udplite.c exports it, no header does). */
 extern struct udp_table udplite_table;
 
-#define NTFE_LISTENERS_BATCH	32
+#define NTFE_LISTENERS_BATCH 32
 
 /* One socket into one record; the owner read takes the socket's lock. */
 static void ntfe_listener_fill(struct peios_ntfe_listener_rec *rec,
-			      const struct sock *sk, u8 protocol)
+			       const struct sock *sk, u8 protocol)
 {
 	const struct inet_sock *inet = inet_sk(sk);
 	struct peios_ntfe_owner owner;
@@ -84,7 +84,7 @@ static void ntfe_listener_fill(struct peios_ntfe_listener_rec *rec,
 	memcpy(rec->owner_comm, owner.comm, sizeof(rec->owner_comm));
 	if (owner.token)
 		ntfe_rust_owner_sids(owner.token, rec->owner_user,
-				    rec->owner_service);
+				     rec->owner_service);
 	pkm_kacs_socket_owner_put(&owner);
 }
 
@@ -99,10 +99,10 @@ void peios_ntfe_kunit_listener_fill(struct peios_ntfe_listener_rec *rec,
 struct ntfe_listeners_walk {
 	struct peios_ntfe_listener_rec __user *ubuf;
 	struct peios_ntfe_listener_rec *batch;
-	u32 room;		/* records the user buffer holds */
+	u32 room; /* records the user buffer holds */
 	u32 written;
 	u32 total;
-	u32 n;			/* records in the batch */
+	u32 n; /* records in the batch */
 	/* Within one bucket: the sockets copied out on its earlier passes,
 	 * where this pass is, whether this is its first pass (the only one
 	 * that counts), and whether the batch filled with more to come.
@@ -126,14 +126,14 @@ static void ntfe_listeners_flush(struct ntfe_listeners_walk *w)
 
 /* Records a socket seen under its bucket lock, if there is room. */
 static void ntfe_listeners_note(struct ntfe_listeners_walk *w,
-			       const struct sock *sk, u8 protocol)
+				const struct sock *sk, u8 protocol)
 {
 	if (w->first)
 		w->total++;
 	if (w->idx++ < w->skip)
-		return;		/* taken on an earlier pass */
+		return; /* taken on an earlier pass */
 	if (w->written + w->n >= w->room)
-		return;		/* count only */
+		return; /* count only */
 	if (w->n == NTFE_LISTENERS_BATCH) {
 		w->more = true;
 		return;
@@ -199,7 +199,7 @@ static void ntfe_listeners_tcp(struct ntfe_listeners_walk *w)
 }
 
 static void ntfe_listeners_udp(struct ntfe_listeners_walk *w,
-			      struct udp_table *table, u8 protocol)
+			       struct udp_table *table, u8 protocol)
 {
 	unsigned int bucket;
 
@@ -219,7 +219,7 @@ static void ntfe_listeners_udp(struct ntfe_listeners_walk *w,
 				if (!net_eq(sock_net(sk), &init_net))
 					continue;
 				if (!inet_sk(sk)->inet_num)
-					continue;	/* not bound: receives nothing */
+					continue; /* not bound: receives nothing */
 				ntfe_listeners_note(w, sk, protocol);
 			}
 			spin_unlock_bh(&hslot->lock);
@@ -235,8 +235,10 @@ long peios_ntfe_listeners_dump(struct peios_ntfe_listeners_query *query)
 		.room = query->buf_len / sizeof(struct peios_ntfe_listener_rec),
 	};
 
-	w.batch = peios_ntfe_kunit_alloc_should_fail() ? NULL :
-		kcalloc(NTFE_LISTENERS_BATCH, sizeof(*w.batch), GFP_KERNEL);
+	w.batch = peios_ntfe_kunit_alloc_should_fail() ?
+			  NULL :
+			  kcalloc(NTFE_LISTENERS_BATCH, sizeof(*w.batch),
+				  GFP_KERNEL);
 	if (!w.batch)
 		return -ENOMEM;
 

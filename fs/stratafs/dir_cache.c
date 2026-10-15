@@ -21,7 +21,8 @@ bool stratafs_dir_cache_contains(struct stratafs_dir_cache *cache,
 		return false;
 	hash = siphash(name, len, &cache->key);
 	hlist_for_each_entry(entry,
-		&cache->buckets[hash & (cache->bucket_count - 1)], hash_node)
+			     &cache->buckets[hash & (cache->bucket_count - 1)],
+			     hash_node)
 		if (entry->hash == hash && entry->len == len &&
 		    !memcmp(entry->name, name, len))
 			return true;
@@ -57,8 +58,8 @@ static int stratafs_dir_cache_grow(struct stratafs_dir_cache *cache)
 }
 
 int stratafs_dir_cache_add(struct stratafs_dir_cache *cache, const char *name,
-			  unsigned int len, unsigned int type,
-			  unsigned int participant_index)
+			   unsigned int len, unsigned int type,
+			   unsigned int participant_index)
 {
 	struct stratafs_dir_entry *entry;
 	int ret;
@@ -78,8 +79,9 @@ int stratafs_dir_cache_add(struct stratafs_dir_cache *cache, const char *name,
 	entry->type = type;
 	entry->participant_index = participant_index;
 	entry->hash = siphash(name, len, &cache->key);
-	hlist_add_head(&entry->hash_node,
-		       &cache->buckets[entry->hash & (cache->bucket_count - 1)]);
+	hlist_add_head(
+		&entry->hash_node,
+		&cache->buckets[entry->hash & (cache->bucket_count - 1)]);
 	list_add_tail(&entry->list, &cache->entries);
 	cache->count++;
 	return 0;
@@ -101,8 +103,8 @@ int stratafs_dir_cache_seal(struct stratafs_dir_cache *cache)
 	unsigned int i = 0;
 
 	if (cache->count) {
-		cache->positions = kvcalloc(cache->count,
-					   sizeof(*cache->positions), GFP_KERNEL);
+		cache->positions = kvcalloc(
+			cache->count, sizeof(*cache->positions), GFP_KERNEL);
 		if (!cache->positions)
 			return -ENOMEM;
 		list_for_each_entry(entry, &cache->entries, list)

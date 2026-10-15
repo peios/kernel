@@ -24,8 +24,8 @@ long pkm_lcs_layer_metadata_root_discover_from_machine_hive(
 		{ .name = "Registry", .name_len = sizeof("Registry") - 1 },
 		{ .name = "Layers", .name_len = sizeof("Layers") - 1 },
 	};
-	struct pkm_lcs_resolved_key_path layers_root = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_resolved_key_path layers_root = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	long ret;
 
 	if (present_out)
@@ -77,12 +77,12 @@ long pkm_lcs_layer_metadata_children_enumerate_from_root(
 	u32 source_id, const u8 layers_root_guid[RSI_GUID_SIZE],
 	struct pkm_lcs_layer_metadata_child_list *children_out)
 {
-	struct pkm_lcs_layer_metadata_child_list result = { };
-	struct pkm_lcs_rsi_enum_children_info_summary summary = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_runtime_limits active_limits = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_layer_metadata_child_list result = {};
+	struct pkm_lcs_rsi_enum_children_info_summary summary = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_runtime_limits active_limits = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	u64 next_sequence = 0;
 	u32 i;
 	long ret;
@@ -133,7 +133,7 @@ long pkm_lcs_layer_metadata_children_enumerate_from_root(
 	}
 
 	for (i = 0; i < summary.subkey_count; i++) {
-		struct pkm_lcs_rsi_enum_subkey_result subkey = { };
+		struct pkm_lcs_rsi_enum_subkey_result subkey = {};
 		char *name;
 
 		ret = pkm_lcs_rsi_materialize_enum_subkey_response(
@@ -142,8 +142,7 @@ long pkm_lcs_layer_metadata_children_enumerate_from_root(
 			NULL, 0, &response.limits, &subkey);
 		if (ret)
 			goto out_result;
-		if (!subkey.found ||
-		    (size_t)subkey.name_offset > frame.len ||
+		if (!subkey.found || (size_t)subkey.name_offset > frame.len ||
 		    (size_t)subkey.name_len >
 			    frame.len - (size_t)subkey.name_offset) {
 			ret = -EIO;
@@ -182,10 +181,10 @@ long pkm_lcs_layer_metadata_child_lookup_from_root_with_limits(
 	const struct pkm_lcs_runtime_limits *limits,
 	u8 child_guid_out[RSI_GUID_SIZE], bool *present_out)
 {
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_lookup_child_result child = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_lookup_child_result child = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -288,12 +287,15 @@ long pkm_lcs_layer_metadata_refresh_all_from_root(
 	u32 source_id, const u8 layers_root_guid[RSI_GUID_SIZE],
 	struct pkm_lcs_layer_metadata_refresh_all_result *result_out)
 {
-	static const char * const path_prefix[] = {
-		"Machine", "System", "Registry", "Layers",
+	static const char *const path_prefix[] = {
+		"Machine",
+		"System",
+		"Registry",
+		"Layers",
 	};
-	struct pkm_lcs_layer_metadata_refresh_all_result result = { };
-	struct pkm_lcs_layer_metadata_child_list children = { };
-	struct pkm_lcs_runtime_limits active_limits = { };
+	struct pkm_lcs_layer_metadata_refresh_all_result result = {};
+	struct pkm_lcs_layer_metadata_child_list children = {};
+	struct pkm_lcs_runtime_limits active_limits = {};
 	u32 i;
 	long ret;
 
@@ -312,15 +314,18 @@ long pkm_lcs_layer_metadata_refresh_all_from_root(
 		goto out_children;
 	result.enumerated_child_count = children.child_count;
 
-	ret = pkm_lcs_layer_metadata_refresh_all_admit_children(
-		&children, &active_limits);
+	ret = pkm_lcs_layer_metadata_refresh_all_admit_children(&children,
+								&active_limits);
 	if (ret)
 		goto out_children;
 
 	for (i = 0; i < children.child_count; i++) {
 		const char *resolved_path[] = {
-			path_prefix[0], path_prefix[1], path_prefix[2],
-			path_prefix[3], children.children[i].name,
+			path_prefix[0],
+			path_prefix[1],
+			path_prefix[2],
+			path_prefix[3],
+			children.children[i].name,
 		};
 		bool effective_changed = false;
 
@@ -339,8 +344,8 @@ long pkm_lcs_layer_metadata_refresh_all_from_root(
 			 * records the skip.
 			 */
 			trace_lcs_layer_metadata_refresh(
-				source_id, 0, 0, result.refreshed_child_count, 0,
-				0, ret);
+				source_id, 0, 0, result.refreshed_child_count,
+				0, 0, ret);
 			result.skipped_child_count++;
 			ret = 0;
 			continue;

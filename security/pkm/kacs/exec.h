@@ -13,20 +13,14 @@ int pkm_kacs_bprm_creds_from_file(struct linux_binprm *bprm,
 				  const struct file *file);
 void pkm_kacs_bprm_committing_creds(const struct linux_binprm *bprm);
 void pkm_kacs_bprm_committed_creds(const struct linux_binprm *bprm);
-long pkm_kacs_bprm_creds_from_file_core(const void *subject_token,
-					const void *primary_token,
-					const struct file *file,
-					struct cred *new,
-					const struct cred *old,
-					bool require_file_for_npm,
-					bool stage_exec_pip,
-					bool usermodehelper,
-					unsigned int bprm_unsafe,
-					bool project_primary_ids);
+long pkm_kacs_bprm_creds_from_file_core(
+	const void *subject_token, const void *primary_token,
+	const struct file *file, struct cred *new, const struct cred *old,
+	bool require_file_for_npm, bool stage_exec_pip, bool usermodehelper,
+	unsigned int bprm_unsafe, bool project_primary_ids);
 bool pkm_kacs_exec_pip_cap_for_unsafe(unsigned int bprm_unsafe,
 				      u32 current_pip_type,
-				      u32 current_pip_trust,
-				      u32 *exec_pip_type,
+				      u32 current_pip_trust, u32 *exec_pip_type,
 				      u32 *exec_pip_trust);
 
 /*

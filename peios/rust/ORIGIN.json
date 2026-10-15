@@ -1,0 +1,13 @@
+{
+  "source_repository": "Peios PKM",
+  "source_commit": "ac4c6eb57ff94821f1eaea2b3bde460777d48f5b",
+  "kernel_import_commit": "b6e6b8c9229e702e41f373722459a58e1609487c",
+  "ownership": "Kernel-owned: edit semantic code in security/pkm, shared by Kbuild and Cargo. No synchronization back to PKM.",
+  "tests": "All six former PKM workspace members; original 1864 tests pass before and after migration.",
+  "adaptations": [
+    "Cargo entry points include the existing kernel module trees and re-export the former crate APIs.",
+    "Cargo ABI constants use the same generated file as Kbuild.",
+    "NTFE userspace crate and generated ABI type tests moved into this workspace.",
+    "ABI regeneration uses include/uapi/pkm headers."
+  ]
+}

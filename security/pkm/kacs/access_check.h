@@ -30,7 +30,8 @@ struct pkm_kacs_resolved_ctx {
 struct pkm_kacs_usercopy_ops {
 	void *ctx;
 	bool (*read_bytes)(void *ctx, u64 user_ptr, void *dst, size_t len);
-	bool (*write_bytes)(void *ctx, u64 user_ptr, const void *src, size_t len);
+	bool (*write_bytes)(void *ctx, u64 user_ptr, const void *src,
+			    size_t len);
 };
 
 struct pkm_kacs_audit_event_view {
@@ -58,9 +59,8 @@ struct pkm_kacs_privilege_use_event_view {
 
 struct pkm_kacs_event_sink_ops {
 	void *ctx;
-	bool (*on_audit_event)(
-		void *ctx,
-		const struct pkm_kacs_audit_event_view *event);
+	bool (*on_audit_event)(void *ctx,
+			       const struct pkm_kacs_audit_event_view *event);
 	bool (*on_privilege_use_event)(
 		void *ctx,
 		const struct pkm_kacs_privilege_use_event_view *event);
@@ -80,18 +80,14 @@ struct pkm_kacs_ingress_summary {
 };
 
 long pkm_kacs_access_check_ingress_scalar(
-	const struct pkm_kacs_usercopy_ops *ops,
-	u64 args_ptr,
+	const struct pkm_kacs_usercopy_ops *ops, u64 args_ptr,
 	const struct pkm_kacs_resolved_ctx *resolved_ctx,
 	const struct pkm_kacs_event_sink_ops *event_sinks,
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kacs_access_check_ingress_list(
-	const struct pkm_kacs_usercopy_ops *ops,
-	u64 args_ptr,
-	u64 results_ptr,
-	u32 results_count,
-	const struct pkm_kacs_resolved_ctx *resolved_ctx,
+	const struct pkm_kacs_usercopy_ops *ops, u64 args_ptr, u64 results_ptr,
+	u32 results_count, const struct pkm_kacs_resolved_ctx *resolved_ctx,
 	const struct pkm_kacs_event_sink_ops *event_sinks,
 	struct pkm_kacs_ingress_summary *summary);
 
@@ -102,25 +98,19 @@ long pkm_kacs_access_check_user_scalar(
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kacs_access_check_user_list(
-	const void __user *uargs,
-	struct kacs_node_result __user *results,
-	u32 results_count,
-	const struct pkm_kacs_resolved_ctx *resolved_ctx,
+	const void __user *uargs, struct kacs_node_result __user *results,
+	u32 results_count, const struct pkm_kacs_resolved_ctx *resolved_ctx,
 	const struct pkm_kacs_event_sink_ops *event_sinks,
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kacs_access_check_ingress_scalar_with_token_fd(
-	const struct pkm_kacs_usercopy_ops *ops,
-	u64 args_ptr,
+	const struct pkm_kacs_usercopy_ops *ops, u64 args_ptr,
 	const struct pkm_kacs_event_sink_ops *event_sinks,
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kacs_access_check_ingress_list_with_token_fd(
-	const struct pkm_kacs_usercopy_ops *ops,
-	u64 args_ptr,
-	u64 results_ptr,
-	u32 results_count,
-	const struct pkm_kacs_event_sink_ops *event_sinks,
+	const struct pkm_kacs_usercopy_ops *ops, u64 args_ptr, u64 results_ptr,
+	u32 results_count, const struct pkm_kacs_event_sink_ops *event_sinks,
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kacs_access_check_user_scalar_with_token_fd(
@@ -129,10 +119,8 @@ long pkm_kacs_access_check_user_scalar_with_token_fd(
 	struct pkm_kacs_ingress_summary *summary);
 
 long pkm_kacs_access_check_user_list_with_token_fd(
-	const void __user *uargs,
-	struct kacs_node_result __user *results,
-	u32 results_count,
-	const struct pkm_kacs_event_sink_ops *event_sinks,
+	const void __user *uargs, struct kacs_node_result __user *results,
+	u32 results_count, const struct pkm_kacs_event_sink_ops *event_sinks,
 	struct pkm_kacs_ingress_summary *summary);
 
 int pkm_kacs_current_pip_context(u32 *pip_type, u32 *pip_trust);
@@ -145,13 +133,10 @@ const struct pkm_kacs_resolved_ctx *kacs_rust_kunit_access_check_context(void);
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 long pkm_kacs_kunit_access_check_syscall_scalar(
-	const struct pkm_kacs_usercopy_ops *ops,
-	u64 args_ptr);
+	const struct pkm_kacs_usercopy_ops *ops, u64 args_ptr);
 
 long pkm_kacs_kunit_access_check_syscall_list(
-	const struct pkm_kacs_usercopy_ops *ops,
-	u64 args_ptr,
-	u64 results_ptr,
+	const struct pkm_kacs_usercopy_ops *ops, u64 args_ptr, u64 results_ptr,
 	u32 results_count);
 #endif
 

@@ -59,8 +59,9 @@ struct pkm_lcs_transaction_key_create_log_input {
 	size_t child_name_len;
 	const char *layer;
 	size_t layer_len;
-	const char * const *parent_path;
-	const u8 (*parent_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
+	const char *const *parent_path;
+	const u8 (
+		*parent_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	const u8 *creator_sid;
 	size_t creator_sid_len;
 	u32 parent_depth;
@@ -69,7 +70,7 @@ struct pkm_lcs_transaction_key_create_log_input {
 
 struct pkm_lcs_transaction_set_security_log_input {
 	const u8 *key_guid;
-	const char * const *path;
+	const char *const *path;
 	const u8 (*ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	u32 depth;
 };
@@ -80,7 +81,7 @@ struct pkm_lcs_transaction_set_value_log_input {
 	size_t value_name_len;
 	const char *layer;
 	size_t layer_len;
-	const char * const *path;
+	const char *const *path;
 	const u8 (*ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	u32 depth;
 	u64 sequence;
@@ -92,7 +93,7 @@ struct pkm_lcs_transaction_delete_value_log_input {
 	size_t value_name_len;
 	const char *layer;
 	size_t layer_len;
-	const char * const *path;
+	const char *const *path;
 	const u8 (*ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	u32 depth;
 };
@@ -101,7 +102,7 @@ struct pkm_lcs_transaction_blanket_tombstone_log_input {
 	const u8 *key_guid;
 	const char *layer;
 	size_t layer_len;
-	const char * const *path;
+	const char *const *path;
 	const u8 (*ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	u32 depth;
 	u64 sequence;
@@ -115,8 +116,9 @@ struct pkm_lcs_transaction_delete_key_log_input {
 	size_t child_name_len;
 	const char *layer;
 	size_t layer_len;
-	const char * const *parent_path;
-	const u8 (*parent_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
+	const char *const *parent_path;
+	const u8 (
+		*parent_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	u32 parent_depth;
 };
 
@@ -127,8 +129,9 @@ struct pkm_lcs_transaction_hide_key_log_input {
 	size_t child_name_len;
 	const char *layer;
 	size_t layer_len;
-	const char * const *parent_path;
-	const u8 (*parent_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
+	const char *const *parent_path;
+	const u8 (
+		*parent_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	u32 parent_depth;
 	u64 sequence;
 };
@@ -222,8 +225,8 @@ long pkm_lcs_transaction_fd_begin_hide_key_mutation(
 long pkm_lcs_transaction_fd_set_delete_value_event(
 	struct pkm_lcs_transaction_mutation_handle *handle, u32 event_type);
 long pkm_lcs_transaction_fd_set_blanket_tombstone_events(
-	struct pkm_lcs_transaction_mutation_handle *handle,
-	const u8 *events, size_t events_len, u32 event_count);
+	struct pkm_lcs_transaction_mutation_handle *handle, const u8 *events,
+	size_t events_len, u32 event_count);
 long pkm_lcs_transaction_fd_commit_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle);
 void pkm_lcs_transaction_fd_cancel_mutation(
@@ -257,8 +260,7 @@ u32 pkm_lcs_kunit_transaction_fd_poll_mask(int fd);
 long pkm_lcs_kunit_transaction_fd_set_state(int fd, u32 state,
 					    u32 bound_source_id);
 long pkm_lcs_kunit_transaction_fd_set_log_capacity(int fd, u32 capacity);
-long pkm_lcs_kunit_transaction_fd_set_commit_in_flight(int fd,
-						       bool in_flight);
+long pkm_lcs_kunit_transaction_fd_set_commit_in_flight(int fd, bool in_flight);
 long pkm_lcs_kunit_transaction_fd_flush_timeout_work(int fd);
 long pkm_lcs_kunit_transaction_fd_mark_audited(int fd, const void *token);
 long pkm_lcs_kunit_transaction_fd_audit_pending(int fd, bool *pending);

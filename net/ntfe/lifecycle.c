@@ -28,8 +28,8 @@
 static_assert(sizeof(struct peios_ntfe_build_why) == 320);
 
 /* The published payload at its widest is 134 bytes: three 9-byte uints. */
-#define NTFE_PUBLISHED_MAX_PAYLOAD	192
-#define NTFE_REJECTED_MAX_PAYLOAD	512
+#define NTFE_PUBLISHED_MAX_PAYLOAD 192
+#define NTFE_REJECTED_MAX_PAYLOAD 512
 
 struct ntfe_lc_mp {
 	u8 *buf;
@@ -191,7 +191,7 @@ void peios_ntfe_policy_published_emit(u64 generation, u64 generation_previous,
 	lc_key_uint(&m, "report-threshold-previous", threshold_previous);
 
 	if (m.overflow)
-		return;	/* cannot happen at this size; never emit a lie */
+		return; /* cannot happen at this size; never emit a lie */
 	pkm_kmes_emit_kernel(KMES_ORIGIN_NTFE,
 			     PKM_KMES_EV_NTFE_POLICY_PUBLISHED_TYPE,
 			     sizeof(PKM_KMES_EV_NTFE_POLICY_PUBLISHED_TYPE) - 1,
@@ -209,8 +209,8 @@ int peios_ntfe_policy_rejected_emit(const struct peios_ntfe_build_why *why,
 	bool has_layer = has_rule && why->layer < PEIOS_NTFE_LAYER_COUNT;
 	bool cut = has_rule && why->rule_truncated;
 	size_t reason_len = strnlen(why->reason, sizeof(why->reason));
-	size_t action_len = strnlen(why->action_error,
-				    sizeof(why->action_error));
+	size_t action_len =
+		strnlen(why->action_error, sizeof(why->action_error));
 
 	if (!pkm_kmes_event_enabled(PKM_KMES_EV_NTFE_POLICY_REJECTED))
 		return 0;
@@ -222,7 +222,7 @@ int peios_ntfe_policy_rejected_emit(const struct peios_ntfe_build_why *why,
 	lc_key_uint(&m, "generation", ntfe_rust_generation());
 	/* NTFE refuses a policy whole: the generation in force stays. */
 	lc_cstr(&m, "previous-retained");
-	lc_byte(&m, 0xc3);	/* true */
+	lc_byte(&m, 0xc3); /* true */
 
 	lc_cstr(&m, "outcome");
 	lc_map(&m, err ? 2 : 1);
@@ -243,9 +243,10 @@ int peios_ntfe_policy_rejected_emit(const struct peios_ntfe_build_why *why,
 
 		lc_cstr(&m, "rule");
 		rule_map = m.len;
-		lc_map(&m, 0);	/* settled once the name's fate is */
+		lc_map(&m, 0); /* settled once the name's fate is */
 		if (has_layer)
-			lc_key_cstr(&m, "layer", ntfe_lc_layer_name(why->layer));
+			lc_key_cstr(&m, "layer",
+				    ntfe_lc_layer_name(why->layer));
 		if (has_action) {
 			lc_cstr(&m, "action-error");
 			lc_str(&m, why->action_error, action_len);
@@ -265,16 +266,16 @@ int peios_ntfe_policy_rejected_emit(const struct peios_ntfe_build_why *why,
 		lc_str(&m, why->rule, n);
 		if (cut) {
 			lc_cstr(&m, "name-truncated");
-			lc_byte(&m, 0xc3);	/* true */
+			lc_byte(&m, 0xc3); /* true */
 		}
 		if (!m.overflow)
-			payload[rule_map] = 0x80 | (1 + (has_layer ? 1 : 0) +
-						    (has_action ? 1 : 0) +
-						    (cut ? 1 : 0));
+			payload[rule_map] =
+				0x80 | (1 + (has_layer ? 1 : 0) +
+					(has_action ? 1 : 0) + (cut ? 1 : 0));
 	}
 
 	if (m.overflow)
-		return -EOVERFLOW;	/* cannot happen at these sizes */
+		return -EOVERFLOW; /* cannot happen at these sizes */
 	pkm_kmes_emit_kernel(KMES_ORIGIN_NTFE,
 			     PKM_KMES_EV_NTFE_POLICY_REJECTED_TYPE,
 			     sizeof(PKM_KMES_EV_NTFE_POLICY_REJECTED_TYPE) - 1,
