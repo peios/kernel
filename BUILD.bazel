@@ -173,3 +173,106 @@ local_test(
         "no-sandbox",
     ],
 )
+
+# Regenerate checked-in tables explicitly; normal checks never rewrite source.
+local_command(
+    name = "generate-kmes-events",
+    command = "exec python3 peios/gen-kmes-event-table.py",
+    workspace = True,
+)
+
+local_test(
+    name = "kmes-event-table-test",
+    size = "small",
+    srcs = [":style-sources"],
+    command = "python3 peios/gen-kmes-event-table.py --check && exec python3 peios/test_kmes_event_table.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
+
+local_test(
+    name = "data-generator-tests",
+    size = "small",
+    srcs = [":style-sources"],
+    command = "python3 peios/gen-port-reservations-seed.py --check && exec python3 peios/test_data_generators.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
+
+local_test(
+    name = "mldsa-vector-test",
+    size = "small",
+    srcs = [":style-sources"],
+    command = "exec python3 peios/test_mldsa_vectors.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
+
+local_test(
+    name = "kunit-runner-tests",
+    size = "small",
+    srcs = [":style-sources"],
+    command = "exec python3 peios/test_kunit_runner.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
+
+local_test(
+    name = "qualification-build-test",
+    size = "small",
+    srcs = [":style-sources"],
+    command = "exec bash peios/qualification/check-build.sh",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
+
+local_command(
+    name = "generate-port-seed",
+    command = "exec python3 peios/gen-port-reservations-seed.py",
+    workspace = True,
+)
+
+local_command(
+    name = "qualify-mntns",
+    command = 'exec bash peios/qualification/test-mntns.sh "$@"',
+    workspace = True,
+)
+
+local_command(
+    name = "qualify-stratafs",
+    command = 'exec bash peios/qualification/test-stratafs.sh "$@"',
+    workspace = True,
+)
+
+local_command(
+    name = "qualify-stratafs-dir-bench",
+    command = 'exec bash peios/qualification/test-stratafs-dir-bench.sh "$@"',
+    workspace = True,
+)
+
+local_command(
+    name = "qualify-modsig",
+    command = 'exec bash peios/qualification/test-modsig.sh "$@"',
+    workspace = True,
+)
+
+local_command(
+    name = "qualify-fwsig",
+    command = 'exec bash peios/qualification/test-fwsig.sh "$@"',
+    workspace = True,
+)

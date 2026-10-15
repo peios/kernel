@@ -20638,6 +20638,22 @@ F:	drivers/peci/
 F:	include/linux/peci-cpu.h
 F:	include/linux/peci.h
 
+PEIOS KERNEL EXTENSIONS
+M:	Jack Palfrey <jackgpalfrey@outlook.com>
+S:	Maintained
+F:	fs/stratafs/
+F:	include/linux/kacs_mntns.h
+F:	include/linux/kacs_stratafs.h
+F:	include/linux/peios_ntfe.h
+F:	include/trace/events/kacs.h
+F:	include/trace/events/kmes.h
+F:	include/trace/events/lcs.h
+F:	include/trace/events/stratafs.h
+F:	include/uapi/pkm/
+F:	net/ntfe/
+F:	peios/
+F:	security/pkm/
+
 PENSANDO ETHERNET DRIVERS
 M:	Brett Creeley <brett.creeley@amd.com>
 L:	netdev@vger.kernel.org

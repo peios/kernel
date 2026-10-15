@@ -69,7 +69,8 @@ their normal build commands. No full-kernel clang-tidy policy is introduced.
 ## CI
 
 `.github/workflows/style.yml` installs the same pins and runs the same Bazel
-style, command regression, Cargo and C ABI targets on pushes and pull requests.
+style, command regression, Cargo, C ABI and KMES event-table targets on pushes
+and pull requests.
 PRs also receive advisory checkpatch output against the merge commit's first
 parent. Actions are pinned to reviewed release commit IDs, credentials are not
 persisted, and the workflow has read-only repository permission.

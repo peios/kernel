@@ -34,6 +34,10 @@ jobs:
         run: ./peios/bazel test //:style //peios/style:tests
       - name: Test shared Rust cores and userspace ABI bindings
         run: ./peios/bazel test //:rust-core-tests //:uapi-tests
+      - name: Check generated KMES event tables
+        run: ./peios/bazel test //:kmes-event-table-test
+      - name: Check data generators and qualification harnesses
+        run: ./peios/bazel test //:data-generator-tests //:kunit-runner-tests //:qualification-build-test
       - name: Review kernel checkpatch findings (advisory)
         if: github.event_name == 'pull_request'
         run: ./peios/bazel run //:style-review -- HEAD^

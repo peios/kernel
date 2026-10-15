@@ -211,3 +211,59 @@ The [Cargo workspace](rust/README.md) tests the same semantic core source used
 by Kbuild: `./peios/bazel test //:rust-core-tests //:uapi-tests`. It also retains
 the NTFE userspace crate and generated ABI layout tests. No PKM checkout is
 required. Cargo tests complement kernel compilation and KUnit.
+
+## KMES event tables
+
+Edit the kernel event catalogue in `peios/packages/data/evman/*.evman`, then run:
+
+```sh
+./peios/bazel run //:generate-kmes-events
+./peios/bazel test //:kmes-event-table-test
+```
+
+The generator writes `security/pkm/kmes/event_types.h` and `event_types.rs`.
+Commit the catalogue and generated tables together. It preserves matching C/Rust
+IDs, event names, tiers, default enablement and the registry-policy lookup tree.
+IDs are kernel-internal; event records carry names. The current enabled mask
+supports at most 64 event types, and generation rejects a larger catalogue.
+
+The test checks for stale tables without rewriting them and exercises generator
+validation. CI runs it alongside the style, Cargo and ABI checks. Python 3.11 or
+newer can also run `python3 peios/gen-kmes-event-table.py` directly; add `--check`
+for read-only drift detection. No old PKM checkout is required.
+
+## Data generators and guest qualification
+
+Portable PKM tooling now lives here. Check data generation and the guest test
+programs without building a kernel:
+
+```sh
+./peios/bazel test //:data-generator-tests //:kunit-runner-tests //:qualification-build-test
+./peios/bazel test //:mldsa-vector-test # requires OpenSSL 3.5 or later
+./peios/bazel run //:generate-port-seed
+```
+
+`generate-casefold-table.py` accepts the official Unicode `CaseFolding.txt`
+through `--input`, with `--out` for the Rust table and `--go-out` for loregd's
+Go table. Update both from the same input. The current version is Unicode
+16.0.0, SHA-256 `6f1f9c588eb4a5c718d9e8f93b782685e5c7fec872cf05e8e6878053599e09bb`.
+`generate-kacs-kunit-mldsa-vectors.py --out HEADER` produces fresh randomized
+key fixtures; it is an explicit replacement operation, not a drift check.
+
+The guest harnesses live in `qualification/` and work from any current directory:
+
+```sh
+./peios/bazel run //:qualify-mntns -- /path/to/bzImage
+./peios/bazel run //:qualify-stratafs -- /path/to/bzImage
+./peios/bazel run //:qualify-stratafs-dir-bench -- /path/to/bzImage
+./peios/bazel run //:qualify-modsig -- /path/to/kbuild-output /path/to/modules-root
+./peios/bazel run //:qualify-fwsig -- /path/to/kbuild-output /path/to/modules-root /path/to/signed-fixtures
+```
+
+They require QEMU, cpio and a C compiler with static libc development files.
+Existing `QEMU_BIN` and `PKM_*` log/timeout overrides remain supported.
+Module and firmware tests require signed inputs trusted by the supplied kernel;
+current unsigned development package outputs do not meet that prerequisite.
+`qualification/prepare-fwsig.sh` prepares unsigned fixtures for a separate signing
+coordinator. No private signing key is passed into these harnesses.
+The Learn kernel-development guide documents inputs, logs and qualification scope.
