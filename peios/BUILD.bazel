@@ -38,6 +38,8 @@ filegroup(
         "*.py",
         "*.sh",
         "*.bzl",
+        "qualification/*.sh",
+        "qualification/*.c",
     ]) + [
         "BUILD.bazel",
         "bazel",
