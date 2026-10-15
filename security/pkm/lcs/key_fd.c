@@ -285,8 +285,7 @@ static long pkm_lcs_key_fd_layer_metadata_path_with_limits(
 static const struct file_operations pkm_lcs_key_fd_fops;
 static DEFINE_MUTEX(pkm_lcs_watch_registry_lock);
 static DEFINE_HASHTABLE(pkm_lcs_watch_map, PKM_LCS_WATCH_REGISTRY_BITS);
-static DEFINE_HASHTABLE(pkm_lcs_subtree_watch_set,
-			PKM_LCS_WATCH_REGISTRY_BITS);
+static DEFINE_HASHTABLE(pkm_lcs_subtree_watch_set, PKM_LCS_WATCH_REGISTRY_BITS);
 static DEFINE_MUTEX(pkm_lcs_key_ref_lock);
 static DEFINE_HASHTABLE(pkm_lcs_key_ref_map, PKM_LCS_KEY_REF_BITS);
 static struct pkm_lcs_internal_self_watch_state pkm_lcs_internal_self_watch;
@@ -366,8 +365,7 @@ extern int lcs_rust_key_fd_fixed_ioctl_access_gate(u32 granted_access,
 extern int lcs_rust_key_fd_security_ioctl_access_gate(u32 granted_access,
 						      u32 ioctl_number,
 						      u32 security_info);
-extern int lcs_rust_backup_restore_fd_mode_gate(u32 operation,
-						u8 fd_readable,
+extern int lcs_rust_backup_restore_fd_mode_gate(u32 operation, u8 fd_readable,
 						u8 fd_writable);
 extern int lcs_rust_write_backup_header_record_frame(
 	u8 *dst, size_t dst_len, const struct pkm_lcs_runtime_limits *limits,
@@ -396,15 +394,17 @@ extern int lcs_rust_write_backup_key_record_frame(
 	u8 *dst, size_t dst_len, const u8 *guid, u8 volatile_key, u8 symlink,
 	const u8 *security_descriptor, size_t security_descriptor_len,
 	s64 last_write_time_ns, size_t *written_out);
-extern int lcs_rust_write_backup_trailer_record_frame(
-	u8 *dst, size_t dst_len, u64 record_count, const u8 *checksum,
-	size_t *written_out);
+extern int lcs_rust_write_backup_trailer_record_frame(u8 *dst, size_t dst_len,
+						      u64 record_count,
+						      const u8 *checksum,
+						      size_t *written_out);
 extern int lcs_rust_validate_backup_header_record(
 	const struct pkm_lcs_runtime_limits *limits, const u8 *frame,
 	size_t frame_len, u32 supported_version, u8 *root_guid_out);
-extern int lcs_rust_validate_backup_trailer_record(
-	const u8 *frame, size_t frame_len, u64 *record_count_out,
-	u8 *checksum_out);
+extern int lcs_rust_validate_backup_trailer_record(const u8 *frame,
+						   size_t frame_len,
+						   u64 *record_count_out,
+						   u8 *checksum_out);
 extern int lcs_rust_parse_backup_key_record(
 	const u8 *frame, size_t frame_len,
 	struct pkm_lcs_backup_key_record_view *result_out);
@@ -418,8 +418,7 @@ extern int lcs_rust_parse_backup_path_entry_record(
 	struct pkm_lcs_backup_path_entry_record_view *result_out);
 extern int lcs_rust_parse_backup_value_record(
 	const struct pkm_lcs_runtime_limits *limits, const u8 *frame,
-	size_t frame_len,
-	struct pkm_lcs_backup_value_record_view *result_out);
+	size_t frame_len, struct pkm_lcs_backup_value_record_view *result_out);
 extern int lcs_rust_parse_backup_blanket_tombstone_record(
 	const struct pkm_lcs_runtime_limits *limits, const u8 *frame,
 	size_t frame_len,
@@ -449,20 +448,21 @@ extern int lcs_rust_materialize_rsi_query_values_backup_entries(
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_backup_value_entry_view *values, size_t value_capacity,
 	struct pkm_lcs_backup_blanket_entry_view *blankets,
-	size_t blanket_capacity, u32 *value_count_out,
-	u32 *blanket_count_out);
+	size_t blanket_capacity, u32 *value_count_out, u32 *blanket_count_out);
 extern int lcs_rust_materialize_rsi_enum_children_backup_path_entries(
 	const u8 *frame, size_t frame_len, u64 request_id, u64 next_sequence,
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_backup_path_entry_view *entries, size_t entry_capacity,
 	u32 *entry_count_out);
-extern int lcs_rust_plan_registry_get_security(
-	const u8 *existing_sd, size_t existing_sd_len, u32 security_info,
-	u8 *output, size_t output_len, size_t *written_out);
+extern int lcs_rust_plan_registry_get_security(const u8 *existing_sd,
+					       size_t existing_sd_len,
+					       u32 security_info, u8 *output,
+					       size_t output_len,
+					       size_t *written_out);
 extern int lcs_rust_plan_registry_set_security(
 	const u8 *existing_sd, size_t existing_sd_len, const u8 *input_sd,
-	size_t input_sd_len, u32 security_info, u8 *output,
-	size_t output_len, size_t *written_out);
+	size_t input_sd_len, u32 security_info, u8 *output, size_t output_len,
+	size_t *written_out);
 extern int lcs_rust_plan_key_fd_watch_notify(
 	u8 armed, u8 orphaned, u32 filter, u8 subtree, const u8 *reserved,
 	struct pkm_lcs_watch_notify_plan_copy *plan_out);
@@ -478,11 +478,12 @@ extern int lcs_rust_layer_name_casefold_eq(
 	const u8 *left, u32 left_len, const u8 *right, u32 right_len,
 	const struct pkm_lcs_runtime_limits *limits, u8 *equal_out);
 
-static void pkm_lcs_get_security_result_destroy(
-	struct pkm_lcs_get_security_result *result);
-static long pkm_lcs_key_fd_plan_get_security(
-	const u8 *existing_sd, size_t existing_sd_len, u32 security_info,
-	struct pkm_lcs_get_security_result *out);
+static void
+pkm_lcs_get_security_result_destroy(struct pkm_lcs_get_security_result *result);
+static long
+pkm_lcs_key_fd_plan_get_security(const u8 *existing_sd, size_t existing_sd_len,
+				 u32 security_info,
+				 struct pkm_lcs_get_security_result *out);
 static long pkm_lcs_key_fd_mark_orphaned_internal(
 	u32 source_id, const u8 guid[PKM_LCS_GUID_BYTES], u32 *marked_out,
 	u32 *live_refs_out, bool dispatch_direct_deleted,
@@ -521,23 +522,40 @@ static u64 pkm_lcs_key_guid_hash64(const u8 guid[PKM_LCS_GUID_BYTES])
 static u8 pkm_lcs_key_ioctl_cmd_code(unsigned int cmd)
 {
 	switch (cmd) {
-	case REG_IOC_SET_VALUE:		return LCS_KCMD_SET_VALUE;
-	case REG_IOC_DELETE_VALUE:	return LCS_KCMD_DELETE_VALUE;
-	case REG_IOC_BLANKET_TOMBSTONE:	return LCS_KCMD_BLANKET_TOMBSTONE;
-	case REG_IOC_DELETE_KEY:	return LCS_KCMD_DELETE_KEY;
-	case REG_IOC_HIDE_KEY:		return LCS_KCMD_HIDE_KEY;
-	case REG_IOC_QUERY_VALUE:	return LCS_KCMD_QUERY_VALUE;
-	case REG_IOC_QUERY_VALUES_BATCH: return LCS_KCMD_QUERY_VALUES_BATCH;
-	case REG_IOC_ENUM_VALUES:	return LCS_KCMD_ENUM_VALUES;
-	case REG_IOC_ENUM_SUBKEYS:	return LCS_KCMD_ENUM_SUBKEYS;
-	case REG_IOC_QUERY_KEY_INFO:	return LCS_KCMD_QUERY_KEY_INFO;
-	case REG_IOC_GET_SECURITY:	return LCS_KCMD_GET_SECURITY;
-	case REG_IOC_SET_SECURITY:	return LCS_KCMD_SET_SECURITY;
-	case REG_IOC_FLUSH:		return LCS_KCMD_FLUSH;
-	case REG_IOC_BACKUP:		return LCS_KCMD_BACKUP;
-	case REG_IOC_RESTORE:		return LCS_KCMD_RESTORE;
-	case REG_IOC_NOTIFY:		return LCS_KCMD_NOTIFY;
-	default:			return LCS_KCMD_NONE;
+	case REG_IOC_SET_VALUE:
+		return LCS_KCMD_SET_VALUE;
+	case REG_IOC_DELETE_VALUE:
+		return LCS_KCMD_DELETE_VALUE;
+	case REG_IOC_BLANKET_TOMBSTONE:
+		return LCS_KCMD_BLANKET_TOMBSTONE;
+	case REG_IOC_DELETE_KEY:
+		return LCS_KCMD_DELETE_KEY;
+	case REG_IOC_HIDE_KEY:
+		return LCS_KCMD_HIDE_KEY;
+	case REG_IOC_QUERY_VALUE:
+		return LCS_KCMD_QUERY_VALUE;
+	case REG_IOC_QUERY_VALUES_BATCH:
+		return LCS_KCMD_QUERY_VALUES_BATCH;
+	case REG_IOC_ENUM_VALUES:
+		return LCS_KCMD_ENUM_VALUES;
+	case REG_IOC_ENUM_SUBKEYS:
+		return LCS_KCMD_ENUM_SUBKEYS;
+	case REG_IOC_QUERY_KEY_INFO:
+		return LCS_KCMD_QUERY_KEY_INFO;
+	case REG_IOC_GET_SECURITY:
+		return LCS_KCMD_GET_SECURITY;
+	case REG_IOC_SET_SECURITY:
+		return LCS_KCMD_SET_SECURITY;
+	case REG_IOC_FLUSH:
+		return LCS_KCMD_FLUSH;
+	case REG_IOC_BACKUP:
+		return LCS_KCMD_BACKUP;
+	case REG_IOC_RESTORE:
+		return LCS_KCMD_RESTORE;
+	case REG_IOC_NOTIFY:
+		return LCS_KCMD_NOTIFY;
+	default:
+		return LCS_KCMD_NONE;
 	}
 }
 
@@ -547,8 +565,8 @@ static u32 pkm_lcs_key_ref_hash(u32 source_id,
 	return jhash_2words(source_id, pkm_lcs_guid_hash(guid), 0);
 }
 
-static struct pkm_lcs_key_ref_entry *pkm_lcs_key_ref_find_locked(
-	u32 source_id, const u8 guid[PKM_LCS_GUID_BYTES])
+static struct pkm_lcs_key_ref_entry *
+pkm_lcs_key_ref_find_locked(u32 source_id, const u8 guid[PKM_LCS_GUID_BYTES])
 {
 	struct pkm_lcs_key_ref_entry *entry;
 
@@ -633,17 +651,16 @@ static void pkm_lcs_key_ref_put_for_key_fd(struct pkm_lcs_key_fd *key_fd,
 		return;
 	}
 
-	if (allow_drop_dispatch && key_fd->published &&
-	    entry->refcount == 1 && (entry->orphaned || key_fd->orphaned)) {
+	if (allow_drop_dispatch && key_fd->published && entry->refcount == 1 &&
+	    (entry->orphaned || key_fd->orphaned)) {
 		long drop_ret;
 
 		source_id = entry->source_id;
 		memcpy(guid, entry->guid, sizeof(guid));
 		drop_ret = pkm_lcs_source_dispatch_drop_key_request(
 			source_id, 0, guid, NULL);
-		trace_lcs_watch_orphan(source_id,
-				       pkm_lcs_key_guid_hash64(guid), 0,
-				       entry->refcount, drop_ret);
+		trace_lcs_watch_orphan(source_id, pkm_lcs_key_guid_hash64(guid),
+				       0, entry->refcount, drop_ret);
 	}
 
 	entry->refcount--;
@@ -667,8 +684,7 @@ pkm_lcs_subtree_watch_find_locked(const u8 guid[PKM_LCS_GUID_BYTES])
 	return NULL;
 }
 
-static long pkm_lcs_subtree_watch_get_locked(
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static long pkm_lcs_subtree_watch_get_locked(const u8 guid[PKM_LCS_GUID_BYTES])
 {
 	struct pkm_lcs_subtree_watch_entry *entry;
 
@@ -690,8 +706,7 @@ static long pkm_lcs_subtree_watch_get_locked(
 	return 0;
 }
 
-static void pkm_lcs_subtree_watch_put_locked(
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static void pkm_lcs_subtree_watch_put_locked(const u8 guid[PKM_LCS_GUID_BYTES])
 {
 	struct pkm_lcs_subtree_watch_entry *entry;
 
@@ -707,8 +722,8 @@ static void pkm_lcs_subtree_watch_put_locked(
 	kfree(entry);
 }
 
-static void pkm_lcs_watch_registry_entry_init_key_fd(
-	struct pkm_lcs_key_fd *key_fd)
+static void
+pkm_lcs_watch_registry_entry_init_key_fd(struct pkm_lcs_key_fd *key_fd)
 {
 	struct pkm_lcs_watch_registry_entry *entry;
 
@@ -762,8 +777,7 @@ static void pkm_lcs_watch_registry_entry_unlink_locked(
 	entry->linked = false;
 }
 
-static void pkm_lcs_key_fd_watch_map_link_locked(
-	struct pkm_lcs_key_fd *key_fd)
+static void pkm_lcs_key_fd_watch_map_link_locked(struct pkm_lcs_key_fd *key_fd)
 {
 	if (key_fd->watch_registry_linked)
 		return;
@@ -773,18 +787,19 @@ static void pkm_lcs_key_fd_watch_map_link_locked(
 	key_fd->watch_registry_linked = true;
 }
 
-static void pkm_lcs_key_fd_watch_map_unlink_locked(
-	struct pkm_lcs_key_fd *key_fd)
+static void
+pkm_lcs_key_fd_watch_map_unlink_locked(struct pkm_lcs_key_fd *key_fd)
 {
 	if (!key_fd->watch_registry_linked)
 		return;
 
-	pkm_lcs_watch_registry_entry_unlink_locked(&key_fd->watch_registry_entry);
+	pkm_lcs_watch_registry_entry_unlink_locked(
+		&key_fd->watch_registry_entry);
 	key_fd->watch_registry_linked = false;
 }
 
-static void pkm_lcs_key_fd_watch_registry_remove_locked(
-	struct pkm_lcs_key_fd *key_fd)
+static void
+pkm_lcs_key_fd_watch_registry_remove_locked(struct pkm_lcs_key_fd *key_fd)
 {
 	pkm_lcs_key_fd_watch_map_unlink_locked(key_fd);
 	if (key_fd->watch_subtree_registered) {
@@ -806,7 +821,7 @@ static bool pkm_lcs_key_fd_default_copyout_write(void *ctx, void __user *dst,
 static const struct pkm_lcs_key_fd_copyout_ops
 	pkm_lcs_key_fd_default_copyout_ops = {
 		.write = pkm_lcs_key_fd_default_copyout_write,
-};
+	};
 
 static bool pkm_lcs_key_fd_default_usercopy_read(void *ctx, void *dst,
 						 const void __user *src,
@@ -827,20 +842,19 @@ static bool pkm_lcs_key_fd_default_usercopy_write(void *ctx, void __user *dst,
 	return copy_to_user(dst, src, len) == 0;
 }
 
-static const struct pkm_lcs_usercopy_ops
-	pkm_lcs_key_fd_default_usercopy_ops = {
-		.read = pkm_lcs_key_fd_default_usercopy_read,
-		.write = pkm_lcs_key_fd_default_usercopy_write,
+static const struct pkm_lcs_usercopy_ops pkm_lcs_key_fd_default_usercopy_ops = {
+	.read = pkm_lcs_key_fd_default_usercopy_read,
+	.write = pkm_lcs_key_fd_default_usercopy_write,
 };
 
-static void pkm_lcs_key_fd_watch_event_free(
-	struct pkm_lcs_key_fd_watch_event *event)
+static void
+pkm_lcs_key_fd_watch_event_free(struct pkm_lcs_key_fd_watch_event *event)
 {
 	kfree(event);
 }
 
-static void pkm_lcs_key_fd_watch_queue_clear_locked(
-	struct pkm_lcs_key_fd *key_fd)
+static void
+pkm_lcs_key_fd_watch_queue_clear_locked(struct pkm_lcs_key_fd *key_fd)
 {
 	struct pkm_lcs_key_fd_watch_event *event;
 	struct pkm_lcs_key_fd_watch_event *tmp;
@@ -853,9 +867,9 @@ static void pkm_lcs_key_fd_watch_queue_clear_locked(
 	key_fd->watch_has_overflow = false;
 }
 
-static void pkm_lcs_key_fd_drop_watch_event_locked(
-	struct pkm_lcs_key_fd *key_fd,
-	struct pkm_lcs_key_fd_watch_event *event)
+static void
+pkm_lcs_key_fd_drop_watch_event_locked(struct pkm_lcs_key_fd *key_fd,
+				       struct pkm_lcs_key_fd_watch_event *event)
 {
 	if (event->event_type == REG_WATCH_OVERFLOW)
 		key_fd->watch_has_overflow = false;
@@ -864,8 +878,8 @@ static void pkm_lcs_key_fd_drop_watch_event_locked(
 	pkm_lcs_key_fd_watch_event_free(event);
 }
 
-static void pkm_lcs_key_fd_drop_oldest_watch_event_locked(
-	struct pkm_lcs_key_fd *key_fd)
+static void
+pkm_lcs_key_fd_drop_oldest_watch_event_locked(struct pkm_lcs_key_fd *key_fd)
 {
 	struct pkm_lcs_key_fd_watch_event *event;
 
@@ -952,7 +966,7 @@ pkm_lcs_key_fd_watch_event_alloc(u32 event_type, const u8 *record,
 static struct pkm_lcs_key_fd_watch_event *
 pkm_lcs_key_fd_overflow_event_alloc(void)
 {
-	u8 record[REG_WATCH_EVENT_MIN_SIZE] = { };
+	u8 record[REG_WATCH_EVENT_MIN_SIZE] = {};
 
 	put_unaligned_le32(REG_WATCH_EVENT_MIN_SIZE,
 			   record + REG_WATCH_EVENT_TOTAL_LEN_OFFSET);
@@ -963,11 +977,9 @@ pkm_lcs_key_fd_overflow_event_alloc(void)
 						sizeof(record));
 }
 
-static struct pkm_lcs_key_fd_watch_event *
-pkm_lcs_key_fd_build_watch_event(u32 event_type, const u8 *name, u32 name_len,
-				 bool subtree,
-				 const struct pkm_lcs_key_fd_string_view *path,
-				 u32 path_count)
+static struct pkm_lcs_key_fd_watch_event *pkm_lcs_key_fd_build_watch_event(
+	u32 event_type, const u8 *name, u32 name_len, bool subtree,
+	const struct pkm_lcs_key_fd_string_view *path, u32 path_count)
 {
 	struct pkm_lcs_key_fd_watch_event *event;
 	u32 record_len = 0;
@@ -980,9 +992,10 @@ pkm_lcs_key_fd_build_watch_event(u32 event_type, const u8 *name, u32 name_len,
 	if (path_count && !path)
 		return ERR_PTR(-EINVAL);
 
-	ret = lcs_rust_write_watch_event_record(
-		event_type, name, name_len, subtree ? 1 : 0, path, path_count,
-		NULL, 0, &record_len, &overflow);
+	ret = lcs_rust_write_watch_event_record(event_type, name, name_len,
+						subtree ? 1 : 0, path,
+						path_count, NULL, 0,
+						&record_len, &overflow);
 	if (ret)
 		return ERR_PTR(ret);
 	if (overflow)
@@ -1019,8 +1032,8 @@ static bool pkm_lcs_key_fd_subtree_depth_suppressed(u32 path_count,
 }
 
 static long pkm_lcs_key_fd_queue_watch_event_locked(
-	struct pkm_lcs_key_fd *key_fd,
-	struct pkm_lcs_key_fd_watch_event *event, u32 queue_limit)
+	struct pkm_lcs_key_fd *key_fd, struct pkm_lcs_key_fd_watch_event *event,
+	u32 queue_limit)
 {
 	struct pkm_lcs_key_fd_watch_event *queued_event = event;
 
@@ -1117,9 +1130,9 @@ static const struct file_operations pkm_lcs_key_fd_fops = {
 	.llseek = noop_llseek,
 };
 
-static long pkm_lcs_key_fd_validate_input(
-	const struct pkm_lcs_key_fd_publish_input *input,
-	struct pkm_lcs_key_fd_string_view **views_out)
+static long
+pkm_lcs_key_fd_validate_input(const struct pkm_lcs_key_fd_publish_input *input,
+			      struct pkm_lcs_key_fd_string_view **views_out)
 {
 	struct pkm_lcs_key_fd_string_view *views = NULL;
 	struct pkm_lcs_runtime_limits effective_limits;
@@ -1176,10 +1189,10 @@ out_free:
 	return ret;
 }
 
-static long pkm_lcs_key_fd_copy_input(
-	const struct pkm_lcs_key_fd_publish_input *input,
-	const struct pkm_lcs_key_fd_string_view *views,
-	struct pkm_lcs_key_fd **key_fd_out)
+static long
+pkm_lcs_key_fd_copy_input(const struct pkm_lcs_key_fd_publish_input *input,
+			  const struct pkm_lcs_key_fd_string_view *views,
+			  struct pkm_lcs_key_fd **key_fd_out)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	size_t guid_bytes;
@@ -1206,11 +1219,10 @@ static long pkm_lcs_key_fd_copy_input(
 		goto out_nomem;
 
 	if (check_mul_overflow((size_t)input->path_component_count,
-			       sizeof(*key_fd->ancestor_guids),
-			       &guid_bytes))
+			       sizeof(*key_fd->ancestor_guids), &guid_bytes))
 		goto out_nomem;
-	key_fd->ancestor_guids = kmemdup(input->ancestor_guids, guid_bytes,
-					 GFP_KERNEL);
+	key_fd->ancestor_guids =
+		kmemdup(input->ancestor_guids, guid_bytes, GFP_KERNEL);
 	if (!key_fd->ancestor_guids)
 		goto out_nomem;
 
@@ -1240,15 +1252,15 @@ out_nomem:
 	return ret ?: -ENOMEM;
 }
 
-static void pkm_lcs_key_fd_capture_source_restart_generation(
-	struct pkm_lcs_key_fd *key_fd)
+static void
+pkm_lcs_key_fd_capture_source_restart_generation(struct pkm_lcs_key_fd *key_fd)
 {
 	u64 generation;
 
 	if (!key_fd)
 		return;
-	if (pkm_lcs_source_restart_generation_snapshot(
-		    key_fd->source_id, &generation))
+	if (pkm_lcs_source_restart_generation_snapshot(key_fd->source_id,
+						       &generation))
 		return;
 
 	key_fd->source_restart_generation_seen = generation;
@@ -1259,9 +1271,9 @@ static long pkm_lcs_key_fd_revalidate_after_source_restart(
 	struct pkm_lcs_key_fd *key_fd,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	u64 generation;
 	long ret;
@@ -1306,8 +1318,7 @@ static long pkm_lcs_key_fd_revalidate_after_source_restart(
 	if (ret)
 		goto out_frame;
 	if (!read_key.sd_len || (size_t)read_key.sd_offset > frame.len ||
-	    (size_t)read_key.sd_len >
-		    frame.len - (size_t)read_key.sd_offset) {
+	    (size_t)read_key.sd_len > frame.len - (size_t)read_key.sd_offset) {
 		ret = -EIO;
 		goto out_frame;
 	}
@@ -1360,8 +1371,8 @@ long pkm_lcs_key_fd_publish(const struct pkm_lcs_key_fd_publish_input *input)
 	return fd;
 }
 
-static long pkm_lcs_key_fd_notify_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct reg_notify_args *args)
+static long pkm_lcs_key_fd_notify_from_args(struct pkm_lcs_key_fd *key_fd,
+					    const struct reg_notify_args *args)
 {
 	struct pkm_lcs_watch_notify_plan_copy plan;
 	u32 action = 0;
@@ -1376,9 +1387,10 @@ static long pkm_lcs_key_fd_notify_from_args(
 
 	mutex_lock(&pkm_lcs_watch_registry_lock);
 	mutex_lock(&key_fd->watch_lock);
-	ret = lcs_rust_plan_key_fd_watch_notify(
-		key_fd->watch_armed ? 1 : 0, key_fd->orphaned ? 1 : 0,
-		args->filter, args->subtree, args->_pad, &plan);
+	ret = lcs_rust_plan_key_fd_watch_notify(key_fd->watch_armed ? 1 : 0,
+						key_fd->orphaned ? 1 : 0,
+						args->filter, args->subtree,
+						args->_pad, &plan);
 	if (ret)
 		goto out_unlock;
 	action = plan.action;
@@ -1391,8 +1403,7 @@ static long pkm_lcs_key_fd_notify_from_args(
 			if (ret)
 				goto out_unlock;
 			key_fd->watch_subtree_registered = true;
-		} else if (!plan.subtree &&
-			   key_fd->watch_subtree_registered) {
+		} else if (!plan.subtree && key_fd->watch_subtree_registered) {
 			pkm_lcs_subtree_watch_put_locked(key_fd->key_guid);
 			key_fd->watch_subtree_registered = false;
 		}
@@ -1426,9 +1437,9 @@ out_unlock:
 	return ret;
 }
 
-static __maybe_unused long pkm_lcs_key_fd_queue_watch_record(
-	struct pkm_lcs_key_fd *key_fd, u32 event_type, const u8 *record,
-	u32 record_len)
+static __maybe_unused long
+pkm_lcs_key_fd_queue_watch_record(struct pkm_lcs_key_fd *key_fd, u32 event_type,
+				  const u8 *record, u32 record_len)
 {
 	struct pkm_lcs_key_fd_watch_event *event;
 	struct pkm_lcs_runtime_limits limits;
@@ -1439,7 +1450,7 @@ static __maybe_unused long pkm_lcs_key_fd_queue_watch_record(
 		return -EINVAL;
 
 	event = pkm_lcs_key_fd_watch_event_alloc(event_type, record,
-						record_len);
+						 record_len);
 	if (IS_ERR(event))
 		return PTR_ERR(event);
 
@@ -1466,9 +1477,10 @@ static __maybe_unused long pkm_lcs_key_fd_queue_watch_record(
 	return ret;
 }
 
-static ssize_t pkm_lcs_key_fd_read_file_with_ops(
-	struct file *file, char __user *buf, size_t count, bool nonblocking,
-	const struct pkm_lcs_key_fd_copyout_ops *ops)
+static ssize_t
+pkm_lcs_key_fd_read_file_with_ops(struct file *file, char __user *buf,
+				  size_t count, bool nonblocking,
+				  const struct pkm_lcs_key_fd_copyout_ops *ops)
 {
 	struct pkm_lcs_key_fd_watch_event *event;
 	struct pkm_lcs_key_fd *key_fd;
@@ -1534,8 +1546,8 @@ static ssize_t pkm_lcs_key_fd_read_file_with_ops(
 
 	trace_lcs_key_read(key_fd->source_id,
 			   pkm_lcs_key_guid_hash64(key_fd->key_guid),
-			   LCS_KCMD_NONE, -1, delivered,
-			   key_fd->granted_access, (long)bytes);
+			   LCS_KCMD_NONE, -1, delivered, key_fd->granted_access,
+			   (long)bytes);
 	return bytes;
 }
 
@@ -1569,10 +1581,10 @@ static __poll_t pkm_lcs_key_fd_poll(struct file *file,
 	return mask;
 }
 
-static long pkm_lcs_key_fd_copy_set_security_sd(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_security_args *args, u8 **sd_out,
-	size_t *sd_len_out)
+static long
+pkm_lcs_key_fd_copy_set_security_sd(const struct pkm_lcs_usercopy_ops *ops,
+				    const struct reg_set_security_args *args,
+				    u8 **sd_out, size_t *sd_len_out)
 {
 	u8 *sd;
 
@@ -1610,8 +1622,8 @@ static long pkm_lcs_key_fd_read_existing_sd(
 	struct pkm_lcs_source_response_frame *frame, const u8 **sd_out,
 	size_t *sd_len_out, struct pkm_lcs_source_response_result *response_out)
 {
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	long ret;
 
@@ -1642,8 +1654,7 @@ static long pkm_lcs_key_fd_read_existing_sd(
 	if (ret)
 		return ret;
 	if (!read_key.sd_len || (size_t)read_key.sd_offset > frame->len ||
-	    (size_t)read_key.sd_len >
-		    frame->len - (size_t)read_key.sd_offset)
+	    (size_t)read_key.sd_len > frame->len - (size_t)read_key.sd_offset)
 		return -EIO;
 
 	*sd_out = frame->data + read_key.sd_offset;
@@ -1655,12 +1666,12 @@ static void pkm_lcs_key_fd_publish_set_security_effects(
 	struct pkm_lcs_key_fd *key_fd,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 
 	context.changed_key_guid = key_fd->key_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
-	context.resolved_path = (const char * const *)key_fd->resolved_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
+	context.resolved_path = (const char *const *)key_fd->resolved_path;
 	context.limits = limits;
 	context.path_component_count = key_fd->path_component_count;
 	context.event_type = REG_WATCH_SD_CHANGED;
@@ -1669,16 +1680,15 @@ static void pkm_lcs_key_fd_publish_set_security_effects(
 }
 
 static void pkm_lcs_key_fd_publish_value_effects(
-	struct pkm_lcs_key_fd *key_fd, u32 event_type,
-	const char *value_name, u32 value_name_len,
-	const struct pkm_lcs_runtime_limits *limits)
+	struct pkm_lcs_key_fd *key_fd, u32 event_type, const char *value_name,
+	u32 value_name_len, const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 
 	context.changed_key_guid = key_fd->key_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
-	context.resolved_path = (const char * const *)key_fd->resolved_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
+	context.resolved_path = (const char *const *)key_fd->resolved_path;
 	context.limits = limits;
 	context.path_component_count = key_fd->path_component_count;
 	context.event_type = event_type;
@@ -1693,7 +1703,7 @@ static u32 pkm_lcs_key_fd_publish_parent_subkey_event(
 	const char *child_name, u32 child_name_len, u32 event_type,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 	u32 internal_effects = 0;
 
 	if (!key_fd || !parent_guid || !child_name || !child_name_len ||
@@ -1702,8 +1712,8 @@ static u32 pkm_lcs_key_fd_publish_parent_subkey_event(
 
 	context.changed_key_guid = parent_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
-	context.resolved_path = (const char * const *)key_fd->resolved_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
+	context.resolved_path = (const char *const *)key_fd->resolved_path;
 	context.limits = limits;
 	context.path_component_count = key_fd->path_component_count - 1U;
 	context.event_type = event_type;
@@ -1739,15 +1749,15 @@ static void pkm_lcs_key_fd_publish_key_deleted_context(
 	struct pkm_lcs_key_fd *key_fd,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 
 	if (!key_fd)
 		return;
 
 	context.changed_key_guid = key_fd->key_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
-	context.resolved_path = (const char * const *)key_fd->resolved_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
+	context.resolved_path = (const char *const *)key_fd->resolved_path;
 	context.limits = limits;
 	context.path_component_count = key_fd->path_component_count;
 	context.event_type = REG_WATCH_KEY_DELETED;
@@ -1784,13 +1794,12 @@ static long pkm_lcs_effective_value_snapshot_validate(
 }
 
 static long pkm_lcs_key_fd_query_effective_value_snapshot_with_limits(
-	const struct pkm_lcs_key_fd *key_fd, u64 txn_id,
-	const char *value_name, u32 value_name_len,
-	const struct pkm_lcs_runtime_limits *limits,
+	const struct pkm_lcs_key_fd *key_fd, u64 txn_id, const char *value_name,
+	u32 value_name_len, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_effective_value_snapshot *snapshot)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_source_response_result response = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	u64 next_sequence = 0;
 	long ret;
@@ -1800,7 +1809,8 @@ static long pkm_lcs_key_fd_query_effective_value_snapshot_with_limits(
 	memset(snapshot, 0, sizeof(*snapshot));
 	pkm_lcs_source_response_frame_init(&snapshot->frame);
 	if (!limits) {
-		pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&effective_limits);
+		pkm_lcs_key_fd_runtime_limits_snapshot_or_default(
+			&effective_limits);
 		limits = &effective_limits;
 	}
 
@@ -1819,8 +1829,8 @@ static long pkm_lcs_key_fd_query_effective_value_snapshot_with_limits(
 		goto out_layer_snapshot;
 
 	ret = pkm_lcs_rsi_materialize_query_value_response(
-		snapshot->frame.data, snapshot->frame.len,
-		response.request_id, next_sequence, value_name, value_name_len,
+		snapshot->frame.data, snapshot->frame.len, response.request_id,
+		next_sequence, value_name, value_name_len,
 		layer_snapshot.layers, layer_snapshot.layer_count, NULL, 0,
 		limits, &snapshot->result);
 	if (ret)
@@ -1833,9 +1843,8 @@ out_layer_snapshot:
 }
 
 static long __maybe_unused pkm_lcs_key_fd_query_effective_value_snapshot(
-	const struct pkm_lcs_key_fd *key_fd, u64 txn_id,
-	const char *value_name, u32 value_name_len,
-	struct pkm_lcs_effective_value_snapshot *snapshot)
+	const struct pkm_lcs_key_fd *key_fd, u64 txn_id, const char *value_name,
+	u32 value_name_len, struct pkm_lcs_effective_value_snapshot *snapshot)
 {
 	return pkm_lcs_key_fd_query_effective_value_snapshot_with_limits(
 		key_fd, txn_id, value_name, value_name_len, NULL, snapshot);
@@ -1913,9 +1922,9 @@ static long pkm_lcs_key_fd_materialize_value_watch_events(
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_value_watch_event_bytes *events)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_rsi_value_watch_events_result result = { };
-	struct pkm_lcs_rsi_value_watch_events_result written = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_rsi_value_watch_events_result result = {};
+	struct pkm_lcs_rsi_value_watch_events_result written = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -1933,9 +1942,10 @@ static long pkm_lcs_key_fd_materialize_value_watch_events(
 
 	ret = pkm_lcs_rsi_materialize_query_values_watch_events(
 		before_frame->data, before_frame->len,
-		before_response->request_id, after_frame->data, after_frame->len,
-		after_response->request_id, next_sequence, layer_snapshot.layers,
-		layer_snapshot.layer_count, NULL, 0, limits, NULL, 0, &result);
+		before_response->request_id, after_frame->data,
+		after_frame->len, after_response->request_id, next_sequence,
+		layer_snapshot.layers, layer_snapshot.layer_count, NULL, 0,
+		limits, NULL, 0, &result);
 	if (ret)
 		goto out_layer_snapshot;
 	if (!result.required_len) {
@@ -1951,10 +1961,10 @@ static long pkm_lcs_key_fd_materialize_value_watch_events(
 	}
 	ret = pkm_lcs_rsi_materialize_query_values_watch_events(
 		before_frame->data, before_frame->len,
-		before_response->request_id, after_frame->data, after_frame->len,
-		after_response->request_id, next_sequence, layer_snapshot.layers,
-		layer_snapshot.layer_count, NULL, 0, limits, events->data,
-		result.required_len, &written);
+		before_response->request_id, after_frame->data,
+		after_frame->len, after_response->request_id, next_sequence,
+		layer_snapshot.layers, layer_snapshot.layer_count, NULL, 0,
+		limits, events->data, result.required_len, &written);
 	if (ret)
 		goto out_events;
 	if (written.required_len != result.required_len ||
@@ -2012,12 +2022,13 @@ static long pkm_lcs_key_fd_publish_value_watch_event_bytes(
 	return offset == events->len ? 0 : -EIO;
 }
 
-static long pkm_lcs_key_fd_get_security_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_get_security_args *args)
+static long
+pkm_lcs_key_fd_get_security_from_args(struct pkm_lcs_key_fd *key_fd,
+				      const struct pkm_lcs_usercopy_ops *ops,
+				      struct reg_get_security_args *args)
 {
-	struct pkm_lcs_get_security_result result = { };
-	struct pkm_lcs_source_response_frame existing_frame = { };
+	struct pkm_lcs_get_security_result result = {};
+	struct pkm_lcs_source_response_frame existing_frame = {};
 	const u8 *existing_sd = NULL;
 	size_t existing_sd_len = 0;
 	size_t provided_len;
@@ -2099,21 +2110,22 @@ static long pkm_lcs_key_fd_value_name_casefold_equal_with_limits(
 	const char *left, u32 left_len, const char *right, u32 right_len,
 	const struct pkm_lcs_runtime_limits *limits, bool *equal);
 
-static long pkm_lcs_key_fd_query_key_info_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_query_key_info_args *args)
+static long
+pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
+					const struct pkm_lcs_usercopy_ops *ops,
+					struct reg_query_key_info_args *args)
 {
-	struct pkm_lcs_private_credential_view private_view = { };
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_source_response_frame read_frame = { };
-	struct pkm_lcs_source_response_frame enum_frame = { };
-	struct pkm_lcs_source_response_frame values_frame = { };
-	struct pkm_lcs_source_response_result read_response = { };
-	struct pkm_lcs_source_response_result enum_response = { };
-	struct pkm_lcs_source_response_result values_response = { };
-	struct pkm_lcs_rsi_enum_children_info_summary enum_summary = { };
-	struct pkm_lcs_rsi_query_values_info_summary values_summary = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_source_response_frame read_frame = {};
+	struct pkm_lcs_source_response_frame enum_frame = {};
+	struct pkm_lcs_source_response_frame values_frame = {};
+	struct pkm_lcs_source_response_result read_response = {};
+	struct pkm_lcs_source_response_result enum_response = {};
+	struct pkm_lcs_source_response_result values_response = {};
+	struct pkm_lcs_rsi_enum_children_info_summary enum_summary = {};
+	struct pkm_lcs_rsi_query_values_info_summary values_summary = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
 	struct pkm_lcs_runtime_limits limits;
 	const char *key_name;
 	char *hive_name = NULL;
@@ -2135,8 +2147,7 @@ static long pkm_lcs_key_fd_query_key_info_from_args(
 
 	provided_len = args->name_len;
 	name_ptr = args->name_ptr;
-	if (args->_pad0 ||
-	    memchr_inv(args->_pad1, 0, sizeof(args->_pad1)))
+	if (args->_pad0 || memchr_inv(args->_pad1, 0, sizeof(args->_pad1)))
 		return -EINVAL;
 	if (provided_len && !name_ptr)
 		return -EFAULT;
@@ -2171,8 +2182,7 @@ static long pkm_lcs_key_fd_query_key_info_from_args(
 
 	ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, 0, key_fd->key_guid, &limits,
-		limits.request_timeout_ms, &read_frame,
-		&read_response, NULL);
+		limits.request_timeout_ms, &read_frame, &read_response, NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
@@ -2218,8 +2228,8 @@ static long pkm_lcs_key_fd_query_key_info_from_args(
 		if (!name_matches) {
 			(void)pkm_lcs_emit_source_validation_failure_audit(
 				key_fd->source_id, NULL, 0, false,
-				read_response.request_id, true, RSI_READ_KEY, true,
-				key_fd->key_guid, true,
+				read_response.request_id, true, RSI_READ_KEY,
+				true, key_fd->key_guid, true,
 				PKM_LCS_SOURCE_VALIDATION_MALFORMED_KEY_METADATA);
 			ret = -EIO;
 			goto out_frames;
@@ -2231,7 +2241,8 @@ static long pkm_lcs_key_fd_query_key_info_from_args(
 		 * hive name supplies their preserved spelling.
 		 */
 		ret = pkm_lcs_source_hive_name_copy(key_fd->source_id,
-			key_fd->key_guid, &hive_name, &hive_name_len);
+						    key_fd->key_guid,
+						    &hive_name, &hive_name_len);
 		if (ret)
 			goto out_frames;
 		key_name = hive_name;
@@ -2240,29 +2251,30 @@ static long pkm_lcs_key_fd_query_key_info_from_args(
 
 	ret = pkm_lcs_source_enum_children_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, 0, key_fd->key_guid, &limits,
-		limits.request_timeout_ms, &enum_frame,
-		&enum_response, NULL);
+		limits.request_timeout_ms, &enum_frame, &enum_response, NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_enum_children_info_summary(
 		enum_frame.data, enum_frame.len, enum_response.request_id,
-		next_sequence, layer_snapshot.layers, layer_snapshot.layer_count,
-		private_view.private_layers, private_view.private_layer_count,
-		&enum_response.limits, &enum_summary);
+		next_sequence, layer_snapshot.layers,
+		layer_snapshot.layer_count, private_view.private_layers,
+		private_view.private_layer_count, &enum_response.limits,
+		&enum_summary);
 	if (ret)
 		goto out_frames;
 
 	ret = pkm_lcs_source_query_values_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, 0, key_fd->key_guid, "", 0, true,
-		&limits, limits.request_timeout_ms, &values_frame,
-		&values_response, NULL);
+		key_fd->source_id, 0, key_fd->key_guid, "", 0, true, &limits,
+		limits.request_timeout_ms, &values_frame, &values_response,
+		NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_query_values_info_summary(
 		values_frame.data, values_frame.len, values_response.request_id,
-		next_sequence, layer_snapshot.layers, layer_snapshot.layer_count,
-		private_view.private_layers, private_view.private_layer_count,
-		&values_response.limits, &values_summary);
+		next_sequence, layer_snapshot.layers,
+		layer_snapshot.layer_count, private_view.private_layers,
+		private_view.private_layer_count, &values_response.limits,
+		&values_summary);
 	if (ret)
 		goto out_frames;
 
@@ -2308,9 +2320,10 @@ out_frames:
 	return ret;
 }
 
-static long pkm_lcs_key_fd_copy_query_value_name(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_query_value_args *args, char **name_out)
+static long
+pkm_lcs_key_fd_copy_query_value_name(const struct pkm_lcs_usercopy_ops *ops,
+				     const struct reg_query_value_args *args,
+				     char **name_out)
 {
 	char *name;
 	size_t alloc_len;
@@ -2324,8 +2337,7 @@ static long pkm_lcs_key_fd_copy_query_value_name(
 		return -EINVAL;
 	if (args->name_len && !args->name_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->name_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->name_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	name = kzalloc(alloc_len, GFP_KERNEL);
@@ -2346,7 +2358,7 @@ static long pkm_lcs_key_fd_copy_query_value_name(
 static long pkm_lcs_key_fd_query_value_prepare_read_context(
 	const struct pkm_lcs_key_fd *key_fd, int txn_fd, u64 *txn_id_out)
 {
-	struct pkm_lcs_transaction_read_plan read = { };
+	struct pkm_lcs_transaction_read_plan read = {};
 	long ret;
 
 	if (!key_fd || !txn_id_out)
@@ -2380,15 +2392,16 @@ static void pkm_lcs_key_fd_query_value_reset_args(
 	args->txn_fd = txn_fd;
 }
 
-static long pkm_lcs_key_fd_query_value_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_query_value_args *args)
+static long
+pkm_lcs_key_fd_query_value_from_args(struct pkm_lcs_key_fd *key_fd,
+				     const struct pkm_lcs_usercopy_ops *ops,
+				     struct reg_query_value_args *args)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_private_credential_view private_view = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_query_value_result result = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_query_value_result result = {};
 	struct pkm_lcs_runtime_limits limits;
 	char *value_name = NULL;
 	const u8 *data;
@@ -2426,8 +2439,8 @@ static long pkm_lcs_key_fd_query_value_from_args(
 	if (layer_buf_len && !layer_ptr)
 		return -EFAULT;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_QUERY_VALUE_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_QUERY_VALUE_NR);
 	if (ret)
 		return ret;
 
@@ -2475,8 +2488,7 @@ static long pkm_lcs_key_fd_query_value_from_args(
 		goto out_frame;
 	}
 	if ((size_t)result.data_offset > frame.len ||
-	    (size_t)result.data_len >
-		    frame.len - (size_t)result.data_offset ||
+	    (size_t)result.data_len > frame.len - (size_t)result.data_offset ||
 	    (result.layer_len && !result.layer)) {
 		ret = -EIO;
 		goto out_frame;
@@ -2484,10 +2496,9 @@ static long pkm_lcs_key_fd_query_value_from_args(
 
 	if (data_buf_len < result.data_len ||
 	    layer_buf_len < result.layer_len) {
-		pkm_lcs_key_fd_query_value_reset_args(args, name_len,
-						      name_ptr, layer_buf_len,
-						      data_ptr, layer_ptr,
-						      txn_fd);
+		pkm_lcs_key_fd_query_value_reset_args(args, name_len, name_ptr,
+						      layer_buf_len, data_ptr,
+						      layer_ptr, txn_fd);
 		args->data_len = result.data_len;
 		args->layer_len = result.layer_len;
 		ret = -ERANGE;
@@ -2497,8 +2508,8 @@ static long pkm_lcs_key_fd_query_value_from_args(
 	data = frame.data + result.data_offset;
 	layer = result.layer;
 	if (result.data_len &&
-	    !ops->write(ops->ctx, (void __user *)(unsigned long)data_ptr,
-			data, result.data_len)) {
+	    !ops->write(ops->ctx, (void __user *)(unsigned long)data_ptr, data,
+			result.data_len)) {
 		ret = -EFAULT;
 		goto out_frame;
 	}
@@ -2536,8 +2547,8 @@ static void pkm_lcs_key_fd_query_values_batch_reset_args(
 	args->txn_fd = txn_fd;
 }
 
-static void pkm_lcs_set_value_input_destroy(
-	struct pkm_lcs_set_value_input *input)
+static void
+pkm_lcs_set_value_input_destroy(struct pkm_lcs_set_value_input *input)
 {
 	if (!input)
 		return;
@@ -2558,8 +2569,8 @@ static void pkm_lcs_key_fd_runtime_limits_snapshot_or_default(
 		memset(limits, 0, sizeof(*limits));
 }
 
-static void pkm_lcs_delete_value_input_destroy(
-	struct pkm_lcs_delete_value_input *input)
+static void
+pkm_lcs_delete_value_input_destroy(struct pkm_lcs_delete_value_input *input)
 {
 	if (!input)
 		return;
@@ -2598,8 +2609,8 @@ static void pkm_lcs_hide_key_input_destroy(struct pkm_lcs_hide_key_input *input)
 	memset(input, 0, sizeof(*input));
 }
 
-static void pkm_lcs_delete_key_input_destroy(
-	struct pkm_lcs_delete_key_input *input)
+static void
+pkm_lcs_delete_key_input_destroy(struct pkm_lcs_delete_key_input *input)
 {
 	if (!input)
 		return;
@@ -2608,10 +2619,10 @@ static void pkm_lcs_delete_key_input_destroy(
 	memset(input, 0, sizeof(*input));
 }
 
-static long pkm_lcs_key_fd_copy_set_value_value_name(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	struct pkm_lcs_set_value_input *input)
+static long
+pkm_lcs_key_fd_copy_set_value_value_name(const struct pkm_lcs_usercopy_ops *ops,
+					 const struct reg_set_value_args *args,
+					 struct pkm_lcs_set_value_input *input)
 {
 	size_t alloc_len;
 
@@ -2619,8 +2630,7 @@ static long pkm_lcs_key_fd_copy_set_value_value_name(
 		return -EINVAL;
 	if (args->name_len && !args->name_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->name_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->name_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	input->value_name = kzalloc(alloc_len, GFP_KERNEL);
@@ -2634,10 +2644,10 @@ static long pkm_lcs_key_fd_copy_set_value_value_name(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_delete_value_name(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_value_args *args,
-	struct pkm_lcs_delete_value_input *input)
+static long
+pkm_lcs_key_fd_copy_delete_value_name(const struct pkm_lcs_usercopy_ops *ops,
+				      const struct reg_delete_value_args *args,
+				      struct pkm_lcs_delete_value_input *input)
 {
 	size_t alloc_len;
 
@@ -2645,8 +2655,7 @@ static long pkm_lcs_key_fd_copy_delete_value_name(
 		return -EINVAL;
 	if (args->name_len && !args->name_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->name_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->name_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	input->value_name = kzalloc(alloc_len, GFP_KERNEL);
@@ -2660,10 +2669,10 @@ static long pkm_lcs_key_fd_copy_delete_value_name(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_set_value_layer(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	struct pkm_lcs_set_value_input *input)
+static long
+pkm_lcs_key_fd_copy_set_value_layer(const struct pkm_lcs_usercopy_ops *ops,
+				    const struct reg_set_value_args *args,
+				    struct pkm_lcs_set_value_input *input)
 {
 	char *layer;
 	size_t alloc_len;
@@ -2682,8 +2691,7 @@ static long pkm_lcs_key_fd_copy_set_value_layer(
 
 	if (!args->layer_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->layer_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->layer_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	layer = kzalloc(alloc_len, GFP_KERNEL);
@@ -2702,10 +2710,10 @@ static long pkm_lcs_key_fd_copy_set_value_layer(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_delete_value_layer(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_value_args *args,
-	struct pkm_lcs_delete_value_input *input)
+static long
+pkm_lcs_key_fd_copy_delete_value_layer(const struct pkm_lcs_usercopy_ops *ops,
+				       const struct reg_delete_value_args *args,
+				       struct pkm_lcs_delete_value_input *input)
 {
 	char *layer;
 	size_t alloc_len;
@@ -2724,8 +2732,7 @@ static long pkm_lcs_key_fd_copy_delete_value_layer(
 
 	if (!args->layer_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->layer_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->layer_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	layer = kzalloc(alloc_len, GFP_KERNEL);
@@ -2766,8 +2773,7 @@ static long pkm_lcs_key_fd_copy_blanket_tombstone_layer(
 
 	if (!args->layer_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->layer_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->layer_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	layer = kzalloc(alloc_len, GFP_KERNEL);
@@ -2786,10 +2792,10 @@ static long pkm_lcs_key_fd_copy_blanket_tombstone_layer(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_hide_key_layer(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_hide_key_args *args,
-	struct pkm_lcs_hide_key_input *input)
+static long
+pkm_lcs_key_fd_copy_hide_key_layer(const struct pkm_lcs_usercopy_ops *ops,
+				   const struct reg_hide_key_args *args,
+				   struct pkm_lcs_hide_key_input *input)
 {
 	char *layer;
 	size_t alloc_len;
@@ -2808,8 +2814,7 @@ static long pkm_lcs_key_fd_copy_hide_key_layer(
 
 	if (!args->layer_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->layer_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->layer_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	layer = kzalloc(alloc_len, GFP_KERNEL);
@@ -2828,10 +2833,10 @@ static long pkm_lcs_key_fd_copy_hide_key_layer(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_delete_key_layer(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_key_args *args,
-	struct pkm_lcs_delete_key_input *input)
+static long
+pkm_lcs_key_fd_copy_delete_key_layer(const struct pkm_lcs_usercopy_ops *ops,
+				     const struct reg_delete_key_args *args,
+				     struct pkm_lcs_delete_key_input *input)
 {
 	char *layer;
 	size_t alloc_len;
@@ -2850,8 +2855,7 @@ static long pkm_lcs_key_fd_copy_delete_key_layer(
 
 	if (!args->layer_ptr)
 		return -EFAULT;
-	if (check_add_overflow((size_t)args->layer_len, (size_t)1,
-			       &alloc_len))
+	if (check_add_overflow((size_t)args->layer_len, (size_t)1, &alloc_len))
 		return -EOVERFLOW;
 
 	layer = kzalloc(alloc_len, GFP_KERNEL);
@@ -2870,10 +2874,10 @@ static long pkm_lcs_key_fd_copy_delete_key_layer(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_set_value_data(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	struct pkm_lcs_set_value_input *input)
+static long
+pkm_lcs_key_fd_copy_set_value_data(const struct pkm_lcs_usercopy_ops *ops,
+				   const struct reg_set_value_args *args,
+				   struct pkm_lcs_set_value_input *input)
 {
 	u8 *data;
 
@@ -2898,11 +2902,11 @@ static long pkm_lcs_key_fd_copy_set_value_data(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_set_value_input(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	const struct pkm_lcs_key_fd *key_fd,
-	struct pkm_lcs_set_value_input *input)
+static long
+pkm_lcs_key_fd_copy_set_value_input(const struct pkm_lcs_usercopy_ops *ops,
+				    const struct reg_set_value_args *args,
+				    const struct pkm_lcs_key_fd *key_fd,
+				    struct pkm_lcs_set_value_input *input)
 {
 	long ret;
 
@@ -2926,11 +2930,11 @@ static long pkm_lcs_key_fd_copy_set_value_input(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_copy_delete_value_input(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_value_args *args,
-	const struct pkm_lcs_key_fd *key_fd,
-	struct pkm_lcs_delete_value_input *input)
+static long
+pkm_lcs_key_fd_copy_delete_value_input(const struct pkm_lcs_usercopy_ops *ops,
+				       const struct reg_delete_value_args *args,
+				       const struct pkm_lcs_key_fd *key_fd,
+				       struct pkm_lcs_delete_value_input *input)
 {
 	long ret;
 
@@ -2956,9 +2960,9 @@ static long pkm_lcs_key_fd_copy_blanket_tombstone_input(
 	const struct pkm_lcs_key_fd *key_fd,
 	struct pkm_lcs_blanket_tombstone_input *input)
 {
-	struct pkm_lcs_rsi_built_request built = { };
-	u8 frame[RSI_REQUEST_HEADER_SIZE + RSI_GUID_SIZE + sizeof(u32) +
-		 1024U + sizeof(u8) + sizeof(u64)];
+	struct pkm_lcs_rsi_built_request built = {};
+	u8 frame[RSI_REQUEST_HEADER_SIZE + RSI_GUID_SIZE + sizeof(u32) + 1024U +
+		 sizeof(u8) + sizeof(u64)];
 	long ret;
 
 	if (!ops || !ops->read || !args || !key_fd || !input)
@@ -2979,10 +2983,10 @@ static long pkm_lcs_key_fd_copy_blanket_tombstone_input(
 		input->set ? 1ULL : 0ULL, &input->limits, &built);
 }
 
-static long pkm_lcs_key_fd_copy_hide_key_input(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_hide_key_args *args,
-	struct pkm_lcs_hide_key_input *input)
+static long
+pkm_lcs_key_fd_copy_hide_key_input(const struct pkm_lcs_usercopy_ops *ops,
+				   const struct reg_hide_key_args *args,
+				   struct pkm_lcs_hide_key_input *input)
 {
 	if (!ops || !ops->read || !args || !input)
 		return -EINVAL;
@@ -2992,10 +2996,10 @@ static long pkm_lcs_key_fd_copy_hide_key_input(
 	return pkm_lcs_key_fd_copy_hide_key_layer(ops, args, input);
 }
 
-static long pkm_lcs_key_fd_copy_delete_key_input(
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_key_args *args,
-	struct pkm_lcs_delete_key_input *input)
+static long
+pkm_lcs_key_fd_copy_delete_key_input(const struct pkm_lcs_usercopy_ops *ops,
+				     const struct reg_delete_key_args *args,
+				     struct pkm_lcs_delete_key_input *input)
 {
 	if (!ops || !ops->read || !args || !input)
 		return -EINVAL;
@@ -3008,9 +3012,9 @@ static long pkm_lcs_key_fd_copy_delete_key_input(
 static long pkm_lcs_key_fd_authorize_value_layer_target(
 	const struct pkm_lcs_create_layer_target *target, const void *token)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_layer_target_admission_plan target_plan = { };
-	struct pkm_lcs_key_open_access_plan layer_plan = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_layer_target_admission_plan target_plan = {};
+	struct pkm_lcs_key_open_access_plan layer_plan = {};
 	long ret;
 
 	if (!target)
@@ -3019,9 +3023,9 @@ static long pkm_lcs_key_fd_authorize_value_layer_target(
 	ret = pkm_lcs_source_layer_snapshot_acquire(&layer_snapshot);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_create_layer_target_admit(
-		target, layer_snapshot.layers, layer_snapshot.layer_count,
-		&target_plan);
+	ret = pkm_lcs_create_layer_target_admit(target, layer_snapshot.layers,
+						layer_snapshot.layer_count,
+						&target_plan);
 	if (ret)
 		goto out_snapshot;
 	ret = pkm_lcs_create_layer_write_access_check_for_token(
@@ -3056,8 +3060,7 @@ static long pkm_lcs_key_fd_delete_value_authorize_layer(
 }
 
 static long pkm_lcs_key_fd_blanket_tombstone_authorize_layer(
-	const struct pkm_lcs_blanket_tombstone_input *input,
-	const void *token)
+	const struct pkm_lcs_blanket_tombstone_input *input, const void *token)
 {
 	if (!input)
 		return -EINVAL;
@@ -3087,9 +3090,8 @@ static long pkm_lcs_key_fd_delete_key_authorize_layer(
 }
 
 static long pkm_lcs_key_fd_path_entry_target(
-	const struct pkm_lcs_key_fd *key_fd,
-	const u8 **parent_guid_out, const char **child_name_out,
-	u32 *child_name_len_out)
+	const struct pkm_lcs_key_fd *key_fd, const u8 **parent_guid_out,
+	const char **child_name_out, u32 *child_name_len_out)
 {
 	const char *child_name;
 	size_t child_name_len;
@@ -3130,7 +3132,7 @@ static long pkm_lcs_key_fd_validate_hide_key_request_shape(
 	const u8 parent_guid[PKM_LCS_GUID_BYTES], const char *child_name,
 	u32 child_name_len, const struct pkm_lcs_hide_key_input *input)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	size_t frame_len;
 	u8 *frame;
 	long ret;
@@ -3140,8 +3142,7 @@ static long pkm_lcs_key_fd_validate_hide_key_request_shape(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)child_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)child_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
 	    check_add_overflow(frame_len, (size_t)input->target.name_len,
 			       &frame_len) ||
@@ -3152,9 +3153,9 @@ static long pkm_lcs_key_fd_validate_hide_key_request_shape(
 	if (!frame)
 		return -ENOMEM;
 	ret = pkm_lcs_rsi_build_hide_entry_request(
-		frame, frame_len, 1, 0, parent_guid, child_name,
-		child_name_len, input->target.name, input->target.name_len, 1,
-		&input->limits, &built);
+		frame, frame_len, 1, 0, parent_guid, child_name, child_name_len,
+		input->target.name, input->target.name_len, 1, &input->limits,
+		&built);
 	kfree(frame);
 	return ret;
 }
@@ -3163,7 +3164,7 @@ static long pkm_lcs_key_fd_validate_delete_key_request_shape(
 	const u8 parent_guid[PKM_LCS_GUID_BYTES], const char *child_name,
 	u32 child_name_len, const struct pkm_lcs_delete_key_input *input)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	size_t frame_len;
 	u8 *frame;
 	long ret;
@@ -3173,8 +3174,7 @@ static long pkm_lcs_key_fd_validate_delete_key_request_shape(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)child_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)child_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
 	    check_add_overflow(frame_len, (size_t)input->target.name_len,
 			       &frame_len))
@@ -3184,9 +3184,9 @@ static long pkm_lcs_key_fd_validate_delete_key_request_shape(
 	if (!frame)
 		return -ENOMEM;
 	ret = pkm_lcs_rsi_build_delete_entry_request(
-		frame, frame_len, 1, 0, parent_guid, child_name,
-		child_name_len, input->target.name, input->target.name_len,
-		&input->limits, &built);
+		frame, frame_len, 1, 0, parent_guid, child_name, child_name_len,
+		input->target.name, input->target.name_len, &input->limits,
+		&built);
 	kfree(frame);
 	return ret;
 }
@@ -3195,10 +3195,10 @@ static long pkm_lcs_key_fd_delete_key_visible_child_gate(
 	const struct pkm_lcs_key_fd *key_fd, u64 txn_id,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_enum_children_info_summary summary = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_enum_children_info_summary summary = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -3214,8 +3214,8 @@ static long pkm_lcs_key_fd_delete_key_visible_child_gate(
 
 	pkm_lcs_source_response_frame_init(&frame);
 	ret = pkm_lcs_source_enum_children_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, txn_id, key_fd->key_guid,
-		limits, limits->request_timeout_ms, &frame, &response, NULL);
+		key_fd->source_id, txn_id, key_fd->key_guid, limits,
+		limits->request_timeout_ms, &frame, &response, NULL);
 	if (ret)
 		goto out_frame;
 
@@ -3240,11 +3240,11 @@ static long pkm_lcs_key_fd_delete_key_post_lookup(
 	u32 child_name_len, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_delete_key_post_lookup *out)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_lookup_guid_entry_result target = { };
-	struct pkm_lcs_rsi_lookup_child_result effective = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_lookup_guid_entry_result target = {};
+	struct pkm_lcs_rsi_lookup_child_result effective = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -3267,8 +3267,8 @@ static long pkm_lcs_key_fd_delete_key_post_lookup(
 
 	ret = pkm_lcs_rsi_materialize_lookup_guid_entry(
 		frame.data, frame.len, response.request_id, next_sequence,
-		child_name, child_name_len, key_fd->key_guid,
-		&response.limits, &target);
+		child_name, child_name_len, key_fd->key_guid, &response.limits,
+		&target);
 	if (ret)
 		goto out_frame;
 	out->target_still_named = target.present != 0;
@@ -3315,16 +3315,17 @@ static void pkm_lcs_key_fd_delete_key_visibility_events(
 	*publish_created_out = after->effective_found && !same_winner;
 }
 
-static long pkm_lcs_key_fd_hide_key_post_lookup(
-	const struct pkm_lcs_key_fd *key_fd,
-	const u8 parent_guid[PKM_LCS_GUID_BYTES], const char *child_name,
-	u32 child_name_len, const struct pkm_lcs_runtime_limits *limits,
-	struct pkm_lcs_hide_key_post_lookup *out)
+static long
+pkm_lcs_key_fd_hide_key_post_lookup(const struct pkm_lcs_key_fd *key_fd,
+				    const u8 parent_guid[PKM_LCS_GUID_BYTES],
+				    const char *child_name, u32 child_name_len,
+				    const struct pkm_lcs_runtime_limits *limits,
+				    struct pkm_lcs_hide_key_post_lookup *out)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_lookup_child_result effective = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_lookup_child_result effective = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -3370,9 +3371,9 @@ static long pkm_lcs_key_fd_set_value_layer_cap_check(
 	const struct pkm_lcs_key_fd *key_fd,
 	const struct pkm_lcs_set_value_input *input, u64 txn_id)
 {
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_value_layer_admission_result result = { };
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_value_layer_admission_result result = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -3386,8 +3387,8 @@ static long pkm_lcs_key_fd_set_value_layer_cap_check(
 	pkm_lcs_source_response_frame_init(&frame);
 	ret = pkm_lcs_source_query_values_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, txn_id, key_fd->key_guid, input->value_name,
-		(input->value_name ? (u32)strlen(input->value_name) : 0),
-		false, &input->limits, input->limits.request_timeout_ms, &frame,
+		(input->value_name ? (u32)strlen(input->value_name) : 0), false,
+		&input->limits, input->limits.request_timeout_ms, &frame,
 		&response, NULL);
 	if (ret)
 		goto out_frame;
@@ -3473,8 +3474,8 @@ static long pkm_lcs_key_fd_set_value_symlink_target_gate(
 	const void *token, const struct pkm_lcs_set_value_input *input,
 	const struct reg_set_value_args *args)
 {
-	struct pkm_lcs_hive_route_result route = { };
-	u8 (*scope_guids)[16] = NULL;
+	struct pkm_lcs_hive_route_result route = {};
+	u8(*scope_guids)[16] = NULL;
 	u32 scope_count;
 	u32 i;
 	long ret;
@@ -3495,8 +3496,8 @@ static long pkm_lcs_key_fd_set_value_symlink_target_gate(
 	 */
 	scope_count = token ? kacs_rust_token_lcs_scope_guid_count(token) : 0;
 	if (scope_count) {
-		scope_guids = kcalloc(scope_count, sizeof(*scope_guids),
-				      GFP_KERNEL);
+		scope_guids =
+			kcalloc(scope_count, sizeof(*scope_guids), GFP_KERNEL);
 		if (!scope_guids)
 			return -ENOMEM;
 		for (i = 0; i < scope_count; i++) {
@@ -3510,7 +3511,7 @@ static long pkm_lcs_key_fd_set_value_symlink_target_gate(
 
 	ret = pkm_lcs_route_symlink_target_with_limits(
 		(const char *)input->data, args->data_len,
-		(const u8 (*)[16])scope_guids, scope_count, &input->limits,
+		(const u8(*)[16])scope_guids, scope_count, &input->limits,
 		&route);
 	kfree(scope_guids);
 	if (ret)
@@ -3567,9 +3568,8 @@ static long pkm_lcs_key_fd_set_value_precedence_tcb_gate(
 	if (!is_precedence)
 		return 0;
 
-	if (!token ||
-	    !kacs_rust_token_has_enabled_privilege(token,
-						  KACS_SE_TCB_PRIVILEGE))
+	if (!token || !kacs_rust_token_has_enabled_privilege(
+			      token, KACS_SE_TCB_PRIVILEGE))
 		return -EPERM;
 	return 0;
 }
@@ -3596,9 +3596,10 @@ static long pkm_lcs_key_fd_layer_name_casefold_equal_with_limits(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_layer_name_casefold_equal(
-	const char *left, u32 left_len, const char *right, u32 right_len,
-	bool *equal)
+static long pkm_lcs_key_fd_layer_name_casefold_equal(const char *left,
+						     u32 left_len,
+						     const char *right,
+						     u32 right_len, bool *equal)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -3630,9 +3631,8 @@ static long pkm_lcs_key_fd_layer_metadata_path_with_limits(
 	u32 *layer_name_len_out, const struct pkm_lcs_runtime_limits *limits,
 	bool *matches_out)
 {
-	static const char * const prefix[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const prefix[] = { "Machine", "System", "Registry",
+					      "Layers" };
 	const char *layer_name;
 	u32 i;
 
@@ -3673,13 +3673,12 @@ static long pkm_lcs_key_fd_layer_metadata_path_with_limits(
 }
 
 static long pkm_lcs_restore_metadata_path_state_from_components(
-	const char * const *path, u32 path_component_count,
+	const char *const *path, u32 path_component_count,
 	const struct pkm_lcs_runtime_limits *limits,
 	enum pkm_lcs_restore_metadata_path_state *state_out)
 {
-	static const char * const prefix[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const prefix[] = { "Machine", "System", "Registry",
+					      "Layers" };
 	u32 i;
 
 	if (!state_out)
@@ -3695,8 +3694,7 @@ static long pkm_lcs_restore_metadata_path_state_from_components(
 	if (path_component_count > ARRAY_SIZE(prefix) + 1U)
 		return 0;
 
-	for (i = 0; i < path_component_count &&
-		    i < ARRAY_SIZE(prefix); i++) {
+	for (i = 0; i < path_component_count && i < ARRAY_SIZE(prefix); i++) {
 		bool equal = false;
 		long ret;
 
@@ -3792,7 +3790,7 @@ static long pkm_lcs_key_fd_query_layer_metadata_dword_with_limits(
 	u32 value_name_len, const struct pkm_lcs_runtime_limits *limits,
 	bool *found_out, u32 *value_out)
 {
-	struct pkm_lcs_effective_value_snapshot snapshot = { };
+	struct pkm_lcs_effective_value_snapshot snapshot = {};
 	const u8 *data;
 	long ret;
 
@@ -3824,8 +3822,8 @@ out:
 static long pkm_lcs_key_fd_query_layer_metadata_owner_with_limits(
 	const struct pkm_lcs_key_fd *key_fd, const char *value_name,
 	u32 value_name_len, const struct pkm_lcs_runtime_limits *limits,
-	struct pkm_lcs_effective_value_snapshot *snapshot,
-	bool *found_out, const u8 **owner_sid_out, size_t *owner_sid_len_out)
+	struct pkm_lcs_effective_value_snapshot *snapshot, bool *found_out,
+	const u8 **owner_sid_out, size_t *owner_sid_len_out)
 {
 	long ret;
 
@@ -3851,7 +3849,8 @@ static long pkm_lcs_key_fd_query_layer_metadata_owner_with_limits(
 	}
 	if ((size_t)snapshot->result.data_offset > snapshot->frame.len ||
 	    (size_t)snapshot->result.data_len >
-		    snapshot->frame.len - (size_t)snapshot->result.data_offset) {
+		    snapshot->frame.len -
+			    (size_t)snapshot->result.data_offset) {
 		ret = -EIO;
 		goto out;
 	}
@@ -3900,10 +3899,10 @@ static long pkm_lcs_key_fd_refresh_layer_metadata_with_owner_context_limits(
 	static const char enabled_name[] = "Enabled";
 	static const char owner_name[] = "Owner";
 	static const char base_name[] = "base";
-	struct pkm_lcs_layer_table_publish_result publish_result = { };
-	struct pkm_lcs_source_response_frame read_frame = { };
-	struct pkm_lcs_source_response_result read_response = { };
-	struct pkm_lcs_effective_value_snapshot owner_snapshot = { };
+	struct pkm_lcs_layer_table_publish_result publish_result = {};
+	struct pkm_lcs_source_response_frame read_frame = {};
+	struct pkm_lcs_source_response_result read_response = {};
+	struct pkm_lcs_effective_value_snapshot owner_snapshot = {};
 	const char *layer_name = NULL;
 	const u8 *sd = NULL;
 	const u8 *owner_sid = NULL;
@@ -3951,8 +3950,8 @@ static long pkm_lcs_key_fd_refresh_layer_metadata_with_owner_context_limits(
 		goto out_read_frame;
 	}
 	if (is_base) {
-		ret = pkm_lcs_base_layer_metadata_publish(key_fd->key_guid,
-							  sd, sd_len);
+		ret = pkm_lcs_base_layer_metadata_publish(key_fd->key_guid, sd,
+							  sd_len);
 		if (ret == -EIO)
 			pkm_lcs_key_fd_emit_layer_metadata_sd_validation_failure(
 				key_fd, &read_response);
@@ -3968,8 +3967,8 @@ static long pkm_lcs_key_fd_refresh_layer_metadata_with_owner_context_limits(
 		precedence = 0;
 
 	ret = pkm_lcs_key_fd_query_layer_metadata_dword_with_limits(
-		key_fd, enabled_name, sizeof(enabled_name) - 1, limits,
-		&found, &enabled_raw);
+		key_fd, enabled_name, sizeof(enabled_name) - 1, limits, &found,
+		&enabled_raw);
 	if (ret)
 		goto out_read_frame;
 	if (!found) {
@@ -3987,9 +3986,10 @@ static long pkm_lcs_key_fd_refresh_layer_metadata_with_owner_context_limits(
 	if (ret)
 		goto out_read_frame;
 
-	ret = pkm_lcs_layer_table_owner_snapshot(
-		layer_name, layer_name_len, &previous_owner_sid,
-		&previous_owner_sid_len, &previous_owner_present);
+	ret = pkm_lcs_layer_table_owner_snapshot(layer_name, layer_name_len,
+						 &previous_owner_sid,
+						 &previous_owner_sid_len,
+						 &previous_owner_present);
 	if (ret)
 		goto out_owner_snapshot;
 
@@ -4072,8 +4072,8 @@ static long pkm_lcs_key_fd_orchestrate_deleted_layer_metadata_key(
 	return ret;
 }
 
-static __maybe_unused long pkm_lcs_key_fd_refresh_layer_metadata(
-	const struct pkm_lcs_key_fd *key_fd)
+static __maybe_unused long
+pkm_lcs_key_fd_refresh_layer_metadata(const struct pkm_lcs_key_fd *key_fd)
 {
 	return pkm_lcs_key_fd_refresh_layer_metadata_with_owner_context(
 		key_fd, NULL, 0, false, NULL);
@@ -4088,7 +4088,7 @@ static long __maybe_unused pkm_lcs_key_fd_refresh_layer_metadata_result(
 
 long pkm_lcs_key_path_refresh_layer_metadata(
 	u32 source_id, const u8 key_guid[PKM_LCS_GUID_BYTES],
-	const char * const *resolved_path, u32 path_component_count)
+	const char *const *resolved_path, u32 path_component_count)
 {
 	return pkm_lcs_key_path_refresh_layer_metadata_with_owner_context(
 		source_id, key_guid, resolved_path, path_component_count, NULL,
@@ -4097,7 +4097,7 @@ long pkm_lcs_key_path_refresh_layer_metadata(
 
 long pkm_lcs_key_path_refresh_layer_metadata_result(
 	u32 source_id, const u8 key_guid[PKM_LCS_GUID_BYTES],
-	const char * const *resolved_path, u32 path_component_count,
+	const char *const *resolved_path, u32 path_component_count,
 	bool *effective_changed_out)
 {
 	return pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result(
@@ -4107,7 +4107,7 @@ long pkm_lcs_key_path_refresh_layer_metadata_result(
 
 long pkm_lcs_key_path_refresh_layer_metadata_with_owner_context(
 	u32 source_id, const u8 key_guid[PKM_LCS_GUID_BYTES],
-	const char * const *resolved_path, u32 path_component_count,
+	const char *const *resolved_path, u32 path_component_count,
 	const u8 *creator_sid, size_t creator_sid_len, bool is_new_layer)
 {
 	return pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result(
@@ -4117,7 +4117,7 @@ long pkm_lcs_key_path_refresh_layer_metadata_with_owner_context(
 
 long pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result(
 	u32 source_id, const u8 key_guid[PKM_LCS_GUID_BYTES],
-	const char * const *resolved_path, u32 path_component_count,
+	const char *const *resolved_path, u32 path_component_count,
 	const u8 *creator_sid, size_t creator_sid_len, bool is_new_layer,
 	bool *effective_changed_out)
 {
@@ -4132,15 +4132,15 @@ long pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result(
 
 long pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result_with_limits(
 	u32 source_id, const u8 key_guid[PKM_LCS_GUID_BYTES],
-	const char * const *resolved_path, u32 path_component_count,
+	const char *const *resolved_path, u32 path_component_count,
 	const u8 *creator_sid, size_t creator_sid_len, bool is_new_layer,
 	const struct pkm_lcs_runtime_limits *limits,
 	bool *effective_changed_out)
 {
-	struct pkm_lcs_key_fd key_fd = { };
+	struct pkm_lcs_key_fd key_fd = {};
 
-	if (!source_id || !key_guid || !resolved_path || !path_component_count ||
-	    !limits)
+	if (!source_id || !key_guid || !resolved_path ||
+	    !path_component_count || !limits)
 		return -EINVAL;
 
 	key_fd.source_id = source_id;
@@ -4156,12 +4156,12 @@ static long pkm_lcs_key_fd_query_values_batch_from_args(
 	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
 	struct reg_query_values_batch_args *args)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_private_credential_view private_view = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_query_values_batch_result result = { };
-	struct pkm_lcs_rsi_query_values_batch_result written = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_query_values_batch_result result = {};
+	struct pkm_lcs_rsi_query_values_batch_result written = {};
 	struct pkm_lcs_runtime_limits limits;
 	u64 next_sequence = 0;
 	u64 txn_id = 0;
@@ -4228,8 +4228,8 @@ static long pkm_lcs_key_fd_query_values_batch_from_args(
 		goto out_frame;
 
 	if (buf_len < result.required_len) {
-		pkm_lcs_key_fd_query_values_batch_reset_args(
-			args, buf_len, buf_ptr, txn_fd);
+		pkm_lcs_key_fd_query_values_batch_reset_args(args, buf_len,
+							     buf_ptr, txn_fd);
 		args->buf_len = result.required_len;
 		ret = -ERANGE;
 		goto out_frame;
@@ -4277,9 +4277,10 @@ out_frame:
 	return ret;
 }
 
-static void pkm_lcs_key_fd_enum_value_reset_args(
-	struct reg_enum_value_args *args, u32 index, u32 name_len,
-	u64 name_ptr, u32 data_len, u64 data_ptr, s32 txn_fd)
+static void
+pkm_lcs_key_fd_enum_value_reset_args(struct reg_enum_value_args *args,
+				     u32 index, u32 name_len, u64 name_ptr,
+				     u32 data_len, u64 data_ptr, s32 txn_fd)
 {
 	memset(args, 0, sizeof(*args));
 	args->index = index;
@@ -4290,15 +4291,16 @@ static void pkm_lcs_key_fd_enum_value_reset_args(
 	args->txn_fd = txn_fd;
 }
 
-static long pkm_lcs_key_fd_enum_value_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_enum_value_args *args)
+static long
+pkm_lcs_key_fd_enum_value_from_args(struct pkm_lcs_key_fd *key_fd,
+				    const struct pkm_lcs_usercopy_ops *ops,
+				    struct reg_enum_value_args *args)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_private_credential_view private_view = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_enum_value_result result = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_enum_value_result result = {};
 	struct pkm_lcs_runtime_limits limits;
 	const u8 *name;
 	const u8 *data;
@@ -4333,8 +4335,8 @@ static long pkm_lcs_key_fd_enum_value_from_args(
 	if (data_buf_len && !data_ptr)
 		return -EFAULT;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_ENUM_VALUES_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_ENUM_VALUES_NR);
 	if (ret)
 		return ret;
 
@@ -4377,17 +4379,14 @@ static long pkm_lcs_key_fd_enum_value_from_args(
 		goto out_frame;
 	}
 	if ((size_t)result.name_offset > frame.len ||
-	    (size_t)result.name_len >
-		    frame.len - (size_t)result.name_offset ||
+	    (size_t)result.name_len > frame.len - (size_t)result.name_offset ||
 	    (size_t)result.data_offset > frame.len ||
-	    (size_t)result.data_len >
-		    frame.len - (size_t)result.data_offset) {
+	    (size_t)result.data_len > frame.len - (size_t)result.data_offset) {
 		ret = -EIO;
 		goto out_frame;
 	}
 
-	if (name_buf_len < result.name_len ||
-	    data_buf_len < result.data_len) {
+	if (name_buf_len < result.name_len || data_buf_len < result.data_len) {
 		pkm_lcs_key_fd_enum_value_reset_args(args, index, name_buf_len,
 						     name_ptr, data_buf_len,
 						     data_ptr, txn_fd);
@@ -4400,14 +4399,14 @@ static long pkm_lcs_key_fd_enum_value_from_args(
 	name = frame.data + result.name_offset;
 	data = frame.data + result.data_offset;
 	if (result.name_len &&
-	    !ops->write(ops->ctx, (void __user *)(unsigned long)name_ptr,
-			name, result.name_len)) {
+	    !ops->write(ops->ctx, (void __user *)(unsigned long)name_ptr, name,
+			result.name_len)) {
 		ret = -EFAULT;
 		goto out_frame;
 	}
 	if (result.data_len &&
-	    !ops->write(ops->ctx, (void __user *)(unsigned long)data_ptr,
-			data, result.data_len)) {
+	    !ops->write(ops->ctx, (void __user *)(unsigned long)data_ptr, data,
+			result.data_len)) {
 		ret = -EFAULT;
 		goto out_frame;
 	}
@@ -4426,9 +4425,10 @@ out_frame:
 	return ret;
 }
 
-static void pkm_lcs_key_fd_enum_subkey_reset_args(
-	struct reg_enum_subkey_args *args, u32 index, u32 name_len,
-	u64 name_ptr, s32 txn_fd)
+static void
+pkm_lcs_key_fd_enum_subkey_reset_args(struct reg_enum_subkey_args *args,
+				      u32 index, u32 name_len, u64 name_ptr,
+				      s32 txn_fd)
 {
 	memset(args, 0, sizeof(*args));
 	args->index = index;
@@ -4441,20 +4441,18 @@ static long pkm_lcs_key_fd_enum_subkey_read_metadata(
 	struct pkm_lcs_key_fd *key_fd, u64 txn_id, u64 next_sequence,
 	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
-	u32 private_layer_count,
-	const struct pkm_lcs_runtime_limits *limits,
-	const u8 child_guid[RSI_GUID_SIZE],
-	struct reg_enum_subkey_args *args)
+	u32 private_layer_count, const struct pkm_lcs_runtime_limits *limits,
+	const u8 child_guid[RSI_GUID_SIZE], struct reg_enum_subkey_args *args)
 {
-	struct pkm_lcs_source_response_frame read_frame = { };
-	struct pkm_lcs_source_response_frame enum_frame = { };
-	struct pkm_lcs_source_response_frame values_frame = { };
-	struct pkm_lcs_source_response_result read_response = { };
-	struct pkm_lcs_source_response_result enum_response = { };
-	struct pkm_lcs_source_response_result values_response = { };
-	struct pkm_lcs_rsi_enum_children_info_summary enum_summary = { };
-	struct pkm_lcs_rsi_query_values_info_summary values_summary = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
+	struct pkm_lcs_source_response_frame read_frame = {};
+	struct pkm_lcs_source_response_frame enum_frame = {};
+	struct pkm_lcs_source_response_frame values_frame = {};
+	struct pkm_lcs_source_response_result read_response = {};
+	struct pkm_lcs_source_response_result enum_response = {};
+	struct pkm_lcs_source_response_result values_response = {};
+	struct pkm_lcs_rsi_enum_children_info_summary enum_summary = {};
+	struct pkm_lcs_rsi_query_values_info_summary values_summary = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
 	long ret;
 
 	if (!limits)
@@ -4466,8 +4464,7 @@ static long pkm_lcs_key_fd_enum_subkey_read_metadata(
 
 	ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, txn_id, child_guid, limits,
-		limits->request_timeout_ms, &read_frame,
-		&read_response, NULL);
+		limits->request_timeout_ms, &read_frame, &read_response, NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
@@ -4478,29 +4475,26 @@ static long pkm_lcs_key_fd_enum_subkey_read_metadata(
 
 	ret = pkm_lcs_source_enum_children_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, txn_id, child_guid, limits,
-		limits->request_timeout_ms, &enum_frame,
-		&enum_response, NULL);
+		limits->request_timeout_ms, &enum_frame, &enum_response, NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_enum_children_info_summary(
 		enum_frame.data, enum_frame.len, enum_response.request_id,
 		next_sequence, layers, layer_count, private_layers,
-		private_layer_count,
-		&enum_response.limits, &enum_summary);
+		private_layer_count, &enum_response.limits, &enum_summary);
 	if (ret)
 		goto out_frames;
 
 	ret = pkm_lcs_source_query_values_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, txn_id, child_guid, "", 0, true,
-		limits, limits->request_timeout_ms, &values_frame,
-		&values_response, NULL);
+		key_fd->source_id, txn_id, child_guid, "", 0, true, limits,
+		limits->request_timeout_ms, &values_frame, &values_response,
+		NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_query_values_info_summary(
 		values_frame.data, values_frame.len, values_response.request_id,
 		next_sequence, layers, layer_count, private_layers,
-		private_layer_count,
-		&values_response.limits, &values_summary);
+		private_layer_count, &values_response.limits, &values_summary);
 	if (ret)
 		goto out_frames;
 
@@ -4516,15 +4510,16 @@ out_frames:
 	return ret;
 }
 
-static long pkm_lcs_key_fd_enum_subkey_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_enum_subkey_args *args)
+static long
+pkm_lcs_key_fd_enum_subkey_from_args(struct pkm_lcs_key_fd *key_fd,
+				     const struct pkm_lcs_usercopy_ops *ops,
+				     struct reg_enum_subkey_args *args)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_private_credential_view private_view = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_rsi_enum_subkey_result result = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_enum_subkey_result result = {};
 	struct pkm_lcs_runtime_limits limits;
 	const u8 *name;
 	u64 next_sequence = 0;
@@ -4552,8 +4547,8 @@ static long pkm_lcs_key_fd_enum_subkey_from_args(
 	if (name_buf_len && !name_ptr)
 		return -EFAULT;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_ENUM_SUBKEYS_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_ENUM_SUBKEYS_NR);
 	if (ret)
 		return ret;
 
@@ -4596,15 +4591,14 @@ static long pkm_lcs_key_fd_enum_subkey_from_args(
 		goto out_frame;
 	}
 	if ((size_t)result.name_offset > frame.len ||
-	    (size_t)result.name_len >
-		    frame.len - (size_t)result.name_offset) {
+	    (size_t)result.name_len > frame.len - (size_t)result.name_offset) {
 		ret = -EIO;
 		goto out_frame;
 	}
 
 	if (name_buf_len < result.name_len) {
-		pkm_lcs_key_fd_enum_subkey_reset_args(
-			args, index, name_buf_len, name_ptr, txn_fd);
+		pkm_lcs_key_fd_enum_subkey_reset_args(args, index, name_buf_len,
+						      name_ptr, txn_fd);
 		args->name_len = result.name_len;
 		ret = -ERANGE;
 		goto out_frame;
@@ -4623,8 +4617,8 @@ static long pkm_lcs_key_fd_enum_subkey_from_args(
 
 	name = frame.data + result.name_offset;
 	if (result.name_len &&
-	    !ops->write(ops->ctx, (void __user *)(unsigned long)name_ptr,
-			name, result.name_len))
+	    !ops->write(ops->ctx, (void __user *)(unsigned long)name_ptr, name,
+			result.name_len))
 		ret = -EFAULT;
 
 out_frame:
@@ -4676,9 +4670,10 @@ static void pkm_lcs_key_audit_ctx_begin(struct pkm_lcs_key_audit_ctx *audit,
 }
 
 /* Starts a record armed when `right` overlaps the handle's audit mask. */
-static void pkm_lcs_key_audit_ctx_begin_for_right(
-	struct pkm_lcs_key_audit_ctx *audit,
-	const struct pkm_lcs_key_fd *key_fd, u32 event, u32 right)
+static void
+pkm_lcs_key_audit_ctx_begin_for_right(struct pkm_lcs_key_audit_ctx *audit,
+				      const struct pkm_lcs_key_fd *key_fd,
+				      u32 event, u32 right)
 {
 	pkm_lcs_key_audit_ctx_begin(
 		audit, key_fd, event, right,
@@ -4719,8 +4714,9 @@ static void pkm_lcs_key_audit_set_key_layer(struct pkm_lcs_key_audit_ctx *audit,
 	audit->record.key_layer_name_len = len;
 }
 
-static void pkm_lcs_key_audit_set_value_name(
-	struct pkm_lcs_key_audit_ctx *audit, const char *name, u32 len)
+static void
+pkm_lcs_key_audit_set_value_name(struct pkm_lcs_key_audit_ctx *audit,
+				 const char *name, u32 len)
 {
 	if (!audit->armed || audit->record.value_name_present)
 		return;
@@ -4781,8 +4777,9 @@ static void pkm_lcs_key_audit_set_sequence(struct pkm_lcs_key_audit_ctx *audit,
 	audit->record.sequence_present = 1;
 }
 
-static void pkm_lcs_key_audit_set_transaction(
-	struct pkm_lcs_key_audit_ctx *audit, u64 transaction_id)
+static void
+pkm_lcs_key_audit_set_transaction(struct pkm_lcs_key_audit_ctx *audit,
+				  u64 transaction_id)
 {
 	if (!audit->armed || !transaction_id)
 		return;
@@ -4795,8 +4792,8 @@ static void pkm_lcs_key_audit_set_transaction(
  * source, so the change may still land (and, for a value or descriptor
  * write, its kernel-side effects are replayed when it does).
  */
-static void pkm_lcs_key_audit_note_round_trip(
-	struct pkm_lcs_key_audit_ctx *audit, long ret)
+static void
+pkm_lcs_key_audit_note_round_trip(struct pkm_lcs_key_audit_ctx *audit, long ret)
 {
 	if (audit->armed && ret == -ETIMEDOUT)
 		audit->record.timed_out = 1;
@@ -4815,10 +4812,9 @@ static void pkm_lcs_key_audit_finish(struct pkm_lcs_key_audit_ctx *audit,
 
 	if (!audit->armed || !key_fd || !token)
 		goto out;
-	if (pkm_lcs_audit_join_path(
-		    (const char * const *)key_fd->resolved_path,
-		    key_fd->path_component_count, NULL, 0, &audit->path,
-		    &path_len))
+	if (pkm_lcs_audit_join_path((const char *const *)key_fd->resolved_path,
+				    key_fd->path_component_count, NULL, 0,
+				    &audit->path, &path_len))
 		goto out;
 
 	audit->record.key_path = audit->path;
@@ -4860,20 +4856,22 @@ static void pkm_lcs_key_audit_set_sd(struct pkm_lcs_key_audit_ctx *audit,
 	}
 }
 
-static long pkm_lcs_key_fd_set_security_core(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_security_args *args,
-	struct pkm_lcs_key_audit_ctx *audit)
+static long
+pkm_lcs_key_fd_set_security_core(struct pkm_lcs_key_fd *key_fd,
+				 const void *token,
+				 const struct pkm_lcs_usercopy_ops *ops,
+				 const struct reg_set_security_args *args,
+				 struct pkm_lcs_key_audit_ctx *audit)
 {
-	struct pkm_lcs_set_security_merge_result merge = { };
-	struct pkm_lcs_source_response_frame existing_frame = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_set_security_log_input log_input = { };
-	struct pkm_lcs_runtime_limits limits = { };
-	struct pkm_lcs_source_key_mutation_late_effect_input late_effect = { };
-	const struct pkm_lcs_source_key_mutation_late_effect_input *late_effect_ptr = NULL;
+	struct pkm_lcs_set_security_merge_result merge = {};
+	struct pkm_lcs_source_response_frame existing_frame = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_set_security_log_input log_input = {};
+	struct pkm_lcs_runtime_limits limits = {};
+	struct pkm_lcs_source_key_mutation_late_effect_input late_effect = {};
+	const struct pkm_lcs_source_key_mutation_late_effect_input
+		*late_effect_ptr = NULL;
 	const u8 *existing_sd = NULL;
 	size_t existing_sd_len = 0;
 	u8 *input_sd = NULL;
@@ -4906,9 +4904,9 @@ static long pkm_lcs_key_fd_set_security_core(
 
 		(void)pkm_lcs_registry_set_security_required_access(
 			args->security_info, &requested);
-		pkm_lcs_key_audit_ctx_begin(audit, key_fd,
-					    PKM_LCS_KEY_AUDIT_DESCRIPTOR_CHANGED,
-					    requested, true);
+		pkm_lcs_key_audit_ctx_begin(
+			audit, key_fd, PKM_LCS_KEY_AUDIT_DESCRIPTOR_CHANGED,
+			requested, true);
 		audit->record.sd_components = args->security_info;
 	}
 
@@ -4921,7 +4919,7 @@ static long pkm_lcs_key_fd_set_security_core(
 	 * Check before contacting or mutating the source, also for transactions.
 	 */
 	ret = kacs_rust_validate_sd_label_update(token, args->security_info,
-					       input_sd, input_sd_len);
+						 input_sd, input_sd_len);
 	if (ret)
 		goto out_input;
 	ret = pkm_lcs_key_fd_snapshot_limits_and_revalidate(key_fd, &limits);
@@ -4930,15 +4928,16 @@ static long pkm_lcs_key_fd_set_security_core(
 
 	if (args->txn_fd >= 0) {
 		log_input.key_guid = key_fd->key_guid;
-		log_input.path = (const char * const *)key_fd->resolved_path;
+		log_input.path = (const char *const *)key_fd->resolved_path;
 		log_input.ancestor_guids =
-			(const u8 (*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+			(const u8(*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 				key_fd->ancestor_guids;
 		log_input.depth = key_fd->path_component_count;
 
 		ret = pkm_lcs_transaction_fd_begin_set_security_mutation(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&log_input, &mutation, &binding);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &log_input, &mutation,
+			&binding);
 		if (ret)
 			goto out_input;
 		txn_id = binding.transaction_id;
@@ -4967,10 +4966,9 @@ static long pkm_lcs_key_fd_set_security_core(
 	if (args->txn_fd < 0) {
 		late_effect.key_guid = key_fd->key_guid;
 		late_effect.ancestor_guids =
-			(const u8 (*)[PKM_LCS_GUID_BYTES])
-				key_fd->ancestor_guids;
+			(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
 		late_effect.resolved_path =
-			(const char * const *)key_fd->resolved_path;
+			(const char *const *)key_fd->resolved_path;
 		late_effect.path_component_count = key_fd->path_component_count;
 		late_effect.event_type = REG_WATCH_SD_CHANGED;
 		late_effect.flags =
@@ -5051,35 +5049,38 @@ static long pkm_lcs_key_fd_set_security_from_args_for_token(
 	if (audit.armed)
 		audit.record.sd_components = args->security_info;
 
-	ret = pkm_lcs_key_fd_set_security_core(key_fd, token, ops, args, &audit);
+	ret = pkm_lcs_key_fd_set_security_core(key_fd, token, ops, args,
+					       &audit);
 	pkm_lcs_key_audit_finish(&audit, key_fd, token, ret);
 	return ret;
 }
 
-static long pkm_lcs_key_fd_set_security_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_security_args *args)
+static long
+pkm_lcs_key_fd_set_security_from_args(struct pkm_lcs_key_fd *key_fd,
+				      const struct pkm_lcs_usercopy_ops *ops,
+				      const struct reg_set_security_args *args)
 {
 	return pkm_lcs_key_fd_set_security_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), ops, args);
 }
 
-static long pkm_lcs_key_fd_set_value_core(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	struct pkm_lcs_key_audit_ctx *audit)
+static long
+pkm_lcs_key_fd_set_value_core(struct pkm_lcs_key_fd *key_fd, const void *token,
+			      const struct pkm_lcs_usercopy_ops *ops,
+			      const struct reg_set_value_args *args,
+			      struct pkm_lcs_key_audit_ctx *audit)
 {
-	struct pkm_lcs_set_value_input input = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_binding_plan binding_probe = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_set_value_log_input log_input = { };
-	struct pkm_lcs_source_key_mutation_late_effect_input late_effect = { };
-	const struct pkm_lcs_source_key_mutation_late_effect_input *late_effect_ptr = NULL;
-	struct pkm_lcs_effective_value_snapshot before = { };
-	struct pkm_lcs_effective_value_snapshot after = { };
+	struct pkm_lcs_set_value_input input = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_binding_plan binding_probe = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_set_value_log_input log_input = {};
+	struct pkm_lcs_source_key_mutation_late_effect_input late_effect = {};
+	const struct pkm_lcs_source_key_mutation_late_effect_input
+		*late_effect_ptr = NULL;
+	struct pkm_lcs_effective_value_snapshot before = {};
+	struct pkm_lcs_effective_value_snapshot after = {};
 	u64 generation = 0;
 	u64 last_write_time;
 	u64 sequence = 0;
@@ -5103,8 +5104,8 @@ static long pkm_lcs_key_fd_set_value_core(
 	if (args->txn_fd < -1)
 		return -EINVAL;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_SET_VALUE_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_SET_VALUE_NR);
 	if (ret)
 		return ret;
 
@@ -5140,8 +5141,8 @@ static long pkm_lcs_key_fd_set_value_core(
 
 	if (args->txn_fd >= 0) {
 		ret = pkm_lcs_transaction_fd_prepare_mutation_binding(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&binding_probe);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &binding_probe);
 		if (ret)
 			goto out_input;
 		if (binding_probe.action == PKM_LCS_TRANSACTION_BIND_REUSE)
@@ -5169,16 +5170,17 @@ static long pkm_lcs_key_fd_set_value_core(
 		log_input.value_name_len = args->name_len;
 		log_input.layer = input.target.name;
 		log_input.layer_len = input.target.name_len;
-		log_input.path = (const char * const *)key_fd->resolved_path;
+		log_input.path = (const char *const *)key_fd->resolved_path;
 		log_input.ancestor_guids =
-			(const u8 (*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+			(const u8(*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 				key_fd->ancestor_guids;
 		log_input.depth = key_fd->path_component_count;
 		log_input.sequence = sequence;
 
 		ret = pkm_lcs_transaction_fd_begin_set_value_mutation(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&log_input, &mutation, &binding);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &log_input, &mutation,
+			&binding);
 		if (ret)
 			goto out_input;
 		txn_id = binding.transaction_id;
@@ -5204,10 +5206,9 @@ static long pkm_lcs_key_fd_set_value_core(
 
 		late_effect.key_guid = key_fd->key_guid;
 		late_effect.ancestor_guids =
-			(const u8 (*)[PKM_LCS_GUID_BYTES])
-				key_fd->ancestor_guids;
+			(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids;
 		late_effect.resolved_path =
-			(const char * const *)key_fd->resolved_path;
+			(const char *const *)key_fd->resolved_path;
 		late_effect.name = input.value_name;
 		late_effect.path_component_count = key_fd->path_component_count;
 		late_effect.name_len = args->name_len;
@@ -5243,10 +5244,11 @@ static long pkm_lcs_key_fd_set_value_core(
 		last_write_time, &input.limits, input.limits.request_timeout_ms,
 		NULL, NULL);
 	if (ret) {
-		trace_lcs_key_mutation(key_fd->source_id,
-				       pkm_lcs_key_guid_hash64(key_fd->key_guid),
-				       LCS_KCMD_SET_VALUE, args->txn_fd, txn_id,
-				       key_fd->granted_access, ret);
+		trace_lcs_key_mutation(
+			key_fd->source_id,
+			pkm_lcs_key_guid_hash64(key_fd->key_guid),
+			LCS_KCMD_SET_VALUE, args->txn_fd, txn_id,
+			key_fd->granted_access, ret);
 		pkm_lcs_source_mark_down_by_id(key_fd->source_id);
 		ret = -EIO;
 		goto out_after;
@@ -5273,7 +5275,7 @@ static long pkm_lcs_key_fd_set_value_core(
 	}
 
 	if (layer_effective_changed) {
-		struct pkm_lcs_layer_operation_recovery_result recovery = { };
+		struct pkm_lcs_layer_operation_recovery_result recovery = {};
 
 		ret = pkm_lcs_source_layer_operation_recover_skip_generation_with_limits(
 			key_fd->source_id, key_fd->ancestor_guids[0],
@@ -5290,9 +5292,10 @@ static long pkm_lcs_key_fd_set_value_core(
 	if (ret)
 		goto out_after;
 	if (event_type)
-		pkm_lcs_key_fd_publish_value_effects(
-			key_fd, event_type, input.value_name, args->name_len,
-			&input.limits);
+		pkm_lcs_key_fd_publish_value_effects(key_fd, event_type,
+						     input.value_name,
+						     args->name_len,
+						     &input.limits);
 	ret = 0;
 
 out_after:
@@ -5315,35 +5318,36 @@ static long pkm_lcs_key_fd_set_value_from_args_for_token(
 	struct pkm_lcs_key_audit_ctx audit;
 	long ret;
 
-	pkm_lcs_key_audit_ctx_begin_for_right(&audit, key_fd,
-					      PKM_LCS_KEY_AUDIT_VALUE_SET,
-					      KEY_SET_VALUE);
+	pkm_lcs_key_audit_ctx_begin_for_right(
+		&audit, key_fd, PKM_LCS_KEY_AUDIT_VALUE_SET, KEY_SET_VALUE);
 	ret = pkm_lcs_key_fd_set_value_core(key_fd, token, ops, args, &audit);
 	pkm_lcs_key_audit_finish(&audit, key_fd, token, ret);
 	return ret;
 }
 
-static long pkm_lcs_key_fd_set_value_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args)
+static long
+pkm_lcs_key_fd_set_value_from_args(struct pkm_lcs_key_fd *key_fd,
+				   const struct pkm_lcs_usercopy_ops *ops,
+				   const struct reg_set_value_args *args)
 {
 	return pkm_lcs_key_fd_set_value_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), ops, args);
 }
 
-static long pkm_lcs_key_fd_delete_value_core(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_value_args *args,
-	struct pkm_lcs_key_audit_ctx *audit)
+static long
+pkm_lcs_key_fd_delete_value_core(struct pkm_lcs_key_fd *key_fd,
+				 const void *token,
+				 const struct pkm_lcs_usercopy_ops *ops,
+				 const struct reg_delete_value_args *args,
+				 struct pkm_lcs_key_audit_ctx *audit)
 {
-	struct pkm_lcs_delete_value_input input = { };
-	struct pkm_lcs_effective_value_snapshot before = { };
-	struct pkm_lcs_effective_value_snapshot after = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_delete_value_log_input log_input = { };
+	struct pkm_lcs_delete_value_input input = {};
+	struct pkm_lcs_effective_value_snapshot before = {};
+	struct pkm_lcs_effective_value_snapshot after = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_delete_value_log_input log_input = {};
 	u64 generation = 0;
 	u64 last_write_time;
 	u64 txn_id = 0;
@@ -5364,13 +5368,12 @@ static long pkm_lcs_key_fd_delete_value_core(
 	if (args->txn_fd < -1)
 		return -EINVAL;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_DELETE_VALUE_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_DELETE_VALUE_NR);
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_key_fd_copy_delete_value_input(ops, args, key_fd,
-						     &input);
+	ret = pkm_lcs_key_fd_copy_delete_value_input(ops, args, key_fd, &input);
 	if (ret)
 		goto out_input;
 	pkm_lcs_key_audit_set_value_name(audit, input.value_name,
@@ -5392,15 +5395,16 @@ static long pkm_lcs_key_fd_delete_value_core(
 		log_input.value_name_len = args->name_len;
 		log_input.layer = input.target.name;
 		log_input.layer_len = input.target.name_len;
-		log_input.path = (const char * const *)key_fd->resolved_path;
+		log_input.path = (const char *const *)key_fd->resolved_path;
 		log_input.ancestor_guids =
-			(const u8 (*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+			(const u8(*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 				key_fd->ancestor_guids;
 		log_input.depth = key_fd->path_component_count;
 
 		ret = pkm_lcs_transaction_fd_begin_delete_value_mutation(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&log_input, &mutation, &binding);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &log_input, &mutation,
+			&binding);
 		if (ret)
 			goto out_input;
 		txn_id = binding.transaction_id;
@@ -5408,8 +5412,8 @@ static long pkm_lcs_key_fd_delete_value_core(
 	}
 
 	ret = pkm_lcs_key_fd_query_effective_value_snapshot_with_limits(
-		key_fd, txn_id, input.value_name, args->name_len,
-		&input.limits, &before);
+		key_fd, txn_id, input.value_name, args->name_len, &input.limits,
+		&before);
 	if (ret)
 		goto out_cancel_mutation;
 	pkm_lcs_key_audit_set_previous(audit, &before);
@@ -5417,14 +5421,15 @@ static long pkm_lcs_key_fd_delete_value_core(
 	ret = pkm_lcs_source_delete_value_entry_round_trip_timeout_with_limits(
 		key_fd->source_id, txn_id, key_fd->key_guid, input.value_name,
 		args->name_len, input.target.name, input.target.name_len,
-		&input.limits, input.limits.request_timeout_ms, &response, NULL);
+		&input.limits, input.limits.request_timeout_ms, &response,
+		NULL);
 	pkm_lcs_key_audit_note_round_trip(audit, ret);
 	if (ret)
 		goto out_before;
 
 	ret = pkm_lcs_key_fd_query_effective_value_snapshot_with_limits(
-		key_fd, txn_id, input.value_name, args->name_len,
-		&input.limits, &after);
+		key_fd, txn_id, input.value_name, args->name_len, &input.limits,
+		&after);
 	if (ret)
 		goto out_before;
 
@@ -5434,10 +5439,11 @@ static long pkm_lcs_key_fd_delete_value_core(
 		last_write_time, &input.limits, input.limits.request_timeout_ms,
 		NULL, NULL);
 	if (ret) {
-		trace_lcs_key_mutation(key_fd->source_id,
-				       pkm_lcs_key_guid_hash64(key_fd->key_guid),
-				       LCS_KCMD_DELETE_VALUE, args->txn_fd,
-				       txn_id, key_fd->granted_access, ret);
+		trace_lcs_key_mutation(
+			key_fd->source_id,
+			pkm_lcs_key_guid_hash64(key_fd->key_guid),
+			LCS_KCMD_DELETE_VALUE, args->txn_fd, txn_id,
+			key_fd->granted_access, ret);
 		pkm_lcs_source_mark_down_by_id(key_fd->source_id);
 		ret = -EIO;
 		goto out_after;
@@ -5448,8 +5454,8 @@ static long pkm_lcs_key_fd_delete_value_core(
 	if (ret)
 		goto out_after;
 	if (args->txn_fd >= 0) {
-		ret = pkm_lcs_transaction_fd_set_delete_value_event(
-			&mutation, event_type);
+		ret = pkm_lcs_transaction_fd_set_delete_value_event(&mutation,
+								    event_type);
 		if (ret)
 			goto out_after;
 		mutation.audited = audit->armed;
@@ -5468,9 +5474,10 @@ static long pkm_lcs_key_fd_delete_value_core(
 	}
 
 	if (event_type)
-		pkm_lcs_key_fd_publish_value_effects(
-			key_fd, event_type, input.value_name, args->name_len,
-			&input.limits);
+		pkm_lcs_key_fd_publish_value_effects(key_fd, event_type,
+						     input.value_name,
+						     args->name_len,
+						     &input.limits);
 	ret = 0;
 
 out_after:
@@ -5494,18 +5501,18 @@ static long pkm_lcs_key_fd_delete_value_from_args_for_token(
 	struct pkm_lcs_key_audit_ctx audit;
 	long ret;
 
-	pkm_lcs_key_audit_ctx_begin_for_right(&audit, key_fd,
-					      PKM_LCS_KEY_AUDIT_VALUE_DELETED,
-					      KEY_SET_VALUE);
+	pkm_lcs_key_audit_ctx_begin_for_right(
+		&audit, key_fd, PKM_LCS_KEY_AUDIT_VALUE_DELETED, KEY_SET_VALUE);
 	ret = pkm_lcs_key_fd_delete_value_core(key_fd, token, ops, args,
 					       &audit);
 	pkm_lcs_key_audit_finish(&audit, key_fd, token, ret);
 	return ret;
 }
 
-static long pkm_lcs_key_fd_delete_value_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_value_args *args)
+static long
+pkm_lcs_key_fd_delete_value_from_args(struct pkm_lcs_key_fd *key_fd,
+				      const struct pkm_lcs_usercopy_ops *ops,
+				      const struct reg_delete_value_args *args)
 {
 	return pkm_lcs_key_fd_delete_value_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), ops, args);
@@ -5517,16 +5524,16 @@ static long pkm_lcs_key_fd_blanket_tombstone_core(
 	const struct reg_blanket_tombstone_args *args,
 	struct pkm_lcs_key_audit_ctx *audit)
 {
-	struct pkm_lcs_blanket_tombstone_input input = { };
-	struct pkm_lcs_source_response_frame before_frame = { };
-	struct pkm_lcs_source_response_frame after_frame = { };
-	struct pkm_lcs_source_response_result before_response = { };
-	struct pkm_lcs_source_response_result after_response = { };
-	struct pkm_lcs_source_response_result mutation_response = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_blanket_tombstone_log_input log_input = { };
-	struct pkm_lcs_value_watch_event_bytes events = { };
+	struct pkm_lcs_blanket_tombstone_input input = {};
+	struct pkm_lcs_source_response_frame before_frame = {};
+	struct pkm_lcs_source_response_frame after_frame = {};
+	struct pkm_lcs_source_response_result before_response = {};
+	struct pkm_lcs_source_response_result after_response = {};
+	struct pkm_lcs_source_response_result mutation_response = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_blanket_tombstone_log_input log_input = {};
+	struct pkm_lcs_value_watch_event_bytes events = {};
 	u64 generation = 0;
 	u64 last_write_time;
 	u64 sequence = 0;
@@ -5582,17 +5589,18 @@ static long pkm_lcs_key_fd_blanket_tombstone_core(
 		log_input.key_guid = key_fd->key_guid;
 		log_input.layer = input.target.name;
 		log_input.layer_len = input.target.name_len;
-		log_input.path = (const char * const *)key_fd->resolved_path;
+		log_input.path = (const char *const *)key_fd->resolved_path;
 		log_input.ancestor_guids =
-			(const u8 (*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+			(const u8(*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 				key_fd->ancestor_guids;
 		log_input.depth = key_fd->path_component_count;
 		log_input.sequence = sequence;
 		log_input.set = input.set;
 
 		ret = pkm_lcs_transaction_fd_begin_blanket_tombstone_mutation(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&log_input, &mutation, &binding);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &log_input, &mutation,
+			&binding);
 		if (ret)
 			goto out_input;
 		txn_id = binding.transaction_id;
@@ -5605,10 +5613,9 @@ static long pkm_lcs_key_fd_blanket_tombstone_core(
 		goto out_cancel_mutation;
 
 	ret = pkm_lcs_source_set_blanket_tombstone_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, key_fd->key_guid,
-		input.target.name, input.target.name_len, input.set, sequence,
-		&input.limits, input.limits.request_timeout_ms, &mutation_response,
-		NULL);
+		key_fd->source_id, txn_id, key_fd->key_guid, input.target.name,
+		input.target.name_len, input.set, sequence, &input.limits,
+		input.limits.request_timeout_ms, &mutation_response, NULL);
 	pkm_lcs_key_audit_note_round_trip(audit, ret);
 	if (ret)
 		goto out_before;
@@ -5624,10 +5631,11 @@ static long pkm_lcs_key_fd_blanket_tombstone_core(
 		last_write_time, &input.limits, input.limits.request_timeout_ms,
 		NULL, NULL);
 	if (ret) {
-		trace_lcs_key_mutation(key_fd->source_id,
-				       pkm_lcs_key_guid_hash64(key_fd->key_guid),
-				       LCS_KCMD_BLANKET_TOMBSTONE, args->txn_fd,
-				       txn_id, key_fd->granted_access, ret);
+		trace_lcs_key_mutation(
+			key_fd->source_id,
+			pkm_lcs_key_guid_hash64(key_fd->key_guid),
+			LCS_KCMD_BLANKET_TOMBSTONE, args->txn_fd, txn_id,
+			key_fd->granted_access, ret);
 		pkm_lcs_source_mark_down_by_id(key_fd->source_id);
 		ret = -EIO;
 		goto out_after;
@@ -5658,7 +5666,7 @@ static long pkm_lcs_key_fd_blanket_tombstone_core(
 	}
 
 	ret = pkm_lcs_key_fd_publish_value_watch_event_bytes(key_fd, &events,
-							    &input.limits);
+							     &input.limits);
 
 out_events:
 	pkm_lcs_value_watch_event_bytes_destroy(&events);
@@ -5704,19 +5712,19 @@ static long pkm_lcs_key_fd_blanket_tombstone_from_args(
 		key_fd, pkm_kacs_current_effective_token_ptr(), ops, args);
 }
 
-static long pkm_lcs_key_fd_delete_key_core(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_key_args *args,
-	struct pkm_lcs_key_audit_ctx *audit)
+static long
+pkm_lcs_key_fd_delete_key_core(struct pkm_lcs_key_fd *key_fd, const void *token,
+			       const struct pkm_lcs_usercopy_ops *ops,
+			       const struct reg_delete_key_args *args,
+			       struct pkm_lcs_key_audit_ctx *audit)
 {
-	struct pkm_lcs_delete_key_input input = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_delete_key_log_input log_input = { };
-	struct pkm_lcs_delete_key_post_lookup pre_lookup = { };
-	struct pkm_lcs_delete_key_post_lookup post_lookup = { };
+	struct pkm_lcs_delete_key_input input = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_delete_key_log_input log_input = {};
+	struct pkm_lcs_delete_key_post_lookup pre_lookup = {};
+	struct pkm_lcs_delete_key_post_lookup post_lookup = {};
 	const u8 *parent_guid = NULL;
 	const char *child_name = NULL;
 	u64 generation = 0;
@@ -5743,8 +5751,8 @@ static long pkm_lcs_key_fd_delete_key_core(
 	if (args->txn_fd < -1)
 		return -EINVAL;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_DELETE_KEY_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_DELETE_KEY_NR);
 	if (ret)
 		return ret;
 
@@ -5781,15 +5789,16 @@ static long pkm_lcs_key_fd_delete_key_core(
 		log_input.layer = input.target.name;
 		log_input.layer_len = input.target.name_len;
 		log_input.parent_path =
-			(const char * const *)key_fd->resolved_path;
+			(const char *const *)key_fd->resolved_path;
 		log_input.parent_ancestor_guids =
-			(const u8 (*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+			(const u8(*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 				key_fd->ancestor_guids;
 		log_input.parent_depth = parent_depth;
 
 		ret = pkm_lcs_transaction_fd_begin_delete_key_mutation(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&log_input, &mutation, &binding);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &log_input, &mutation,
+			&binding);
 		if (ret)
 			goto out_input;
 		txn_id = binding.transaction_id;
@@ -5812,7 +5821,8 @@ static long pkm_lcs_key_fd_delete_key_core(
 	ret = pkm_lcs_source_delete_entry_round_trip_timeout_with_limits(
 		key_fd->source_id, txn_id, parent_guid, child_name,
 		child_name_len, input.target.name, input.target.name_len,
-		&input.limits, input.limits.request_timeout_ms, &response, NULL);
+		&input.limits, input.limits.request_timeout_ms, &response,
+		NULL);
 	pkm_lcs_key_audit_note_round_trip(audit, ret);
 	if (ret)
 		goto out_cancel_mutation;
@@ -5826,16 +5836,18 @@ static long pkm_lcs_key_fd_delete_key_core(
 			ret = -EIO;
 			goto out_cancel_mutation;
 		}
-		pkm_lcs_key_fd_delete_key_visibility_events(
-			&pre_lookup, &post_lookup, &publish_deleted,
-			&publish_created);
+		pkm_lcs_key_fd_delete_key_visibility_events(&pre_lookup,
+							    &post_lookup,
+							    &publish_deleted,
+							    &publish_created);
 		if (!post_lookup.target_still_named) {
 			key_object_gone = true;
 			ret = pkm_lcs_key_fd_mark_orphaned_internal(
-				key_fd->source_id, key_fd->key_guid, NULL,
-				NULL, false, &input.limits);
+				key_fd->source_id, key_fd->key_guid, NULL, NULL,
+				false, &input.limits);
 			if (ret) {
-				pkm_lcs_source_mark_down_by_id(key_fd->source_id);
+				pkm_lcs_source_mark_down_by_id(
+					key_fd->source_id);
 				ret = -EIO;
 				goto out_cancel_mutation;
 			}
@@ -5844,13 +5856,15 @@ static long pkm_lcs_key_fd_delete_key_core(
 
 	last_write_time = (u64)ktime_get_real_ns();
 	ret = pkm_lcs_source_write_key_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, parent_guid, NULL, 0, last_write_time,
-		&input.limits, input.limits.request_timeout_ms, NULL, NULL);
+		key_fd->source_id, txn_id, parent_guid, NULL, 0,
+		last_write_time, &input.limits, input.limits.request_timeout_ms,
+		NULL, NULL);
 	if (ret) {
-		trace_lcs_key_mutation(key_fd->source_id,
-				       pkm_lcs_key_guid_hash64(key_fd->key_guid),
-				       LCS_KCMD_DELETE_KEY, args->txn_fd, txn_id,
-				       key_fd->granted_access, ret);
+		trace_lcs_key_mutation(
+			key_fd->source_id,
+			pkm_lcs_key_guid_hash64(key_fd->key_guid),
+			LCS_KCMD_DELETE_KEY, args->txn_fd, txn_id,
+			key_fd->granted_access, ret);
 		pkm_lcs_source_mark_down_by_id(key_fd->source_id);
 		ret = -EIO;
 		goto out_cancel_mutation;
@@ -5936,35 +5950,35 @@ static long pkm_lcs_key_fd_delete_key_from_args_for_token(
 	struct pkm_lcs_key_audit_ctx audit;
 	long ret;
 
-	pkm_lcs_key_audit_ctx_begin_for_right(&audit, key_fd,
-					      PKM_LCS_KEY_AUDIT_KEY_DELETED,
-					      DELETE);
+	pkm_lcs_key_audit_ctx_begin_for_right(
+		&audit, key_fd, PKM_LCS_KEY_AUDIT_KEY_DELETED, DELETE);
 	ret = pkm_lcs_key_fd_delete_key_core(key_fd, token, ops, args, &audit);
 	pkm_lcs_key_audit_finish(&audit, key_fd, token, ret);
 	return ret;
 }
 
-static long pkm_lcs_key_fd_delete_key_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_delete_key_args *args)
+static long
+pkm_lcs_key_fd_delete_key_from_args(struct pkm_lcs_key_fd *key_fd,
+				    const struct pkm_lcs_usercopy_ops *ops,
+				    const struct reg_delete_key_args *args)
 {
 	return pkm_lcs_key_fd_delete_key_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), ops, args);
 }
 
-static long pkm_lcs_key_fd_hide_key_core(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_hide_key_args *args,
-	struct pkm_lcs_key_audit_ctx *audit)
+static long pkm_lcs_key_fd_hide_key_core(struct pkm_lcs_key_fd *key_fd,
+					 const void *token,
+					 const struct pkm_lcs_usercopy_ops *ops,
+					 const struct reg_hide_key_args *args,
+					 struct pkm_lcs_key_audit_ctx *audit)
 {
-	struct pkm_lcs_hide_key_input input = { };
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_transaction_mutation_handle mutation = { };
-	struct pkm_lcs_transaction_binding_plan binding_probe = { };
-	struct pkm_lcs_transaction_binding_plan binding = { };
-	struct pkm_lcs_transaction_hide_key_log_input log_input = { };
-	struct pkm_lcs_hide_key_post_lookup post_lookup = { };
+	struct pkm_lcs_hide_key_input input = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_transaction_mutation_handle mutation = {};
+	struct pkm_lcs_transaction_binding_plan binding_probe = {};
+	struct pkm_lcs_transaction_binding_plan binding = {};
+	struct pkm_lcs_transaction_hide_key_log_input log_input = {};
+	struct pkm_lcs_hide_key_post_lookup post_lookup = {};
 	const u8 *parent_guid = NULL;
 	const char *child_name = NULL;
 	u64 generation = 0;
@@ -5988,8 +6002,8 @@ static long pkm_lcs_key_fd_hide_key_core(
 	if (args->txn_fd < -1)
 		return -EINVAL;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_HIDE_KEY_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_HIDE_KEY_NR);
 	if (ret)
 		return ret;
 
@@ -6019,8 +6033,8 @@ static long pkm_lcs_key_fd_hide_key_core(
 
 	if (args->txn_fd >= 0) {
 		ret = pkm_lcs_transaction_fd_prepare_mutation_binding(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&binding_probe);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &binding_probe);
 		if (ret)
 			goto out_input;
 	}
@@ -6038,16 +6052,17 @@ static long pkm_lcs_key_fd_hide_key_core(
 		log_input.layer = input.target.name;
 		log_input.layer_len = input.target.name_len;
 		log_input.parent_path =
-			(const char * const *)key_fd->resolved_path;
+			(const char *const *)key_fd->resolved_path;
 		log_input.parent_ancestor_guids =
-			(const u8 (*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+			(const u8(*)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 				key_fd->ancestor_guids;
 		log_input.parent_depth = key_fd->path_component_count - 1;
 		log_input.sequence = sequence;
 
 		ret = pkm_lcs_transaction_fd_begin_hide_key_mutation(
-			args->txn_fd, key_fd->source_id, key_fd->ancestor_guids[0],
-			&log_input, &mutation, &binding);
+			args->txn_fd, key_fd->source_id,
+			key_fd->ancestor_guids[0], &log_input, &mutation,
+			&binding);
 		if (ret)
 			goto out_input;
 		txn_id = binding.transaction_id;
@@ -6055,9 +6070,10 @@ static long pkm_lcs_key_fd_hide_key_core(
 	}
 
 	ret = pkm_lcs_source_hide_entry_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, parent_guid, child_name, child_name_len,
-		input.target.name, input.target.name_len, sequence,
-		&input.limits, input.limits.request_timeout_ms, &response, NULL);
+		key_fd->source_id, txn_id, parent_guid, child_name,
+		child_name_len, input.target.name, input.target.name_len,
+		sequence, &input.limits, input.limits.request_timeout_ms,
+		&response, NULL);
 	pkm_lcs_key_audit_note_round_trip(audit, ret);
 	if (ret)
 		goto out_cancel_mutation;
@@ -6072,9 +6088,9 @@ static long pkm_lcs_key_fd_hide_key_core(
 		goto out_input;
 	}
 
-	ret = pkm_lcs_key_fd_hide_key_post_lookup(
-		key_fd, parent_guid, child_name, child_name_len, &input.limits,
-		&post_lookup);
+	ret = pkm_lcs_key_fd_hide_key_post_lookup(key_fd, parent_guid,
+						  child_name, child_name_len,
+						  &input.limits, &post_lookup);
 	if (ret) {
 		pkm_lcs_source_mark_down_by_id(key_fd->source_id);
 		ret = -EIO;
@@ -6129,16 +6145,17 @@ static long pkm_lcs_key_fd_hide_key_from_args_for_token(
 	struct pkm_lcs_key_audit_ctx audit;
 	long ret;
 
-	pkm_lcs_key_audit_ctx_begin_for_right(&audit, key_fd,
-					      PKM_LCS_KEY_AUDIT_KEY_HIDDEN, DELETE);
+	pkm_lcs_key_audit_ctx_begin_for_right(
+		&audit, key_fd, PKM_LCS_KEY_AUDIT_KEY_HIDDEN, DELETE);
 	ret = pkm_lcs_key_fd_hide_key_core(key_fd, token, ops, args, &audit);
 	pkm_lcs_key_audit_finish(&audit, key_fd, token, ret);
 	return ret;
 }
 
-static long pkm_lcs_key_fd_hide_key_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_hide_key_args *args)
+static long
+pkm_lcs_key_fd_hide_key_from_args(struct pkm_lcs_key_fd *key_fd,
+				  const struct pkm_lcs_usercopy_ops *ops,
+				  const struct reg_hide_key_args *args)
 {
 	return pkm_lcs_key_fd_hide_key_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), ops, args);
@@ -6184,7 +6201,7 @@ static long pkm_lcs_key_fd_external_fd_get_mode_checked(int fd, u32 operation,
 						   writable);
 	if (ret) {
 		fdput_pos(*held);
-		*held = (struct fd) { };
+		*held = (struct fd){};
 		return ret;
 	}
 
@@ -6195,11 +6212,11 @@ static long pkm_lcs_key_fd_external_fd_get_mode_checked(int fd, u32 operation,
 static long pkm_lcs_key_fd_external_fd_mode_gate(int fd, u32 operation)
 {
 	struct file *file = NULL;
-	struct fd held = { };
+	struct fd held = {};
 	long ret;
 
-	ret = pkm_lcs_key_fd_external_fd_get_mode_checked(fd, operation,
-							  &held, &file);
+	ret = pkm_lcs_key_fd_external_fd_get_mode_checked(fd, operation, &held,
+							  &file);
 	if (!ret)
 		fdput_pos(held);
 	return ret;
@@ -6322,17 +6339,18 @@ static long pkm_lcs_key_fd_restore_commit_read_write_transaction(
 	const struct pkm_lcs_runtime_limits *limits, u64 transaction_id,
 	bool *commit_dispatched_out)
 {
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_source_enqueue_result enqueue = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_source_enqueue_result enqueue = {};
 	struct pkm_lcs_source_restore_commit_late_effect_input late_effect = {
 		.key_guid = key_fd ? key_fd->key_guid : NULL,
-		.ancestor_guids = key_fd ?
-			(const u8 (*)[RSI_GUID_SIZE])key_fd->ancestor_guids :
-			NULL,
-		.resolved_path = key_fd ?
-			(const char * const *)key_fd->resolved_path :
-			NULL,
-		.path_component_count = key_fd ? key_fd->path_component_count : 0,
+		.ancestor_guids = key_fd ? (const u8(*)[RSI_GUID_SIZE])
+						   key_fd->ancestor_guids :
+					   NULL,
+		.resolved_path =
+			key_fd ? (const char *const *)key_fd->resolved_path :
+				 NULL,
+		.path_component_count = key_fd ? key_fd->path_component_count :
+						 0,
 	};
 	long ret;
 
@@ -6346,14 +6364,15 @@ static long pkm_lcs_key_fd_restore_commit_read_write_transaction(
 		limits->request_timeout_ms, &late_effect, &response, &enqueue);
 	pkm_lcs_source_transaction_put(transaction_id);
 	if (commit_dispatched_out)
-		*commit_dispatched_out = response.request_id || enqueue.request_id;
+		*commit_dispatched_out = response.request_id ||
+					 enqueue.request_id;
 	return ret;
 }
 
 long pkm_lcs_key_fd_publish_restore_commit_effects(
 	u32 source_id, const u8 key_guid[PKM_LCS_GUID_BYTES],
 	const u8 (*ancestor_guids)[PKM_LCS_GUID_BYTES],
-	const char * const *resolved_path, u32 path_component_count,
+	const char *const *resolved_path, u32 path_component_count,
 	const struct pkm_lcs_runtime_limits *limits)
 {
 	u64 generation = 0;
@@ -6382,7 +6401,7 @@ long pkm_lcs_key_fd_publish_late_mutation_effects(
 	u32 source_id, const struct pkm_lcs_source_late_effect *effect,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 	u64 generation = 0;
 	long ret;
 
@@ -6400,7 +6419,7 @@ long pkm_lcs_key_fd_publish_late_mutation_effects(
 	}
 
 	if (effect->flags & PKM_LCS_SOURCE_LATE_EFFECT_LAYER_RECOVERY) {
-		struct pkm_lcs_layer_operation_recovery_result recovery = { };
+		struct pkm_lcs_layer_operation_recovery_result recovery = {};
 
 		ret = pkm_lcs_source_layer_operation_recover_skip_generation_with_limits(
 			source_id, effect->ancestor_guids[0], limits,
@@ -6409,16 +6428,14 @@ long pkm_lcs_key_fd_publish_late_mutation_effects(
 			return -EIO;
 	}
 
-	if (!(effect->flags &
-	      (PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_WATCH |
-	       PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_OVERFLOW)))
+	if (!(effect->flags & (PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_WATCH |
+			       PKM_LCS_SOURCE_LATE_EFFECT_DISPATCH_OVERFLOW)))
 		return 0;
 
 	context.changed_key_guid = effect->key_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])effect->ancestor_guids;
-	context.resolved_path =
-		(const char * const *)effect->resolved_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])effect->ancestor_guids;
+	context.resolved_path = (const char *const *)effect->resolved_path;
 	context.limits = limits;
 	context.path_component_count = effect->path_component_count;
 	context.event_type = effect->event_type;
@@ -6439,8 +6456,8 @@ static long pkm_lcs_key_fd_restore_publish_commit_effects(
 
 	return pkm_lcs_key_fd_publish_restore_commit_effects(
 		key_fd->source_id, key_fd->key_guid,
-		(const u8 (*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids,
-		(const char * const *)key_fd->resolved_path,
+		(const u8(*)[PKM_LCS_GUID_BYTES])key_fd->ancestor_guids,
+		(const char *const *)key_fd->resolved_path,
 		key_fd->path_component_count, limits);
 }
 
@@ -6598,8 +6615,8 @@ static void pkm_lcs_restore_layer_manifest_set_destroy(
 	memset(set, 0, sizeof(*set));
 }
 
-static void pkm_lcs_restore_guid_set_destroy(
-	struct pkm_lcs_restore_guid_set *set)
+static void
+pkm_lcs_restore_guid_set_destroy(struct pkm_lcs_restore_guid_set *set)
 {
 	if (!set)
 		return;
@@ -6722,8 +6739,7 @@ static bool pkm_lcs_restore_guid_is_nil(const u8 guid[PKM_LCS_GUID_BYTES])
 
 static void pkm_lcs_restore_remap_guid(
 	const struct pkm_lcs_restore_root_key_summary *summary,
-	const u8 input[PKM_LCS_GUID_BYTES],
-	u8 output[PKM_LCS_GUID_BYTES])
+	const u8 input[PKM_LCS_GUID_BYTES], u8 output[PKM_LCS_GUID_BYTES])
 {
 	if (pkm_lcs_restore_guid_eq(input, summary->header_root_guid))
 		memcpy(output, summary->target_root_guid, PKM_LCS_GUID_BYTES);
@@ -6731,9 +6747,9 @@ static void pkm_lcs_restore_remap_guid(
 		memcpy(output, input, PKM_LCS_GUID_BYTES);
 }
 
-static bool pkm_lcs_restore_guid_set_contains(
-	const struct pkm_lcs_restore_guid_set *set,
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static bool
+pkm_lcs_restore_guid_set_contains(const struct pkm_lcs_restore_guid_set *set,
+				  const u8 guid[PKM_LCS_GUID_BYTES])
 {
 	u32 i;
 
@@ -6746,11 +6762,11 @@ static bool pkm_lcs_restore_guid_set_contains(
 	return false;
 }
 
-static long pkm_lcs_restore_guid_set_append(
-	struct pkm_lcs_restore_guid_set *set,
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static long
+pkm_lcs_restore_guid_set_append(struct pkm_lcs_restore_guid_set *set,
+				const u8 guid[PKM_LCS_GUID_BYTES])
 {
-	u8 (*entries)[PKM_LCS_GUID_BYTES];
+	u8(*entries)[PKM_LCS_GUID_BYTES];
 	u32 new_capacity;
 
 	if (!set || !guid || pkm_lcs_restore_guid_is_nil(guid))
@@ -6777,7 +6793,8 @@ static bool pkm_lcs_restore_parent_guid_valid(
 	const struct pkm_lcs_restore_root_key_summary *summary,
 	const u8 parent_guid[PKM_LCS_GUID_BYTES])
 {
-	return pkm_lcs_restore_guid_eq(parent_guid, summary->target_root_guid) ||
+	return pkm_lcs_restore_guid_eq(parent_guid,
+				       summary->target_root_guid) ||
 	       pkm_lcs_restore_guid_set_contains(
 		       &summary->processed_non_root_keys, parent_guid);
 }
@@ -6804,8 +6821,8 @@ static long pkm_lcs_restore_copy_root_key_mutable(
 
 	if (!summary || !frame || !key)
 		return -EINVAL;
-	if (check_add_overflow((size_t)key->sd_offset,
-			       (size_t)key->sd_len, &sd_end) ||
+	if (check_add_overflow((size_t)key->sd_offset, (size_t)key->sd_len,
+			       &sd_end) ||
 	    sd_end > record_len)
 		return -EINVAL;
 
@@ -6836,9 +6853,10 @@ static long pkm_lcs_restore_start_non_root_key_section(
 		return -EINVAL;
 	if (summary->non_root_sections.count ==
 	    summary->non_root_sections.capacity) {
-		new_capacity = summary->non_root_sections.capacity ?
-				       summary->non_root_sections.capacity * 2U :
-				       8U;
+		new_capacity =
+			summary->non_root_sections.capacity ?
+				summary->non_root_sections.capacity * 2U :
+				8U;
 		if (new_capacity < summary->non_root_sections.capacity)
 			return -EOVERFLOW;
 		entries = krealloc_array(summary->non_root_sections.entries,
@@ -6854,8 +6872,8 @@ static long pkm_lcs_restore_start_non_root_key_section(
 	if (!key_frame)
 		return -ENOMEM;
 
-	section = &summary->non_root_sections.entries
-			   [summary->non_root_sections.count];
+	section = &summary->non_root_sections
+			   .entries[summary->non_root_sections.count];
 	memset(section, 0, sizeof(*section));
 	memcpy(section->guid, key->guid, sizeof(section->guid));
 	section->key_frame = key_frame;
@@ -6893,8 +6911,8 @@ static long pkm_lcs_restore_finish_current_key_section(
 	return 0;
 }
 
-static long pkm_lcs_restore_read_exact(struct file *file, loff_t *posp,
-				       u8 *buf, size_t len)
+static long pkm_lcs_restore_read_exact(struct file *file, loff_t *posp, u8 *buf,
+				       size_t len)
 {
 	size_t done = 0;
 
@@ -6902,8 +6920,7 @@ static long pkm_lcs_restore_read_exact(struct file *file, loff_t *posp,
 		return -EINVAL;
 
 	while (done < len) {
-		ssize_t count = kernel_read(file, buf + done, len - done,
-					    posp);
+		ssize_t count = kernel_read(file, buf + done, len - done, posp);
 
 		if (count < 0)
 			return count;
@@ -6914,9 +6931,8 @@ static long pkm_lcs_restore_read_exact(struct file *file, loff_t *posp,
 	return 0;
 }
 
-static long pkm_lcs_restore_read_record_header(struct file *file,
-					       loff_t *posp, u8 header[6],
-					       bool *eof_out)
+static long pkm_lcs_restore_read_record_header(struct file *file, loff_t *posp,
+					       u8 header[6], bool *eof_out)
 {
 	size_t done = 0;
 
@@ -6944,8 +6960,7 @@ static long pkm_lcs_restore_read_record_header(struct file *file,
 	return 0;
 }
 
-static long pkm_lcs_restore_hash_and_skip_body(struct file *file,
-					       loff_t *posp,
+static long pkm_lcs_restore_hash_and_skip_body(struct file *file, loff_t *posp,
 					       struct sha256_ctx *checksum,
 					       size_t payload_len)
 {
@@ -6989,8 +7004,8 @@ static long pkm_lcs_restore_header_frame_max_len(
 static long pkm_lcs_restore_validate_header_record(
 	struct file *file, loff_t *posp,
 	const struct pkm_lcs_runtime_limits *limits,
-	struct sha256_ctx *checksum, const u8 common_header[6],
-	u32 record_len, u8 root_guid_out[PKM_LCS_GUID_BYTES])
+	struct sha256_ctx *checksum, const u8 common_header[6], u32 record_len,
+	u8 root_guid_out[PKM_LCS_GUID_BYTES])
 {
 	size_t max_frame_len = 0;
 	size_t payload_len;
@@ -7039,8 +7054,9 @@ static long pkm_lcs_restore_key_frame_max_len(size_t *max_len_out)
 	return 0;
 }
 
-static long pkm_lcs_restore_layer_frame_max_len(
-	const struct pkm_lcs_runtime_limits *limits, size_t *max_len_out)
+static long
+pkm_lcs_restore_layer_frame_max_len(const struct pkm_lcs_runtime_limits *limits,
+				    size_t *max_len_out)
 {
 	size_t max_len;
 
@@ -7053,17 +7069,18 @@ static long pkm_lcs_restore_layer_frame_max_len(
 			       (size_t)limits->max_path_component_length,
 			       &max_len))
 		return -EOVERFLOW;
-	if (check_add_overflow(max_len, (size_t)sizeof(u32) + 1U +
-			       sizeof(u32) + PKM_LCS_MAX_SD_BYTES,
+	if (check_add_overflow(max_len,
+			       (size_t)sizeof(u32) + 1U + sizeof(u32) +
+				       PKM_LCS_MAX_SD_BYTES,
 			       &max_len))
 		return -EOVERFLOW;
 	*max_len_out = max_len;
 	return 0;
 }
 
-static long pkm_lcs_restore_data_frame_max_len(
-	const struct pkm_lcs_runtime_limits *limits, u16 record_type,
-	size_t *max_len_out)
+static long
+pkm_lcs_restore_data_frame_max_len(const struct pkm_lcs_runtime_limits *limits,
+				   u16 record_type, size_t *max_len_out)
 {
 	size_t max_len;
 
@@ -7074,50 +7091,50 @@ static long pkm_lcs_restore_data_frame_max_len(
 	switch (record_type) {
 	case REG_BACKUP_PATH_ENTRY:
 		if (check_add_overflow(max_len,
-				       (size_t)PKM_LCS_GUID_BYTES +
-					       sizeof(u32),
+				       (size_t)PKM_LCS_GUID_BYTES + sizeof(u32),
 				       &max_len) ||
+		    check_add_overflow(
+			    max_len, (size_t)limits->max_path_component_length,
+			    &max_len) ||
 		    check_add_overflow(max_len,
-				       (size_t)limits->max_path_component_length,
+				       (size_t)PKM_LCS_GUID_BYTES + sizeof(u32),
 				       &max_len) ||
-		    check_add_overflow(max_len,
-				       (size_t)PKM_LCS_GUID_BYTES +
-					       sizeof(u32),
-				       &max_len) ||
-		    check_add_overflow(max_len,
-				       (size_t)limits->max_path_component_length +
-					       sizeof(u64),
-				       &max_len))
+		    check_add_overflow(
+			    max_len,
+			    (size_t)limits->max_path_component_length +
+				    sizeof(u64),
+			    &max_len))
 			return -EOVERFLOW;
 		break;
 	case REG_BACKUP_VALUE:
 		if (check_add_overflow(max_len,
-				       (size_t)PKM_LCS_GUID_BYTES +
-					       sizeof(u32),
+				       (size_t)PKM_LCS_GUID_BYTES + sizeof(u32),
 				       &max_len) ||
-		    check_add_overflow(max_len,
-				       (size_t)limits->max_path_component_length +
-					       sizeof(u32) + sizeof(u32),
-				       &max_len) ||
+		    check_add_overflow(
+			    max_len,
+			    (size_t)limits->max_path_component_length +
+				    sizeof(u32) + sizeof(u32),
+			    &max_len) ||
 		    check_add_overflow(max_len,
 				       (size_t)limits->max_value_size +
 					       sizeof(u32),
 				       &max_len) ||
-		    check_add_overflow(max_len,
-				       (size_t)limits->max_path_component_length +
-					       sizeof(u64),
-				       &max_len))
+		    check_add_overflow(
+			    max_len,
+			    (size_t)limits->max_path_component_length +
+				    sizeof(u64),
+			    &max_len))
 			return -EOVERFLOW;
 		break;
 	case REG_BACKUP_BLANKET_TOMBSTONE:
 		if (check_add_overflow(max_len,
-				       (size_t)PKM_LCS_GUID_BYTES +
-					       sizeof(u32),
+				       (size_t)PKM_LCS_GUID_BYTES + sizeof(u32),
 				       &max_len) ||
-		    check_add_overflow(max_len,
-				       (size_t)limits->max_path_component_length +
-					       sizeof(u64),
-				       &max_len))
+		    check_add_overflow(
+			    max_len,
+			    (size_t)limits->max_path_component_length +
+				    sizeof(u64),
+			    &max_len))
 			return -EOVERFLOW;
 		break;
 	default:
@@ -7137,7 +7154,8 @@ static long pkm_lcs_restore_note_data_record_order(
 
 	switch (record_type) {
 	case REG_BACKUP_PATH_ENTRY:
-		if (summary->section_phase != PKM_LCS_RESTORE_SECTION_PATH_ENTRY)
+		if (summary->section_phase !=
+		    PKM_LCS_RESTORE_SECTION_PATH_ENTRY)
 			return -EINVAL;
 		return 0;
 	case REG_BACKUP_VALUE:
@@ -7206,9 +7224,9 @@ static long pkm_lcs_restore_validate_key_scoped_record_topology(
 	return 0;
 }
 
-static long pkm_lcs_restore_retain_replay_frame(
-	struct pkm_lcs_backup_record_frames *frames, const u8 *frame,
-	u32 record_len)
+static long
+pkm_lcs_restore_retain_replay_frame(struct pkm_lcs_backup_record_frames *frames,
+				    const u8 *frame, u32 record_len)
 {
 	u8 *copy;
 	long ret;
@@ -7241,8 +7259,8 @@ static long pkm_lcs_restore_retain_current_replay_frame(
 		    summary->non_root_sections.count)
 		return -EINVAL;
 
-	section = &summary->non_root_sections.entries
-			   [summary->current_non_root_section_index];
+	section = &summary->non_root_sections
+			   .entries[summary->current_non_root_section_index];
 	return pkm_lcs_restore_retain_replay_frame(&section->replay_frames,
 						   frame, record_len);
 }
@@ -7267,7 +7285,7 @@ static long pkm_lcs_restore_validate_data_record(
 	if (ret)
 		return ret;
 	ret = pkm_lcs_restore_data_frame_max_len(limits, record_type,
-						&max_frame_len);
+						 &max_frame_len);
 	if (ret)
 		return ret;
 	if ((size_t)record_len > max_frame_len)
@@ -7292,30 +7310,28 @@ static long pkm_lcs_restore_validate_data_record(
 		goto out_free;
 
 	switch (record_type) {
-	case REG_BACKUP_PATH_ENTRY:
-	{
-		struct pkm_lcs_backup_path_entry_record_view path = { };
+	case REG_BACKUP_PATH_ENTRY: {
+		struct pkm_lcs_backup_path_entry_record_view path = {};
 
 		ret = lcs_rust_parse_backup_path_entry_record(
 			limits, frame, record_len, &path);
 		if (ret)
 			break;
 		ret = pkm_lcs_restore_validate_path_entry_topology(summary,
-								  &path);
+								   &path);
 		if (ret)
 			break;
 		/* A skipped root-section entry is not held to the manifest. */
 		if (summary->current_key_is_root && !path.hidden)
 			break;
 		ret = lcs_rust_validate_backup_path_entry_record_layer_manifest(
-			limits, manifests, summary->layer_manifests.count, frame,
-			record_len);
+			limits, manifests, summary->layer_manifests.count,
+			frame, record_len);
 		retain_replay_frame = !ret;
 		break;
 	}
-	case REG_BACKUP_VALUE:
-	{
-		struct pkm_lcs_backup_value_record_view value = { };
+	case REG_BACKUP_VALUE: {
+		struct pkm_lcs_backup_value_record_view value = {};
 
 		ret = lcs_rust_parse_backup_value_record(limits, frame,
 							 record_len, &value);
@@ -7330,14 +7346,13 @@ static long pkm_lcs_restore_validate_data_record(
 		if (ret)
 			break;
 		ret = lcs_rust_validate_backup_value_record_layer_manifest(
-			limits, manifests, summary->layer_manifests.count, frame,
-			record_len);
+			limits, manifests, summary->layer_manifests.count,
+			frame, record_len);
 		retain_replay_frame = !ret;
 		break;
 	}
-	case REG_BACKUP_BLANKET_TOMBSTONE:
-	{
-		struct pkm_lcs_backup_blanket_tombstone_record_view blanket = { };
+	case REG_BACKUP_BLANKET_TOMBSTONE: {
+		struct pkm_lcs_backup_blanket_tombstone_record_view blanket = {};
 
 		ret = lcs_rust_parse_backup_blanket_tombstone_record(
 			limits, frame, record_len, &blanket);
@@ -7352,8 +7367,8 @@ static long pkm_lcs_restore_validate_data_record(
 		if (ret)
 			break;
 		ret = lcs_rust_validate_backup_blanket_tombstone_record_layer_manifest(
-			limits, manifests, summary->layer_manifests.count, frame,
-			record_len);
+			limits, manifests, summary->layer_manifests.count,
+			frame, record_len);
 		retain_replay_frame = !ret;
 		break;
 	}
@@ -7378,7 +7393,7 @@ static long pkm_lcs_restore_validate_layer_record(
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_restore_root_key_summary *summary)
 {
-	struct pkm_lcs_backup_layer_manifest_record_view manifest = { };
+	struct pkm_lcs_backup_layer_manifest_record_view manifest = {};
 	size_t max_frame_len = 0;
 	size_t payload_len;
 	u8 *frame;
@@ -7427,7 +7442,7 @@ static long pkm_lcs_restore_validate_key_record(
 	const u8 common_header[6], u32 record_len,
 	struct pkm_lcs_restore_root_key_summary *summary)
 {
-	struct pkm_lcs_backup_key_record_view key = { };
+	struct pkm_lcs_backup_key_record_view key = {};
 	size_t max_frame_len = 0;
 	size_t payload_len;
 	u8 *frame;
@@ -7471,8 +7486,8 @@ static long pkm_lcs_restore_validate_key_record(
 			ret = -EINVAL;
 			goto out_free;
 		}
-		ret = pkm_lcs_restore_copy_root_key_mutable(
-			summary, frame, record_len, &key);
+		ret = pkm_lcs_restore_copy_root_key_mutable(summary, frame,
+							    record_len, &key);
 		if (ret)
 			goto out_free;
 		summary->root_key_seen = true;
@@ -7492,8 +7507,8 @@ static long pkm_lcs_restore_validate_key_record(
 		goto out_free;
 	}
 	if (pkm_lcs_restore_guid_eq(key.guid, summary->target_root_guid) ||
-	    pkm_lcs_restore_guid_set_contains(
-		    &summary->processed_non_root_keys, key.guid)) {
+	    pkm_lcs_restore_guid_set_contains(&summary->processed_non_root_keys,
+					      key.guid)) {
 		ret = -EINVAL;
 		goto out_free;
 	}
@@ -7621,8 +7636,8 @@ static long pkm_lcs_restore_validate_stream_file(
 			goto out_finish;
 		}
 		record_count = next_record_count;
-		payload_len = (size_t)record_len -
-			      PKM_LCS_BACKUP_RECORD_HEADER_LEN;
+		payload_len =
+			(size_t)record_len - PKM_LCS_BACKUP_RECORD_HEADER_LEN;
 
 		if (!header_seen && record_type != REG_BACKUP_HEADER) {
 			ret = -EINVAL;
@@ -7691,8 +7706,7 @@ static long pkm_lcs_restore_validate_stream_file(
 
 		sha256_update(&checksum, common_header,
 			      PKM_LCS_BACKUP_RECORD_HEADER_LEN);
-		ret = pkm_lcs_restore_hash_and_skip_body(file, posp,
-							 &checksum,
+		ret = pkm_lcs_restore_hash_and_skip_body(file, posp, &checksum,
 							 payload_len);
 		if (ret)
 			goto out_finish;
@@ -7775,14 +7789,13 @@ static long pkm_lcs_key_fd_restore_snapshot_layers(
 	if (!limits->max_total_layers)
 		return -ENOSPC;
 
-	layers = kcalloc(limits->max_total_layers, sizeof(*layers),
-			 GFP_KERNEL);
+	layers = kcalloc(limits->max_total_layers, sizeof(*layers), GFP_KERNEL);
 	if (!layers)
 		return -ENOMEM;
 	if (check_add_overflow((size_t)limits->max_path_component_length,
 			       (size_t)1, &name_stride) ||
-	    check_mul_overflow((size_t)limits->max_total_layers,
-			       name_stride, &name_buf_len)) {
+	    check_mul_overflow((size_t)limits->max_total_layers, name_stride,
+			       &name_buf_len)) {
 		ret = -EOVERFLOW;
 		goto out_layers;
 	}
@@ -7794,9 +7807,10 @@ static long pkm_lcs_key_fd_restore_snapshot_layers(
 		}
 	}
 
-	ret = pkm_lcs_source_layer_snapshot_copy(
-		layers, limits->max_total_layers, name_buf, name_buf_len,
-		&layer_count);
+	ret = pkm_lcs_source_layer_snapshot_copy(layers,
+						 limits->max_total_layers,
+						 name_buf, name_buf_len,
+						 &layer_count);
 	if (ret)
 		goto out_name_buf;
 
@@ -7832,22 +7846,23 @@ static long pkm_lcs_key_fd_restore_validate_layer_precedence(
 	ret = pkm_lcs_key_fd_restore_layer_manifest_views(set, &manifests);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_key_fd_restore_snapshot_layers(limits, &layers,
-						    &name_buf, &layer_count);
+	ret = pkm_lcs_key_fd_restore_snapshot_layers(limits, &layers, &name_buf,
+						     &layer_count);
 	if (ret)
 		goto out_manifests;
 
-	caller_has_tcb = token &&
-			 kacs_rust_token_has_enabled_privilege(
-				 token, KACS_SE_TCB_PRIVILEGE) ? 1 : 0;
+	caller_has_tcb = token && kacs_rust_token_has_enabled_privilege(
+					  token, KACS_SE_TCB_PRIVILEGE) ?
+				 1 :
+				 0;
 	ret = lcs_rust_plan_backup_restore_layer_precedence_gate(
 		limits, manifests, set->count, layers, layer_count,
 		caller_has_tcb, &tcb_required);
 	if (ret)
 		goto out_layers;
 	if (tcb_required) {
-		ret = pkm_lcs_key_fd_mark_privilege_used(
-			token, KACS_SE_TCB_PRIVILEGE);
+		ret = pkm_lcs_key_fd_mark_privilege_used(token,
+							 KACS_SE_TCB_PRIVILEGE);
 		if (ret)
 			goto out_layers;
 	}
@@ -7888,8 +7903,8 @@ static long pkm_lcs_backup_write_all(struct pkm_lcs_backup_output *output,
 
 	while (remaining) {
 		loff_t *ppos = output->positional ? &output->pos : NULL;
-		ssize_t written = kernel_write(output->file, cursor, remaining,
-					       ppos);
+		ssize_t written =
+			kernel_write(output->file, cursor, remaining, ppos);
 
 		if (written < 0)
 			return written;
@@ -7901,8 +7916,9 @@ static long pkm_lcs_backup_write_all(struct pkm_lcs_backup_output *output,
 	return 0;
 }
 
-static long pkm_lcs_backup_write_hashed_record(
-	struct pkm_lcs_backup_output *output, const u8 *frame, size_t frame_len)
+static long
+pkm_lcs_backup_write_hashed_record(struct pkm_lcs_backup_output *output,
+				   const u8 *frame, size_t frame_len)
 {
 	long ret;
 
@@ -7914,18 +7930,18 @@ static long pkm_lcs_backup_write_hashed_record(
 	return 0;
 }
 
-static long pkm_lcs_backup_alloc_header_frame(
-	const struct pkm_lcs_runtime_limits *limits, const u8 root_guid[16],
-	const char *hive_name, size_t hive_name_len, s64 timestamp_ns,
-	u8 **frame_out, size_t *frame_len_out)
+static long
+pkm_lcs_backup_alloc_header_frame(const struct pkm_lcs_runtime_limits *limits,
+				  const u8 root_guid[16], const char *hive_name,
+				  size_t hive_name_len, s64 timestamp_ns,
+				  u8 **frame_out, size_t *frame_len_out)
 {
 	size_t frame_len = 0;
 	size_t written = 0;
 	u8 *frame;
 	long ret;
 
-	if (!limits || !root_guid || !hive_name || !frame_out ||
-	    !frame_len_out)
+	if (!limits || !root_guid || !hive_name || !frame_out || !frame_len_out)
 		return -EINVAL;
 	*frame_out = NULL;
 	*frame_len_out = 0;
@@ -7973,8 +7989,8 @@ static long pkm_lcs_backup_sd_owner_sid_copy(const u8 *sd, size_t sd_len,
 	*owner_sid_out = NULL;
 	*owner_sid_len_out = 0;
 
-	ret = lcs_rust_security_descriptor_owner_sid(
-		sd, sd_len, &owner_sid, &owner_sid_len);
+	ret = lcs_rust_security_descriptor_owner_sid(sd, sd_len, &owner_sid,
+						     &owner_sid_len);
 	if (ret)
 		return ret;
 	if (!owner_sid || !owner_sid_len)
@@ -8011,8 +8027,8 @@ static long pkm_lcs_backup_base_layer_owner_snapshot(
 		return ret == -EINVAL ? -EIO : ret;
 	}
 
-	default_sd = kacs_rust_create_lcs_base_layer_default_sd(
-		&default_sd_len);
+	default_sd =
+		kacs_rust_create_lcs_base_layer_default_sd(&default_sd_len);
 	if (!default_sd || !default_sd_len)
 		return -ENOMEM;
 	ret = pkm_lcs_backup_sd_owner_sid_copy(
@@ -8046,9 +8062,10 @@ static long pkm_lcs_backup_layer_owner_snapshot(
 		return pkm_lcs_backup_base_layer_owner_snapshot(
 			snapshot, owner_sid_out, owner_sid_len_out);
 
-	ret = pkm_lcs_layer_table_owner_snapshot(
-		layer_name, layer_name_len, owner_sid_out, owner_sid_len_out,
-		&owner_present);
+	ret = pkm_lcs_layer_table_owner_snapshot(layer_name, layer_name_len,
+						 owner_sid_out,
+						 owner_sid_len_out,
+						 &owner_present);
 	if (ret)
 		return ret;
 	if (!owner_present)
@@ -8075,9 +8092,9 @@ static long pkm_lcs_backup_alloc_layer_manifest_frame(
 	*frame_out = NULL;
 	*frame_len_out = 0;
 
-	ret = pkm_lcs_backup_layer_owner_snapshot(
-		snapshot, limits, layer->name, layer->name_len, &owner_sid,
-		&owner_sid_len);
+	ret = pkm_lcs_backup_layer_owner_snapshot(snapshot, limits, layer->name,
+						  layer->name_len, &owner_sid,
+						  &owner_sid_len);
 	if (ret)
 		return ret;
 
@@ -8096,8 +8113,8 @@ static long pkm_lcs_backup_alloc_layer_manifest_frame(
 	}
 	ret = lcs_rust_write_backup_layer_manifest_record_frame(
 		frame, frame_len, limits, (const u8 *)layer->name,
-		layer->name_len, layer->precedence, layer->enabled,
-		owner_sid, owner_sid_len, &written);
+		layer->name_len, layer->precedence, layer->enabled, owner_sid,
+		owner_sid_len, &written);
 	if (ret)
 		goto out_free;
 	if (written != frame_len) {
@@ -8261,9 +8278,10 @@ static long pkm_lcs_backup_collect_enum_child_layers(
 		const char *layer_name = NULL;
 		u32 layer_name_len = 0;
 
-		ret = pkm_lcs_backup_frame_field(
-			frame, frame_len, entries[i].layer_offset,
-			entries[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(frame, frame_len,
+						 entries[i].layer_offset,
+						 entries[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out;
 		ret = pkm_lcs_backup_referenced_layers_add(
@@ -8306,8 +8324,8 @@ static long pkm_lcs_backup_collect_query_value_layers(
 			return -ENOMEM;
 	}
 	if (blanket_count) {
-		blankets = kcalloc(blanket_count, sizeof(*blankets),
-				   GFP_KERNEL);
+		blankets =
+			kcalloc(blanket_count, sizeof(*blankets), GFP_KERNEL);
 		if (!blankets) {
 			ret = -ENOMEM;
 			goto out;
@@ -8332,9 +8350,10 @@ static long pkm_lcs_backup_collect_query_value_layers(
 		const char *layer_name = NULL;
 		u32 layer_name_len = 0;
 
-		ret = pkm_lcs_backup_frame_field(
-			frame, frame_len, values[i].layer_offset,
-			values[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(frame, frame_len,
+						 values[i].layer_offset,
+						 values[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out;
 		ret = pkm_lcs_backup_referenced_layers_add(
@@ -8347,9 +8366,10 @@ static long pkm_lcs_backup_collect_query_value_layers(
 		const char *layer_name = NULL;
 		u32 layer_name_len = 0;
 
-		ret = pkm_lcs_backup_frame_field(
-			frame, frame_len, blankets[i].layer_offset,
-			blankets[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(frame, frame_len,
+						 blankets[i].layer_offset,
+						 blankets[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out;
 		ret = pkm_lcs_backup_referenced_layers_add(
@@ -8434,12 +8454,12 @@ static long pkm_lcs_backup_alloc_layer_manifest_frames(
 	if (!refs->layers)
 		return -EINVAL;
 
-	frames->frames = kcalloc(refs->count, sizeof(*frames->frames),
-				 GFP_KERNEL);
+	frames->frames =
+		kcalloc(refs->count, sizeof(*frames->frames), GFP_KERNEL);
 	if (!frames->frames)
 		return -ENOMEM;
-	frames->frame_lens = kcalloc(refs->count, sizeof(*frames->frame_lens),
-				     GFP_KERNEL);
+	frames->frame_lens =
+		kcalloc(refs->count, sizeof(*frames->frame_lens), GFP_KERNEL);
 	if (!frames->frame_lens) {
 		ret = -ENOMEM;
 		goto out_destroy;
@@ -8451,8 +8471,8 @@ static long pkm_lcs_backup_alloc_layer_manifest_frames(
 			goto out_destroy;
 		}
 		ret = pkm_lcs_backup_alloc_layer_manifest_frame(
-			limits, snapshot, refs->layers[i],
-			&frames->frames[i], &frames->frame_lens[i]);
+			limits, snapshot, refs->layers[i], &frames->frames[i],
+			&frames->frame_lens[i]);
 		if (ret)
 			goto out_destroy;
 		frames->count++;
@@ -8525,8 +8545,9 @@ static void pkm_lcs_backup_record_frames_destroy(
 	frames->capacity = 0;
 }
 
-static long pkm_lcs_backup_record_frames_init(
-	struct pkm_lcs_backup_record_frames *frames, u32 capacity)
+static long
+pkm_lcs_backup_record_frames_init(struct pkm_lcs_backup_record_frames *frames,
+				  u32 capacity)
 {
 	if (!frames)
 		return -EINVAL;
@@ -8534,12 +8555,11 @@ static long pkm_lcs_backup_record_frames_init(
 	if (!capacity)
 		return 0;
 
-	frames->frames = kcalloc(capacity, sizeof(*frames->frames),
-				 GFP_KERNEL);
+	frames->frames = kcalloc(capacity, sizeof(*frames->frames), GFP_KERNEL);
 	if (!frames->frames)
 		return -ENOMEM;
-	frames->frame_lens = kcalloc(capacity, sizeof(*frames->frame_lens),
-				     GFP_KERNEL);
+	frames->frame_lens =
+		kcalloc(capacity, sizeof(*frames->frame_lens), GFP_KERNEL);
 	if (!frames->frame_lens) {
 		pkm_lcs_backup_record_frames_destroy(frames);
 		return -ENOMEM;
@@ -8548,9 +8568,9 @@ static long pkm_lcs_backup_record_frames_init(
 	return 0;
 }
 
-static long pkm_lcs_backup_record_frames_append(
-	struct pkm_lcs_backup_record_frames *frames, u8 **frame,
-	size_t frame_len)
+static long
+pkm_lcs_backup_record_frames_append(struct pkm_lcs_backup_record_frames *frames,
+				    u8 **frame, size_t frame_len)
 {
 	if (!frames || !frame || !*frame || !frame_len)
 		return -EINVAL;
@@ -8583,8 +8603,8 @@ static long pkm_lcs_backup_record_frames_append_grow(
 				       GFP_KERNEL);
 		if (!grown_frames)
 			return -ENOMEM;
-		grown_lens = kcalloc(new_capacity, sizeof(*grown_lens),
-				     GFP_KERNEL);
+		grown_lens =
+			kcalloc(new_capacity, sizeof(*grown_lens), GFP_KERNEL);
 		if (!grown_lens) {
 			kfree(grown_frames);
 			return -ENOMEM;
@@ -8611,9 +8631,9 @@ static bool pkm_lcs_backup_guid_equal(const u8 left[PKM_LCS_GUID_BYTES],
 	return !memcmp(left, right, PKM_LCS_GUID_BYTES);
 }
 
-static void pkm_lcs_backup_child_section_init(
-	struct pkm_lcs_backup_child_section *child,
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static void
+pkm_lcs_backup_child_section_init(struct pkm_lcs_backup_child_section *child,
+				  const u8 guid[PKM_LCS_GUID_BYTES])
 {
 	memset(child, 0, sizeof(*child));
 	memcpy(child->guid, guid, PKM_LCS_GUID_BYTES);
@@ -8622,8 +8642,8 @@ static void pkm_lcs_backup_child_section_init(
 	pkm_lcs_source_response_frame_init(&child->values_frame);
 }
 
-static void pkm_lcs_backup_child_section_destroy(
-	struct pkm_lcs_backup_child_section *child)
+static void
+pkm_lcs_backup_child_section_destroy(struct pkm_lcs_backup_child_section *child)
 {
 	if (!child)
 		return;
@@ -8671,8 +8691,7 @@ static long pkm_lcs_backup_child_sections_append(
 		if (new_capacity < sections->capacity)
 			return -EOVERFLOW;
 		grown = krealloc_array(sections->children, new_capacity,
-				       sizeof(*sections->children),
-				       GFP_KERNEL);
+				       sizeof(*sections->children), GFP_KERNEL);
 		if (!grown)
 			return -ENOMEM;
 		sections->children = grown;
@@ -8763,9 +8782,9 @@ static long pkm_lcs_backup_alloc_value_frame(
 	if (!frame)
 		return -ENOMEM;
 	ret = lcs_rust_write_backup_value_record_frame(
-		frame, frame_len, limits, key_guid, (const u8 *)name,
-		name_len, value_type, data, data_len,
-		(const u8 *)layer_name, layer_name_len, sequence, &written);
+		frame, frame_len, limits, key_guid, (const u8 *)name, name_len,
+		value_type, data, data_len, (const u8 *)layer_name,
+		layer_name_len, sequence, &written);
 	if (ret)
 		goto out_free;
 	if (written != frame_len) {
@@ -8908,8 +8927,8 @@ static long pkm_lcs_backup_materialize_value_entries(
 			return -ENOMEM;
 	}
 	if (blanket_count) {
-		blankets = kcalloc(blanket_count, sizeof(*blankets),
-				   GFP_KERNEL);
+		blankets =
+			kcalloc(blanket_count, sizeof(*blankets), GFP_KERNEL);
 		if (!blankets) {
 			ret = -ENOMEM;
 			goto out_free;
@@ -9005,15 +9024,16 @@ static long pkm_lcs_backup_alloc_root_section_frames(
 
 		if (!entries[i].hidden)
 			continue;
-		ret = pkm_lcs_backup_frame_field(
-			enum_frame, enum_frame_len, entries[i].child_name_offset,
-			entries[i].child_name_len, &child_name,
-			&child_name_len);
+		ret = pkm_lcs_backup_frame_field(enum_frame, enum_frame_len,
+						 entries[i].child_name_offset,
+						 entries[i].child_name_len,
+						 &child_name, &child_name_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			enum_frame, enum_frame_len, entries[i].layer_offset,
-			entries[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(enum_frame, enum_frame_len,
+						 entries[i].layer_offset,
+						 entries[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_path_entry_frame(
@@ -9040,26 +9060,28 @@ static long pkm_lcs_backup_alloc_root_section_frames(
 		size_t frame_len = 0;
 		u8 *frame = NULL;
 
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].name_offset,
-			values[i].name_len, &name, &name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].name_offset,
+						 values[i].name_len, &name,
+						 &name_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].data_offset,
-			values[i].data_len, &data, &data_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].data_offset,
+						 values[i].data_len, &data,
+						 &data_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].layer_offset,
-			values[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].layer_offset,
+						 values[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_value_frame(
-			limits, key_guid, name, name_len,
-			values[i].value_type, (const u8 *)data, data_len,
-			layer_name, layer_name_len, values[i].sequence, &frame,
-			&frame_len);
+			limits, key_guid, name, name_len, values[i].value_type,
+			(const u8 *)data, data_len, layer_name, layer_name_len,
+			values[i].sequence, &frame, &frame_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_record_frames_append(frames, &frame,
@@ -9076,9 +9098,10 @@ static long pkm_lcs_backup_alloc_root_section_frames(
 		size_t frame_len = 0;
 		u8 *frame = NULL;
 
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, blankets[i].layer_offset,
-			blankets[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 blankets[i].layer_offset,
+						 blankets[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_blanket_tombstone_frame(
@@ -9116,8 +9139,7 @@ static bool pkm_lcs_backup_child_sections_contains(
 		return false;
 
 	for (i = 0; i < sections->count; i++) {
-		if (pkm_lcs_backup_guid_equal(sections->children[i].guid,
-					      guid))
+		if (pkm_lcs_backup_guid_equal(sections->children[i].guid, guid))
 			return true;
 	}
 	return false;
@@ -9190,8 +9212,8 @@ static long pkm_lcs_backup_alloc_child_section_frames(
 	summary->value_count = value_count;
 	summary->blanket_count = blanket_count;
 
-	if (check_add_overflow(incoming_path_count,
-			       summary->hidden_path_count, &capacity) ||
+	if (check_add_overflow(incoming_path_count, summary->hidden_path_count,
+			       &capacity) ||
 	    check_add_overflow(capacity, value_count, &capacity) ||
 	    check_add_overflow(capacity, blanket_count, &capacity)) {
 		ret = -EOVERFLOW;
@@ -9220,11 +9242,11 @@ static long pkm_lcs_backup_alloc_child_section_frames(
 			&child_name_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			parent_enum_frame, parent_enum_frame_len,
-			parent_entries[i].layer_offset,
-			parent_entries[i].layer_len, &layer_name,
-			&layer_name_len);
+		ret = pkm_lcs_backup_frame_field(parent_enum_frame,
+						 parent_enum_frame_len,
+						 parent_entries[i].layer_offset,
+						 parent_entries[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_path_entry_frame(
@@ -9259,11 +9281,11 @@ static long pkm_lcs_backup_alloc_child_section_frames(
 			&child_name_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			child_enum_frame, child_enum_frame_len,
-			child_entries[i].layer_offset,
-			child_entries[i].layer_len, &layer_name,
-			&layer_name_len);
+		ret = pkm_lcs_backup_frame_field(child_enum_frame,
+						 child_enum_frame_len,
+						 child_entries[i].layer_offset,
+						 child_entries[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_path_entry_frame(
@@ -9290,19 +9312,22 @@ static long pkm_lcs_backup_alloc_child_section_frames(
 		size_t frame_len = 0;
 		u8 *frame = NULL;
 
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].name_offset,
-			values[i].name_len, &name, &name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].name_offset,
+						 values[i].name_len, &name,
+						 &name_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].data_offset,
-			values[i].data_len, &data, &data_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].data_offset,
+						 values[i].data_len, &data,
+						 &data_len);
 		if (ret)
 			goto out_destroy_frames;
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].layer_offset,
-			values[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].layer_offset,
+						 values[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_value_frame(
@@ -9326,9 +9351,10 @@ static long pkm_lcs_backup_alloc_child_section_frames(
 		size_t frame_len = 0;
 		u8 *frame = NULL;
 
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, blankets[i].layer_offset,
-			blankets[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 blankets[i].layer_offset,
+						 blankets[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_destroy_frames;
 		ret = pkm_lcs_backup_alloc_blanket_tombstone_frame(
@@ -9357,10 +9383,12 @@ out_destroy_frames:
 	goto out_free_views;
 }
 
-static long pkm_lcs_backup_alloc_key_frame(
-	const u8 guid[16], bool volatile_key, bool symlink, const u8 *sd,
-	size_t sd_len, s64 last_write_time_ns, u8 **frame_out,
-	size_t *frame_len_out)
+static long pkm_lcs_backup_alloc_key_frame(const u8 guid[16], bool volatile_key,
+					   bool symlink, const u8 *sd,
+					   size_t sd_len,
+					   s64 last_write_time_ns,
+					   u8 **frame_out,
+					   size_t *frame_len_out)
 {
 	size_t frame_len = 0;
 	size_t written = 0;
@@ -9381,8 +9409,8 @@ static long pkm_lcs_backup_alloc_key_frame(
 	if (!frame)
 		return -ENOMEM;
 	ret = lcs_rust_write_backup_key_record_frame(
-		frame, frame_len, guid, volatile_key ? 1 : 0,
-		symlink ? 1 : 0, sd, sd_len, last_write_time_ns, &written);
+		frame, frame_len, guid, volatile_key ? 1 : 0, symlink ? 1 : 0,
+		sd, sd_len, last_write_time_ns, &written);
 	if (ret)
 		goto out_free;
 	if (written != frame_len) {
@@ -9400,12 +9428,12 @@ out_free:
 }
 
 static long pkm_lcs_backup_stage_child_section(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_runtime_limits *limits,
-	u64 transaction_id, u64 next_sequence,
-	const struct pkm_lcs_layer_snapshot *layer_snapshot,
-	const u8 parent_guid[PKM_LCS_GUID_BYTES],
-	const u8 *parent_enum_frame, size_t parent_enum_frame_len,
-	u64 parent_enum_request_id, struct pkm_lcs_backup_referenced_layers *refs,
+	struct pkm_lcs_key_fd *key_fd,
+	const struct pkm_lcs_runtime_limits *limits, u64 transaction_id,
+	u64 next_sequence, const struct pkm_lcs_layer_snapshot *layer_snapshot,
+	const u8 parent_guid[PKM_LCS_GUID_BYTES], const u8 *parent_enum_frame,
+	size_t parent_enum_frame_len, u64 parent_enum_request_id,
+	struct pkm_lcs_backup_referenced_layers *refs,
 	struct pkm_lcs_backup_child_section *child)
 {
 	const u8 *sd;
@@ -9430,8 +9458,7 @@ static long pkm_lcs_backup_stage_child_section(
 	if (!child->read_key.sd_len ||
 	    (size_t)child->read_key.sd_offset > child->read_frame.len ||
 	    (size_t)child->read_key.sd_len >
-		    child->read_frame.len -
-			    (size_t)child->read_key.sd_offset)
+		    child->read_frame.len - (size_t)child->read_key.sd_offset)
 		return -EIO;
 	sd = child->read_frame.data + child->read_key.sd_offset;
 
@@ -9468,8 +9495,7 @@ static long pkm_lcs_backup_stage_child_section(
 		child->enum_frame.data, child->enum_frame.len,
 		child->enum_response.request_id, child->values_frame.data,
 		child->values_frame.len, child->values_response.request_id,
-		next_sequence, &child->section_frames,
-		&child->section_summary);
+		next_sequence, &child->section_frames, &child->section_summary);
 	if (ret)
 		return ret;
 
@@ -9515,20 +9541,19 @@ static void pkm_lcs_key_fd_emit_backup_topology_validation_failure(
 	}
 
 	(void)pkm_lcs_emit_source_validation_failure_audit(
-		key_fd->source_id, hive_name, hive_name_len,
-		hive_name_present, request_id, true, RSI_ENUM_CHILDREN, true,
-		parent_guid, true,
+		key_fd->source_id, hive_name, hive_name_len, hive_name_present,
+		request_id, true, RSI_ENUM_CHILDREN, true, parent_guid, true,
 		PKM_LCS_SOURCE_VALIDATION_MALFORMED_KEY_METADATA);
 }
 
 static long pkm_lcs_backup_stage_descendants(
-	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_runtime_limits *limits,
-	u64 transaction_id, u64 next_sequence,
-	const struct pkm_lcs_layer_snapshot *layer_snapshot,
+	struct pkm_lcs_key_fd *key_fd,
+	const struct pkm_lcs_runtime_limits *limits, u64 transaction_id,
+	u64 next_sequence, const struct pkm_lcs_layer_snapshot *layer_snapshot,
 	const u8 root_guid[PKM_LCS_GUID_BYTES],
-	const u8 parent_guid[PKM_LCS_GUID_BYTES],
-	const u8 *parent_enum_frame, size_t parent_enum_frame_len,
-	u64 parent_enum_request_id, struct pkm_lcs_backup_referenced_layers *refs,
+	const u8 parent_guid[PKM_LCS_GUID_BYTES], const u8 *parent_enum_frame,
+	size_t parent_enum_frame_len, u64 parent_enum_request_id,
+	struct pkm_lcs_backup_referenced_layers *refs,
 	struct pkm_lcs_backup_child_sections *sections)
 {
 	struct pkm_lcs_backup_path_entry_view *entries = NULL;
@@ -9594,11 +9619,11 @@ out_free_entries:
 	return ret;
 }
 
-static long pkm_lcs_backup_alloc_trailer_frame(
-	struct pkm_lcs_backup_output *output, u8 **frame_out,
-	size_t *frame_len_out)
+static long
+pkm_lcs_backup_alloc_trailer_frame(struct pkm_lcs_backup_output *output,
+				   u8 **frame_out, size_t *frame_len_out)
 {
-	u8 zero_checksum[SHA256_DIGEST_SIZE] = { };
+	u8 zero_checksum[SHA256_DIGEST_SIZE] = {};
 	u8 checksum[SHA256_DIGEST_SIZE];
 	size_t frame_len = 0;
 	size_t written = 0;
@@ -9656,19 +9681,19 @@ static long pkm_lcs_key_fd_backup_export_subtree_snapshot(
 	struct pkm_lcs_key_fd *key_fd, struct file *output_file,
 	const struct pkm_lcs_runtime_limits *limits, u64 transaction_id)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_source_response_frame read_frame = { };
-	struct pkm_lcs_source_response_frame enum_frame = { };
-	struct pkm_lcs_source_response_frame values_frame = { };
-	struct pkm_lcs_source_response_result read_response = { };
-	struct pkm_lcs_source_response_result enum_response = { };
-	struct pkm_lcs_source_response_result values_response = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
-	struct pkm_lcs_backup_referenced_layers referenced_layers = { };
-	struct pkm_lcs_backup_layer_manifest_frames layer_manifests = { };
-	struct pkm_lcs_backup_record_frames root_section_frames = { };
-	struct pkm_lcs_backup_root_section_summary root_section = { };
-	struct pkm_lcs_backup_child_sections child_sections = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_source_response_frame read_frame = {};
+	struct pkm_lcs_source_response_frame enum_frame = {};
+	struct pkm_lcs_source_response_frame values_frame = {};
+	struct pkm_lcs_source_response_result read_response = {};
+	struct pkm_lcs_source_response_result enum_response = {};
+	struct pkm_lcs_source_response_result values_response = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
+	struct pkm_lcs_backup_referenced_layers referenced_layers = {};
+	struct pkm_lcs_backup_layer_manifest_frames layer_manifests = {};
+	struct pkm_lcs_backup_record_frames root_section_frames = {};
+	struct pkm_lcs_backup_root_section_summary root_section = {};
+	struct pkm_lcs_backup_child_sections child_sections = {};
 	struct pkm_lcs_backup_output output;
 	const char *hive_name;
 	u8 *header_frame = NULL;
@@ -9702,8 +9727,7 @@ static long pkm_lcs_key_fd_backup_export_subtree_snapshot(
 
 	ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, transaction_id, key_fd->key_guid, limits,
-		limits->request_timeout_ms, &read_frame, &read_response,
-		NULL);
+		limits->request_timeout_ms, &read_frame, &read_response, NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
@@ -9721,8 +9745,7 @@ static long pkm_lcs_key_fd_backup_export_subtree_snapshot(
 
 	ret = pkm_lcs_source_enum_children_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, transaction_id, key_fd->key_guid, limits,
-		limits->request_timeout_ms, &enum_frame, &enum_response,
-		NULL);
+		limits->request_timeout_ms, &enum_frame, &enum_response, NULL);
 	if (ret)
 		goto out_frames;
 
@@ -9738,15 +9761,13 @@ static long pkm_lcs_key_fd_backup_export_subtree_snapshot(
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_backup_collect_enum_child_layers(
-		limits, &layer_snapshot, &referenced_layers,
-		enum_frame.data, enum_frame.len, enum_response.request_id,
-		next_sequence);
+		limits, &layer_snapshot, &referenced_layers, enum_frame.data,
+		enum_frame.len, enum_response.request_id, next_sequence);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_backup_collect_query_value_layers(
-		limits, &layer_snapshot, &referenced_layers,
-		values_frame.data, values_frame.len, values_response.request_id,
-		next_sequence);
+		limits, &layer_snapshot, &referenced_layers, values_frame.data,
+		values_frame.len, values_response.request_id, next_sequence);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_backup_alloc_root_section_frames(
@@ -9766,8 +9787,7 @@ static long pkm_lcs_key_fd_backup_export_subtree_snapshot(
 		goto out_frames;
 
 	ret = pkm_lcs_backup_alloc_layer_manifest_frames(
-		limits, &layer_snapshot, &referenced_layers,
-		&layer_manifests);
+		limits, &layer_snapshot, &referenced_layers, &layer_manifests);
 	if (ret)
 		goto out_frames;
 
@@ -9818,7 +9838,8 @@ static long pkm_lcs_key_fd_backup_export_subtree_snapshot(
 		     j++) {
 			ret = pkm_lcs_backup_write_hashed_record(
 				&output,
-				child_sections.children[i].section_frames.frames[j],
+				child_sections.children[i]
+					.section_frames.frames[j],
 				child_sections.children[i]
 					.section_frames.frame_lens[j]);
 			if (ret)
@@ -9849,21 +9870,21 @@ out_frames:
 	return ret;
 }
 
-static long pkm_lcs_key_fd_backup_from_args_for_token(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct reg_backup_args *args)
+static long
+pkm_lcs_key_fd_backup_from_args_for_token(struct pkm_lcs_key_fd *key_fd,
+					  const void *token,
+					  const struct reg_backup_args *args)
 {
 	struct pkm_lcs_runtime_limits limits;
 	struct file *output_file = NULL;
-	struct fd output_held = { };
+	struct fd output_held = {};
 	u64 transaction_id = 0;
 	long ret;
 
 	if (!key_fd || !args)
 		return -EINVAL;
 
-	ret = pkm_lcs_key_fd_require_privilege(token,
-					       KACS_SE_BACKUP_PRIVILEGE);
+	ret = pkm_lcs_key_fd_require_privilege(token, KACS_SE_BACKUP_PRIVILEGE);
 	if (ret)
 		return ret;
 
@@ -9885,15 +9906,15 @@ static long pkm_lcs_key_fd_backup_from_args_for_token(
 	if (ret)
 		goto out_output_fd;
 
-	ret = pkm_lcs_emit_backup_start_audit_for_token(
-		token, key_fd->key_guid, args->output_fd);
+	ret = pkm_lcs_emit_backup_start_audit_for_token(token, key_fd->key_guid,
+							args->output_fd);
 	if (ret) {
 		ret = -EIO;
 		goto out_output_fd;
 	}
 
-	ret = pkm_lcs_key_fd_backup_begin_read_only_snapshot(
-		key_fd, &limits, &transaction_id);
+	ret = pkm_lcs_key_fd_backup_begin_read_only_snapshot(key_fd, &limits,
+							     &transaction_id);
 	if (ret)
 		goto out_complete;
 
@@ -9905,15 +9926,14 @@ static long pkm_lcs_key_fd_backup_from_args_for_token(
 	ret = pkm_lcs_key_fd_backup_export_subtree_snapshot(
 		key_fd, output_file, &limits, transaction_id);
 
-out_release_snapshot:
-	{
-		long release_ret;
+out_release_snapshot: {
+	long release_ret;
 
-		release_ret = pkm_lcs_key_fd_backup_release_read_only_snapshot(
-			key_fd, &limits, transaction_id);
-		if (release_ret)
-			ret = release_ret;
-	}
+	release_ret = pkm_lcs_key_fd_backup_release_read_only_snapshot(
+		key_fd, &limits, transaction_id);
+	if (release_ret)
+		ret = release_ret;
+}
 out_complete:
 	(void)pkm_lcs_emit_backup_complete_audit_for_token(
 		token, key_fd->key_guid,
@@ -9923,8 +9943,8 @@ out_output_fd:
 	return ret;
 }
 
-static long pkm_lcs_key_fd_backup_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct reg_backup_args *args)
+static long pkm_lcs_key_fd_backup_from_args(struct pkm_lcs_key_fd *key_fd,
+					    const struct reg_backup_args *args)
 {
 	return pkm_lcs_key_fd_backup_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), args);
@@ -9935,9 +9955,9 @@ static long pkm_lcs_key_fd_restore_read_target_root_flags(
 	const struct pkm_lcs_runtime_limits *limits, u8 *volatile_out,
 	u8 *symlink_out)
 {
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_rsi_read_key_result read_key = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_rsi_read_key_result read_key = {};
 	long ret;
 
 	if (!key_fd || !limits || !volatile_out || !symlink_out)
@@ -9958,8 +9978,7 @@ static long pkm_lcs_key_fd_restore_read_target_root_flags(
 	if (ret)
 		goto out_frame;
 	if (!read_key.sd_len || (size_t)read_key.sd_offset > frame.len ||
-	    (size_t)read_key.sd_len >
-		    frame.len - (size_t)read_key.sd_offset) {
+	    (size_t)read_key.sd_len > frame.len - (size_t)read_key.sd_offset) {
 		ret = -EIO;
 		goto out_frame;
 	}
@@ -10026,11 +10045,11 @@ static bool pkm_lcs_restore_teardown_seen_contains(
 	return false;
 }
 
-static long pkm_lcs_restore_teardown_seen_append(
-	struct pkm_lcs_restore_teardown_seen *seen,
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static long
+pkm_lcs_restore_teardown_seen_append(struct pkm_lcs_restore_teardown_seen *seen,
+				     const u8 guid[PKM_LCS_GUID_BYTES])
 {
-	u8 (*grown)[PKM_LCS_GUID_BYTES];
+	u8(*grown)[PKM_LCS_GUID_BYTES];
 	u32 new_capacity;
 
 	if (!seen || !guid)
@@ -10073,28 +10092,29 @@ static long pkm_lcs_key_fd_restore_teardown_path_entries(
 		return ret;
 
 	for (i = 0; i < entry_count; i++) {
-		struct pkm_lcs_source_response_result response = { };
+		struct pkm_lcs_source_response_result response = {};
 		const char *child_name = NULL;
 		const char *layer_name = NULL;
 		u32 child_name_len = 0;
 		u32 layer_name_len = 0;
 
-		ret = pkm_lcs_backup_frame_field(
-			enum_frame, enum_frame_len, entries[i].child_name_offset,
-			entries[i].child_name_len, &child_name,
-			&child_name_len);
+		ret = pkm_lcs_backup_frame_field(enum_frame, enum_frame_len,
+						 entries[i].child_name_offset,
+						 entries[i].child_name_len,
+						 &child_name, &child_name_len);
 		if (ret)
 			goto out_free;
-		ret = pkm_lcs_backup_frame_field(
-			enum_frame, enum_frame_len, entries[i].layer_offset,
-			entries[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(enum_frame, enum_frame_len,
+						 entries[i].layer_offset,
+						 entries[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_free;
 
 		ret = pkm_lcs_source_delete_entry_round_trip_timeout_with_limits(
-			key_fd->source_id, txn_id, parent_guid,
-			child_name, child_name_len, layer_name, layer_name_len,
-			limits, limits->request_timeout_ms, &response, NULL);
+			key_fd->source_id, txn_id, parent_guid, child_name,
+			child_name_len, layer_name, layer_name_len, limits,
+			limits->request_timeout_ms, &response, NULL);
 		if (ret)
 			goto out_free;
 	}
@@ -10128,39 +10148,42 @@ static long pkm_lcs_key_fd_restore_teardown_values(
 		return ret;
 
 	for (i = 0; i < value_count; i++) {
-		struct pkm_lcs_source_response_result response = { };
+		struct pkm_lcs_source_response_result response = {};
 		const char *value_name = NULL;
 		const char *layer_name = NULL;
 		u32 value_name_len = 0;
 		u32 layer_name_len = 0;
 
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].name_offset,
-			values[i].name_len, &value_name, &value_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].name_offset,
+						 values[i].name_len,
+						 &value_name, &value_name_len);
 		if (ret)
 			goto out_free;
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, values[i].layer_offset,
-			values[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 values[i].layer_offset,
+						 values[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_free;
 
 		ret = pkm_lcs_source_delete_value_entry_round_trip_timeout_with_limits(
-			key_fd->source_id, txn_id, key_guid,
-			value_name, value_name_len, layer_name, layer_name_len,
-			limits, limits->request_timeout_ms, &response, NULL);
+			key_fd->source_id, txn_id, key_guid, value_name,
+			value_name_len, layer_name, layer_name_len, limits,
+			limits->request_timeout_ms, &response, NULL);
 		if (ret)
 			goto out_free;
 	}
 
 	for (i = 0; i < blanket_count; i++) {
-		struct pkm_lcs_source_response_result response = { };
+		struct pkm_lcs_source_response_result response = {};
 		const char *layer_name = NULL;
 		u32 layer_name_len = 0;
 
-		ret = pkm_lcs_backup_frame_field(
-			values_frame, values_frame_len, blankets[i].layer_offset,
-			blankets[i].layer_len, &layer_name, &layer_name_len);
+		ret = pkm_lcs_backup_frame_field(values_frame, values_frame_len,
+						 blankets[i].layer_offset,
+						 blankets[i].layer_len,
+						 &layer_name, &layer_name_len);
 		if (ret)
 			goto out_free;
 
@@ -10183,15 +10206,14 @@ static long pkm_lcs_key_fd_restore_teardown_subtree(
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_layer_snapshot *layer_snapshot,
 	const u8 key_guid[PKM_LCS_GUID_BYTES], u64 next_sequence,
-	bool drop_self, u32 depth,
-	struct pkm_lcs_restore_teardown_seen *seen)
+	bool drop_self, u32 depth, struct pkm_lcs_restore_teardown_seen *seen)
 {
 	struct pkm_lcs_backup_path_entry_view *entries = NULL;
-	struct pkm_lcs_source_response_frame enum_frame = { };
-	struct pkm_lcs_source_response_frame values_frame = { };
-	struct pkm_lcs_source_response_result enum_response = { };
-	struct pkm_lcs_source_response_result values_response = { };
-	struct pkm_lcs_rsi_enum_children_info_summary enum_summary = { };
+	struct pkm_lcs_source_response_frame enum_frame = {};
+	struct pkm_lcs_source_response_frame values_frame = {};
+	struct pkm_lcs_source_response_result enum_response = {};
+	struct pkm_lcs_source_response_result values_response = {};
+	struct pkm_lcs_rsi_enum_children_info_summary enum_summary = {};
 	u32 entry_count = 0;
 	u32 i;
 	long ret;
@@ -10205,22 +10227,22 @@ static long pkm_lcs_key_fd_restore_teardown_subtree(
 
 	ret = pkm_lcs_source_enum_children_round_trip_retaining_frame_timeout_with_limits(
 		key_fd->source_id, txn_id, key_guid, limits,
-		limits->request_timeout_ms, &enum_frame, &enum_response,
-		NULL);
+		limits->request_timeout_ms, &enum_frame, &enum_response, NULL);
 	if (ret)
 		goto out_frames;
 	ret = pkm_lcs_rsi_materialize_enum_children_info_summary(
 		enum_frame.data, enum_frame.len, enum_response.request_id,
 		next_sequence, layer_snapshot->layers,
-		layer_snapshot->layer_count,
-		NULL, 0, &enum_response.limits, &enum_summary);
+		layer_snapshot->layer_count, NULL, 0, &enum_response.limits,
+		&enum_summary);
 	if (ret)
 		goto out_frames;
 
-	ret = pkm_lcs_backup_materialize_path_entries(
-		limits, enum_frame.data, enum_frame.len,
-		enum_response.request_id, next_sequence, &entries,
-		&entry_count);
+	ret = pkm_lcs_backup_materialize_path_entries(limits, enum_frame.data,
+						      enum_frame.len,
+						      enum_response.request_id,
+						      next_sequence, &entries,
+						      &entry_count);
 	if (ret)
 		goto out_frames;
 
@@ -10270,9 +10292,9 @@ static long pkm_lcs_key_fd_restore_teardown_subtree(
 	}
 
 	ret = pkm_lcs_source_query_values_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, txn_id, key_guid, "", 0, true,
-		limits, limits->request_timeout_ms, &values_frame,
-		&values_response, NULL);
+		key_fd->source_id, txn_id, key_guid, "", 0, true, limits,
+		limits->request_timeout_ms, &values_frame, &values_response,
+		NULL);
 	if (ret)
 		goto out_entries;
 	ret = pkm_lcs_key_fd_restore_teardown_values(
@@ -10282,7 +10304,7 @@ static long pkm_lcs_key_fd_restore_teardown_subtree(
 		goto out_entries;
 
 	if (drop_self) {
-		struct pkm_lcs_source_response_result drop_response = { };
+		struct pkm_lcs_source_response_result drop_response = {};
 
 		ret = pkm_lcs_source_drop_key_round_trip_timeout_with_limits(
 			key_fd->source_id, txn_id, key_guid, limits,
@@ -10301,8 +10323,8 @@ static long pkm_lcs_key_fd_restore_teardown_root_contents(
 	const struct pkm_lcs_key_fd *key_fd, u64 txn_id,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_restore_teardown_seen seen = { };
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
+	struct pkm_lcs_restore_teardown_seen seen = {};
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -10334,7 +10356,7 @@ static long pkm_lcs_key_fd_restore_write_root_mutable(
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_restore_root_key_summary *summary)
 {
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_source_response_result response = {};
 
 	if (!key_fd || !txn_id || !limits || !summary ||
 	    !summary->root_key_seen || !summary->root_sd ||
@@ -10342,10 +10364,9 @@ static long pkm_lcs_key_fd_restore_write_root_mutable(
 		return -EINVAL;
 
 	return pkm_lcs_source_write_key_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, key_fd->key_guid,
-		summary->root_sd, summary->root_sd_len,
-		(u64)summary->root_last_write_time_ns, limits,
-		limits->request_timeout_ms, &response, NULL);
+		key_fd->source_id, txn_id, key_fd->key_guid, summary->root_sd,
+		summary->root_sd_len, (u64)summary->root_last_write_time_ns,
+		limits, limits->request_timeout_ms, &response, NULL);
 }
 
 static long pkm_lcs_restore_remapped_sequence(
@@ -10362,11 +10383,11 @@ static long pkm_lcs_key_fd_restore_replay_root_path_entry(
 	const struct pkm_lcs_key_fd *key_fd, u64 txn_id,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_restore_root_key_summary *summary,
-	struct pkm_lcs_restore_sequence_gate *sequence_gate,
-	const u8 *frame, size_t frame_len)
+	struct pkm_lcs_restore_sequence_gate *sequence_gate, const u8 *frame,
+	size_t frame_len)
 {
-	struct pkm_lcs_backup_path_entry_record_view path = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_path_entry_record_view path = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *child_name = NULL;
 	const char *layer_name = NULL;
 	u8 parent_guid[PKM_LCS_GUID_BYTES];
@@ -10378,8 +10399,8 @@ static long pkm_lcs_key_fd_restore_replay_root_path_entry(
 	if (!key_fd || !txn_id || !limits || !summary || !frame)
 		return -EINVAL;
 
-	ret = lcs_rust_parse_backup_path_entry_record(
-		limits, frame, frame_len, &path);
+	ret = lcs_rust_parse_backup_path_entry_record(limits, frame, frame_len,
+						      &path);
 	if (ret)
 		return ret;
 	if (!path.hidden)
@@ -10421,8 +10442,7 @@ static long pkm_lcs_key_fd_restore_precedence_tcb_gate(
 
 	if (!limits || !value_name)
 		return -EINVAL;
-	if (metadata_path_state !=
-	    PKM_LCS_RESTORE_METADATA_PATH_LAYER_METADATA)
+	if (metadata_path_state != PKM_LCS_RESTORE_METADATA_PATH_LAYER_METADATA)
 		return 0;
 	if (value_type != REG_DWORD || data_len != sizeof(u32) || !data)
 		return 0;
@@ -10437,9 +10457,8 @@ static long pkm_lcs_key_fd_restore_precedence_tcb_gate(
 	if (!is_precedence)
 		return 0;
 
-	if (!token ||
-	    !kacs_rust_token_has_enabled_privilege(token,
-						  KACS_SE_TCB_PRIVILEGE))
+	if (!token || !kacs_rust_token_has_enabled_privilege(
+			      token, KACS_SE_TCB_PRIVILEGE))
 		return -EPERM;
 	return 0;
 }
@@ -10448,11 +10467,11 @@ static long pkm_lcs_key_fd_restore_replay_root_value(
 	const struct pkm_lcs_key_fd *key_fd, const void *token, u64 txn_id,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_restore_root_key_summary *summary,
-	struct pkm_lcs_restore_sequence_gate *sequence_gate,
-	const u8 *frame, size_t frame_len)
+	struct pkm_lcs_restore_sequence_gate *sequence_gate, const u8 *frame,
+	size_t frame_len)
 {
-	struct pkm_lcs_backup_value_record_view value = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_value_record_view value = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *name = NULL;
 	const char *data = NULL;
 	const char *layer_name = NULL;
@@ -10497,21 +10516,21 @@ static long pkm_lcs_key_fd_restore_replay_root_value(
 		return ret;
 
 	return pkm_lcs_source_set_value_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, key_guid, name, name_len,
-		layer_name, layer_name_len, value.value_type,
-		(const u8 *)data, data_len, new_sequence, 0, limits,
-		limits->request_timeout_ms, &response, NULL);
+		key_fd->source_id, txn_id, key_guid, name, name_len, layer_name,
+		layer_name_len, value.value_type, (const u8 *)data, data_len,
+		new_sequence, 0, limits, limits->request_timeout_ms, &response,
+		NULL);
 }
 
 static long pkm_lcs_key_fd_restore_replay_root_blanket(
 	const struct pkm_lcs_key_fd *key_fd, u64 txn_id,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_restore_root_key_summary *summary,
-	struct pkm_lcs_restore_sequence_gate *sequence_gate,
-	const u8 *frame, size_t frame_len)
+	struct pkm_lcs_restore_sequence_gate *sequence_gate, const u8 *frame,
+	size_t frame_len)
 {
-	struct pkm_lcs_backup_blanket_tombstone_record_view blanket = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_blanket_tombstone_record_view blanket = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *layer_name = NULL;
 	u8 key_guid[PKM_LCS_GUID_BYTES];
 	u32 layer_name_len = 0;
@@ -10528,21 +10547,20 @@ static long pkm_lcs_key_fd_restore_replay_root_blanket(
 	pkm_lcs_restore_remap_guid(summary, blanket.key_guid, key_guid);
 	if (!pkm_lcs_restore_guid_eq(key_guid, summary->target_root_guid))
 		return -EINVAL;
-	ret = pkm_lcs_backup_frame_field(frame, frame_len,
-					 blanket.layer_offset,
+	ret = pkm_lcs_backup_frame_field(frame, frame_len, blanket.layer_offset,
 					 blanket.layer_len, &layer_name,
 					 &layer_name_len);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_restore_remapped_sequence(
-		sequence_gate, blanket.sequence, &new_sequence);
+	ret = pkm_lcs_restore_remapped_sequence(sequence_gate, blanket.sequence,
+						&new_sequence);
 	if (ret)
 		return ret;
 
 	return pkm_lcs_source_set_blanket_tombstone_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, key_guid, layer_name,
-		layer_name_len, true, new_sequence, limits,
-		limits->request_timeout_ms, &response, NULL);
+		key_fd->source_id, txn_id, key_guid, layer_name, layer_name_len,
+		true, new_sequence, limits, limits->request_timeout_ms,
+		&response, NULL);
 }
 
 static long pkm_lcs_key_fd_restore_select_non_root_anchor(
@@ -10554,14 +10572,14 @@ static long pkm_lcs_key_fd_restore_select_non_root_anchor(
 {
 	u32 i;
 
-	if (!limits || !summary || !section || !parent_guid_out ||
-	    !name_out || !name_len_out)
+	if (!limits || !summary || !section || !parent_guid_out || !name_out ||
+	    !name_len_out)
 		return -EINVAL;
 
 	for (i = 0; i < section->replay_frames.count; i++) {
 		const u8 *frame = section->replay_frames.frames[i];
 		size_t frame_len = section->replay_frames.frame_lens[i];
-		struct pkm_lcs_backup_path_entry_record_view path = { };
+		struct pkm_lcs_backup_path_entry_record_view path = {};
 		u8 child_guid[PKM_LCS_GUID_BYTES];
 		long ret;
 
@@ -10569,8 +10587,8 @@ static long pkm_lcs_key_fd_restore_select_non_root_anchor(
 			return -EINVAL;
 		if (get_unaligned_le16(frame) != REG_BACKUP_PATH_ENTRY)
 			continue;
-		ret = lcs_rust_parse_backup_path_entry_record(
-			limits, frame, frame_len, &path);
+		ret = lcs_rust_parse_backup_path_entry_record(limits, frame,
+							      frame_len, &path);
 		if (ret)
 			return ret;
 		if (path.hidden)
@@ -10581,17 +10599,18 @@ static long pkm_lcs_key_fd_restore_select_non_root_anchor(
 			return -EINVAL;
 		pkm_lcs_restore_remap_guid(summary, path.parent_guid,
 					   parent_guid_out);
-		return pkm_lcs_backup_frame_field(
-			frame, frame_len, path.child_name_offset,
-			path.child_name_len, name_out, name_len_out);
+		return pkm_lcs_backup_frame_field(frame, frame_len,
+						  path.child_name_offset,
+						  path.child_name_len, name_out,
+						  name_len_out);
 	}
 
 	return -EINVAL;
 }
 
 static long pkm_lcs_key_fd_restore_parent_metadata_path_state(
-	const struct pkm_lcs_restore_root_key_summary *summary, u32 section_index,
-	const u8 parent_guid[PKM_LCS_GUID_BYTES],
+	const struct pkm_lcs_restore_root_key_summary *summary,
+	u32 section_index, const u8 parent_guid[PKM_LCS_GUID_BYTES],
 	enum pkm_lcs_restore_metadata_path_state *state_out)
 {
 	u32 i;
@@ -10627,7 +10646,7 @@ static long pkm_lcs_key_fd_restore_classify_metadata_paths(
 	if (!key_fd || !limits || !summary)
 		return -EINVAL;
 	ret = pkm_lcs_restore_metadata_path_state_from_components(
-		(const char * const *)key_fd->resolved_path,
+		(const char *const *)key_fd->resolved_path,
 		key_fd->path_component_count, limits,
 		&summary->root_metadata_path_state);
 	if (ret)
@@ -10642,7 +10661,8 @@ static long pkm_lcs_key_fd_restore_classify_metadata_paths(
 		u32 name_len = 0;
 
 		ret = pkm_lcs_key_fd_restore_select_non_root_anchor(
-			limits, summary, section, parent_guid, &name, &name_len);
+			limits, summary, section, parent_guid, &name,
+			&name_len);
 		if (ret)
 			return ret;
 		ret = pkm_lcs_key_fd_restore_parent_metadata_path_state(
@@ -10664,8 +10684,8 @@ static long pkm_lcs_key_fd_restore_create_non_root_key(
 	const struct pkm_lcs_restore_root_key_summary *summary,
 	const struct pkm_lcs_restore_non_root_key_section *section)
 {
-	struct pkm_lcs_backup_key_record_view key = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_key_record_view key = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *name = NULL;
 	u8 parent_guid[PKM_LCS_GUID_BYTES];
 	u32 name_len = 0;
@@ -10701,8 +10721,8 @@ static long pkm_lcs_key_fd_restore_create_non_root_key(
 
 	return pkm_lcs_source_write_key_round_trip_timeout_with_limits(
 		key_fd->source_id, txn_id, key.guid, NULL, 0,
-		(u64)key.last_write_time_ns, limits,
-		limits->request_timeout_ms, &response, NULL);
+		(u64)key.last_write_time_ns, limits, limits->request_timeout_ms,
+		&response, NULL);
 }
 
 static long pkm_lcs_key_fd_restore_replay_non_root_path_entry(
@@ -10713,8 +10733,8 @@ static long pkm_lcs_key_fd_restore_replay_non_root_path_entry(
 	const struct pkm_lcs_restore_non_root_key_section *section,
 	const u8 *frame, size_t frame_len)
 {
-	struct pkm_lcs_backup_path_entry_record_view path = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_path_entry_record_view path = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *child_name = NULL;
 	const char *layer_name = NULL;
 	u8 parent_guid[PKM_LCS_GUID_BYTES];
@@ -10727,8 +10747,8 @@ static long pkm_lcs_key_fd_restore_replay_non_root_path_entry(
 	if (!key_fd || !txn_id || !limits || !summary || !section || !frame)
 		return -EINVAL;
 
-	ret = lcs_rust_parse_backup_path_entry_record(
-		limits, frame, frame_len, &path);
+	ret = lcs_rust_parse_backup_path_entry_record(limits, frame, frame_len,
+						      &path);
 	if (ret)
 		return ret;
 	pkm_lcs_restore_remap_guid(summary, path.parent_guid, parent_guid);
@@ -10776,8 +10796,8 @@ static long pkm_lcs_key_fd_restore_replay_non_root_value(
 	const struct pkm_lcs_restore_non_root_key_section *section,
 	const u8 *frame, size_t frame_len)
 {
-	struct pkm_lcs_backup_value_record_view value = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_value_record_view value = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *name = NULL;
 	const char *data = NULL;
 	const char *layer_name = NULL;
@@ -10822,10 +10842,10 @@ static long pkm_lcs_key_fd_restore_replay_non_root_value(
 		return ret;
 
 	return pkm_lcs_source_set_value_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, key_guid, name, name_len,
-		layer_name, layer_name_len, value.value_type,
-		(const u8 *)data, data_len, new_sequence, 0, limits,
-		limits->request_timeout_ms, &response, NULL);
+		key_fd->source_id, txn_id, key_guid, name, name_len, layer_name,
+		layer_name_len, value.value_type, (const u8 *)data, data_len,
+		new_sequence, 0, limits, limits->request_timeout_ms, &response,
+		NULL);
 }
 
 static long pkm_lcs_key_fd_restore_replay_non_root_blanket(
@@ -10836,8 +10856,8 @@ static long pkm_lcs_key_fd_restore_replay_non_root_blanket(
 	const struct pkm_lcs_restore_non_root_key_section *section,
 	const u8 *frame, size_t frame_len)
 {
-	struct pkm_lcs_backup_blanket_tombstone_record_view blanket = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_backup_blanket_tombstone_record_view blanket = {};
+	struct pkm_lcs_source_response_result response = {};
 	const char *layer_name = NULL;
 	u8 key_guid[PKM_LCS_GUID_BYTES];
 	u32 layer_name_len = 0;
@@ -10854,21 +10874,20 @@ static long pkm_lcs_key_fd_restore_replay_non_root_blanket(
 	pkm_lcs_restore_remap_guid(summary, blanket.key_guid, key_guid);
 	if (!pkm_lcs_restore_guid_eq(key_guid, section->guid))
 		return -EINVAL;
-	ret = pkm_lcs_backup_frame_field(frame, frame_len,
-					 blanket.layer_offset,
+	ret = pkm_lcs_backup_frame_field(frame, frame_len, blanket.layer_offset,
 					 blanket.layer_len, &layer_name,
 					 &layer_name_len);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_restore_remapped_sequence(
-		sequence_gate, blanket.sequence, &new_sequence);
+	ret = pkm_lcs_restore_remapped_sequence(sequence_gate, blanket.sequence,
+						&new_sequence);
 	if (ret)
 		return ret;
 
 	return pkm_lcs_source_set_blanket_tombstone_round_trip_timeout_with_limits(
-		key_fd->source_id, txn_id, key_guid, layer_name,
-		layer_name_len, true, new_sequence, limits,
-		limits->request_timeout_ms, &response, NULL);
+		key_fd->source_id, txn_id, key_guid, layer_name, layer_name_len,
+		true, new_sequence, limits, limits->request_timeout_ms,
+		&response, NULL);
 }
 
 static long pkm_lcs_key_fd_restore_replay_root_section(
@@ -10936,8 +10955,8 @@ static long pkm_lcs_key_fd_restore_replay_non_root_section(
 	    !sequence_gate || !sequence_gate->held)
 		return -EINVAL;
 
-	ret = pkm_lcs_key_fd_restore_create_non_root_key(
-		key_fd, txn_id, limits, summary, section);
+	ret = pkm_lcs_key_fd_restore_create_non_root_key(key_fd, txn_id, limits,
+							 summary, section);
 	if (ret)
 		return ret;
 
@@ -11004,13 +11023,14 @@ static long pkm_lcs_key_fd_restore_replay_non_root_sections(
 	return 0;
 }
 
-static long pkm_lcs_key_fd_restore_from_args_for_token(
-	struct pkm_lcs_key_fd *key_fd, const void *token,
-	const struct reg_restore_args *args)
+static long
+pkm_lcs_key_fd_restore_from_args_for_token(struct pkm_lcs_key_fd *key_fd,
+					   const void *token,
+					   const struct reg_restore_args *args)
 {
 	struct pkm_lcs_runtime_limits limits;
-	struct pkm_lcs_restore_root_key_summary root_summary = { };
-	struct pkm_lcs_restore_sequence_gate sequence_gate = { };
+	struct pkm_lcs_restore_root_key_summary root_summary = {};
+	struct pkm_lcs_restore_sequence_gate sequence_gate = {};
 	u64 transaction_id = 0;
 	bool restore_started = false;
 	bool start_audit_failed = false;
@@ -11072,8 +11092,8 @@ static long pkm_lcs_key_fd_restore_from_args_for_token(
 	if (ret)
 		goto out_abort_transaction;
 
-	ret = pkm_lcs_key_fd_restore_classify_metadata_paths(
-		key_fd, &limits, &root_summary);
+	ret = pkm_lcs_key_fd_restore_classify_metadata_paths(key_fd, &limits,
+							     &root_summary);
 	if (ret)
 		goto out_abort_transaction;
 
@@ -11101,8 +11121,8 @@ static long pkm_lcs_key_fd_restore_from_args_for_token(
 	if (ret)
 		goto out_abort_transaction;
 
-	ret = pkm_lcs_key_fd_restore_write_root_mutable(
-		key_fd, transaction_id, &limits, &root_summary);
+	ret = pkm_lcs_key_fd_restore_write_root_mutable(key_fd, transaction_id,
+							&limits, &root_summary);
 	if (ret)
 		goto out_abort_transaction;
 
@@ -11160,8 +11180,9 @@ out_abort_transaction:
 	return ret;
 }
 
-static long pkm_lcs_key_fd_restore_from_args(
-	struct pkm_lcs_key_fd *key_fd, const struct reg_restore_args *args)
+static long
+pkm_lcs_key_fd_restore_from_args(struct pkm_lcs_key_fd *key_fd,
+				 const struct reg_restore_args *args)
 {
 	return pkm_lcs_key_fd_restore_from_args_for_token(
 		key_fd, pkm_kacs_current_effective_token_ptr(), args);
@@ -11169,7 +11190,7 @@ static long pkm_lcs_key_fd_restore_from_args(
 
 static long pkm_lcs_key_fd_flush(struct pkm_lcs_key_fd *key_fd)
 {
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_source_response_result response = {};
 	struct pkm_lcs_runtime_limits limits;
 	const char *hive_name;
 	size_t hive_name_len;
@@ -11178,8 +11199,8 @@ static long pkm_lcs_key_fd_flush(struct pkm_lcs_key_fd *key_fd)
 	if (!key_fd)
 		return -EINVAL;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_FLUSH_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_FLUSH_NR);
 	if (ret)
 		return ret;
 
@@ -11442,16 +11463,15 @@ static long pkm_lcs_key_fd_get(int fd, struct fd *held,
 	return 0;
 }
 
-static void pkm_lcs_key_fd_path_views_free(
-	struct pkm_lcs_key_fd_string_view *views)
+static void
+pkm_lcs_key_fd_path_views_free(struct pkm_lcs_key_fd_string_view *views)
 {
 	kfree(views);
 }
 
 static long pkm_lcs_key_fd_path_views_from_components(
-	const char * const *resolved_path, u32 component_count, u32 start,
-	u32 count,
-	struct pkm_lcs_key_fd_string_view **views_out)
+	const char *const *resolved_path, u32 component_count, u32 start,
+	u32 count, struct pkm_lcs_key_fd_string_view **views_out)
 {
 	struct pkm_lcs_key_fd_string_view *views;
 	size_t len;
@@ -11514,9 +11534,10 @@ static long pkm_lcs_key_fd_queue_dispatch_event_locked(
 		return ret;
 	}
 
-	event = pkm_lcs_key_fd_build_watch_event(
-		event_type, name, name_len, subtree_record, path_components,
-		path_component_count);
+	event = pkm_lcs_key_fd_build_watch_event(event_type, name, name_len,
+						 subtree_record,
+						 path_components,
+						 path_component_count);
 	if (IS_ERR(event)) {
 		mutex_unlock(&watcher->watch_lock);
 		return PTR_ERR(event);
@@ -11546,7 +11567,8 @@ static long pkm_lcs_key_fd_dispatch_to_watcher_locked(
 		wake_up_interruptible(&watcher->watch_wait);
 	trace_lcs_watch_dispatch(watcher->source_id,
 				 pkm_lcs_key_guid_hash64(watcher->key_guid),
-				 event_type, watcher->watch_pending_events, ret);
+				 event_type, watcher->watch_pending_events,
+				 ret);
 	return ret;
 }
 
@@ -11566,9 +11588,9 @@ static long pkm_lcs_key_fd_validate_dispatch_input(
 		input->event_type, REG_NOTIFY_ALL, &matches);
 	if (ret)
 		return ret;
-	return lcs_rust_write_watch_event_record(
-		input->event_type, input->name, input->name_len, 0, NULL, 0,
-		NULL, 0, &written, &overflow);
+	return lcs_rust_write_watch_event_record(input->event_type, input->name,
+						 input->name_len, 0, NULL, 0,
+						 NULL, 0, &written, &overflow);
 }
 
 static long pkm_lcs_key_fd_validate_dispatch_context(
@@ -11596,7 +11618,7 @@ static long pkm_lcs_key_fd_validate_dispatch_context(
 			return -EINVAL;
 	}
 	return pkm_lcs_key_fd_validate_dispatch_input(
-		&(struct pkm_lcs_watch_dispatch_input) {
+		&(struct pkm_lcs_watch_dispatch_input){
 			.mutation_fd = -1,
 			.event_type = context->event_type,
 			.name = context->name,
@@ -11604,8 +11626,8 @@ static long pkm_lcs_key_fd_validate_dispatch_context(
 		});
 }
 
-static void pkm_lcs_key_fd_transaction_burst_counts_free(
-	struct list_head *counts)
+static void
+pkm_lcs_key_fd_transaction_burst_counts_free(struct list_head *counts)
 {
 	struct pkm_lcs_key_fd_transaction_burst_entry *entry;
 	struct pkm_lcs_key_fd_transaction_burst_entry *tmp;
@@ -11619,8 +11641,8 @@ static void pkm_lcs_key_fd_transaction_burst_counts_free(
 }
 
 static struct pkm_lcs_key_fd_transaction_burst_entry *
-pkm_lcs_key_fd_transaction_burst_find(
-	struct list_head *counts, const struct pkm_lcs_key_fd *watcher)
+pkm_lcs_key_fd_transaction_burst_find(struct list_head *counts,
+				      const struct pkm_lcs_key_fd *watcher)
 {
 	struct pkm_lcs_key_fd_transaction_burst_entry *entry;
 
@@ -11633,9 +11655,10 @@ pkm_lcs_key_fd_transaction_burst_find(
 	return NULL;
 }
 
-static long pkm_lcs_key_fd_transaction_burst_count_watcher(
-	struct list_head *counts, struct pkm_lcs_key_fd *watcher,
-	u32 event_type, u32 limit)
+static long
+pkm_lcs_key_fd_transaction_burst_count_watcher(struct list_head *counts,
+					       struct pkm_lcs_key_fd *watcher,
+					       u32 event_type, u32 limit)
 {
 	struct pkm_lcs_key_fd_transaction_burst_entry *entry;
 	bool matches = false;
@@ -11700,8 +11723,7 @@ static long pkm_lcs_internal_watch_event_name_copy(
 	if (!event || !context || !context->name || !context->name_len)
 		return -EINVAL;
 
-	event->name = kmemdup_nul(context->name, context->name_len,
-				  GFP_KERNEL);
+	event->name = kmemdup_nul(context->name, context->name_len, GFP_KERNEL);
 	if (!event->name)
 		return -ENOMEM;
 	event->name_len = context->name_len;
@@ -11735,8 +11757,8 @@ static long pkm_lcs_internal_watch_event_path_copy(
 			pkm_lcs_internal_watch_event_path_destroy(event);
 			return -EINVAL;
 		}
-		event->resolved_path[i] = kstrdup(context->resolved_path[i],
-						  GFP_KERNEL);
+		event->resolved_path[i] =
+			kstrdup(context->resolved_path[i], GFP_KERNEL);
 		if (!event->resolved_path[i]) {
 			pkm_lcs_internal_watch_event_path_destroy(event);
 			return -ENOMEM;
@@ -11899,8 +11921,7 @@ static long pkm_lcs_internal_watch_collect_locked(
 			}
 		}
 	} else {
-		memcpy(event->guid, watch->registry.guid,
-		       sizeof(event->guid));
+		memcpy(event->guid, watch->registry.guid, sizeof(event->guid));
 	}
 	list_add_tail(&event->link, events);
 	return 0;
@@ -11909,7 +11930,7 @@ static long pkm_lcs_internal_watch_collect_locked(
 static void pkm_lcs_internal_watch_recover_layer_change(
 	const struct pkm_lcs_internal_watch_event *event)
 {
-	struct pkm_lcs_layer_operation_recovery_result recovery = { };
+	struct pkm_lcs_layer_operation_recovery_result recovery = {};
 
 	if (!event)
 		return;
@@ -11935,7 +11956,7 @@ static void pkm_lcs_internal_watch_deliver_layer_metadata_refresh(
 	pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&limits);
 	if (!pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result_with_limits(
 		    event->source_id, event->guid,
-		    (const char * const *)event->resolved_path,
+		    (const char *const *)event->resolved_path,
 		    event->path_component_count, NULL, 0, false, &limits,
 		    &effective_changed) &&
 	    effective_changed)
@@ -11954,8 +11975,9 @@ struct pkm_lcs_internal_refreshed_layer {
 	u8 guid[PKM_LCS_GUID_BYTES];
 };
 
-static bool pkm_lcs_internal_refreshed_layer_contains(
-	const struct list_head *refreshed, const u8 *guid)
+static bool
+pkm_lcs_internal_refreshed_layer_contains(const struct list_head *refreshed,
+					  const u8 *guid)
 {
 	const struct pkm_lcs_internal_refreshed_layer *entry;
 
@@ -11979,8 +12001,8 @@ static void pkm_lcs_internal_refreshed_layer_add(struct list_head *refreshed,
 	list_add_tail(&entry->link, refreshed);
 }
 
-static void pkm_lcs_internal_refreshed_layers_destroy(
-	struct list_head *refreshed)
+static void
+pkm_lcs_internal_refreshed_layers_destroy(struct list_head *refreshed)
 {
 	struct pkm_lcs_internal_refreshed_layer *entry;
 	struct pkm_lcs_internal_refreshed_layer *tmp;
@@ -11995,8 +12017,11 @@ static void pkm_lcs_internal_watch_deliver_layer_create(
 	const struct pkm_lcs_internal_watch_event *event,
 	struct list_head *refreshed)
 {
-	static const char * const path_prefix[] = {
-		"Machine", "System", "Registry", "Layers",
+	static const char *const path_prefix[] = {
+		"Machine",
+		"System",
+		"Registry",
+		"Layers",
 	};
 	const char *resolved_path[ARRAY_SIZE(path_prefix) + 1];
 	struct pkm_lcs_runtime_limits limits;
@@ -12012,8 +12037,8 @@ static void pkm_lcs_internal_watch_deliver_layer_create(
 	pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&limits);
 
 	if (pkm_lcs_layer_metadata_child_lookup_from_root_with_limits(
-		    event->source_id, event->guid, event->name,
-		    event->name_len, &limits, child_guid, &present) ||
+		    event->source_id, event->guid, event->name, event->name_len,
+		    &limits, child_guid, &present) ||
 	    !present)
 		return;
 	if (refreshed) {
@@ -12032,8 +12057,7 @@ static void pkm_lcs_internal_watch_deliver_layer_create(
 }
 
 static void pkm_lcs_internal_watch_deliver_layer_delete(
-	const struct pkm_lcs_internal_watch_event *event,
-	u32 *internal_effects)
+	const struct pkm_lcs_internal_watch_event *event, u32 *internal_effects)
 {
 	static const char base_name[] = "base";
 	struct pkm_lcs_runtime_limits limits;
@@ -12044,8 +12068,8 @@ static void pkm_lcs_internal_watch_deliver_layer_delete(
 		return;
 
 	ret = pkm_lcs_key_fd_layer_name_casefold_equal(
-		event->name, event->name_len, base_name,
-		sizeof(base_name) - 1, &is_base);
+		event->name, event->name_len, base_name, sizeof(base_name) - 1,
+		&is_base);
 	if (ret || is_base)
 		return;
 
@@ -12058,8 +12082,8 @@ static void pkm_lcs_internal_watch_deliver_layer_delete(
 }
 
 static void pkm_lcs_internal_watch_deliver_layer_event(
-	const struct pkm_lcs_internal_watch_event *event,
-	u32 *internal_effects, struct list_head *refreshed)
+	const struct pkm_lcs_internal_watch_event *event, u32 *internal_effects,
+	struct list_head *refreshed)
 {
 	if (!event)
 		return;
@@ -12081,8 +12105,8 @@ static void pkm_lcs_internal_watch_deliver_layer_event(
 		pkm_lcs_internal_watch_deliver_layer_create(event, refreshed);
 		break;
 	case REG_WATCH_SUBKEY_DELETED:
-		pkm_lcs_internal_watch_deliver_layer_delete(
-			event, internal_effects);
+		pkm_lcs_internal_watch_deliver_layer_delete(event,
+							    internal_effects);
 		break;
 	default:
 		break;
@@ -12109,7 +12133,7 @@ static void pkm_lcs_internal_watch_deliver_machine_root_fallback(
 		return;
 
 	pkm_lcs_source_bootstrap_refresh_machine_hive(event->source_id,
-						     event->guid, result);
+						      event->guid, result);
 	kfree(result);
 }
 
@@ -12149,15 +12173,14 @@ static void pkm_lcs_internal_watch_events_deliver(struct list_head *events,
 			 */
 			pkm_kacs_port_reservations_refresh_from_key(
 				event->source_id, event->guid);
-		} else if (event->target ==
-			   PKM_LCS_INTERNAL_WATCH_NETWORK) {
+		} else if (event->target == PKM_LCS_INTERNAL_WATCH_NETWORK) {
 			/*
 			 * NTFE coalesces (per-key events, one deferred
 			 * re-walk) and keeps its last known-good policy
 			 * generation and context table if the re-walk fails.
 			 */
 			peios_ntfe_network_registry_changed(event->source_id,
-							 event->guid);
+							    event->guid);
 		} else if (event->target ==
 			   PKM_LCS_INTERNAL_WATCH_EVENT_POLICY) {
 			/*
@@ -12198,8 +12221,7 @@ static long pkm_lcs_key_fd_transaction_burst_count_context_locked(
 	hash = pkm_lcs_guid_hash(context->changed_key_guid);
 	hash_for_each_possible(pkm_lcs_watch_map, entry, link, hash) {
 		if (entry->kind != PKM_LCS_WATCH_REGISTRY_KEY_FD ||
-		    !pkm_lcs_guid_equal(entry->guid,
-					context->changed_key_guid))
+		    !pkm_lcs_guid_equal(entry->guid, context->changed_key_guid))
 			continue;
 		watcher = entry->owner.key_fd;
 		ret = pkm_lcs_key_fd_transaction_burst_count_watcher(
@@ -12213,13 +12235,14 @@ static long pkm_lcs_key_fd_transaction_burst_count_context_locked(
 		const u8 *ancestor_guid = context->ancestor_guids[i - 1U];
 		u32 path_count = changed_index - (i - 1U);
 
-		if (pkm_lcs_guid_equal(ancestor_guid, context->changed_key_guid))
+		if (pkm_lcs_guid_equal(ancestor_guid,
+				       context->changed_key_guid))
 			continue;
 		subtree = pkm_lcs_subtree_watch_find_locked(ancestor_guid);
 		if (!subtree)
 			continue;
-		if (pkm_lcs_key_fd_subtree_depth_suppressed(
-			    path_count, max_subtree_depth))
+		if (pkm_lcs_key_fd_subtree_depth_suppressed(path_count,
+							    max_subtree_depth))
 			continue;
 
 		hash = pkm_lcs_guid_hash(ancestor_guid);
@@ -12322,7 +12345,8 @@ static long pkm_lcs_key_fd_dispatch_watch_event_context_locked(
 		u32 watched_index = i - 1U;
 		u32 path_count;
 
-		if (pkm_lcs_guid_equal(ancestor_guid, context->changed_key_guid))
+		if (pkm_lcs_guid_equal(ancestor_guid,
+				       context->changed_key_guid))
 			continue;
 		subtree = pkm_lcs_subtree_watch_find_locked(ancestor_guid);
 		if (!subtree)
@@ -12343,13 +12367,13 @@ static long pkm_lcs_key_fd_dispatch_watch_event_context_locked(
 				goto out_unlock;
 		}
 
-		if (pkm_lcs_key_fd_subtree_depth_suppressed(
-			    path_count, max_subtree_depth))
+		if (pkm_lcs_key_fd_subtree_depth_suppressed(path_count,
+							    max_subtree_depth))
 			continue;
 
 		ret = pkm_lcs_key_fd_path_views_from_components(
-			context->resolved_path, context->path_component_count, i,
-			path_count, &path_views);
+			context->resolved_path, context->path_component_count,
+			i, path_count, &path_views);
 		if (ret)
 			goto out_unlock;
 
@@ -12402,11 +12426,10 @@ long pkm_lcs_key_fd_dispatch_watch_event_context_effects(
 	}
 
 	mutex_lock(&pkm_lcs_watch_registry_lock);
-	ret = pkm_lcs_key_fd_dispatch_watch_event_context_locked(context,
-								NULL,
-								&internal_events,
-								limits->max_subtree_watch_depth,
-								limits->notification_queue_size);
+	ret = pkm_lcs_key_fd_dispatch_watch_event_context_locked(
+		context, NULL, &internal_events,
+		limits->max_subtree_watch_depth,
+		limits->notification_queue_size);
 	mutex_unlock(&pkm_lcs_watch_registry_lock);
 	pkm_lcs_internal_watch_events_deliver(&internal_events,
 					      internal_effects_out);
@@ -12417,12 +12440,12 @@ long pkm_lcs_key_fd_dispatch_watch_event_context(
 	const struct pkm_lcs_watch_dispatch_context *context)
 {
 	return pkm_lcs_key_fd_dispatch_watch_event_context_effects(context,
-								  NULL);
+								   NULL);
 }
 
 long pkm_lcs_key_fd_dispatch_watch_event_context_batch_effects(
-	const struct pkm_lcs_watch_dispatch_context *contexts, u32 context_count,
-	u32 *internal_effects_out)
+	const struct pkm_lcs_watch_dispatch_context *contexts,
+	u32 context_count, u32 *internal_effects_out)
 {
 	LIST_HEAD(internal_events);
 	LIST_HEAD(transaction_burst_counts);
@@ -12473,15 +12496,15 @@ long pkm_lcs_key_fd_dispatch_watch_event_context_batch_effects(
 	}
 out_unlock:
 	mutex_unlock(&pkm_lcs_watch_registry_lock);
-	pkm_lcs_key_fd_transaction_burst_counts_free(
-		&transaction_burst_counts);
+	pkm_lcs_key_fd_transaction_burst_counts_free(&transaction_burst_counts);
 	pkm_lcs_internal_watch_events_deliver(&internal_events,
 					      internal_effects_out);
 	return ret;
 }
 
 long pkm_lcs_key_fd_dispatch_watch_event_context_batch(
-	const struct pkm_lcs_watch_dispatch_context *contexts, u32 context_count)
+	const struct pkm_lcs_watch_dispatch_context *contexts,
+	u32 context_count)
 {
 	return pkm_lcs_key_fd_dispatch_watch_event_context_batch_effects(
 		contexts, context_count, NULL);
@@ -12502,8 +12525,7 @@ static long pkm_lcs_key_fd_dispatch_overflow_context_locked(
 	hash = pkm_lcs_guid_hash(context->changed_key_guid);
 	hash_for_each_possible(pkm_lcs_watch_map, entry, link, hash) {
 		if (entry->kind != PKM_LCS_WATCH_REGISTRY_KEY_FD ||
-		    !pkm_lcs_guid_equal(entry->guid,
-					context->changed_key_guid))
+		    !pkm_lcs_guid_equal(entry->guid, context->changed_key_guid))
 			continue;
 		watcher = entry->owner.key_fd;
 		ret = pkm_lcs_key_fd_dispatch_to_watcher_locked(
@@ -12518,13 +12540,14 @@ static long pkm_lcs_key_fd_dispatch_overflow_context_locked(
 		const u8 *ancestor_guid = context->ancestor_guids[i - 1U];
 		u32 path_count = changed_index - (i - 1U);
 
-		if (pkm_lcs_guid_equal(ancestor_guid, context->changed_key_guid))
+		if (pkm_lcs_guid_equal(ancestor_guid,
+				       context->changed_key_guid))
 			continue;
 		subtree = pkm_lcs_subtree_watch_find_locked(ancestor_guid);
 		if (!subtree)
 			continue;
-		if (pkm_lcs_key_fd_subtree_depth_suppressed(
-			    path_count, max_subtree_depth))
+		if (pkm_lcs_key_fd_subtree_depth_suppressed(path_count,
+							    max_subtree_depth))
 			continue;
 
 		hash = pkm_lcs_guid_hash(ancestor_guid);
@@ -12709,8 +12732,7 @@ static long pkm_lcs_key_fd_mark_orphaned_internal(
 	mutex_unlock(&pkm_lcs_key_ref_lock);
 
 	if (!already_orphaned && dispatch_direct_deleted)
-		(void)pkm_lcs_key_fd_dispatch_key_deleted_direct(guid,
-								 limits);
+		(void)pkm_lcs_key_fd_dispatch_key_deleted_direct(guid, limits);
 	if (marked_out)
 		*marked_out = marked;
 	if (live_refs_out)
@@ -12721,18 +12743,16 @@ static long pkm_lcs_key_fd_mark_orphaned_internal(
 long pkm_lcs_key_fd_mark_orphaned_and_dispatch_deleted(
 	u32 source_id, const u8 guid[PKM_LCS_GUID_BYTES], u32 *marked_out)
 {
-	return pkm_lcs_key_fd_mark_orphaned_internal(source_id, guid,
-						    marked_out, NULL, true,
-						    NULL);
+	return pkm_lcs_key_fd_mark_orphaned_internal(
+		source_id, guid, marked_out, NULL, true, NULL);
 }
 
 long pkm_lcs_key_fd_mark_orphaned_and_dispatch_deleted_with_refs(
 	u32 source_id, const u8 guid[PKM_LCS_GUID_BYTES], u32 *marked_out,
 	u32 *live_refs_out)
 {
-	return pkm_lcs_key_fd_mark_orphaned_internal(source_id, guid,
-						    marked_out, live_refs_out,
-						    true, NULL);
+	return pkm_lcs_key_fd_mark_orphaned_internal(
+		source_id, guid, marked_out, live_refs_out, true, NULL);
 }
 
 long pkm_lcs_key_fd_mark_orphaned_and_dispatch_deleted_with_refs_limits(
@@ -12740,24 +12760,22 @@ long pkm_lcs_key_fd_mark_orphaned_and_dispatch_deleted_with_refs_limits(
 	const struct pkm_lcs_runtime_limits *limits, u32 *marked_out,
 	u32 *live_refs_out)
 {
-	return pkm_lcs_key_fd_mark_orphaned_internal(source_id, guid,
-						    marked_out, live_refs_out,
-						    true, limits);
+	return pkm_lcs_key_fd_mark_orphaned_internal(
+		source_id, guid, marked_out, live_refs_out, true, limits);
 }
 
-long pkm_lcs_key_fd_mark_orphaned_no_watch(
-	u32 source_id, const u8 guid[PKM_LCS_GUID_BYTES], u32 *marked_out,
-	u32 *live_refs_out)
+long pkm_lcs_key_fd_mark_orphaned_no_watch(u32 source_id,
+					   const u8 guid[PKM_LCS_GUID_BYTES],
+					   u32 *marked_out, u32 *live_refs_out)
 {
-	return pkm_lcs_key_fd_mark_orphaned_internal(source_id, guid,
-						    marked_out, live_refs_out,
-						    false, NULL);
+	return pkm_lcs_key_fd_mark_orphaned_internal(
+		source_id, guid, marked_out, live_refs_out, false, NULL);
 }
 
 long pkm_lcs_key_fd_dispatch_watch_event(
 	const struct pkm_lcs_watch_dispatch_input *input)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
+	struct pkm_lcs_watch_dispatch_context context = {};
 	struct pkm_lcs_key_fd *mutation_key;
 	struct fd held;
 	long ret;
@@ -12777,7 +12795,8 @@ long pkm_lcs_key_fd_dispatch_watch_event(
 
 	context.changed_key_guid = mutation_key->key_guid;
 	context.ancestor_guids = mutation_key->ancestor_guids;
-	context.resolved_path = (const char * const *)mutation_key->resolved_path;
+	context.resolved_path =
+		(const char *const *)mutation_key->resolved_path;
 	context.path_component_count = mutation_key->path_component_count;
 	context.event_type = input->event_type;
 	context.name = input->name;
@@ -12787,14 +12806,13 @@ long pkm_lcs_key_fd_dispatch_watch_event(
 	return ret;
 }
 
-static bool pkm_lcs_internal_watch_guid_valid(
-	const u8 guid[PKM_LCS_GUID_BYTES])
+static bool pkm_lcs_internal_watch_guid_valid(const u8 guid[PKM_LCS_GUID_BYTES])
 {
 	return guid && memchr_inv(guid, 0, PKM_LCS_GUID_BYTES);
 }
 
-static void pkm_lcs_internal_watch_remove_locked(
-	struct pkm_lcs_internal_watch *watch)
+static void
+pkm_lcs_internal_watch_remove_locked(struct pkm_lcs_internal_watch *watch)
 {
 	if (!watch->registry.linked)
 		return;
@@ -12809,7 +12827,8 @@ static void pkm_lcs_internal_self_watch_disarm_locked(void)
 {
 	pkm_lcs_internal_watch_remove_locked(
 		&pkm_lcs_internal_self_watch.registry);
-	pkm_lcs_internal_watch_remove_locked(&pkm_lcs_internal_self_watch.layers);
+	pkm_lcs_internal_watch_remove_locked(
+		&pkm_lcs_internal_self_watch.layers);
 	pkm_lcs_internal_watch_remove_locked(&pkm_lcs_internal_self_watch.kmes);
 	pkm_lcs_internal_watch_remove_locked(&pkm_lcs_internal_self_watch.port);
 	pkm_lcs_internal_watch_remove_locked(
@@ -12819,15 +12838,15 @@ static void pkm_lcs_internal_self_watch_disarm_locked(void)
 	pkm_lcs_internal_watch_remove_locked(
 		&pkm_lcs_internal_self_watch.fallback);
 	pkm_lcs_internal_self_watch.source_id = 0;
-	pkm_lcs_internal_self_watch.mode =
-		PKM_LCS_INTERNAL_SELF_WATCH_DISARMED;
+	pkm_lcs_internal_self_watch.mode = PKM_LCS_INTERNAL_SELF_WATCH_DISARMED;
 	pkm_lcs_internal_self_watch.watch_count = 0;
 }
 
-static long pkm_lcs_internal_watch_add_locked(
-	struct pkm_lcs_internal_watch *watch, u32 source_id,
-	const u8 guid[PKM_LCS_GUID_BYTES],
-	enum pkm_lcs_internal_watch_target target)
+static long
+pkm_lcs_internal_watch_add_locked(struct pkm_lcs_internal_watch *watch,
+				  u32 source_id,
+				  const u8 guid[PKM_LCS_GUID_BYTES],
+				  enum pkm_lcs_internal_watch_target target)
 {
 	long ret;
 
@@ -12881,8 +12900,7 @@ static void pkm_lcs_internal_self_watch_fill_result_locked(
 
 long pkm_lcs_internal_self_watch_arm_full(
 	u32 source_id, const u8 machine_root_guid[PKM_LCS_GUID_BYTES],
-	bool registry_present,
-	const u8 registry_guid[PKM_LCS_GUID_BYTES],
+	bool registry_present, const u8 registry_guid[PKM_LCS_GUID_BYTES],
 	bool layers_present, const u8 layers_guid[PKM_LCS_GUID_BYTES],
 	bool kmes_present, const u8 kmes_guid[PKM_LCS_GUID_BYTES],
 	bool port_present, const u8 port_guid[PKM_LCS_GUID_BYTES],
@@ -12936,8 +12954,8 @@ long pkm_lcs_internal_self_watch_arm_full(
 
 	if (kmes_present) {
 		ret = pkm_lcs_internal_watch_add_locked(
-			&pkm_lcs_internal_self_watch.kmes, source_id,
-			kmes_guid, PKM_LCS_INTERNAL_WATCH_KMES_CONFIGURATION);
+			&pkm_lcs_internal_self_watch.kmes, source_id, kmes_guid,
+			PKM_LCS_INTERNAL_WATCH_KMES_CONFIGURATION);
 		if (ret)
 			goto out_rollback;
 		watch_count++;
@@ -12945,8 +12963,8 @@ long pkm_lcs_internal_self_watch_arm_full(
 
 	if (port_present) {
 		ret = pkm_lcs_internal_watch_add_locked(
-			&pkm_lcs_internal_self_watch.port, source_id,
-			port_guid, PKM_LCS_INTERNAL_WATCH_PORT_RESERVATIONS);
+			&pkm_lcs_internal_self_watch.port, source_id, port_guid,
+			PKM_LCS_INTERNAL_WATCH_PORT_RESERVATIONS);
 		if (ret)
 			goto out_rollback;
 		watch_count++;
@@ -13020,10 +13038,11 @@ void pkm_lcs_internal_self_watch_disarm(void)
 	mutex_unlock(&pkm_lcs_watch_registry_lock);
 }
 
-static long pkm_lcs_key_fd_check_ioctl_common(
-	int fd, unsigned int cmd,
-	int (*gate)(u32 granted_access, u32 ioctl_number),
-	u32 security_info, bool has_security_info)
+static long pkm_lcs_key_fd_check_ioctl_common(int fd, unsigned int cmd,
+					      int (*gate)(u32 granted_access,
+							  u32 ioctl_number),
+					      u32 security_info,
+					      bool has_security_info)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13055,8 +13074,8 @@ long pkm_lcs_key_fd_check_fixed_ioctl_access(int fd, unsigned int cmd)
 long pkm_lcs_key_fd_check_security_ioctl_access(int fd, unsigned int cmd,
 						u32 security_info)
 {
-	return pkm_lcs_key_fd_check_ioctl_common(
-		fd, cmd, NULL, security_info, true);
+	return pkm_lcs_key_fd_check_ioctl_common(fd, cmd, NULL, security_info,
+						 true);
 }
 
 void pkm_lcs_set_security_merge_result_destroy(
@@ -13070,8 +13089,8 @@ void pkm_lcs_set_security_merge_result_destroy(
 }
 
 long pkm_lcs_key_fd_plan_set_security_merge(
-	const u8 *existing_sd, size_t existing_sd_len,
-	const u8 *input_sd, size_t input_sd_len, u32 security_info,
+	const u8 *existing_sd, size_t existing_sd_len, const u8 *input_sd,
+	size_t input_sd_len, u32 security_info,
 	struct pkm_lcs_set_security_merge_result *out)
 {
 	size_t required_len = 0;
@@ -13086,9 +13105,10 @@ long pkm_lcs_key_fd_plan_set_security_merge(
 	if (!existing_sd || !input_sd)
 		return -EINVAL;
 
-	ret = lcs_rust_plan_registry_set_security(
-		existing_sd, existing_sd_len, input_sd, input_sd_len,
-		security_info, NULL, 0, &required_len);
+	ret = lcs_rust_plan_registry_set_security(existing_sd, existing_sd_len,
+						  input_sd, input_sd_len,
+						  security_info, NULL, 0,
+						  &required_len);
 	if (ret)
 		return ret;
 	if (!required_len || required_len > U32_MAX)
@@ -13098,9 +13118,10 @@ long pkm_lcs_key_fd_plan_set_security_merge(
 	if (!merged_sd)
 		return -ENOMEM;
 
-	ret = lcs_rust_plan_registry_set_security(
-		existing_sd, existing_sd_len, input_sd, input_sd_len,
-		security_info, merged_sd, required_len, &written);
+	ret = lcs_rust_plan_registry_set_security(existing_sd, existing_sd_len,
+						  input_sd, input_sd_len,
+						  security_info, merged_sd,
+						  required_len, &written);
 	if (ret) {
 		kfree(merged_sd);
 		return ret;
@@ -13115,8 +13136,8 @@ long pkm_lcs_key_fd_plan_set_security_merge(
 	return 0;
 }
 
-static void pkm_lcs_get_security_result_destroy(
-	struct pkm_lcs_get_security_result *result)
+static void
+pkm_lcs_get_security_result_destroy(struct pkm_lcs_get_security_result *result)
 {
 	if (!result)
 		return;
@@ -13125,9 +13146,10 @@ static void pkm_lcs_get_security_result_destroy(
 	result->sd_len = 0;
 }
 
-static long pkm_lcs_key_fd_plan_get_security(
-	const u8 *existing_sd, size_t existing_sd_len, u32 security_info,
-	struct pkm_lcs_get_security_result *out)
+static long
+pkm_lcs_key_fd_plan_get_security(const u8 *existing_sd, size_t existing_sd_len,
+				 u32 security_info,
+				 struct pkm_lcs_get_security_result *out)
 {
 	size_t required_len = 0;
 	size_t written = 0;
@@ -13203,7 +13225,8 @@ long pkm_lcs_key_fd_relative_base(int fd,
 	out->parent_depth = key_fd->path_component_count;
 	out->orphaned = key_fd->orphaned;
 	memcpy(out->key_guid, key_fd->key_guid, sizeof(out->key_guid));
-	memcpy(out->root_guid, key_fd->ancestor_guids[0], sizeof(out->root_guid));
+	memcpy(out->root_guid, key_fd->ancestor_guids[0],
+	       sizeof(out->root_guid));
 
 	fdput(held);
 	return 0;
@@ -13226,9 +13249,9 @@ void pkm_lcs_key_fd_parent_snapshot_destroy(
 	memset(snapshot, 0, sizeof(*snapshot));
 }
 
-static long pkm_lcs_key_fd_copy_parent_snapshot(
-	const struct pkm_lcs_key_fd *key_fd,
-	struct pkm_lcs_key_fd_parent_snapshot *out)
+static long
+pkm_lcs_key_fd_copy_parent_snapshot(const struct pkm_lcs_key_fd *key_fd,
+				    struct pkm_lcs_key_fd_parent_snapshot *out)
 {
 	size_t guid_bytes;
 	u32 i;
@@ -13244,8 +13267,7 @@ static long pkm_lcs_key_fd_copy_parent_snapshot(
 	memcpy(out->key_guid, key_fd->key_guid, sizeof(out->key_guid));
 
 	out->resolved_path = kcalloc(key_fd->path_component_count,
-				     sizeof(*out->resolved_path),
-				     GFP_KERNEL);
+				     sizeof(*out->resolved_path), GFP_KERNEL);
 	if (!out->resolved_path)
 		return -ENOMEM;
 
@@ -13254,8 +13276,8 @@ static long pkm_lcs_key_fd_copy_parent_snapshot(
 		pkm_lcs_key_fd_parent_snapshot_destroy(out);
 		return -EINVAL;
 	}
-	out->ancestor_guids = kmemdup(key_fd->ancestor_guids, guid_bytes,
-				      GFP_KERNEL);
+	out->ancestor_guids =
+		kmemdup(key_fd->ancestor_guids, guid_bytes, GFP_KERNEL);
 	if (!out->ancestor_guids) {
 		pkm_lcs_key_fd_parent_snapshot_destroy(out);
 		return -ENOMEM;
@@ -13266,8 +13288,8 @@ static long pkm_lcs_key_fd_copy_parent_snapshot(
 			pkm_lcs_key_fd_parent_snapshot_destroy(out);
 			return -EINVAL;
 		}
-		out->resolved_path[i] = kstrdup(key_fd->resolved_path[i],
-						GFP_KERNEL);
+		out->resolved_path[i] =
+			kstrdup(key_fd->resolved_path[i], GFP_KERNEL);
 		if (!out->resolved_path[i]) {
 			pkm_lcs_key_fd_parent_snapshot_destroy(out);
 			return -ENOMEM;
@@ -13314,10 +13336,12 @@ long pkm_lcs_key_fd_parent_snapshot(int fd,
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-long pkm_lcs_kunit_build_watch_event_kind(
-	u32 event_type, const u8 *name, u32 name_len, bool subtree,
-	const u8 *const *components, const u32 *component_lens,
-	u32 component_count, u32 *kind_out, u32 *total_len_out)
+long pkm_lcs_kunit_build_watch_event_kind(u32 event_type, const u8 *name,
+					  u32 name_len, bool subtree,
+					  const u8 *const *components,
+					  const u32 *component_lens,
+					  u32 component_count, u32 *kind_out,
+					  u32 *total_len_out)
 {
 	struct pkm_lcs_key_fd_string_view *views = NULL;
 	struct pkm_lcs_key_fd_watch_event *event;
@@ -13336,9 +13360,8 @@ long pkm_lcs_kunit_build_watch_event_kind(
 			views[i].len = component_lens[i];
 		}
 	}
-	event = pkm_lcs_key_fd_build_watch_event(event_type, name, name_len,
-						 subtree, views,
-						 component_count);
+	event = pkm_lcs_key_fd_build_watch_event(
+		event_type, name, name_len, subtree, views, component_count);
 	kfree(views);
 	if (IS_ERR(event))
 		return PTR_ERR(event);
@@ -13354,8 +13377,8 @@ long pkm_lcs_kunit_build_watch_event_kind(
  * and the events are discarded rather than acted on.
  */
 long pkm_lcs_kunit_dispatch_batch_collect_internal(
-	const struct pkm_lcs_watch_dispatch_context *contexts, u32 context_count,
-	u32 *collected_out)
+	const struct pkm_lcs_watch_dispatch_context *contexts,
+	u32 context_count, u32 *collected_out)
 {
 	LIST_HEAD(internal_events);
 	LIST_HEAD(transaction_burst_counts);
@@ -13401,8 +13424,7 @@ long pkm_lcs_kunit_dispatch_batch_collect_internal(
 	}
 out_unlock:
 	mutex_unlock(&pkm_lcs_watch_registry_lock);
-	pkm_lcs_key_fd_transaction_burst_counts_free(
-		&transaction_burst_counts);
+	pkm_lcs_key_fd_transaction_burst_counts_free(&transaction_burst_counts);
 	list_for_each_entry_safe(event, tmp, &internal_events, link) {
 		collected++;
 		list_del(&event->link);
@@ -13435,9 +13457,9 @@ long pkm_lcs_kunit_key_fd_set_orphaned(int fd, bool orphaned)
 	return 0;
 }
 
-long pkm_lcs_kunit_key_fd_get_security(
-	int fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_get_security_args *args)
+long pkm_lcs_kunit_key_fd_get_security(int fd,
+				       const struct pkm_lcs_usercopy_ops *ops,
+				       struct reg_get_security_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13452,9 +13474,9 @@ long pkm_lcs_kunit_key_fd_get_security(
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_query_value(
-	int fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_query_value_args *args)
+long pkm_lcs_kunit_key_fd_query_value(int fd,
+				      const struct pkm_lcs_usercopy_ops *ops,
+				      struct reg_query_value_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13484,9 +13506,9 @@ long pkm_lcs_kunit_key_fd_query_values_batch(
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_enum_value(
-	int fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_enum_value_args *args)
+long pkm_lcs_kunit_key_fd_enum_value(int fd,
+				     const struct pkm_lcs_usercopy_ops *ops,
+				     struct reg_enum_value_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13500,9 +13522,9 @@ long pkm_lcs_kunit_key_fd_enum_value(
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_enum_subkey(
-	int fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_enum_subkey_args *args)
+long pkm_lcs_kunit_key_fd_enum_subkey(int fd,
+				      const struct pkm_lcs_usercopy_ops *ops,
+				      struct reg_enum_subkey_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13516,9 +13538,9 @@ long pkm_lcs_kunit_key_fd_enum_subkey(
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_query_key_info(
-	int fd, const struct pkm_lcs_usercopy_ops *ops,
-	struct reg_query_key_info_args *args)
+long pkm_lcs_kunit_key_fd_query_key_info(int fd,
+					 const struct pkm_lcs_usercopy_ops *ops,
+					 struct reg_query_key_info_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13533,9 +13555,9 @@ long pkm_lcs_kunit_key_fd_query_key_info(
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_set_security(
-	int fd, const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_security_args *args)
+long pkm_lcs_kunit_key_fd_set_security(int fd,
+				       const struct pkm_lcs_usercopy_ops *ops,
+				       const struct reg_set_security_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13563,7 +13585,7 @@ long pkm_lcs_kunit_key_fd_set_security_for_token(
 		return ret;
 
 	ret = pkm_lcs_key_fd_set_security_from_args_for_token(key_fd, token,
-							       ops, args);
+							      ops, args);
 	fdput(held);
 	return ret;
 }
@@ -13581,7 +13603,7 @@ long pkm_lcs_kunit_key_fd_set_value_for_token(
 		return ret;
 
 	ret = pkm_lcs_key_fd_set_value_from_args_for_token(key_fd, token, ops,
-							    args);
+							   args);
 	fdput(held);
 	return ret;
 }
@@ -13613,8 +13635,8 @@ long pkm_lcs_kunit_key_fd_delete_value_for_token(
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_key_fd_delete_value_from_args_for_token(
-		key_fd, token, ops, args);
+	ret = pkm_lcs_key_fd_delete_value_from_args_for_token(key_fd, token,
+							      ops, args);
 	fdput(held);
 	return ret;
 }
@@ -13673,8 +13695,8 @@ long pkm_lcs_kunit_key_fd_hide_key_for_token(
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_backup_for_token(
-	int fd, const void *token, const struct reg_backup_args *args)
+long pkm_lcs_kunit_key_fd_backup_for_token(int fd, const void *token,
+					   const struct reg_backup_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13727,19 +13749,19 @@ long pkm_lcs_kunit_backup_path_entry_frame(
 		frame_len_out);
 }
 
-long pkm_lcs_kunit_backup_value_frame(
-	const u8 key_guid[PKM_LCS_GUID_BYTES], const char *name,
-	size_t name_len, u32 value_type, const u8 *data, size_t data_len,
-	const char *layer_name, size_t layer_name_len, u64 sequence,
-	u8 **frame_out, size_t *frame_len_out)
+long pkm_lcs_kunit_backup_value_frame(const u8 key_guid[PKM_LCS_GUID_BYTES],
+				      const char *name, size_t name_len,
+				      u32 value_type, const u8 *data,
+				      size_t data_len, const char *layer_name,
+				      size_t layer_name_len, u64 sequence,
+				      u8 **frame_out, size_t *frame_len_out)
 {
 	struct pkm_lcs_runtime_limits limits;
 
 	pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&limits);
 	return pkm_lcs_backup_alloc_value_frame(
 		&limits, key_guid, name, name_len, value_type, data, data_len,
-		layer_name, layer_name_len, sequence, frame_out,
-		frame_len_out);
+		layer_name, layer_name_len, sequence, frame_out, frame_len_out);
 }
 
 long pkm_lcs_kunit_backup_blanket_tombstone_frame(
@@ -13759,8 +13781,7 @@ long pkm_lcs_kunit_backup_query_values_entries(
 	const u8 *frame, size_t frame_len, u64 request_id, u64 next_sequence,
 	struct pkm_lcs_backup_value_entry_view *values, size_t value_capacity,
 	struct pkm_lcs_backup_blanket_entry_view *blankets,
-	size_t blanket_capacity, u32 *value_count_out,
-	u32 *blanket_count_out)
+	size_t blanket_capacity, u32 *value_count_out, u32 *blanket_count_out)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -13787,16 +13808,15 @@ long pkm_lcs_kunit_backup_enum_children_path_entries(
 long pkm_lcs_kunit_backup_collect_referenced_layers(
 	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const u8 *enum_frame, size_t enum_frame_len, u64 enum_request_id,
-	const u8 *values_frame, size_t values_frame_len,
-	u64 values_request_id, u64 next_sequence,
-	struct pkm_lcs_backup_layer_ref_view *refs, size_t ref_capacity,
-	u32 *ref_count_out)
+	const u8 *values_frame, size_t values_frame_len, u64 values_request_id,
+	u64 next_sequence, struct pkm_lcs_backup_layer_ref_view *refs,
+	size_t ref_capacity, u32 *ref_count_out)
 {
 	struct pkm_lcs_layer_snapshot snapshot = {
 		.layers = layers,
 		.layer_count = layer_count,
 	};
-	struct pkm_lcs_backup_referenced_layers collected = { };
+	struct pkm_lcs_backup_referenced_layers collected = {};
 	struct pkm_lcs_runtime_limits limits;
 	u32 i;
 	long ret;
@@ -13807,9 +13827,9 @@ long pkm_lcs_kunit_backup_collect_referenced_layers(
 
 	pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&limits);
 	ret = pkm_lcs_backup_collect_referenced_layers(
-		&limits, &snapshot, enum_frame, enum_frame_len,
-		enum_request_id, values_frame, values_frame_len,
-		values_request_id, next_sequence, &collected);
+		&limits, &snapshot, enum_frame, enum_frame_len, enum_request_id,
+		values_frame, values_frame_len, values_request_id,
+		next_sequence, &collected);
 	if (ret)
 		return ret;
 
@@ -13856,8 +13876,8 @@ long pkm_lcs_kunit_backup_layer_manifest_frame_set(
 		.base_metadata_sd = base_metadata_sd,
 		.base_metadata_sd_len = base_metadata_sd_len,
 	};
-	struct pkm_lcs_backup_referenced_layers referenced = { };
-	struct pkm_lcs_backup_layer_manifest_frames frames = { };
+	struct pkm_lcs_backup_referenced_layers referenced = {};
+	struct pkm_lcs_backup_layer_manifest_frames frames = {};
 	struct pkm_lcs_runtime_limits limits;
 	size_t total_len = 0;
 	u32 i;
@@ -13870,9 +13890,8 @@ long pkm_lcs_kunit_backup_layer_manifest_frame_set(
 		return -EOVERFLOW;
 
 	if (ref_count) {
-		referenced.layers = kcalloc(ref_count,
-					    sizeof(*referenced.layers),
-					    GFP_KERNEL);
+		referenced.layers = kcalloc(
+			ref_count, sizeof(*referenced.layers), GFP_KERNEL);
 		if (!referenced.layers)
 			return -ENOMEM;
 		referenced.count = (u32)ref_count;
@@ -13886,8 +13905,8 @@ long pkm_lcs_kunit_backup_layer_manifest_frame_set(
 	}
 
 	pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&limits);
-	ret = pkm_lcs_backup_alloc_layer_manifest_frames(
-		&limits, &snapshot, &referenced, &frames);
+	ret = pkm_lcs_backup_alloc_layer_manifest_frames(&limits, &snapshot,
+							 &referenced, &frames);
 	if (ret)
 		goto out;
 
@@ -13919,8 +13938,8 @@ long pkm_lcs_kunit_backup_root_section_frames(
 	size_t values_frame_len, u64 values_request_id, u64 next_sequence,
 	struct pkm_lcs_backup_root_section_frame_summary *summary_out)
 {
-	struct pkm_lcs_backup_record_frames frames = { };
-	struct pkm_lcs_backup_root_section_summary summary = { };
+	struct pkm_lcs_backup_record_frames frames = {};
+	struct pkm_lcs_backup_root_section_summary summary = {};
 	struct pkm_lcs_runtime_limits limits;
 	size_t total_len = 0;
 	u32 i;
@@ -13932,9 +13951,9 @@ long pkm_lcs_kunit_backup_root_section_frames(
 
 	pkm_lcs_key_fd_runtime_limits_snapshot_or_default(&limits);
 	ret = pkm_lcs_backup_alloc_root_section_frames(
-		&limits, key_guid, enum_frame, enum_frame_len,
-		enum_request_id, values_frame, values_frame_len,
-		values_request_id, next_sequence, &frames, &summary);
+		&limits, key_guid, enum_frame, enum_frame_len, enum_request_id,
+		values_frame, values_frame_len, values_request_id,
+		next_sequence, &frames, &summary);
 	if (ret)
 		return ret;
 
@@ -13951,7 +13970,7 @@ long pkm_lcs_kunit_backup_root_section_frames(
 	summary_out->value_count = summary.value_count;
 	summary_out->blanket_count = summary.blanket_count;
 	summary_out->needs_child_traversal = summary.needs_child_traversal ? 1 :
-									  0;
+									     0;
 	summary_out->total_len = total_len;
 
 out:
@@ -13961,8 +13980,8 @@ out:
 	return ret;
 }
 
-long pkm_lcs_kunit_key_fd_restore_for_token(
-	int fd, const void *token, const struct reg_restore_args *args)
+long pkm_lcs_kunit_key_fd_restore_for_token(int fd, const void *token,
+					    const struct reg_restore_args *args)
 {
 	struct pkm_lcs_key_fd *key_fd;
 	struct fd held;
@@ -13982,8 +14001,8 @@ long pkm_lcs_kunit_restore_validate_stream_summary(
 	struct pkm_lcs_kunit_restore_stream_summary *summary_out,
 	u8 *root_sd_out, size_t root_sd_out_len)
 {
-	struct pkm_lcs_restore_root_key_summary root_summary = { };
-	struct pkm_lcs_kunit_restore_stream_summary public_summary = { };
+	struct pkm_lcs_restore_root_key_summary root_summary = {};
+	struct pkm_lcs_kunit_restore_stream_summary public_summary = {};
 	struct pkm_lcs_runtime_limits limits;
 	long ret;
 
@@ -14068,8 +14087,8 @@ long pkm_lcs_kunit_key_fd_notify(int fd, const struct reg_notify_args *args)
 	if (ret)
 		return ret;
 
-	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(
-		key_fd->granted_access, REG_IOC_NOTIFY_NR);
+	ret = lcs_rust_key_fd_fixed_ioctl_access_gate(key_fd->granted_access,
+						      REG_IOC_NOTIFY_NR);
 	if (!ret)
 		ret = pkm_lcs_key_fd_notify_from_args(key_fd, args);
 	fdput(held);
@@ -14087,7 +14106,7 @@ long pkm_lcs_kunit_key_fd_queue_watch_event(int fd, u32 event_type,
 	if (ret)
 		return ret;
 	ret = pkm_lcs_key_fd_queue_watch_record(key_fd, event_type, record,
-					       record_len);
+						record_len);
 	fdput(held);
 	return ret;
 }
@@ -14244,8 +14263,8 @@ static void pkm_lcs_key_fd_copy_component_snapshot(char *dst, u32 *len_out,
 	if (len_out)
 		*len_out = len > U32_MAX ? U32_MAX : (u32)len;
 
-	copy_len = min_t(size_t, len,
-			 PKM_LCS_KUNIT_SNAPSHOT_COMPONENT_BYTES - 1U);
+	copy_len =
+		min_t(size_t, len, PKM_LCS_KUNIT_SNAPSHOT_COMPONENT_BYTES - 1U);
 	memcpy(dst, src, copy_len);
 	dst[copy_len] = '\0';
 }

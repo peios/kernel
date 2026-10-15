@@ -79,12 +79,11 @@ static u32 pkm_kacs_inode_setattr_required_access(const struct iattr *attr)
 		required |= KACS_ACCESS_WRITE_DAC;
 	if ((ia_valid & (ATTR_UID | ATTR_GID)) != 0)
 		required |= KACS_ACCESS_WRITE_OWNER;
-	if ((ia_valid & ATTR_SIZE) != 0 &&
-	    (ia_valid & ATTR_FILE) == 0)
+	if ((ia_valid & ATTR_SIZE) != 0 && (ia_valid & ATTR_FILE) == 0)
 		required |= KACS_FILE_WRITE_DATA;
-	if ((ia_valid & (ATTR_ATIME | ATTR_MTIME | ATTR_ATIME_SET |
-			 ATTR_MTIME_SET | ATTR_CTIME_SET | ATTR_TIMES_SET |
-			 ATTR_TOUCH)) != 0)
+	if ((ia_valid &
+	     (ATTR_ATIME | ATTR_MTIME | ATTR_ATIME_SET | ATTR_MTIME_SET |
+	      ATTR_CTIME_SET | ATTR_TIMES_SET | ATTR_TOUCH)) != 0)
 		required |= KACS_FILE_WRITE_ATTRIBUTES;
 
 	return required;
@@ -218,8 +217,8 @@ int pkm_kacs_inode_getxattr(struct dentry *dentry, const char *name)
 		    PKM_KACS_METADATA_OP_GETXATTR))
 		return 0;
 
-	return pkm_kacs_authorize_dentry_metadata_access(
-		dentry, KACS_FILE_READ_EA);
+	return pkm_kacs_authorize_dentry_metadata_access(dentry,
+							 KACS_FILE_READ_EA);
 }
 
 /*
@@ -362,8 +361,8 @@ int pkm_kacs_inode_setxattr(struct mnt_idmap *idmap, struct dentry *dentry,
 		    PKM_KACS_METADATA_OP_SETXATTR))
 		return 0;
 
-	return pkm_kacs_authorize_dentry_metadata_access(
-		dentry, KACS_FILE_WRITE_EA);
+	return pkm_kacs_authorize_dentry_metadata_access(dentry,
+							 KACS_FILE_WRITE_EA);
 }
 
 int pkm_kacs_inode_removexattr(struct mnt_idmap *idmap, struct dentry *dentry,
@@ -421,8 +420,8 @@ int pkm_kacs_inode_removexattr(struct mnt_idmap *idmap, struct dentry *dentry,
 		    PKM_KACS_METADATA_OP_SETXATTR))
 		return 0;
 
-	return pkm_kacs_authorize_dentry_metadata_access(
-		dentry, KACS_FILE_WRITE_EA);
+	return pkm_kacs_authorize_dentry_metadata_access(dentry,
+							 KACS_FILE_WRITE_EA);
 }
 
 int pkm_kacs_inode_listxattr(struct dentry *dentry)
@@ -783,8 +782,8 @@ int pkm_kacs_inode_getsecurity(struct mnt_idmap *idmap, struct inode *inode,
 	return (int)len;
 }
 
-static void pkm_kacs_clear_file_metadata_decision(
-	struct pkm_kacs_task_security *task_sec)
+static void
+pkm_kacs_clear_file_metadata_decision(struct pkm_kacs_task_security *task_sec)
 {
 	if (!task_sec)
 		return;
@@ -795,8 +794,8 @@ static void pkm_kacs_clear_file_metadata_decision(
 	task_sec->metadata_decision.active = 0;
 }
 
-int pkm_kacs_stratafs_rebind_metadata_decision(
-	const struct inode *outer, const struct inode *provider)
+int pkm_kacs_stratafs_rebind_metadata_decision(const struct inode *outer,
+					       const struct inode *provider)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -830,8 +829,7 @@ void pkm_kacs_stratafs_end_metadata_decision(const struct inode *provider)
 		pkm_kacs_clear_file_metadata_decision(task_sec);
 }
 
-struct file *
-pkm_kacs_stratafs_metadata_file(const struct inode *outer)
+struct file *pkm_kacs_stratafs_metadata_file(const struct inode *outer)
 {
 	struct pkm_kacs_task_security *task_sec;
 	struct file *file;
@@ -847,8 +845,7 @@ pkm_kacs_stratafs_metadata_file(const struct inode *outer)
 	return file;
 }
 
-static int pkm_kacs_begin_file_metadata_decision(struct file *file,
-						 u8 op_class)
+static int pkm_kacs_begin_file_metadata_decision(struct file *file, u8 op_class)
 {
 	struct pkm_kacs_task_security *task_sec;
 	struct inode *inode;
@@ -904,8 +901,7 @@ static int pkm_kacs_begin_inode_metadata_decision(const struct inode *inode,
 	return 0;
 }
 
-bool pkm_kacs_has_file_metadata_decision(const struct inode *inode,
-					 u8 op_class)
+bool pkm_kacs_has_file_metadata_decision(const struct inode *inode, u8 op_class)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -942,9 +938,9 @@ bool pkm_kacs_consume_file_metadata_decision(const struct inode *inode,
 	matched = inode && task_sec->metadata_decision.inode == inode &&
 		  task_sec->metadata_decision.op_class == op_class;
 
-	trace_kacs_metadata(inode, op_class, matched ? 1 : 0,
-			    matched ? KACS_META_CONSUME_HIT : KACS_META_DECISION,
-			    0);
+	trace_kacs_metadata(
+		inode, op_class, matched ? 1 : 0,
+		matched ? KACS_META_CONSUME_HIT : KACS_META_DECISION, 0);
 	/* StrataFS must retarget the one-shot decision to its provider hook. */
 	if (matched && inode->i_sb &&
 	    inode->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
@@ -985,12 +981,10 @@ static void pkm_kacs_inode_end_metadata(const struct inode *inode)
 		pkm_kacs_clear_file_metadata_decision(task_sec);
 }
 
-static int pkm_kacs_check_file_xattr_snapshot(struct file *file,
-					      const char *name,
-					      u32 required_access,
-					      bool write_operation,
-					      bool reject_capability,
-					      u8 op_class)
+static int
+pkm_kacs_check_file_xattr_snapshot(struct file *file, const char *name,
+				   u32 required_access, bool write_operation,
+				   bool reject_capability, u8 op_class)
 {
 	enum pkm_kacs_copy_up_file_access copy_up;
 	struct inode *inode;
@@ -1062,8 +1056,8 @@ int pkm_kacs_file_getattr(struct file *file)
 		return 0;
 	if (copy_up == PKM_KACS_COPY_UP_FILE_DENY)
 		return -EACCES;
-	ret = pkm_kacs_check_file_snapshot_grant(
-		file, KACS_FILE_READ_ATTRIBUTES);
+	ret = pkm_kacs_check_file_snapshot_grant(file,
+						 KACS_FILE_READ_ATTRIBUTES);
 	if (ret)
 		return ret;
 
@@ -1077,8 +1071,8 @@ int pkm_kacs_file_statfs(struct file *file)
 		return -EACCES;
 	if (pkm_kacs_copy_up_file_is_internal(file))
 		return -EACCES;
-	return pkm_kacs_check_file_snapshot_grant(
-		file, KACS_FILE_READ_ATTRIBUTES);
+	return pkm_kacs_check_file_snapshot_grant(file,
+						  KACS_FILE_READ_ATTRIBUTES);
 }
 
 int pkm_kacs_file_chmod(struct file *file)
@@ -1095,8 +1089,7 @@ int pkm_kacs_file_chmod(struct file *file)
 		return 0;
 	if (copy_up == PKM_KACS_COPY_UP_FILE_DENY)
 		return -EACCES;
-	ret = pkm_kacs_check_file_snapshot_grant(file,
-						 KACS_ACCESS_WRITE_DAC);
+	ret = pkm_kacs_check_file_snapshot_grant(file, KACS_ACCESS_WRITE_DAC);
 	if (ret)
 		return ret;
 
@@ -1118,8 +1111,7 @@ int pkm_kacs_file_chown(struct file *file)
 		return 0;
 	if (copy_up == PKM_KACS_COPY_UP_FILE_DENY)
 		return -EACCES;
-	ret = pkm_kacs_check_file_snapshot_grant(file,
-						 KACS_ACCESS_WRITE_OWNER);
+	ret = pkm_kacs_check_file_snapshot_grant(file, KACS_ACCESS_WRITE_OWNER);
 	if (ret)
 		return ret;
 
@@ -1139,8 +1131,8 @@ int pkm_kacs_file_utimens(struct file *file)
 		return 0;
 	if (copy_up == PKM_KACS_COPY_UP_FILE_DENY)
 		return -EACCES;
-	ret = pkm_kacs_check_file_snapshot_grant(
-		file, KACS_FILE_WRITE_ATTRIBUTES);
+	ret = pkm_kacs_check_file_snapshot_grant(file,
+						 KACS_FILE_WRITE_ATTRIBUTES);
 	if (ret)
 		return ret;
 
@@ -1162,8 +1154,8 @@ int pkm_kacs_file_fileattr_get(struct file *file)
 		return 0;
 	if (copy_up == PKM_KACS_COPY_UP_FILE_DENY)
 		return -EACCES;
-	ret = pkm_kacs_check_file_snapshot_grant(
-		file, KACS_FILE_READ_ATTRIBUTES);
+	ret = pkm_kacs_check_file_snapshot_grant(file,
+						 KACS_FILE_READ_ATTRIBUTES);
 	if (ret)
 		return ret;
 
@@ -1185,8 +1177,8 @@ int pkm_kacs_file_fileattr_set(struct file *file)
 		return 0;
 	if (copy_up == PKM_KACS_COPY_UP_FILE_DENY)
 		return -EACCES;
-	ret = pkm_kacs_check_file_snapshot_grant(
-		file, KACS_FILE_WRITE_ATTRIBUTES);
+	ret = pkm_kacs_check_file_snapshot_grant(file,
+						 KACS_FILE_WRITE_ATTRIBUTES);
 	if (ret)
 		return ret;
 
@@ -1219,9 +1211,8 @@ int pkm_kacs_path_fileattr_set(const struct path *path)
 
 void pkm_kacs_path_end_metadata(const struct path *path)
 {
-	pkm_kacs_inode_end_metadata(path && path->dentry ?
-					    d_inode(path->dentry) :
-					    NULL);
+	pkm_kacs_inode_end_metadata(
+		path && path->dentry ? d_inode(path->dentry) : NULL);
 }
 
 int pkm_kacs_file_listxattr(struct file *file)

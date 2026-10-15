@@ -42,18 +42,18 @@
 struct peios_ntfe_tag_entry {
 	u64 hash;
 	u64 value;
-	u8 present;			/* 0 = cleared (tombstone, reusable) */
+	u8 present; /* 0 = cleared (tombstone, reusable) */
 	u8 _pad[7];
 };
 
 struct peios_ntfe_tag_table {
 	struct rcu_head rcu;
 	u32 cap;
-	u32 len;			/* entries in use, tombstones included */
+	u32 len; /* entries in use, tombstones included */
 	struct peios_ntfe_tag_entry e[];
 };
 
-#define NTFE_TAG_INITIAL_CAP	8
+#define NTFE_TAG_INITIAL_CAP 8
 
 static struct peios_ntfe_ct *ntfe_ct_of(const void *flow);
 
@@ -86,8 +86,8 @@ void peios_ntfe_ct_ext_add(struct nf_conn *ct)
 	 */
 }
 
-u32 peios_ntfe_tags_snapshot(const struct nf_conn *ct, u64 *hashes,
-			    u64 *values, u32 max)
+u32 peios_ntfe_tags_snapshot(const struct nf_conn *ct, u64 *hashes, u64 *values,
+			     u32 max)
 {
 	struct peios_ntfe_ct *pc = ntfe_ct_of(ct);
 	struct peios_ntfe_tag_table *t;
@@ -165,8 +165,8 @@ int peios_ntfe_tag_lookup(const void *flow, u64 hash, u64 *value_out)
 /* Under the flow lock. Returns the entry for `hash`, allocating a slot
  * (or a bigger table) as needed; NULL when refused.
  */
-static struct peios_ntfe_tag_entry *
-ntfe_tag_slot(struct peios_ntfe_ct *pc, u64 hash, bool create)
+static struct peios_ntfe_tag_entry *ntfe_tag_slot(struct peios_ntfe_ct *pc,
+						  u64 hash, bool create)
 {
 	struct peios_ntfe_tag_table *t, *bigger;
 	struct peios_ntfe_tag_entry *tomb = NULL;
@@ -195,8 +195,8 @@ ntfe_tag_slot(struct peios_ntfe_ct *pc, u64 hash, bool create)
 	} else if (t->len == t->cap) {
 		if (t->cap >= PEIOS_NTFE_TAG_MAX_PER_FLOW)
 			return NULL;
-		bigger = ntfe_tag_table_alloc(min_t(u32, t->cap * 2,
-						   PEIOS_NTFE_TAG_MAX_PER_FLOW));
+		bigger = ntfe_tag_table_alloc(
+			min_t(u32, t->cap * 2, PEIOS_NTFE_TAG_MAX_PER_FLOW));
 		if (!bigger)
 			return NULL;
 		memcpy(bigger->e, t->e, sizeof(t->e[0]) * t->len);

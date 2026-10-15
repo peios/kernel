@@ -2,21 +2,19 @@
 
 #include "kunit_common.h"
 
-
 static void pkm_lcs_kunit_rust_probe_links_lcs_core(struct kunit *test)
 {
 	KUNIT_ASSERT_GT(test, lcs_rust_kunit_probe(), (size_t)0);
 }
 
-
-static void pkm_lcs_kunit_private_hive_route_uses_scope_order_live(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_private_hive_route_uses_scope_order_live(struct kunit *test)
 {
 	static const char name_a[] = "Machine";
 	static const char name_b[] = "machine";
 	const u8 scope_ab[2][16] = { { 0x42 }, { 0x43 } };
 	const u8 scope_ba[2][16] = { { 0x43 }, { 0x42 } };
-	struct pkm_lcs_kunit_usercopy_ctx ctx = { };
+	struct pkm_lcs_kunit_usercopy_ctx ctx = {};
 	struct pkm_lcs_usercopy_ops ops = pkm_lcs_kunit_usercopy_ops(&ctx);
 	struct reg_src_hive_entry hives[2] = {
 		{
@@ -38,8 +36,8 @@ static void pkm_lcs_kunit_private_hive_route_uses_scope_order_live(
 		.hive_count = ARRAY_SIZE(hives),
 		.hives_ptr = (u64)(unsigned long)hives,
 	};
-	struct pkm_lcs_hive_route_result route = { };
-	struct file file = { };
+	struct pkm_lcs_hive_route_result route = {};
+	struct file file = {};
 	const void *token;
 
 	pkm_lcs_kunit_reset_source_table();
@@ -74,9 +72,8 @@ static void pkm_lcs_kunit_private_hive_route_uses_scope_order_live(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(struct kunit *test)
 {
 	static const u8 machine_root_guid[RSI_GUID_SIZE] = { 0xa1 };
 	static const u8 registry_guid[RSI_GUID_SIZE] = { 0xa2 };
@@ -85,16 +82,16 @@ static void pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(
 	static const u8 port_guid[RSI_GUID_SIZE] = { 0xa5 };
 	static const u8 network_guid[RSI_GUID_SIZE] = { 0xa6 };
 	static const u8 events_guid[RSI_GUID_SIZE] = { 0xa7 };
-	struct pkm_lcs_internal_self_watch_arm_result result = { };
-	struct pkm_lcs_internal_self_watch_snapshot snapshot = { };
+	struct pkm_lcs_internal_self_watch_arm_result result = {};
+	struct pkm_lcs_internal_self_watch_snapshot snapshot = {};
 
 	pkm_lcs_internal_self_watch_disarm();
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
 				7, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				true, port_guid, true, network_guid, true,
-				events_guid, &result),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, true, port_guid,
+				true, network_guid, true, events_guid, &result),
 			0L);
 	KUNIT_EXPECT_EQ(test, result.source_id, 7U);
 	KUNIT_EXPECT_EQ(test, result.mode,
@@ -120,8 +117,7 @@ static void pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(
 			       sizeof(layers_guid)),
 			0);
 	KUNIT_EXPECT_EQ(test,
-			memcmp(result.kmes_guid,
-			       pkm_lcs_kunit_kmes_watch_guid,
+			memcmp(result.kmes_guid, pkm_lcs_kunit_kmes_watch_guid,
 			       sizeof(pkm_lcs_kunit_kmes_watch_guid)),
 			0);
 
@@ -150,8 +146,8 @@ static void pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(
 
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
-				8, replacement_root_guid, false, NULL,
-				false, NULL, false, NULL, &result),
+				8, replacement_root_guid, false, NULL, false,
+				NULL, false, NULL, &result),
 			0L);
 	KUNIT_EXPECT_EQ(test, result.source_id, 8U);
 	KUNIT_EXPECT_EQ(test, result.mode,
@@ -161,12 +157,10 @@ static void pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(
 			memcmp(result.fallback_guid, replacement_root_guid,
 			       sizeof(replacement_root_guid)),
 			0);
-	KUNIT_EXPECT_FALSE(test,
-			   memchr_inv(result.registry_guid, 0,
-				      sizeof(result.registry_guid)));
-	KUNIT_EXPECT_FALSE(test,
-			   memchr_inv(result.layers_guid, 0,
-				      sizeof(result.layers_guid)));
+	KUNIT_EXPECT_FALSE(test, memchr_inv(result.registry_guid, 0,
+					    sizeof(result.registry_guid)));
+	KUNIT_EXPECT_FALSE(test, memchr_inv(result.layers_guid, 0,
+					    sizeof(result.layers_guid)));
 
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_kunit_internal_self_watch_snapshot(&snapshot),
@@ -182,9 +176,8 @@ static void pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback(
 	pkm_lcs_internal_self_watch_disarm();
 }
 
-
-static void pkm_lcs_kunit_internal_self_watch_arms_port_reservations(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_self_watch_arms_port_reservations(struct kunit *test)
 {
 	static const u8 machine_root_guid[RSI_GUID_SIZE] = { 0xc1 };
 	static const u8 registry_guid[RSI_GUID_SIZE] = { 0xc2 };
@@ -193,16 +186,16 @@ static void pkm_lcs_kunit_internal_self_watch_arms_port_reservations(
 	static const u8 network_guid[RSI_GUID_SIZE] = { 0xc6 };
 	static const u8 events_guid[RSI_GUID_SIZE] = { 0xc7 };
 	static const u8 nil_guid[RSI_GUID_SIZE] = { 0 };
-	struct pkm_lcs_internal_self_watch_arm_result result = { };
-	struct pkm_lcs_internal_self_watch_snapshot snapshot = { };
+	struct pkm_lcs_internal_self_watch_arm_result result = {};
+	struct pkm_lcs_internal_self_watch_snapshot snapshot = {};
 
 	pkm_lcs_internal_self_watch_disarm();
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
-				11, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				true, port_guid, true, network_guid, true,
-				events_guid, &result),
+				11, machine_root_guid, true, registry_guid,
+				true, layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, true, port_guid,
+				true, network_guid, true, events_guid, &result),
 			0L);
 	KUNIT_EXPECT_EQ(test, result.mode,
 			(u32)PKM_LCS_INTERNAL_SELF_WATCH_TARGETED);
@@ -218,9 +211,9 @@ static void pkm_lcs_kunit_internal_self_watch_arms_port_reservations(
 			pkm_lcs_kunit_internal_self_watch_snapshot(&snapshot),
 			0L);
 	KUNIT_EXPECT_EQ(test, snapshot.watch_count, 6U);
-	KUNIT_EXPECT_EQ(test,
-			memcmp(snapshot.port_guid, port_guid, sizeof(port_guid)),
-			0);
+	KUNIT_EXPECT_EQ(
+		test, memcmp(snapshot.port_guid, port_guid, sizeof(port_guid)),
+		0);
 	KUNIT_EXPECT_EQ(test,
 			memcmp(snapshot.events_guid, events_guid,
 			       sizeof(events_guid)),
@@ -233,10 +226,10 @@ static void pkm_lcs_kunit_internal_self_watch_arms_port_reservations(
 	 */
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
-				11, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				false, NULL, true, network_guid, true,
-				events_guid, &result),
+				11, machine_root_guid, true, registry_guid,
+				true, layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, false, NULL,
+				true, network_guid, true, events_guid, &result),
 			0L);
 	KUNIT_EXPECT_EQ(test, result.mode,
 			(u32)PKM_LCS_INTERNAL_SELF_WATCH_MIXED);
@@ -245,70 +238,70 @@ static void pkm_lcs_kunit_internal_self_watch_arms_port_reservations(
 			memcmp(result.fallback_guid, machine_root_guid,
 			       sizeof(machine_root_guid)),
 			0);
-	KUNIT_EXPECT_FALSE(test,
-			   memchr_inv(result.port_guid, 0,
-				      sizeof(result.port_guid)));
+	KUNIT_EXPECT_FALSE(test, memchr_inv(result.port_guid, 0,
+					    sizeof(result.port_guid)));
 
 	/* A nil port guid with port_present fails closed. */
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
-				11, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				true, nil_guid, false, NULL, false, NULL, NULL),
+				11, machine_root_guid, true, registry_guid,
+				true, layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, true, nil_guid,
+				false, NULL, false, NULL, NULL),
 			(long)-EINVAL);
 	/* Likewise a nil Network guid with network_present. */
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
-				11, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				true, port_guid, true, nil_guid, false, NULL,
-				NULL),
+				11, machine_root_guid, true, registry_guid,
+				true, layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, true, port_guid,
+				true, nil_guid, false, NULL, NULL),
 			(long)-EINVAL);
 	/* And a nil Events guid with events_present. */
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
-				11, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				true, port_guid, true, network_guid, true,
-				nil_guid, NULL),
+				11, machine_root_guid, true, registry_guid,
+				true, layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, true, port_guid,
+				true, network_guid, true, nil_guid, NULL),
 			(long)-EINVAL);
 	pkm_lcs_internal_self_watch_disarm();
 }
 
-static void pkm_lcs_kunit_internal_self_watch_bad_inputs_fail_closed(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_self_watch_bad_inputs_fail_closed(struct kunit *test)
 {
 	static const u8 machine_root_guid[RSI_GUID_SIZE] = { 0xb1 };
 	static const u8 registry_guid[RSI_GUID_SIZE] = { 0xb2 };
 	static const u8 layers_guid[RSI_GUID_SIZE] = { 0xb3 };
 	static const u8 nil_guid[RSI_GUID_SIZE] = { 0 };
-	struct pkm_lcs_internal_self_watch_snapshot snapshot = { };
+	struct pkm_lcs_internal_self_watch_snapshot snapshot = {};
 
 	pkm_lcs_internal_self_watch_disarm();
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				9, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				0, machine_root_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			(long)-EINVAL);
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				9, nil_guid, true, registry_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			(long)-EINVAL);
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				9, machine_root_guid, true, nil_guid, true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			(long)-EINVAL);
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
@@ -333,15 +326,18 @@ static void pkm_lcs_kunit_internal_self_watch_bad_inputs_fail_closed(
 	pkm_lcs_internal_self_watch_disarm();
 }
 
-
 static void pkm_lcs_kunit_internal_self_watch_value_event_refreshes_config(
 	struct kunit *test)
 {
-	static const char * const registry_path[] = {
-		"Machine", "System", "Registry",
+	static const char *const registry_path[] = {
+		"Machine",
+		"System",
+		"Registry",
 	};
 	static const u8 ancestors[3][RSI_GUID_SIZE] = {
-		{ 0xc1 }, { 0xc2 }, { 0xc3 },
+		{ 0xc1 },
+		{ 0xc2 },
+		{ 0xc3 },
 	};
 	static const u8 layers_guid[RSI_GUID_SIZE] = { 0xc4 };
 	static const char value_name[] = "RequestTimeoutMs";
@@ -365,9 +361,9 @@ static void pkm_lcs_kunit_internal_self_watch_value_event_refreshes_config(
 		.value_type = REG_DWORD,
 		.query_all = true,
 	};
-	struct pkm_lcs_runtime_limits snapshot = { };
+	struct pkm_lcs_runtime_limits snapshot = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	long ret;
 	int thread_ret;
@@ -380,8 +376,8 @@ static void pkm_lcs_kunit_internal_self_watch_value_event_refreshes_config(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -407,15 +403,18 @@ static void pkm_lcs_kunit_internal_self_watch_value_event_refreshes_config(
 	kacs_rust_token_drop(token);
 }
 
-
 static void pkm_lcs_kunit_internal_kmes_watch_value_event_refreshes_config(
 	struct kunit *test)
 {
-	static const char * const kmes_path[] = {
-		"Machine", "System", "KMES",
+	static const char *const kmes_path[] = {
+		"Machine",
+		"System",
+		"KMES",
 	};
 	static const u8 ancestors[3][RSI_GUID_SIZE] = {
-		{ 0xca }, { 0xcb }, { 0xcc },
+		{ 0xca },
+		{ 0xcb },
+		{ 0xcc },
 	};
 	static const u8 registry_guid[RSI_GUID_SIZE] = { 0xcd };
 	static const u8 layers_guid[RSI_GUID_SIZE] = { 0xce };
@@ -440,9 +439,9 @@ static void pkm_lcs_kunit_internal_kmes_watch_value_event_refreshes_config(
 		.value_type = REG_DWORD,
 		.query_all = true,
 	};
-	struct pkm_kmes_runtime_config snapshot = { };
+	struct pkm_kmes_runtime_config snapshot = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	long ret;
 	int thread_ret;
@@ -470,8 +469,7 @@ static void pkm_lcs_kunit_internal_kmes_watch_value_event_refreshes_config(
 	KUNIT_EXPECT_EQ(test, script.result, 0);
 	KUNIT_EXPECT_EQ(test, script.reads, 1U);
 	KUNIT_EXPECT_EQ(test, script.writes, 1U);
-	KUNIT_ASSERT_EQ(test,
-			pkm_kmes_runtime_config_snapshot(&snapshot), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kmes_runtime_config_snapshot(&snapshot), 0);
 	KUNIT_EXPECT_EQ(test, snapshot.max_nesting_depth, 64U);
 
 	KUNIT_EXPECT_EQ(test, pkm_lcs_source_device_release_file(&file), 0);
@@ -481,15 +479,18 @@ static void pkm_lcs_kunit_internal_kmes_watch_value_event_refreshes_config(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_internal_self_watch_non_value_event_noop(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_self_watch_non_value_event_noop(struct kunit *test)
 {
-	static const char * const registry_path[] = {
-		"Machine", "System", "Registry",
+	static const char *const registry_path[] = {
+		"Machine",
+		"System",
+		"Registry",
 	};
 	static const u8 ancestors[3][RSI_GUID_SIZE] = {
-		{ 0xd1 }, { 0xd2 }, { 0xd3 },
+		{ 0xd1 },
+		{ 0xd2 },
+		{ 0xd3 },
 	};
 	static const u8 layers_guid[RSI_GUID_SIZE] = { 0xd4 };
 	static const char value_name[] = "RequestTimeoutMs";
@@ -511,9 +512,9 @@ static void pkm_lcs_kunit_internal_self_watch_non_value_event_noop(
 		.value_type = REG_DWORD,
 		.query_all = true,
 	};
-	struct pkm_lcs_runtime_limits snapshot = { };
+	struct pkm_lcs_runtime_limits snapshot = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	long ret;
 	int thread_ret;
@@ -525,8 +526,8 @@ static void pkm_lcs_kunit_internal_self_watch_non_value_event_noop(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				layers_guid, true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				layers_guid, true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -552,11 +553,10 @@ static void pkm_lcs_kunit_internal_self_watch_non_value_event_noop(
 	kacs_rust_token_drop(token);
 }
 
-
 static void pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted(
 	struct kunit *test)
 {
-	static const char * const machine_path[] = { "Machine" };
+	static const char *const machine_path[] = { "Machine" };
 	static const u8 ancestors[1][RSI_GUID_SIZE] = { { 1 } };
 	static const u8 system_guid[RSI_GUID_SIZE] = { 0xd5 };
 	static const u8 registry_guid[RSI_GUID_SIZE] = { 0xd6 };
@@ -671,13 +671,13 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted(
 		.expect_kmes_query = true,
 		.expect_layers_refresh = true,
 	};
-	struct pkm_lcs_internal_self_watch_snapshot watch_snapshot = { };
-	struct pkm_lcs_runtime_limits limits = { };
-	struct pkm_kmes_runtime_config kmes_snapshot = { };
-	struct pkm_lcs_rsi_layer_view layers[3] = { };
-	char names[64] = { };
+	struct pkm_lcs_internal_self_watch_snapshot watch_snapshot = {};
+	struct pkm_lcs_runtime_limits limits = {};
+	struct pkm_kmes_runtime_config kmes_snapshot = {};
+	struct pkm_lcs_rsi_layer_view layers[3] = {};
+	char names[64] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	long ret;
@@ -691,9 +691,9 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted(
 	pkm_lcs_kunit_reset_layer_table();
 	pkm_lcs_kunit_setup_registered_source(test, &file, &token);
 	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_internal_self_watch_arm(
-				1, ancestors[0], false, NULL, false, NULL,
-				false, NULL, NULL),
+			pkm_lcs_internal_self_watch_arm(1, ancestors[0], false,
+							NULL, false, NULL,
+							false, NULL, NULL),
 			0L);
 	script.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -709,10 +709,10 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted(
 	KUNIT_EXPECT_EQ(test, script.result, 0);
 	KUNIT_EXPECT_EQ(test, script.reads, 19U);
 	KUNIT_EXPECT_EQ(test, script.writes, 19U);
-	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_kunit_internal_self_watch_snapshot(
-				&watch_snapshot),
-			0L);
+	KUNIT_ASSERT_EQ(
+		test,
+		pkm_lcs_kunit_internal_self_watch_snapshot(&watch_snapshot),
+		0L);
 	KUNIT_EXPECT_EQ(test, watch_snapshot.source_id, 1U);
 	/* The scripted hive has no PortReservations key: fallback armed. */
 	KUNIT_EXPECT_EQ(test, watch_snapshot.mode,
@@ -732,13 +732,13 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted(
 			0);
 	KUNIT_ASSERT_EQ(test, pkm_lcs_runtime_limits_snapshot(&limits), 0L);
 	KUNIT_EXPECT_EQ(test, limits.request_timeout_ms, 1000U);
-	KUNIT_ASSERT_EQ(test,
-			pkm_kmes_runtime_config_snapshot(&kmes_snapshot), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kmes_runtime_config_snapshot(&kmes_snapshot),
+			0);
 	KUNIT_EXPECT_EQ(test, kmes_snapshot.max_nesting_depth, 128U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_ASSERT_EQ(test, count, 2U);
 	KUNIT_EXPECT_STREQ(test, layers[1].name, "Policy");
@@ -753,11 +753,10 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_internal_self_watch_fallback_non_create_noop(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_self_watch_fallback_non_create_noop(struct kunit *test)
 {
-	static const char * const machine_path[] = { "Machine" };
+	static const char *const machine_path[] = { "Machine" };
 	static const u8 ancestors[1][RSI_GUID_SIZE] = { { 1 } };
 	struct pkm_lcs_watch_dispatch_context context = {
 		.changed_key_guid = ancestors[0],
@@ -766,18 +765,18 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_non_create_noop(
 		.path_component_count = ARRAY_SIZE(machine_path),
 		.event_type = REG_WATCH_SD_CHANGED,
 	};
-	struct pkm_lcs_source_fd_snapshot fd_snapshot = { };
-	struct pkm_lcs_internal_self_watch_snapshot watch_snapshot = { };
-	struct file file = { };
+	struct pkm_lcs_source_fd_snapshot fd_snapshot = {};
+	struct pkm_lcs_internal_self_watch_snapshot watch_snapshot = {};
+	struct file file = {};
 	const void *token;
 
 	pkm_lcs_runtime_limits_reset_defaults();
 	pkm_lcs_internal_self_watch_disarm();
 	pkm_lcs_kunit_setup_registered_source(test, &file, &token);
 	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_internal_self_watch_arm(
-				1, ancestors[0], false, NULL, false, NULL,
-				false, NULL, NULL),
+			pkm_lcs_internal_self_watch_arm(1, ancestors[0], false,
+							NULL, false, NULL,
+							false, NULL, NULL),
 			0L);
 
 	KUNIT_EXPECT_EQ(test,
@@ -785,10 +784,10 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_non_create_noop(
 			0L);
 	pkm_lcs_kunit_source_fd_snapshot(&file, &fd_snapshot);
 	KUNIT_EXPECT_EQ(test, fd_snapshot.queued_request_count, 0U);
-	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_kunit_internal_self_watch_snapshot(
-				&watch_snapshot),
-			0L);
+	KUNIT_ASSERT_EQ(
+		test,
+		pkm_lcs_kunit_internal_self_watch_snapshot(&watch_snapshot),
+		0L);
 	KUNIT_EXPECT_EQ(test, watch_snapshot.mode,
 			(u32)PKM_LCS_INTERNAL_SELF_WATCH_MACHINE_ROOT_FALLBACK);
 	KUNIT_EXPECT_EQ(test, watch_snapshot.watch_count, 1U);
@@ -800,17 +799,14 @@ static void pkm_lcs_kunit_internal_self_watch_fallback_non_create_noop(
 	kacs_rust_token_drop(token);
 }
 
-
-static void
-pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata(
+static void pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata(
 	struct kunit *test)
 {
-	static const char * const metadata_path[] = {
-		"Machine", "System", "Registry", "Layers", "Policy"
-	};
+	static const char *const metadata_path[] = { "Machine", "System",
+						     "Registry", "Layers",
+						     "Policy" };
 	static const u8 ancestors[5][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe4, 0x10 }, { 0xe4, 0x11 },
-		{ 0xe4, 0x12 }, { 0xe4 },
+		{ 1 }, { 0xe4, 0x10 }, { 0xe4, 0x11 }, { 0xe4, 0x12 }, { 0xe4 },
 	};
 	static const char value_name[] = "Enabled";
 	struct pkm_lcs_watch_dispatch_context context = {
@@ -832,10 +828,10 @@ pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata(
 		.precedence_present = true,
 		.enabled_present = true,
 	};
-	struct pkm_lcs_rsi_layer_view layers[3] = { };
-	char names[64] = { };
+	struct pkm_lcs_rsi_layer_view layers[3] = {};
+	char names[64] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	long ret;
@@ -847,8 +843,8 @@ pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -866,8 +862,8 @@ pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata(
 	KUNIT_EXPECT_EQ(test, script.writes, 4U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_ASSERT_EQ(test, count, 2U);
 	KUNIT_EXPECT_STREQ(test, layers[1].name, "Policy");
@@ -881,16 +877,14 @@ pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop(struct kunit *test)
 {
-	static const char * const metadata_path[] = {
-		"Machine", "System", "Registry", "Layers", "Policy"
-	};
+	static const char *const metadata_path[] = { "Machine", "System",
+						     "Registry", "Layers",
+						     "Policy" };
 	static const u8 ancestors[5][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe5, 0x10 }, { 0xe5, 0x11 },
-		{ 0xe5, 0x12 }, { 0xe5 },
+		{ 1 }, { 0xe5, 0x10 }, { 0xe5, 0x11 }, { 0xe5, 0x12 }, { 0xe5 },
 	};
 	/* All six keys present, so no fallback watch is armed and the
 	 * lifecycle event is a true no-op.
@@ -918,10 +912,10 @@ static void pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop(
 		.precedence_present = true,
 		.enabled_present = true,
 	};
-	struct pkm_lcs_rsi_layer_view layers[2] = { };
-	char names[32] = { };
+	struct pkm_lcs_rsi_layer_view layers[2] = {};
+	char names[32] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	long ret;
@@ -933,9 +927,9 @@ static void pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm_full(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				true, port_guid, true, network_guid, true,
-				events_guid, NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, true, port_guid,
+				true, network_guid, true, events_guid, NULL),
 			0L);
 	script.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -952,8 +946,8 @@ static void pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop(
 	KUNIT_EXPECT_EQ(test, script.writes, 0U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_EXPECT_EQ(test, count, 1U);
 
@@ -964,15 +958,14 @@ static void pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_internal_layer_watch_descendant_event_noop(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_layer_watch_descendant_event_noop(struct kunit *test)
 {
-	static const char * const descendant_path[] = {
-		"Machine", "System", "Registry", "Layers", "Policy", "Child"
-	};
+	static const char *const descendant_path[] = { "Machine",  "System",
+						       "Registry", "Layers",
+						       "Policy",   "Child" };
 	static const u8 ancestors[6][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe5, 0x20 }, { 0xe5, 0x21 },
+		{ 1 },		{ 0xe5, 0x20 }, { 0xe5, 0x21 },
 		{ 0xe5, 0x22 }, { 0xe5, 0x23 }, { 0xe5, 0x24 },
 	};
 	static const char value_name[] = "Enabled";
@@ -985,10 +978,10 @@ static void pkm_lcs_kunit_internal_layer_watch_descendant_event_noop(
 		.name = (const u8 *)value_name,
 		.name_len = sizeof(value_name) - 1U,
 	};
-	struct pkm_lcs_source_fd_snapshot fd_snapshot = { };
-	struct pkm_lcs_rsi_layer_view layers[2] = { };
-	char names[32] = { };
-	struct file file = { };
+	struct pkm_lcs_source_fd_snapshot fd_snapshot = {};
+	struct pkm_lcs_rsi_layer_view layers[2] = {};
+	char names[32] = {};
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 
@@ -998,8 +991,8 @@ static void pkm_lcs_kunit_internal_layer_watch_descendant_event_noop(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 
 	KUNIT_EXPECT_EQ(test,
@@ -1009,8 +1002,8 @@ static void pkm_lcs_kunit_internal_layer_watch_descendant_event_noop(
 	KUNIT_EXPECT_EQ(test, fd_snapshot.queued_request_count, 0U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_EXPECT_EQ(test, count, 1U);
 
@@ -1021,16 +1014,16 @@ static void pkm_lcs_kunit_internal_layer_watch_descendant_event_noop(
 	kacs_rust_token_drop(token);
 }
 
-
-static void
-pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata(
+static void pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata(
 	struct kunit *test)
 {
-	static const char * const layers_path[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const layers_path[] = { "Machine", "System",
+						   "Registry", "Layers" };
 	static const u8 ancestors[4][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe6, 0x10 }, { 0xe6, 0x11 }, { 0xe6, 0x12 },
+		{ 1 },
+		{ 0xe6, 0x10 },
+		{ 0xe6, 0x11 },
+		{ 0xe6, 0x12 },
 	};
 	static const u8 policy_guid[RSI_GUID_SIZE] = { 0xe6, 0x13 };
 	static const char layer_name[] = "Policy";
@@ -1067,10 +1060,10 @@ pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata(
 		},
 		.expect_refresh = true,
 	};
-	struct pkm_lcs_rsi_layer_view layers[3] = { };
-	char names[64] = { };
+	struct pkm_lcs_rsi_layer_view layers[3] = {};
+	char names[64] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	long ret;
@@ -1082,8 +1075,8 @@ pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.lookup.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -1105,8 +1098,8 @@ pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata(
 	KUNIT_EXPECT_EQ(test, script.writes, 5U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_ASSERT_EQ(test, count, 2U);
 	KUNIT_EXPECT_STREQ(test, layers[1].name, "Policy");
@@ -1120,16 +1113,16 @@ pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata(
 	kacs_rust_token_drop(token);
 }
 
-
 static void
-pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop(
-	struct kunit *test)
+pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop(struct kunit *test)
 {
-	static const char * const layers_path[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const layers_path[] = { "Machine", "System",
+						   "Registry", "Layers" };
 	static const u8 ancestors[4][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe7, 0x10 }, { 0xe7, 0x11 }, { 0xe7, 0x12 },
+		{ 1 },
+		{ 0xe7, 0x10 },
+		{ 0xe7, 0x11 },
+		{ 0xe7, 0x12 },
 	};
 	static const char layer_name[] = "Policy";
 	struct pkm_lcs_watch_dispatch_context context = {
@@ -1151,10 +1144,10 @@ pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop(
 			.step_count = 1,
 		},
 	};
-	struct pkm_lcs_rsi_layer_view layers[2] = { };
-	char names[32] = { };
+	struct pkm_lcs_rsi_layer_view layers[2] = {};
+	char names[32] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	long ret;
@@ -1166,8 +1159,8 @@ pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.lookup.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -1187,8 +1180,8 @@ pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop(
 	KUNIT_EXPECT_EQ(test, script.refresh.writes, 0U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_EXPECT_EQ(test, count, 1U);
 
@@ -1199,17 +1192,17 @@ pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop(
 	kacs_rust_token_drop(token);
 }
 
-
-static void
-pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits(
+static void pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits(
 	struct kunit *test)
 {
 	enum { LONG_NAME_LEN = 300 };
-	static const char * const layers_path[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const layers_path[] = { "Machine", "System",
+						   "Registry", "Layers" };
 	static const u8 ancestors[4][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe6, 0x20 }, { 0xe6, 0x21 }, { 0xe6, 0x22 },
+		{ 1 },
+		{ 0xe6, 0x20 },
+		{ 0xe6, 0x21 },
+		{ 0xe6, 0x22 },
 	};
 	static const u8 policy_guid[RSI_GUID_SIZE] = { 0xe6, 0x23 };
 	char layer_name[LONG_NAME_LEN + 1];
@@ -1247,11 +1240,11 @@ pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits(
 		},
 		.expect_refresh = true,
 	};
-	struct pkm_lcs_rsi_layer_view layers[3] = { };
-	struct pkm_lcs_runtime_limits limits = { };
-	char names[512] = { };
+	struct pkm_lcs_rsi_layer_view layers[3] = {};
+	struct pkm_lcs_runtime_limits limits = {};
+	char names[512] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	long ret;
@@ -1270,8 +1263,8 @@ pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.lookup.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -1291,13 +1284,12 @@ pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits(
 	KUNIT_EXPECT_EQ(test, script.refresh.writes, 4U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_ASSERT_EQ(test, count, 2U);
 	KUNIT_EXPECT_EQ(test, layers[1].name_len, (u32)LONG_NAME_LEN);
-	KUNIT_EXPECT_EQ(test,
-			memcmp(layers[1].name, layer_name, LONG_NAME_LEN),
+	KUNIT_EXPECT_EQ(test, memcmp(layers[1].name, layer_name, LONG_NAME_LEN),
 			0);
 	KUNIT_EXPECT_EQ(test, layers[1].precedence, 29U);
 
@@ -1309,16 +1301,16 @@ pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits(
 	kacs_rust_token_drop(token);
 }
 
-
 static void
-pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates(
-	struct kunit *test)
+pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates(struct kunit *test)
 {
-	static const char * const layers_path[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const layers_path[] = { "Machine", "System",
+						   "Registry", "Layers" };
 	static const u8 ancestors[4][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe8, 0x10 }, { 0xe8, 0x11 }, { 0xe8, 0x12 },
+		{ 1 },
+		{ 0xe8, 0x10 },
+		{ 0xe8, 0x11 },
+		{ 0xe8, 0x12 },
 	};
 	static const u8 policy_guid[RSI_GUID_SIZE] = { 0xe8, 0x13 };
 	static const char layer_name[] = "Policy";
@@ -1335,10 +1327,10 @@ pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates(
 		.expected_layer_name = layer_name,
 		.status = RSI_OK,
 	};
-	struct pkm_lcs_rsi_layer_view layers[2] = { };
-	char names[32] = { };
+	struct pkm_lcs_rsi_layer_view layers[2] = {};
+	char names[32] = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	u32 effects = 0;
@@ -1359,8 +1351,8 @@ pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 	script.file = &file;
 	task = pkm_lcs_kunit_kthread_run(
@@ -1377,13 +1369,12 @@ pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates(
 	KUNIT_EXPECT_EQ(test, script.result, 0);
 	KUNIT_EXPECT_EQ(test, script.reads, 1U);
 	KUNIT_EXPECT_EQ(test, script.writes, 1U);
-	KUNIT_EXPECT_TRUE(test,
-			  !!(effects &
-			     PKM_LCS_INTERNAL_WATCH_EFFECT_LAYER_DELETE));
+	KUNIT_EXPECT_TRUE(test, !!(effects &
+				   PKM_LCS_INTERNAL_WATCH_EFFECT_LAYER_DELETE));
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_ASSERT_EQ(test, count, 1U);
 	KUNIT_EXPECT_STREQ(test, layers[0].name, "base");
@@ -1395,15 +1386,16 @@ pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_internal_layer_watch_delete_base_noop(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_internal_layer_watch_delete_base_noop(struct kunit *test)
 {
-	static const char * const layers_path[] = {
-		"Machine", "System", "Registry", "Layers"
-	};
+	static const char *const layers_path[] = { "Machine", "System",
+						   "Registry", "Layers" };
 	static const u8 ancestors[4][RSI_GUID_SIZE] = {
-		{ 1 }, { 0xe9, 0x10 }, { 0xe9, 0x11 }, { 0xe9, 0x12 },
+		{ 1 },
+		{ 0xe9, 0x10 },
+		{ 0xe9, 0x11 },
+		{ 0xe9, 0x12 },
 	};
 	static const char layer_name[] = "base";
 	struct pkm_lcs_watch_dispatch_context context = {
@@ -1415,10 +1407,10 @@ static void pkm_lcs_kunit_internal_layer_watch_delete_base_noop(
 		.name = (const u8 *)layer_name,
 		.name_len = sizeof(layer_name) - 1U,
 	};
-	struct pkm_lcs_source_fd_snapshot source_snapshot = { };
-	struct pkm_lcs_rsi_layer_view layers[2] = { };
-	char names[32] = { };
-	struct file file = { };
+	struct pkm_lcs_source_fd_snapshot source_snapshot = {};
+	struct pkm_lcs_rsi_layer_view layers[2] = {};
+	char names[32] = {};
+	struct file file = {};
 	const void *token;
 	u32 count = 0;
 	u32 effects = 0;
@@ -1430,8 +1422,8 @@ static void pkm_lcs_kunit_internal_layer_watch_delete_base_noop(
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_internal_self_watch_arm(
 				1, ancestors[0], true, ancestors[2], true,
-				ancestors[3], true, pkm_lcs_kunit_kmes_watch_guid,
-				NULL),
+				ancestors[3], true,
+				pkm_lcs_kunit_kmes_watch_guid, NULL),
 			0L);
 
 	ret = pkm_lcs_key_fd_dispatch_watch_event_context_effects(&context,
@@ -1444,8 +1436,8 @@ static void pkm_lcs_kunit_internal_layer_watch_delete_base_noop(
 	KUNIT_EXPECT_EQ(test, source_snapshot.in_flight_request_count, 0U);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_source_layer_snapshot_copy(
-				layers, ARRAY_SIZE(layers), names, sizeof(names),
-				&count),
+				layers, ARRAY_SIZE(layers), names,
+				sizeof(names), &count),
 			0L);
 	KUNIT_ASSERT_EQ(test, count, 1U);
 	KUNIT_EXPECT_STREQ(test, layers[0].name, "base");
@@ -1457,18 +1449,17 @@ static void pkm_lcs_kunit_internal_layer_watch_delete_base_noop(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_user_absolute_path_copy_routes_current_user(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_user_absolute_path_copy_routes_current_user(struct kunit *test)
 {
 	const char name_src[] = "Users";
 	const char current_user_path[] = "CurrentUser\\Software";
-	struct pkm_lcs_kunit_usercopy_ctx ctx = { };
+	struct pkm_lcs_kunit_usercopy_ctx ctx = {};
 	struct pkm_lcs_usercopy_ops ops = pkm_lcs_kunit_usercopy_ops(&ctx);
 	struct reg_src_hive_entry hive;
 	struct reg_src_register_args args;
-	struct pkm_lcs_hive_route_result route = { };
-	struct file file = { };
+	struct pkm_lcs_hive_route_result route = {};
+	struct file file = {};
 	const void *token;
 
 	pkm_lcs_kunit_reset_source_table();
@@ -1486,8 +1477,9 @@ static void pkm_lcs_kunit_user_absolute_path_copy_routes_current_user(
 
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_route_user_absolute_path_for_token(
-				token, &ops, (const char __user *)current_user_path,
-				true, NULL, 0, &route),
+				token, &ops,
+				(const char __user *)current_user_path, true,
+				NULL, 0, &route),
 			0L);
 	KUNIT_EXPECT_EQ(test, route.source_id, 1U);
 	KUNIT_EXPECT_EQ(test, route.root_guid[0], 1U);
@@ -1497,8 +1489,9 @@ static void pkm_lcs_kunit_user_absolute_path_copy_routes_current_user(
 	ctx.fault_src = current_user_path;
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_route_user_absolute_path_for_token(
-				token, &ops, (const char __user *)current_user_path,
-				true, NULL, 0, &route),
+				token, &ops,
+				(const char __user *)current_user_path, true,
+				NULL, 0, &route),
 			(long)-EFAULT);
 	KUNIT_EXPECT_EQ(test, route.source_id, 0U);
 	ctx.fault_src = NULL;
@@ -1506,8 +1499,9 @@ static void pkm_lcs_kunit_user_absolute_path_copy_routes_current_user(
 	ctx.unterminated_src = current_user_path;
 	KUNIT_EXPECT_EQ(test,
 			pkm_lcs_route_user_absolute_path_for_token(
-				token, &ops, (const char __user *)current_user_path,
-				true, NULL, 0, &route),
+				token, &ops,
+				(const char __user *)current_user_path, true,
+				NULL, 0, &route),
 			(long)-ENAMETOOLONG);
 	KUNIT_EXPECT_EQ(test, route.source_id, 0U);
 	ctx.unterminated_src = NULL;
@@ -1523,54 +1517,157 @@ static void pkm_lcs_kunit_user_absolute_path_copy_routes_current_user(
 	kacs_rust_token_drop(token);
 }
 
-
-static void pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change(struct kunit *test)
 {
-	static const char * const path[] = { "Machine", "Software" };
+	static const char *const path[] = { "Machine", "Software" };
 	static const u8 ancestors[2][PKM_LCS_GUID_BYTES] = {
 		{ 1 },
 		{ 0xa4 },
 	};
 	static const u8 existing_sd[] = {
 		/* SECURITY_DESCRIPTOR_RELATIVE */
-		0x01, 0x00, 0x04, 0x80, 0x14, 0x00, 0x00, 0x00,
-		0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x2c, 0x00, 0x00, 0x00,
+		0x01,
+		0x00,
+		0x04,
+		0x80,
+		0x14,
+		0x00,
+		0x00,
+		0x00,
+		0x20,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x2c,
+		0x00,
+		0x00,
+		0x00,
 		/* Owner: S-1-5-18 */
-		0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-		0x12, 0x00, 0x00, 0x00,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x12,
+		0x00,
+		0x00,
+		0x00,
 		/* Group: S-1-5-18 */
-		0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-		0x12, 0x00, 0x00, 0x00,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x12,
+		0x00,
+		0x00,
+		0x00,
 		/* DACL: one CONTAINER_INHERIT allow ACE for Everyone. */
-		0x02, 0x00, 0x1c, 0x00, 0x01, 0x00, 0x00, 0x00,
-		0x00, 0x02, 0x14, 0x00, 0x00, 0x00, 0x00, 0x80,
-		0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-		0x00, 0x00, 0x00, 0x00,
+		0x02,
+		0x00,
+		0x1c,
+		0x00,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x02,
+		0x14,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x80,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
 	};
 	static const u8 input_empty_dacl_sd[] = {
 		/* SECURITY_DESCRIPTOR_RELATIVE with an empty DACL only. */
-		0x01, 0x00, 0x04, 0x80, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x14, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x04, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00,
 		0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
 	};
 	static const u8 expected_merged_sd[] = {
 		/* Existing owner/group with the replacement empty DACL. */
-		0x01, 0x00, 0x04, 0x80, 0x14, 0x00, 0x00, 0x00,
-		0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x2c, 0x00, 0x00, 0x00,
+		0x01,
+		0x00,
+		0x04,
+		0x80,
+		0x14,
+		0x00,
+		0x00,
+		0x00,
+		0x20,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x2c,
+		0x00,
+		0x00,
+		0x00,
 		/* Owner: S-1-5-18 */
-		0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-		0x12, 0x00, 0x00, 0x00,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x12,
+		0x00,
+		0x00,
+		0x00,
 		/* Group: S-1-5-18 */
-		0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-		0x12, 0x00, 0x00, 0x00,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x12,
+		0x00,
+		0x00,
+		0x00,
 		/* DACL: empty ACL. */
-		0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x02,
+		0x00,
+		0x08,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
 	};
-	struct pkm_lcs_kunit_usercopy_ctx ctx = { };
+	struct pkm_lcs_kunit_usercopy_ctx ctx = {};
 	struct pkm_lcs_usercopy_ops ops = pkm_lcs_kunit_usercopy_ops(&ctx);
 	struct reg_notify_args notify = {
 		.filter = REG_NOTIFY_SD,
@@ -1588,11 +1685,11 @@ static void pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change(
 		.expected_merged_sd = expected_merged_sd,
 		.expected_merged_sd_len = sizeof(expected_merged_sd),
 	};
-	struct pkm_lcs_key_fd_snapshot snapshot = { };
+	struct pkm_lcs_key_fd_snapshot snapshot = {};
 	struct task_struct *task;
-	struct file file = { };
+	struct file file = {};
 	const void *token;
-	u8 record[16] = { };
+	u8 record[16] = {};
 	u32 marked = U32_MAX;
 	long fd;
 	long ret;
@@ -1602,8 +1699,8 @@ static void pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change(
 	pkm_lcs_kunit_setup_registered_source(test, &file, &token);
 	script.file = &file;
 
-	fd = pkm_lcs_kunit_publish_key_fd_from_path(
-		1, KEY_NOTIFY | WRITE_DAC, path, ancestors, 2);
+	fd = pkm_lcs_kunit_publish_key_fd_from_path(1, KEY_NOTIFY | WRITE_DAC,
+						    path, ancestors, 2);
 	KUNIT_ASSERT_TRUE(test, fd >= 0);
 	KUNIT_ASSERT_EQ(test, pkm_lcs_kunit_key_fd_notify((int)fd, &notify),
 			0L);
@@ -1613,13 +1710,13 @@ static void pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change(
 				1, ancestors[1], &marked),
 			0L);
 	KUNIT_EXPECT_EQ(test, marked, 1U);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_key_fd_snapshot((int)fd, &snapshot),
-			0L);
+	KUNIT_ASSERT_EQ(test, pkm_lcs_key_fd_snapshot((int)fd, &snapshot), 0L);
 	KUNIT_EXPECT_TRUE(test, snapshot.orphaned);
 	KUNIT_EXPECT_TRUE(test, snapshot.watch_armed);
 
-	KUNIT_ASSERT_EQ(test, pkm_lcs_kunit_key_fd_read((int)fd, record,
-							sizeof(record), true),
+	KUNIT_ASSERT_EQ(test,
+			pkm_lcs_kunit_key_fd_read((int)fd, record,
+						  sizeof(record), true),
 			(ssize_t)8);
 	KUNIT_EXPECT_EQ(test, get_unaligned_le32(record), 8U);
 	KUNIT_EXPECT_EQ(test, get_unaligned_le16(record + 4),
@@ -1640,8 +1737,9 @@ static void pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change(
 	KUNIT_EXPECT_EQ(test, script.reads, 2U);
 	KUNIT_EXPECT_EQ(test, script.writes, 2U);
 
-	KUNIT_ASSERT_EQ(test, pkm_lcs_kunit_key_fd_read((int)fd, record,
-							sizeof(record), true),
+	KUNIT_ASSERT_EQ(test,
+			pkm_lcs_kunit_key_fd_read((int)fd, record,
+						  sizeof(record), true),
 			(ssize_t)8);
 	KUNIT_EXPECT_EQ(test, get_unaligned_le32(record), 8U);
 	KUNIT_EXPECT_EQ(test, get_unaligned_le16(record + 4),
@@ -1663,18 +1761,26 @@ static struct kunit_case pkm_lcs_kunit_misc_cases[] = {
 	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_arm_targeted_and_fallback),
 	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_arms_port_reservations),
 	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_bad_inputs_fail_closed),
-	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_value_event_refreshes_config),
-	KUNIT_CASE(pkm_lcs_kunit_internal_kmes_watch_value_event_refreshes_config),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_self_watch_value_event_refreshes_config),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_kmes_watch_value_event_refreshes_config),
 	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_non_value_event_noop),
-	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_self_watch_fallback_create_rearms_targeted),
 	KUNIT_CASE(pkm_lcs_kunit_internal_self_watch_fallback_non_create_noop),
-	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_layer_watch_value_event_refreshes_metadata),
 	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_lifecycle_event_noop),
 	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_descendant_event_noop),
-	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata),
-	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop),
-	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits),
-	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_layer_watch_create_event_refreshes_metadata),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_layer_watch_create_missing_child_noop),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_layer_watch_create_retains_runtime_limits),
+	KUNIT_CASE(
+		pkm_lcs_kunit_internal_layer_watch_delete_event_orchestrates),
 	KUNIT_CASE(pkm_lcs_kunit_internal_layer_watch_delete_base_noop),
 	KUNIT_CASE(pkm_lcs_kunit_user_absolute_path_copy_routes_current_user),
 	KUNIT_CASE(pkm_lcs_kunit_orphan_watch_observes_guid_local_sd_change),

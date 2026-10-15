@@ -31,9 +31,8 @@ bool pkm_kacs_firmware_sig_enforced(void);
  * (a KACS_FW_* code). @enforce false turns every refusal into 0 while
  * leaving the reason intact, which is what log mode reports.
  */
-int pkm_kacs_firmware_verdict(
-	int probe_ret, u32 source, int verify_ret,
-	const struct pkm_kacs_signing_trust_result *result, bool enforce,
-	u8 *reason_out);
+int pkm_kacs_firmware_verdict(int probe_ret, u32 source, int verify_ret,
+			      const struct pkm_kacs_signing_trust_result *result,
+			      bool enforce, u8 *reason_out);
 
 #endif /* _SECURITY_PKM_KACS_FIRMWARE_H */

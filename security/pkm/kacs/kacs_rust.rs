@@ -10,17 +10,15 @@
 // The semantic cores (`kacs_core`, `lcs_core`) and the LCS ingress glue are
 // `pub`-API crates in their own right — their public items are exercised by
 // their standalone integration-test suites, so the `pub` is load-bearing
-// there. Vendored here as private modules of a crate that has no Rust
+// there. Included here as private modules of a crate that has no Rust
 // consumers (it is linked via `#[no_mangle]` C ABI), every such `pub`
-// collapses to effectively `pub(crate)`, tripping `unreachable_pub`. Both
-// crates already opt out in their own `lib.rs`; staging strips that when it
-// renames `lib.rs` -> `mod.rs`, so restore the opt-out at the vendoring root.
+// collapses to effectively `pub(crate)`, tripping `unreachable_pub`. Their Cargo entry points in peios/rust expose the same files for
+// standalone tests; keep the kernel-only visibility allowance at this root.
 #![allow(unreachable_pub)]
 
-// Generated UAPI constants — the ABI single source of truth, vendored by
-// stage-sources.sh from uapi/generated/rust/src/zconst.rs. The semantic cores
-// reference these as `crate::peios_uapi::<CONST>` (rewritten from bare
-// `peios_uapi::` paths by stage-rust-core.sh). Most are unused in this build,
+// Generated UAPI constants, shared directly with the Cargo peios-uapi crate.
+// Regenerate from include/uapi/pkm with peios/rust/peios-uapi/gen.sh.
+// Semantic cores resolve them through `crate::peios_uapi`. Most are unused here,
 // so the whole module opts out of dead-code analysis.
 #[allow(dead_code)]
 mod peios_uapi;
@@ -30,7 +28,7 @@ mod access_check_ingress;
 mod caap_cache;
 mod kacs_core;
 // `lcs_core` is the standalone LCS semantic-core crate (0 warnings on its own
-// `cargo` build + 268 integration tests) vendored here as a private module.
+// `cargo` build + 268 integration tests) included here as a private module.
 // The kernel glue only drives a fraction of its surface so far, so the bulk of
 // its API reads as dead/unused in this build only; the dead-code and
 // unused-import checks have teeth in its standalone build, not here.

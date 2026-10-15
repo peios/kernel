@@ -30,7 +30,8 @@ int pkm_kacs_task_alloc(struct task_struct *task, u64 clone_flags)
 	new_sec = pkm_kacs_task(task);
 	new_sec->process_state = NULL;
 	new_sec->primary_epoch = (clone_flags & CLONE_THREAD) ?
-		pkm_kacs_task(current)->primary_epoch : 0;
+					 pkm_kacs_task(current)->primary_epoch :
+					 0;
 	new_sec->copy_up_context = NULL;
 	new_sec->delete_on_close_file = NULL;
 	new_sec->delete_on_close_parent_inode = NULL;
@@ -98,9 +99,8 @@ int pkm_kacs_task_alloc(struct task_struct *task, u64 clone_flags)
 
 	child_cred = task->cred;
 	child_real_cred = task->real_cred;
-	ret = pkm_kacs_apply_clone_token_lifecycle(&child_cred,
-						   &child_real_cred,
-						   clone_flags);
+	ret = pkm_kacs_apply_clone_token_lifecycle(
+		&child_cred, &child_real_cred, clone_flags);
 	if (ret)
 		return (int)ret;
 	rcu_assign_pointer(task->cred, child_cred);
@@ -108,8 +108,8 @@ int pkm_kacs_task_alloc(struct task_struct *task, u64 clone_flags)
 
 	state = pkm_kacs_inherit_process_state(clone_flags);
 	if (!state) {
-		trace_kacs_task(clone_flags, 0,
-				KACS_TASK_ALLOC_INHERIT_ENOMEM, -ENOMEM);
+		trace_kacs_task(clone_flags, 0, KACS_TASK_ALLOC_INHERIT_ENOMEM,
+				-ENOMEM);
 		return -ENOMEM;
 	}
 
@@ -131,8 +131,8 @@ void pkm_kacs_task_free(struct task_struct *task)
 
 	sec = pkm_kacs_task(task);
 	pkm_kacs_copy_up_task_exit(task);
-	trace_kacs_task(0, (u64)(uintptr_t)sec->process_state,
-			KACS_TASK_FREE, 0);
+	trace_kacs_task(0, (u64)(uintptr_t)sec->process_state, KACS_TASK_FREE,
+			0);
 	pkm_kacs_process_state_put(sec->process_state);
 	sec->process_state = NULL;
 	/*

@@ -30,6 +30,8 @@ struct super_block;
  * kacs/mount_policy.h; declared here so the event probe compiles. */
 u32 pkm_kacs_superblock_mount_policy(const struct super_block *sb);
 
+/* Preserve the trace macro tables and field/assignment layout. */
+/* clang-format off */
 #define kacs_trace_reason_symbols					\
 	{ KACS_TR_DECISION,			"decision" },		\
 	{ KACS_TR_BAD_ARGS,			"bad-args" },		\
@@ -1951,6 +1953,7 @@ TRACE_EVENT(kacs_ipc,
 		__entry->kind, __entry->id, __entry->cmd, __entry->desired,
 		__entry->reason, __entry->ret ? "deny" : "allow", __entry->ret)
 );
+/* clang-format on */
 
 #endif /* _TRACE_KACS_H */
 

@@ -15,22 +15,22 @@
  */
 
 /* Full size of kacs_access_check_args the current kernel copies. */
-#define KACS_ACCESS_CHECK_ARGS_SIZE		136U
+#define KACS_ACCESS_CHECK_ARGS_SIZE 136U
 
 /* Minimum caller_size the kernel accepts (the v1 / v0.20 layout). */
-#define KACS_ACCESS_CHECK_ARGS_V1_SIZE		40U
+#define KACS_ACCESS_CHECK_ARGS_V1_SIZE 40U
 
 /* Byte size of one kacs_object_type_entry in the object-type tree array. */
-#define KACS_OBJECT_TYPE_ENTRY_SIZE		20U
+#define KACS_OBJECT_TYPE_ENTRY_SIZE 20U
 
 /* Largest object-audit-context buffer the kernel accepts. */
-#define KACS_ACCESS_CHECK_MAX_AUDIT_CONTEXT_LEN	4096U
+#define KACS_ACCESS_CHECK_MAX_AUDIT_CONTEXT_LEN 4096U
 
 /* Largest @Local claims blob the kernel accepts (local_claims_ptr). */
-#define KACS_ACCESS_CHECK_MAX_LOCAL_CLAIMS_LEN	65536U
+#define KACS_ACCESS_CHECK_MAX_LOCAL_CLAIMS_LEN 65536U
 
 /* Largest object-type tree entry count the kernel accepts. */
-#define KACS_ACCESS_CHECK_MAX_OBJECT_TYPE_COUNT	1024U
+#define KACS_ACCESS_CHECK_MAX_OBJECT_TYPE_COUNT 1024U
 
 /*
  * AccessCheck request. Pointer fields hold userspace addresses; a zero
@@ -78,7 +78,7 @@ struct kacs_access_check_args {
 struct kacs_object_type_entry {
 	__u16 level;
 	__u16 _reserved;
-	__u8  guid[16];
+	__u8 guid[16];
 };
 
 /* Per-node result of kacs_access_check_list. */
@@ -91,17 +91,17 @@ struct kacs_node_result {
  * Claim value types — the discriminant of one attribute in the @Local
  * claims array (local_claims_ptr).
  */
-#define KACS_CLAIM_TYPE_INT64		0x0001U
-#define KACS_CLAIM_TYPE_UINT64		0x0002U
-#define KACS_CLAIM_TYPE_STRING		0x0003U
-#define KACS_CLAIM_TYPE_SID		0x0005U
-#define KACS_CLAIM_TYPE_BOOLEAN		0x0006U
-#define KACS_CLAIM_TYPE_OCTET		0x0010U
+#define KACS_CLAIM_TYPE_INT64 0x0001U
+#define KACS_CLAIM_TYPE_UINT64 0x0002U
+#define KACS_CLAIM_TYPE_STRING 0x0003U
+#define KACS_CLAIM_TYPE_SID 0x0005U
+#define KACS_CLAIM_TYPE_BOOLEAN 0x0006U
+#define KACS_CLAIM_TYPE_OCTET 0x0010U
 
 /* Claim attribute flags. */
-#define KACS_CLAIM_ATTR_CASE_SENSITIVE		0x0002U
-#define KACS_CLAIM_ATTR_USE_FOR_DENY_ONLY	0x0004U
-#define KACS_CLAIM_ATTR_DISABLED		0x0010U
+#define KACS_CLAIM_ATTR_CASE_SENSITIVE 0x0002U
+#define KACS_CLAIM_ATTR_USE_FOR_DENY_ONLY 0x0004U
+#define KACS_CLAIM_ATTR_DISABLED 0x0010U
 
 /*
  * Central Access Policy (CAAP) spec wire format — the (spec, spec_len) buffer
@@ -129,17 +129,17 @@ struct kacs_node_result {
  * security-descriptor size limit (KACS_CAAP_MAX_ACL_BYTES). ACLs use the
  * binary ACL format from <pkm/sd.h>; applies_to is conditional-ACE bytecode.
  */
-#define KACS_CAAP_SPEC_VERSION		0x01U
-#define KACS_CAAP_MAX_SPEC_BYTES	(256U * 1024U)
-#define KACS_CAAP_MAX_RULE_COUNT	256U
-#define KACS_CAAP_MAX_FIELD_BYTES	(64U * 1024U)
-#define KACS_CAAP_MAX_ACL_BYTES		65535U
+#define KACS_CAAP_SPEC_VERSION 0x01U
+#define KACS_CAAP_MAX_SPEC_BYTES (256U * 1024U)
+#define KACS_CAAP_MAX_RULE_COUNT 256U
+#define KACS_CAAP_MAX_FIELD_BYTES (64U * 1024U)
+#define KACS_CAAP_MAX_ACL_BYTES 65535U
 
 /* Byte offsets of the fixed CAAP-spec prefix fields. */
-#define KACS_CAAP_SPEC_OFF_VERSION	0U
-#define KACS_CAAP_SPEC_OFF_RULE_COUNT	1U
+#define KACS_CAAP_SPEC_OFF_VERSION 0U
+#define KACS_CAAP_SPEC_OFF_RULE_COUNT 1U
 
 /* Byte length of the fixed CAAP-spec prefix (version + rule_count). */
-#define KACS_CAAP_SPEC_PREFIX_BYTES	5U
+#define KACS_CAAP_SPEC_PREFIX_BYTES 5U
 
 #endif /* _UAPI_PKM_ACCESS_H */

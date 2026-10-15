@@ -78,15 +78,11 @@ long pkm_kacs_prepare_new_file_sd_core(
 	size_t *new_sd_len);
 
 long pkm_kacs_query_token_sd_core(const void *subject_token,
-				  const void *target_token,
-				  u32 security_info,
-				  const u8 **out_sd_ptr,
-				  size_t *out_sd_len);
+				  const void *target_token, u32 security_info,
+				  const u8 **out_sd_ptr, size_t *out_sd_len);
 long pkm_kacs_set_token_sd_core(const void *subject_token,
-				const void *target_token,
-				u32 security_info,
-				const u8 *input_sd_ptr,
-				size_t input_sd_len);
+				const void *target_token, u32 security_info,
+				const u8 *input_sd_ptr, size_t input_sd_len);
 long pkm_kacs_query_process_sd_core(
 	const void *subject_token,
 	const struct pkm_kacs_process_state *caller_state,
@@ -97,21 +93,18 @@ long pkm_kacs_set_process_sd_core(
 	const struct pkm_kacs_process_state *caller_state,
 	struct pkm_kacs_process_state *target_state, bool self_target,
 	u32 security_info, const u8 *input_sd_ptr, size_t input_sd_len);
-long pkm_kacs_query_file_sd_core(const void *subject_token,
-				 struct file *file, u32 security_info,
-				 const u8 **out_sd_ptr,
+long pkm_kacs_query_file_sd_core(const void *subject_token, struct file *file,
+				 u32 security_info, const u8 **out_sd_ptr,
 				 size_t *out_sd_len);
 long pkm_kacs_set_file_sd_core(const void *subject_token, struct file *file,
 			       u32 security_info, const u8 *input_sd_ptr,
 			       size_t input_sd_len);
 long pkm_kacs_query_path_file_sd_core(const void *subject_token,
 				      const struct path *path,
-				      u32 security_info,
-				      const u8 **out_sd_ptr,
+				      u32 security_info, const u8 **out_sd_ptr,
 				      size_t *out_sd_len);
 long pkm_kacs_set_path_file_sd_core(const void *subject_token,
-				    const struct path *path,
-				    u32 security_info,
+				    const struct path *path, u32 security_info,
 				    const u8 *input_sd_ptr,
 				    size_t input_sd_len);
 

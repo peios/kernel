@@ -81,7 +81,7 @@ static u32 ntfe_sentence_slot(const struct peios_ntfe_snapshot *snap)
 
 /* Lock-free read; false when the slot is empty or was torn under us. */
 static bool ntfe_sentence_read(const struct peios_ntfe_ct *pc, u32 slot,
-			      struct peios_ntfe_sentence *out)
+			       struct peios_ntfe_sentence *out)
 {
 	const struct peios_ntfe_sentence *s = &pc->sentence[slot];
 	const seqcount_t *seq = &pc->sentence_seq[slot].seqcount;
@@ -110,7 +110,7 @@ static bool ntfe_sentence_read(const struct peios_ntfe_ct *pc, u32 slot,
 }
 
 static void ntfe_sentence_write(struct nf_conn *ct, struct peios_ntfe_ct *pc,
-			       u32 slot, const struct peios_ntfe_sentence *val)
+				u32 slot, const struct peios_ntfe_sentence *val)
 {
 	struct peios_ntfe_sentence *s = &pc->sentence[slot];
 
@@ -128,9 +128,9 @@ static void ntfe_sentence_write(struct nf_conn *ct, struct peios_ntfe_ct *pc,
 	spin_unlock_bh(&ct->lock);
 }
 
-static bool ntfe_sentence_current(const struct peios_ntfe_sentence *s,
-				 const struct peios_ntfe_policy_snapshot *policy,
-				 s64 now)
+static bool
+ntfe_sentence_current(const struct peios_ntfe_sentence *s,
+		      const struct peios_ntfe_policy_snapshot *policy, s64 now)
 {
 	return s->generation == policy->cache_generation &&
 	       s->policy_generation == policy->generation &&
@@ -139,7 +139,7 @@ static bool ntfe_sentence_current(const struct peios_ntfe_sentence *s,
 
 /* Strictness: DROP > REJECT(Refused) > REJECT(Prohibited) > PASS. */
 static bool ntfe_sentence_stricter(const struct peios_ntfe_sentence *a,
-				  const struct peios_ntfe_sentence *b)
+				   const struct peios_ntfe_sentence *b)
 {
 	if (a->verdict != b->verdict)
 		return a->verdict > b->verdict;
@@ -159,8 +159,8 @@ static bool ntfe_sentence_stricter(const struct peios_ntfe_sentence *a,
  * direction, so it records what it sees.
  */
 static void ntfe_flow_view(const struct peios_ntfe_snapshot *snap,
-			  const struct peios_ntfe_ct *pc, u32 slot,
-			  struct peios_ntfe_snapshot *view)
+			   const struct peios_ntfe_ct *pc, u32 slot,
+			   struct peios_ntfe_snapshot *view)
 {
 	*view = *snap;
 	if (snap->flow_reply) {
@@ -185,7 +185,8 @@ static void ntfe_flow_view(const struct peios_ntfe_snapshot *snap,
 			view->icmp_code = t->dst.u.icmp.code;
 		}
 		view->direction = snap->direction == PEIOS_NTFE_DIR_IN ?
-			PEIOS_NTFE_DIR_OUT : PEIOS_NTFE_DIR_IN;
+					  PEIOS_NTFE_DIR_OUT :
+					  PEIOS_NTFE_DIR_IN;
 	}
 	if (snap->loopback)
 		view->direction = slot ? PEIOS_NTFE_DIR_IN : PEIOS_NTFE_DIR_OUT;
@@ -224,7 +225,7 @@ static void ntfe_flow_view(const struct peios_ntfe_snapshot *snap,
 
 /* Records the flow facts the tuple does not carry, once. */
 static void ntfe_flow_record(struct peios_ntfe_ct *pc,
-			    const struct peios_ntfe_snapshot *view)
+			     const struct peios_ntfe_snapshot *view)
 {
 	if (READ_ONCE(pc->judged))
 		return;
@@ -255,18 +256,18 @@ struct ntfe_identity_pair {
 };
 
 static void ntfe_identity_read(const struct peios_ntfe_ct *pc, u32 s,
-			      struct peios_ntfe_identity *id)
+			       struct peios_ntfe_identity *id)
 {
 	id->kind = READ_ONCE(pc->owner_kind[s]);
 	id->unresolved = READ_ONCE(pc->owner_unresolved[s]);
-	id->owner = pc->owner[s];	/* borrowed: the extension holds the ref */
+	id->owner = pc->owner[s]; /* borrowed: the extension holds the ref */
 }
 
 static void ntfe_flow_identity(struct sk_buff *skb,
-			      const struct nf_hook_state *state,
-			      const struct peios_ntfe_snapshot *snap,
-			      struct nf_conn *ct, struct peios_ntfe_ct *pc,
-			      u32 slot, struct ntfe_identity_pair *p)
+			       const struct nf_hook_state *state,
+			       const struct peios_ntfe_snapshot *snap,
+			       struct nf_conn *ct, struct peios_ntfe_ct *pc,
+			       u32 slot, struct ntfe_identity_pair *p)
 {
 	u32 s;
 
@@ -333,7 +334,8 @@ static void ntfe_identity_pair_release(struct ntfe_identity_pair *p)
 
 /* The identity facts onto the flow view: this end, and the other. */
 static void ntfe_flow_view_identity(struct peios_ntfe_snapshot *view,
-				   const struct ntfe_identity_pair *p, u32 slot)
+				    const struct ntfe_identity_pair *p,
+				    u32 slot)
 {
 	const struct peios_ntfe_identity *l = &p->id[slot];
 	const struct peios_ntfe_identity *r = &p->id[slot ^ 1];
@@ -353,9 +355,9 @@ static void ntfe_flow_view_identity(struct peios_ntfe_snapshot *view,
 }
 
 static unsigned int ntfe_apply_sentence(struct sk_buff *skb,
-				       const struct nf_hook_state *state,
-				       const struct peios_ntfe_snapshot *snap,
-				       const struct peios_ntfe_sentence *s)
+					const struct nf_hook_state *state,
+					const struct peios_ntfe_snapshot *snap,
+					const struct peios_ntfe_sentence *s)
 {
 	switch (s->verdict) {
 	case PEIOS_NTFE_VERDICT_PASS:
@@ -369,14 +371,15 @@ static unsigned int ntfe_apply_sentence(struct sk_buff *skb,
 	}
 }
 
-static unsigned int ntfe_flow_dispatch_policy(
-	struct sk_buff *skb, const struct nf_hook_state *state,
-	const struct peios_ntfe_snapshot *snap,
-	const struct peios_ntfe_policy_snapshot *policy)
+static unsigned int
+ntfe_flow_dispatch_policy(struct sk_buff *skb,
+			  const struct nf_hook_state *state,
+			  const struct peios_ntfe_snapshot *snap,
+			  const struct peios_ntfe_policy_snapshot *policy)
 {
 	struct nf_conn *ct = (struct nf_conn *)snap->flow;
-	struct peios_ntfe_sentence cur = { }, other = { };
-	struct ntfe_identity_pair ids = { };
+	struct peios_ntfe_sentence cur = {}, other = {};
+	struct ntfe_identity_pair ids = {};
 	struct peios_ntfe_snapshot view;
 	struct peios_ntfe_outcome out;
 	struct peios_ntfe_ct *pc;
@@ -424,7 +427,8 @@ static unsigned int ntfe_flow_dispatch_policy(
 		 * only when there is a Flow forest to judge them.
 		 */
 		if (policy->forest) {
-			ntfe_flow_identity(skb, state, snap, ct, pc, slot, &ids);
+			ntfe_flow_identity(skb, state, snap, ct, pc, slot,
+					   &ids);
 			ntfe_flow_view_identity(&view, &ids, slot);
 			if (view.local_unresolved || view.remote_unresolved)
 				evflags |= PEIOS_NTFE_EV_F_IDENTITY_UNRESOLVED;
@@ -442,8 +446,9 @@ static unsigned int ntfe_flow_dispatch_policy(
 			out.verdict = PEIOS_NTFE_VERDICT_DROP;
 			strscpy(out.attributed, "fail-closed",
 				sizeof(out.attributed));
-			peios_ntfe_event_emit(&view, &out, PEIOS_NTFE_LAYER_FLOW,
-					     PEIOS_NTFE_EV_F_FAIL_CLOSED);
+			peios_ntfe_event_emit(&view, &out,
+					      PEIOS_NTFE_LAYER_FLOW,
+					      PEIOS_NTFE_EV_F_FAIL_CLOSED);
 			ntfe_identity_pair_release(&ids);
 			return NF_DROP;
 		}
@@ -480,7 +485,6 @@ static unsigned int ntfe_flow_dispatch_policy(
 		} else {
 			atomic64_inc(&peios_ntfe_stats.flow_uncached);
 		}
-
 	}
 
 	/* A loopback flow answers to both endpoints' sentences: the other
@@ -489,15 +493,14 @@ static unsigned int ntfe_flow_dispatch_policy(
 	 * comes before any refusal: a REJECT the other end's DROP overrules
 	 * sends nothing (PEI-1303).
 	 */
-	if (snap->loopback && pc &&
-	    ntfe_sentence_read(pc, slot ^ 1, &other) &&
+	if (snap->loopback && pc && ntfe_sentence_read(pc, slot ^ 1, &other) &&
 	    ntfe_sentence_current(&other, policy, snap->t_secs) &&
 	    ntfe_sentence_stricter(&other, &cur))
 		other_rules = true;
 
 	if (!hit) {
 		const struct peios_ntfe_sentence *final = other_rules ? &other :
-								      &cur;
+									&cur;
 		unsigned int nf = NF_DROP;
 
 		/* The refusal, when it is one, answers the packet in hand
@@ -507,14 +510,15 @@ static unsigned int ntfe_flow_dispatch_policy(
 		 */
 		if (final->verdict == PEIOS_NTFE_VERDICT_REJECT) {
 			bool sent = peios_ntfe_refuse(skb, state, snap,
-						     final->reject_kind);
+						      final->reject_kind);
 
 			if (!sent && !other_rules)
 				evflags |= PEIOS_NTFE_EV_F_REJECT_DEGRADED;
 		} else if (final->verdict == PEIOS_NTFE_VERDICT_PASS) {
 			nf = NF_ACCEPT;
 		}
-		peios_ntfe_event_emit(&view, &out, PEIOS_NTFE_LAYER_FLOW, evflags);
+		peios_ntfe_event_emit(&view, &out, PEIOS_NTFE_LAYER_FLOW,
+				      evflags);
 		ntfe_identity_pair_release(&ids);
 		return nf;
 	}
@@ -524,8 +528,8 @@ static unsigned int ntfe_flow_dispatch_policy(
 }
 
 unsigned int peios_ntfe_flow_dispatch(struct sk_buff *skb,
-				     const struct nf_hook_state *state,
-				     const struct peios_ntfe_snapshot *snap)
+				      const struct nf_hook_state *state,
+				      const struct peios_ntfe_snapshot *snap)
 {
 	struct peios_ntfe_policy_snapshot policy;
 	unsigned int verdict;
@@ -539,7 +543,7 @@ unsigned int peios_ntfe_flow_dispatch(struct sk_buff *skb,
 /* --- the flows dump ------------------------------------------------- */
 
 static void ntfe_sentence_to_rec(const struct peios_ntfe_ct *pc,
-				struct peios_ntfe_flow_rec *rec, u32 slot)
+				 struct peios_ntfe_flow_rec *rec, u32 slot)
 {
 	struct peios_ntfe_sentence val;
 
@@ -554,7 +558,7 @@ static void ntfe_sentence_to_rec(const struct peios_ntfe_ct *pc,
 
 /* The endpoint identity recorded for one slot, if any. */
 static void ntfe_owner_to_rec(const struct peios_ntfe_ct *pc,
-			     struct peios_ntfe_flow_rec *rec, u32 slot)
+			      struct peios_ntfe_flow_rec *rec, u32 slot)
 {
 	const struct peios_ntfe_owner *o = &pc->owner[slot];
 
@@ -572,15 +576,14 @@ static void ntfe_owner_to_rec(const struct peios_ntfe_ct *pc,
 	memcpy(&rec->owner_comm[slot * PEIOS_NTFE_COMM_LEN], o->comm,
 	       PEIOS_NTFE_COMM_LEN);
 	if (o->token)
-		ntfe_rust_owner_sids(o->token,
-				    &rec->owner_user[slot * PEIOS_NTFE_SID_LEN],
-				    &rec->owner_service[slot *
-							PEIOS_NTFE_SERVICE_SID_LEN]);
+		ntfe_rust_owner_sids(
+			o->token, &rec->owner_user[slot * PEIOS_NTFE_SID_LEN],
+			&rec->owner_service[slot * PEIOS_NTFE_SERVICE_SID_LEN]);
 }
 
 /* Fills one record from a live entry; called under its bucket lock. */
 static void ntfe_flow_fill(struct peios_ntfe_flow_rec *rec,
-			  const struct nf_conn *ct)
+			   const struct nf_conn *ct)
 {
 	const struct nf_conntrack_tuple *t =
 		&ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
@@ -624,12 +627,12 @@ static void ntfe_flow_fill(struct peios_ntfe_flow_rec *rec,
 	if (acct) {
 		rec->packets[0] = atomic64_read(
 			&acct->counter[IP_CT_DIR_ORIGINAL].packets);
-		rec->bytes[0] = atomic64_read(
-			&acct->counter[IP_CT_DIR_ORIGINAL].bytes);
-		rec->packets[1] = atomic64_read(
-			&acct->counter[IP_CT_DIR_REPLY].packets);
-		rec->bytes[1] = atomic64_read(
-			&acct->counter[IP_CT_DIR_REPLY].bytes);
+		rec->bytes[0] =
+			atomic64_read(&acct->counter[IP_CT_DIR_ORIGINAL].bytes);
+		rec->packets[1] =
+			atomic64_read(&acct->counter[IP_CT_DIR_REPLY].packets);
+		rec->bytes[1] =
+			atomic64_read(&acct->counter[IP_CT_DIR_REPLY].bytes);
 	}
 	if (pc) {
 		rec->start_secs = pc->start_secs;
@@ -647,13 +650,13 @@ static void ntfe_flow_fill(struct peios_ntfe_flow_rec *rec,
 		/* The flow's total: a reader seeing more than the record
 		 * lists knows some are missing (PEI-1308).
 		 */
-		rec->n_tags = peios_ntfe_tags_snapshot(ct, rec->tag_hash,
-						      rec->tag_value,
-						      PEIOS_NTFE_FLOW_MAX_TAGS);
+		rec->n_tags = peios_ntfe_tags_snapshot(
+			ct, rec->tag_hash, rec->tag_value,
+			PEIOS_NTFE_FLOW_MAX_TAGS);
 	}
 }
 
-#define NTFE_FLOWS_BATCH		32
+#define NTFE_FLOWS_BATCH 32
 
 long peios_ntfe_flows_dump(struct peios_ntfe_flows_query *query)
 {
@@ -665,8 +668,9 @@ long peios_ntfe_flows_dump(struct peios_ntfe_flows_query *query)
 	u32 written = 0, total = 0, n = 0, i;
 	long ret = 0;
 
-	batch = peios_ntfe_kunit_alloc_should_fail() ? NULL :
-		kcalloc(NTFE_FLOWS_BATCH, sizeof(*batch), GFP_KERNEL);
+	batch = peios_ntfe_kunit_alloc_should_fail() ?
+			NULL :
+			kcalloc(NTFE_FLOWS_BATCH, sizeof(*batch), GFP_KERNEL);
 	if (!batch)
 		return -ENOMEM;
 
@@ -686,7 +690,8 @@ again:
 		skip = taken;
 		idx = 0;
 		more = false;
-		hlist_nulls_for_each_entry(h, nn, &nf_conntrack_hash[i], hnnode) {
+		hlist_nulls_for_each_entry(h, nn, &nf_conntrack_hash[i],
+					   hnnode) {
 			struct nf_conn *ct = nf_ct_tuplehash_to_ctrack(h);
 
 			if (NF_CT_DIRECTION(h) != IP_CT_DIR_ORIGINAL)
@@ -698,9 +703,9 @@ again:
 			if (first)
 				total++;
 			if (idx++ < skip)
-				continue;	/* taken on an earlier pass */
+				continue; /* taken on an earlier pass */
 			if (written + n >= room)
-				continue;	/* count only */
+				continue; /* count only */
 			if (n == NTFE_FLOWS_BATCH) {
 				more = true;
 				continue;
@@ -719,7 +724,8 @@ again:
 		 */
 		if (n >= NTFE_FLOWS_BATCH / 2 || more) {
 			local_bh_enable();
-			if (copy_to_user(ubuf + written, batch, n * sizeof(*batch))) {
+			if (copy_to_user(ubuf + written, batch,
+					 n * sizeof(*batch))) {
 				ret = -EFAULT;
 				goto out;
 			}
@@ -747,7 +753,7 @@ out:
 
 #ifdef CONFIG_PEIOS_NTFE_KUNIT
 bool peios_ntfe_kunit_sentence_read(struct nf_conn *ct, u32 slot,
-				   struct peios_ntfe_sentence *out)
+				    struct peios_ntfe_sentence *out)
 {
 	struct peios_ntfe_ct *pc = ntfe_ct_ext(ct);
 
@@ -755,7 +761,7 @@ bool peios_ntfe_kunit_sentence_read(struct nf_conn *ct, u32 slot,
 }
 
 void peios_ntfe_kunit_sentence_write(struct nf_conn *ct, u32 slot,
-				    const struct peios_ntfe_sentence *val)
+				     const struct peios_ntfe_sentence *val)
 {
 	struct peios_ntfe_ct *pc = ntfe_ct_ext(ct);
 

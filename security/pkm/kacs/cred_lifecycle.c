@@ -74,7 +74,8 @@ long pkm_kacs_project_linux_cred_from_token(struct cred *cred,
 		return -EINVAL;
 
 	projected_uid = kacs_rust_token_projected_uid(token);
-	if (projected_uid == 0 && !kacs_rust_token_allows_uid0_projection(token)) {
+	if (projected_uid == 0 &&
+	    !kacs_rust_token_allows_uid0_projection(token)) {
 		trace_kacs_cred((u64)(uintptr_t)token, 0, 0,
 				KACS_CRED_PROJECT_UID0_BLOCKED, -EACCES);
 		return -EACCES;
@@ -172,7 +173,8 @@ int pkm_kacs_cred_prepare(struct cred *new, const struct cred *old, gfp_t gfp)
 	pkm_kacs_stamp_projected_ids(new_sec);
 	pkm_kacs_raise_allow_compat_caps(new);
 	trace_kacs_cred((u64)(uintptr_t)old_sec->token,
-			(u64)(uintptr_t)new_sec->token, 0, KACS_CRED_PREPARE, 0);
+			(u64)(uintptr_t)new_sec->token, 0, KACS_CRED_PREPARE,
+			0);
 	return 0;
 }
 
@@ -198,7 +200,8 @@ void pkm_kacs_cred_transfer(struct cred *new, const struct cred *old)
 	pkm_kacs_stamp_projected_ids(new_sec);
 	pkm_kacs_raise_allow_compat_caps(new);
 	trace_kacs_cred((u64)(uintptr_t)old_sec->token,
-			(u64)(uintptr_t)new_sec->token, 0, KACS_CRED_TRANSFER, 0);
+			(u64)(uintptr_t)new_sec->token, 0, KACS_CRED_TRANSFER,
+			0);
 }
 
 int pkm_kacs_cred_alloc_blank(struct cred *cred, gfp_t gfp)
@@ -254,14 +257,15 @@ long pkm_kacs_install_primary_on_child_cred_pair(
 	    pkm_kacs_cred_is_current_shared(child_real_cred))
 		return -EACCES;
 
-	child_primary = deep_copy_primary ?
-				kacs_rust_token_deep_copy(source_primary_token) :
-				kacs_rust_token_clone(source_primary_token);
+	child_primary =
+		deep_copy_primary ?
+			kacs_rust_token_deep_copy(source_primary_token) :
+			kacs_rust_token_clone(source_primary_token);
 	if (!child_primary)
 		return -ENOMEM;
 
 	ret = pkm_kacs_install_token_ref_on_cred((struct cred *)child_real_cred,
-						child_primary, false);
+						 child_primary, false);
 	if (ret) {
 		kacs_rust_token_drop(child_primary);
 		return ret;
@@ -270,13 +274,13 @@ long pkm_kacs_install_primary_on_child_cred_pair(
 	if (child_cred == child_real_cred)
 		return 0;
 
-	child_effective = kacs_rust_token_clone(
-		pkm_kacs_cred(child_real_cred)->token);
+	child_effective =
+		kacs_rust_token_clone(pkm_kacs_cred(child_real_cred)->token);
 	if (!child_effective)
 		return -ENOMEM;
 
 	ret = pkm_kacs_install_token_ref_on_cred((struct cred *)child_cred,
-						child_effective, false);
+						 child_effective, false);
 	if (ret) {
 		kacs_rust_token_drop(child_effective);
 		return ret;
@@ -284,9 +288,9 @@ long pkm_kacs_install_primary_on_child_cred_pair(
 	return 0;
 }
 
-long pkm_kacs_apply_clone_token_lifecycle(
-	const struct cred **child_credp, const struct cred **child_real_credp,
-	u64 clone_flags)
+long pkm_kacs_apply_clone_token_lifecycle(const struct cred **child_credp,
+					  const struct cred **child_real_credp,
+					  u64 clone_flags)
 {
 	const struct cred *child_cred;
 	const struct cred *child_real_cred;

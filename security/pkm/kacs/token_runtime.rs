@@ -26,10 +26,9 @@ use crate::port_reservation::{
     PORT_FALLBACK_DEFAULT_SD, PORT_GENERIC_MAPPING, PORT_PROTO_TCP, PORT_PROTO_UDP,
 };
 use crate::access_mask::{
-    GenericMapping, ACCESS_SYSTEM_SECURITY, FILE_GENERIC_MAPPING, FILE_READ_DATA,
-    FILE_WRITE_DATA, GENERIC_ALL, GENERIC_READ, GENERIC_WRITE, GENERIC_EXECUTE,
-    IPC_GENERIC_MAPPING, MNTNS_GENERIC_MAPPING,
-    PROCESS_GENERIC_MAPPING, PROCESS_QUERY_INFORMATION,
+    GenericMapping, ACCESS_SYSTEM_SECURITY, FILE_GENERIC_MAPPING, FILE_READ_DATA, FILE_WRITE_DATA,
+    GENERIC_ALL, GENERIC_READ, GENERIC_WRITE, GENERIC_EXECUTE, IPC_GENERIC_MAPPING,
+    MNTNS_GENERIC_MAPPING, PROCESS_GENERIC_MAPPING, PROCESS_QUERY_INFORMATION,
     PROCESS_QUERY_LIMITED, READ_CONTROL, WRITE_DAC, WRITE_OWNER,
 };
 use crate::audit::evaluate_sacl;
@@ -70,10 +69,9 @@ use crate::sacl::extract_sacl_metadata;
 use crate::security_descriptor::{
     SecurityDescriptor, SecurityDescriptorComponentLayout, SecurityDescriptorLayout,
     MAX_SECURITY_DESCRIPTOR_BYTES, SE_DACL_AUTO_INHERITED, SE_DACL_AUTO_INHERIT_REQ,
-    SE_DACL_DEFAULTED, SE_DACL_PRESENT, SE_DACL_PROTECTED, SE_DACL_TRUSTED,
-    SE_GROUP_DEFAULTED, SE_OWNER_DEFAULTED, SE_RM_CONTROL_VALID, SE_SACL_AUTO_INHERITED,
-    SE_SACL_AUTO_INHERIT_REQ, SE_SACL_DEFAULTED, SE_SACL_PRESENT, SE_SACL_PROTECTED,
-    SE_SELF_RELATIVE, SE_SERVER_SECURITY,
+    SE_DACL_DEFAULTED, SE_DACL_PRESENT, SE_DACL_PROTECTED, SE_DACL_TRUSTED, SE_GROUP_DEFAULTED,
+    SE_OWNER_DEFAULTED, SE_RM_CONTROL_VALID, SE_SACL_AUTO_INHERITED, SE_SACL_AUTO_INHERIT_REQ,
+    SE_SACL_DEFAULTED, SE_SACL_PRESENT, SE_SACL_PROTECTED, SE_SELF_RELATIVE, SE_SERVER_SECURITY,
 };
 use crate::sid::Sid;
 use crate::token::{
@@ -85,9 +83,7 @@ use crate::token::{
 use core::cell::UnsafeCell;
 use core::ffi::{c_char, c_long, c_ulong, c_void};
 use core::ptr::{copy_nonoverlapping, null, null_mut};
-use core::sync::atomic::{
-    fence, AtomicBool, AtomicPtr, AtomicU32, AtomicU64, AtomicUsize, Ordering,
-};
+use core::sync::atomic::{fence, AtomicBool, AtomicPtr, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 
 const SYSTEM_PRIVILEGES_ALL: u64 = 0xC000_000F_FFFF_FFFC;
 const SE_TCB_PRIVILEGE: u64 = 1 << 7;
@@ -242,10 +238,8 @@ const SYSTEM_DEFAULT_DACL_BYTES: &[u8] = &[
     24, 0, 0, 0, 0, 16, 1, 2, 0, 0, 0, 0, 0, 5, 32, 0, 0, 0, 32, 2, 0, 0,
 ];
 const ANONYMOUS_PROJECTED_ID: u32 = 65534;
-const LOGON_GROUP_ATTRIBUTES: u32 = SE_GROUP_MANDATORY
-    | SE_GROUP_ENABLED_BY_DEFAULT
-    | SE_GROUP_ENABLED
-    | SE_GROUP_LOGON_ID;
+const LOGON_GROUP_ATTRIBUTES: u32 =
+    SE_GROUP_MANDATORY | SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED | SE_GROUP_LOGON_ID;
 const EMPTY_DEVICE_GROUPS: &[SidAndAttributes<'static>] = &[];
 const EMPTY_CLAIMS: &[crate::claims::ClaimAttribute] = &[];
 const EMPTY_POLICIES: &[crate::caap::CaapPolicyEntry<'static>] = &[];
@@ -258,8 +252,7 @@ static LOGON_SESSION_TABLE_LOCK: AtomicBool = AtomicBool::new(false);
 /// the session-audit work item. Each entry holds the session reference the
 /// session table used to hold, so the fields the record reads stay alive
 /// until it is written.
-static DESTROYED_SESSION_AUDIT_HEAD: AtomicPtr<PkmKacsLogonSession> =
-    AtomicPtr::new(null_mut());
+static DESTROYED_SESSION_AUDIT_HEAD: AtomicPtr<PkmKacsLogonSession> = AtomicPtr::new(null_mut());
 const ANONYMOUS_ONLY_GROUP_ATTRIBUTES: [u32; MAX_BOOT_GROUPS] = [
     SE_GROUP_MANDATORY | SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED,
     0,
@@ -928,13 +921,11 @@ impl PkmKacsLogonSession {
             let Some(session) = (unsafe { Self::from_ptr(ptr.cast()) }) else {
                 return;
             };
-            let Some(elevated) =
-                (unsafe { PkmKacsBootToken::from_ptr(session.linked_elevated) })
+            let Some(elevated) = (unsafe { PkmKacsBootToken::from_ptr(session.linked_elevated) })
             else {
                 return;
             };
-            let Some(filtered) =
-                (unsafe { PkmKacsBootToken::from_ptr(session.linked_filtered) })
+            let Some(filtered) = (unsafe { PkmKacsBootToken::from_ptr(session.linked_filtered) })
             else {
                 return;
             };
@@ -1068,9 +1059,7 @@ impl PkmKacsLogonSession {
             return &[];
         }
 
-        unsafe {
-            core::slice::from_raw_parts(self.own_sd_ptr.cast_const(), self.own_sd_len)
-        }
+        unsafe { core::slice::from_raw_parts(self.own_sd_ptr.cast_const(), self.own_sd_len) }
     }
 }
 
@@ -1145,7 +1134,10 @@ fn write_hex_bytes(writer: &mut QueryWriter, bytes: &[u8]) -> bool {
     true
 }
 
-fn write_logon_session_listing_line(writer: &mut QueryWriter, session: &PkmKacsLogonSession) -> bool {
+fn write_logon_session_listing_line(
+    writer: &mut QueryWriter,
+    session: &PkmKacsLogonSession,
+) -> bool {
     writer.write_bytes(b"logon_session_id=")
         && write_decimal_u64(writer, session.logon_session_id)
         && writer.write_bytes(b" user_sid=")
@@ -1308,7 +1300,9 @@ fn claim_value_nested_len(value_type: u16, value: &ClaimValue) -> Result<usize, 
         (CLAIM_TYPE_INT64, ClaimValue::Int64(_))
         | (CLAIM_TYPE_UINT64, ClaimValue::UInt64(_))
         | (CLAIM_TYPE_BOOLEAN, ClaimValue::Boolean(_)) => Ok(0),
-        (CLAIM_TYPE_STRING, ClaimValue::String(value)) => utf16_cstr_len(value.as_str()).ok_or(-EINVAL),
+        (CLAIM_TYPE_STRING, ClaimValue::String(value)) => {
+            utf16_cstr_len(value.as_str()).ok_or(-EINVAL)
+        }
         (CLAIM_TYPE_SID, ClaimValue::Sid(value)) => Ok(value.len()),
         (CLAIM_TYPE_OCTET, ClaimValue::Octet(value)) => {
             4usize.checked_add(value.len()).ok_or(-EINVAL)
@@ -1333,7 +1327,9 @@ fn claim_entry_query_len(claim: &ClaimAttribute) -> Result<usize, i32> {
     for value in claim.values.as_slice() {
         len = len
             .checked_add(claim_value_slot_len(value_type)?)
-            .and_then(|value_len| value_len.checked_add(claim_value_nested_len(value_type, value).ok()?))
+            .and_then(|value_len| {
+                value_len.checked_add(claim_value_nested_len(value_type, value).ok()?)
+            })
             .ok_or(-EINVAL)?;
     }
 
@@ -1369,10 +1365,7 @@ fn write_utf16_cstr(writer: &mut QueryWriter, value: &str) -> bool {
     writer.write_u16(0)
 }
 
-fn write_claim_array_query(
-    claims: &[ClaimAttribute],
-    writer: &mut QueryWriter,
-) -> Result<(), i32> {
+fn write_claim_array_query(claims: &[ClaimAttribute], writer: &mut QueryWriter) -> Result<(), i32> {
     // A claims array is `[count:u32le]` followed by `count` entries of
     // `[entry_len:u32le][entry_bytes]`, the same shape family as a SID
     // array; an empty array is a zero count, not an empty payload (§3.D,
@@ -1447,9 +1440,7 @@ fn write_claim_entry(claim: &ClaimAttribute, writer: &mut QueryWriter) -> Result
         return Err(-ERANGE);
     }
 
-    let mut nested_cursor = value_slot_base
-        .checked_add(slot_total_len)
-        .ok_or(-EINVAL)?;
+    let mut nested_cursor = value_slot_base.checked_add(slot_total_len).ok_or(-EINVAL)?;
     for value in claim.values.as_slice() {
         match (value_type, value) {
             (CLAIM_TYPE_INT64, ClaimValue::Int64(value)) => {
@@ -1662,8 +1653,8 @@ fn parse_sid_and_attributes_array(
     let mut offset = 0usize;
 
     for _ in 0..count {
-        let sid_len = usize::try_from(read_le_u32(bytes, offset).ok_or(-EINVAL)?)
-            .map_err(|_| -EINVAL)?;
+        let sid_len =
+            usize::try_from(read_le_u32(bytes, offset).ok_or(-EINVAL)?).map_err(|_| -EINVAL)?;
         let sid_offset = offset.checked_add(4).ok_or(-ERANGE)?;
         let sid_end = sid_offset.checked_add(sid_len).ok_or(-ERANGE)?;
         let attr_offset = sid_end;
@@ -2042,10 +2033,7 @@ fn sorted_active_section_offsets(spec: &[u8], offsets: &[u32]) -> Result<Vec<usi
 fn section_limit(sorted_offsets: &[usize], offset: usize, total_len: usize) -> Result<usize, i32> {
     for (index, candidate) in sorted_offsets.iter().enumerate() {
         if *candidate == offset {
-            return Ok(sorted_offsets
-                .get(index + 1)
-                .copied()
-                .unwrap_or(total_len));
+            return Ok(sorted_offsets.get(index + 1).copied().unwrap_or(total_len));
         }
     }
 
@@ -2189,17 +2177,26 @@ fn parse_lcs_credential_extension(
     scope_guids = Vec::with_capacity(scope_count).map_err(|_| -ENOMEM)?;
     for index in 0..scope_count {
         let start = TOKEN_LCS_CREDENTIALS_HEADER_LEN
-            .checked_add(index.checked_mul(KACS_LCS_SCOPE_GUID_BYTES).ok_or(-ERANGE)?)
+            .checked_add(
+                index
+                    .checked_mul(KACS_LCS_SCOPE_GUID_BYTES)
+                    .ok_or(-ERANGE)?,
+            )
             .ok_or(-ERANGE)?;
-        let end = start.checked_add(KACS_LCS_SCOPE_GUID_BYTES).ok_or(-ERANGE)?;
-        let guid = <[u8; KACS_LCS_SCOPE_GUID_BYTES]>::try_from(
-            extension.get(start..end).ok_or(-EINVAL)?,
-        )
-        .map_err(|_| -EINVAL)?;
+        let end = start
+            .checked_add(KACS_LCS_SCOPE_GUID_BYTES)
+            .ok_or(-ERANGE)?;
+        let guid =
+            <[u8; KACS_LCS_SCOPE_GUID_BYTES]>::try_from(extension.get(start..end).ok_or(-EINVAL)?)
+                .map_err(|_| -EINVAL)?;
         if guid.iter().all(|byte| *byte == 0) {
             return Err(-EINVAL);
         }
-        if scope_guids.as_slice().iter().any(|existing| existing == &guid) {
+        if scope_guids
+            .as_slice()
+            .iter()
+            .any(|existing| existing == &guid)
+        {
             return Err(-EINVAL);
         }
         scope_guids.push(guid).map_err(|_| -ENOMEM)?;
@@ -2211,9 +2208,8 @@ fn parse_lcs_credential_extension(
         let len_offset = private_header_offset
             .checked_add(index.checked_mul(4).ok_or(-ERANGE)?)
             .ok_or(-ERANGE)?;
-        let name_len =
-            usize::try_from(read_le_u32(extension, len_offset).ok_or(-EINVAL)?)
-                .map_err(|_| -EINVAL)?;
+        let name_len = usize::try_from(read_le_u32(extension, len_offset).ok_or(-EINVAL)?)
+            .map_err(|_| -EINVAL)?;
         if name_len == 0 || name_len > KACS_LCS_MAX_PRIVATE_LAYER_NAME_BYTES {
             return Err(-EINVAL);
         }
@@ -2248,7 +2244,9 @@ fn parse_lcs_credential_extension(
     Ok((scope_guids, private_layers))
 }
 
-fn published_logon_session_ref_by_id(logon_session_id: u64) -> Result<*const PkmKacsLogonSession, i32> {
+fn published_logon_session_ref_by_id(
+    logon_session_id: u64,
+) -> Result<*const PkmKacsLogonSession, i32> {
     let _guard = lock_logon_session_table();
     let Some(session_ptr) = session_list_find_locked(logon_session_id) else {
         return Err(-EINVAL);
@@ -2338,8 +2336,8 @@ fn create_logon_session_object(
             return Err(err);
         }
     };
-    let session_ptr =
-        unsafe { pkm_kacs_zalloc(core::mem::size_of::<PkmKacsLogonSession>()) } as *mut PkmKacsLogonSession;
+    let session_ptr = unsafe { pkm_kacs_zalloc(core::mem::size_of::<PkmKacsLogonSession>()) }
+        as *mut PkmKacsLogonSession;
 
     if session_ptr.is_null() {
         free_allocated_bytes(user_sid_ptr);
@@ -2591,7 +2589,9 @@ fn try_clone_vec<T: TryClone>(values: &Vec<T>) -> Result<Vec<T>, i32> {
     values.try_clone().map_err(|_| -ENOMEM)
 }
 
-fn build_owned_group_entries(entries: &[(Sid<'_>, u32)]) -> Result<Vec<OwnedSidAndAttributes>, i32> {
+fn build_owned_group_entries(
+    entries: &[(Sid<'_>, u32)],
+) -> Result<Vec<OwnedSidAndAttributes>, i32> {
     let mut owned = Vec::with_capacity(entries.len()).map_err(|_| -ENOMEM)?;
 
     for (sid, attributes) in entries {
@@ -2778,8 +2778,7 @@ fn ace_inherits_to_child(ace_flags: u8, child_is_container: bool) -> bool {
         // OI alone targets files below this directory. NP prevents reaching
         // them, so it must not turn into an effective directory grant.
         (ace_flags & CONTAINER_INHERIT_ACE) != 0
-            || (ace_flags & OBJECT_INHERIT_ACE != 0
-                && ace_flags & NO_PROPAGATE_INHERIT_ACE == 0)
+            || (ace_flags & OBJECT_INHERIT_ACE != 0 && ace_flags & NO_PROPAGATE_INHERIT_ACE == 0)
     } else {
         (ace_flags & OBJECT_INHERIT_ACE) != 0
     }
@@ -2796,8 +2795,10 @@ fn inherited_ace_flags(parent_flags: u8, child_is_container: bool) -> u8 {
         flags |= INHERIT_ONLY_ACE;
     }
     if !child_is_container || (parent_flags & NO_PROPAGATE_INHERIT_ACE) != 0 {
-        flags &= !(OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE
-            | NO_PROPAGATE_INHERIT_ACE | INHERIT_ONLY_ACE);
+        flags &= !(OBJECT_INHERIT_ACE
+            | CONTAINER_INHERIT_ACE
+            | NO_PROPAGATE_INHERIT_ACE
+            | INHERIT_ONLY_ACE);
     }
 
     flags
@@ -2862,9 +2863,7 @@ fn build_rewritten_file_ace_bytes(
     if !substitute_creator || ace.kind() == AceKind::Opaque {
         // A propagating copy is the original rule: neither creator SIDs nor
         // generic masks are resolved until it applies to a descendant.
-        bytes
-            .extend_from_slice(ace.bytes())
-            .map_err(|_| -ENOMEM)?;
+        bytes.extend_from_slice(ace.bytes()).map_err(|_| -ENOMEM)?;
         bytes[1] = new_flags;
         return Ok(bytes);
     }
@@ -2873,10 +2872,9 @@ fn build_rewritten_file_ace_bytes(
 
     match ace.kind() {
         AceKind::SingleSid { sid, .. } => {
-            let sid_bytes = resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
-            let ace_len = ACE_HEADER_LEN
-                .checked_add(sid_bytes.len())
-                .ok_or(-ERANGE)?;
+            let sid_bytes =
+                resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
+            let ace_len = ACE_HEADER_LEN.checked_add(sid_bytes.len()).ok_or(-ERANGE)?;
 
             bytes
                 .extend_from_slice(&[
@@ -2898,7 +2896,8 @@ fn build_rewritten_file_ace_bytes(
             sid,
             ..
         } => {
-            let sid_bytes = resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
+            let sid_bytes =
+                resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
             let ace_len = 12usize
                 .checked_add(object_type.map_or(0, |_| 16))
                 .and_then(|value| value.checked_add(inherited_object_type.map_or(0, |_| 16)))
@@ -2936,7 +2935,8 @@ fn build_rewritten_file_ace_bytes(
             application_data,
             ..
         } => {
-            let sid_bytes = resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
+            let sid_bytes =
+                resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
             let ace_len = ACE_HEADER_LEN
                 .checked_add(sid_bytes.len())
                 .and_then(|value| value.checked_add(application_data.len()))
@@ -2966,7 +2966,8 @@ fn build_rewritten_file_ace_bytes(
             application_data,
             ..
         } => {
-            let sid_bytes = resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
+            let sid_bytes =
+                resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
             let ace_len = 12usize
                 .checked_add(object_type.map_or(0, |_| 16))
                 .and_then(|value| value.checked_add(inherited_object_type.map_or(0, |_| 16)))
@@ -3008,7 +3009,8 @@ fn build_rewritten_file_ace_bytes(
             application_data,
             ..
         } => {
-            let sid_bytes = resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
+            let sid_bytes =
+                resolved_creator_ace_sid(sid, owner_sid, group_sid, substitute_creator)?;
             let ace_len = ACE_HEADER_LEN
                 .checked_add(sid_bytes.len())
                 .and_then(|value| value.checked_add(application_data.len()))
@@ -3071,19 +3073,14 @@ fn build_inherited_ace_bytes(
         | AceKind::Object { mask, .. }
         | AceKind::Callback { mask, .. }
         | AceKind::CallbackObject { mask, .. }
-        | AceKind::ResourceAttribute { mask, .. } =>
-            mask & (GENERIC_ALL | GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE) != 0,
+        | AceKind::ResourceAttribute { mask, .. } => {
+            mask & (GENERIC_ALL | GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE) != 0
+        }
         AceKind::Opaque => false,
     };
     if !ace_sid_names_creator(ace.kind()) && !generic {
-        return build_rewritten_file_ace_bytes(
-            ace,
-            inherited_flags,
-            owner_sid,
-            group_sid,
-            true,
-        )
-        .map(|bytes| (Some(bytes), None));
+        return build_rewritten_file_ace_bytes(ace, inherited_flags, owner_sid, group_sid, true)
+            .map(|bytes| (Some(bytes), None));
     }
 
     // The resolved ACE, only where the inherited flags say it applies to this
@@ -3399,12 +3396,18 @@ fn build_created_file_acl_bytes(
             return Ok((explicit_acl, false, false));
         }
         if (creator_control & auto_inherit_req) == auto_inherit_req {
-            let inherited_acl =
-                inherit_acl_from_parent(parent_acl, owner_sid, Some(group_sid), child_is_container)?;
+            let inherited_acl = inherit_acl_from_parent(
+                parent_acl,
+                owner_sid,
+                Some(group_sid),
+                child_is_container,
+            )?;
             let combined = append_acl_bytes(
                 explicit_acl.as_deref(),
                 inherited_acl.as_deref(),
-                creator_acl.map(|acl| acl.revision()).unwrap_or(ACL_REVISION),
+                creator_acl
+                    .map(|acl| acl.revision())
+                    .unwrap_or(ACL_REVISION),
                 creator_acl.map(|acl| acl.sbz1()).unwrap_or(0),
                 creator_acl.map(|acl| acl.sbz2()).unwrap_or(0),
             )?;
@@ -3605,10 +3608,7 @@ fn validate_stored_sd_bytes(sd_bytes: &[u8]) -> Result<(), i32> {
 fn build_kunit_single_opaque_acl_len(ace_len: usize) -> Result<usize, i32> {
     const OPAQUE_ACE_HEADER_LEN: usize = 4;
 
-    if ace_len < OPAQUE_ACE_HEADER_LEN
-        || ace_len > usize::from(u16::MAX)
-        || (ace_len % 4) != 0
-    {
+    if ace_len < OPAQUE_ACE_HEADER_LEN || ace_len > usize::from(u16::MAX) || (ace_len % 4) != 0 {
         return Err(-EINVAL);
     }
 
@@ -4005,7 +4005,9 @@ fn build_callback_allow_ace_bytes(
     bytes
         .extend_from_slice(&mask.to_le_bytes())
         .map_err(|_| -ENOMEM)?;
-    bytes.extend_from_slice(sid.as_bytes()).map_err(|_| -ENOMEM)?;
+    bytes
+        .extend_from_slice(sid.as_bytes())
+        .map_err(|_| -ENOMEM)?;
     bytes
         .extend_from_slice(application_data)
         .map_err(|_| -ENOMEM)?;
@@ -4595,8 +4597,8 @@ fn build_token_sd_bytes(
     let system = Sid::parse(SYSTEM_SID_BYTES).map_err(|_| -EINVAL)?;
     let administrators = Sid::parse(ADMINISTRATORS_SID_BYTES).map_err(|_| -EINVAL)?;
     let owner_rights = Sid::parse(OWNER_RIGHTS_SID_BYTES).map_err(|_| -EINVAL)?;
-    let suppress_owner_implicit = creator_sid.as_bytes() == token_user_sid.as_bytes()
-        && creator_mask.is_some();
+    let suppress_owner_implicit =
+        creator_sid.as_bytes() == token_user_sid.as_bytes() && creator_mask.is_some();
     let creator_mask = if creator_sid.as_bytes() == token_user_sid.as_bytes() {
         None
     } else {
@@ -4615,7 +4617,10 @@ fn build_token_sd_bytes(
     let mut dacl_len = ACL_HEADER_LEN;
 
     for (mask, sid) in [
-        (suppress_owner_implicit.then_some(READ_CONTROL), owner_rights),
+        (
+            suppress_owner_implicit.then_some(READ_CONTROL),
+            owner_rights,
+        ),
         (self_mask, token_user_sid),
         (creator_mask, creator_sid),
         (system_mask, system),
@@ -4668,7 +4673,10 @@ fn build_token_sd_bytes(
     write_le_u16(bytes, dacl_offset + 6, 0);
 
     for (mask, sid) in [
-        (suppress_owner_implicit.then_some(READ_CONTROL), owner_rights),
+        (
+            suppress_owner_implicit.then_some(READ_CONTROL),
+            owner_rights,
+        ),
         (self_mask, token_user_sid),
         (creator_mask, creator_sid),
         (system_mask, system),
@@ -5287,7 +5295,13 @@ impl PkmKacsBootToken {
         }
         let user_sid = build_owned_sid(user_sid.as_bytes()).ok()?;
         let group_defaults = BOOT_SYSTEM_GROUP_ATTRIBUTES.as_slice();
-        let group_sids = [administrators, everyone, authenticated_users, local, logon_sid];
+        let group_sids = [
+            administrators,
+            everyone,
+            authenticated_users,
+            local,
+            logon_sid,
+        ];
         let groups = build_owned_group_entries(&[
             (administrators, group_defaults[0]),
             (everyone, group_defaults[1]),
@@ -5372,8 +5386,7 @@ impl PkmKacsBootToken {
     }
 
     fn create_without_tcb() -> Option<*const c_void> {
-        let privileges =
-            SYSTEM_PRIVILEGES_ALL & !(SE_TCB_PRIVILEGE | SE_CREATE_TOKEN_PRIVILEGE);
+        let privileges = SYSTEM_PRIVILEGES_ALL & !(SE_TCB_PRIVILEGE | SE_CREATE_TOKEN_PRIVILEGE);
         let session = boot_system_logon_session_ref().ok()?;
 
         Self::create_system_like(
@@ -5538,17 +5551,16 @@ impl PkmKacsBootToken {
         } else {
             return None;
         };
-        let (group_attributes, first_group_sid, include_user_group) = if user_sid.as_bytes()
-            == LOCAL_SERVICE_SID_BYTES
-        {
-            (
-                KUNIT_LOCAL_SERVICE_GROUP_ATTRIBUTES,
-                Some(Sid::parse(SERVICE_SID_BYTES).ok()?),
-                false,
-            )
-        } else {
-            (BOOT_SYSTEM_GROUP_ATTRIBUTES, None, false)
-        };
+        let (group_attributes, first_group_sid, include_user_group) =
+            if user_sid.as_bytes() == LOCAL_SERVICE_SID_BYTES {
+                (
+                    KUNIT_LOCAL_SERVICE_GROUP_ATTRIBUTES,
+                    Some(Sid::parse(SERVICE_SID_BYTES).ok()?),
+                    false,
+                )
+            } else {
+                (BOOT_SYSTEM_GROUP_ATTRIBUTES, None, false)
+            };
 
         Self::create_system_like(
             session,
@@ -5625,11 +5637,9 @@ impl PkmKacsBootToken {
         // bare `.ok()?` sites that used to follow the commits leaked all of them.
         let built = (|| {
             let owned_anonymous = build_owned_sid(anonymous.as_bytes()).ok()?;
-            let groups = build_owned_group_entries(&[(
-                everyone,
-                ANONYMOUS_ONLY_GROUP_ATTRIBUTES[0],
-            )])
-            .ok()?;
+            let groups =
+                build_owned_group_entries(&[(everyone, ANONYMOUS_ONLY_GROUP_ATTRIBUTES[0])])
+                    .ok()?;
             let group_sids = slice_to_vec([everyone].as_slice()).ok()?;
             let group_default_attributes =
                 slice_to_vec(&ANONYMOUS_ONLY_GROUP_ATTRIBUTES[..1]).ok()?;
@@ -5814,10 +5824,8 @@ impl PkmKacsBootToken {
         let logon_session_id = read_le_u64(spec, 56).ok_or(-EINVAL)?;
         let owner_sid_index = read_le_u32(spec, 64).ok_or(-EINVAL)?;
         let primary_group_index = read_le_u32(spec, 68).ok_or(-EINVAL)?;
-        let source_name = <[u8; TOKEN_SOURCE_NAME_LEN]>::try_from(
-            spec.get(72..80).ok_or(-EINVAL)?,
-        )
-        .map_err(|_| -EINVAL)?;
+        let source_name = <[u8; TOKEN_SOURCE_NAME_LEN]>::try_from(spec.get(72..80).ok_or(-EINVAL)?)
+            .map_err(|_| -EINVAL)?;
         let source_id = read_le_u64(spec, 80).ok_or(-EINVAL)?;
         let user_sid_offset = read_le_u32(spec, 88).ok_or(-EINVAL)?;
         let groups_offset = read_le_u32(spec, 92).ok_or(-EINVAL)?;
@@ -5931,7 +5939,8 @@ impl PkmKacsBootToken {
             device_claims_offset,
             device_claims_len,
         )?;
-        let groups_bytes = token_spec_count_section(spec, &sorted_offsets, groups_offset, groups_count)?;
+        let groups_bytes =
+            token_spec_count_section(spec, &sorted_offsets, groups_offset, groups_count)?;
         let device_groups_bytes = token_spec_count_section(
             spec,
             &sorted_offsets,
@@ -6035,7 +6044,8 @@ impl PkmKacsBootToken {
         }
 
         session = published_logon_session_ref_by_id(logon_session_id)?;
-        let session_ref = unsafe { PkmKacsLogonSession::from_ptr(session.cast()) }.ok_or(-EINVAL)?;
+        let session_ref =
+            unsafe { PkmKacsLogonSession::from_ptr(session.cast()) }.ok_or(-EINVAL)?;
         if groups
             .iter()
             .any(|entry| entry.sid.as_bytes() == session_ref.logon_sid.as_bytes())
@@ -6083,13 +6093,14 @@ impl PkmKacsBootToken {
                 return Err(err);
             }
         };
-        group_views = match build_group_views(group_sids.as_slice(), group_default_attributes.as_slice()) {
-            Ok(value) => value,
-            Err(err) => {
-                unsafe { PkmKacsLogonSession::drop_ref(session.cast()) };
-                return Err(err);
-            }
-        };
+        group_views =
+            match build_group_views(group_sids.as_slice(), group_default_attributes.as_slice()) {
+                Ok(value) => value,
+                Err(err) => {
+                    unsafe { PkmKacsLogonSession::drop_ref(session.cast()) };
+                    return Err(err);
+                }
+            };
         group_runtime_views = match build_group_runtime_views(
             group_sids.as_slice(),
             group_default_attributes.as_slice(),
@@ -6257,11 +6268,11 @@ impl PkmKacsBootToken {
             Ok(value) => value,
             Err(_) => return null(),
         };
-        let group_views = match build_group_views(group_sids.as_slice(), group_attributes.as_slice())
-        {
-            Ok(value) => value,
-            Err(_) => return null(),
-        };
+        let group_views =
+            match build_group_views(group_sids.as_slice(), group_attributes.as_slice()) {
+                Ok(value) => value,
+                Err(_) => return null(),
+            };
         let group_runtime_views =
             match build_group_runtime_views(group_sids.as_slice(), group_attributes.as_slice()) {
                 Ok(value) => value,
@@ -6421,14 +6432,10 @@ impl PkmKacsBootToken {
             source_name: token.source_name,
             source_id: token.source_id,
             origin: token.origin,
-            interactivity_scope: AtomicU32::new(
-                token.interactivity_scope.load(Ordering::Relaxed),
-            ),
+            interactivity_scope: AtomicU32::new(token.interactivity_scope.load(Ordering::Relaxed)),
             projected_uid: token.projected_uid,
             projected_gid: token.projected_gid,
-            projected_supplementary_gids: match try_clone_vec(
-                &token.projected_supplementary_gids,
-            ) {
+            projected_supplementary_gids: match try_clone_vec(&token.projected_supplementary_gids) {
                 Ok(value) => value,
                 Err(_) => {
                     free_allocated_bytes(default_dacl_ptr);
@@ -6494,8 +6501,7 @@ impl PkmKacsBootToken {
         // privileges, claims, restricted SIDs, and confinement are NOT carried
         // forward. A duplicate to a Primary token keeps identity, so this only
         // fires for Impersonation.
-        if new_type == TokenType::Impersonation
-            && requested_level == ImpersonationLevel::Anonymous
+        if new_type == TokenType::Impersonation && requested_level == ImpersonationLevel::Anonymous
         {
             return Self::create_anonymous(Some(creator.user_sid.sid)).ok_or(-ENOMEM);
         }
@@ -6634,9 +6640,7 @@ impl PkmKacsBootToken {
             source_name: self.source_name,
             source_id: self.source_id,
             origin: self.origin,
-            interactivity_scope: AtomicU32::new(
-                self.interactivity_scope.load(Ordering::Relaxed),
-            ),
+            interactivity_scope: AtomicU32::new(self.interactivity_scope.load(Ordering::Relaxed)),
             projected_uid: self.projected_uid,
             projected_gid: self.projected_gid,
             projected_supplementary_gids,
@@ -6771,9 +6775,7 @@ impl PkmKacsBootToken {
             source_name: self.source_name,
             source_id: self.source_id,
             origin: self.origin,
-            interactivity_scope: AtomicU32::new(
-                self.interactivity_scope.load(Ordering::Relaxed),
-            ),
+            interactivity_scope: AtomicU32::new(self.interactivity_scope.load(Ordering::Relaxed)),
             projected_uid: self.projected_uid,
             projected_gid: self.projected_gid,
             projected_supplementary_gids,
@@ -6927,11 +6929,7 @@ impl PkmKacsBootToken {
             expiration: self.expiration,
             origin: self.origin,
             restricted_sid_count: self.restricted_sids.len() as u32,
-            confinement_sid_present: if self.confinement_sid.is_some() {
-                1
-            } else {
-                0
-            },
+            confinement_sid_present: if self.confinement_sid.is_some() { 1 } else { 0 },
             confinement_capability_count: self.confinement_capabilities.len() as u32,
             projected_supplementary_gid_count: self.projected_supplementary_gids.len() as u32,
         };
@@ -7364,8 +7362,7 @@ impl PkmKacsBootToken {
             }
 
             old_default_dacl_ptr = if let Some((sequence, next_sequence)) = next_dacl_sequence {
-                self.default_dacl_seq
-                    .store(sequence + 1, Ordering::Release);
+                self.default_dacl_seq.store(sequence + 1, Ordering::Release);
                 let old = self
                     .default_dacl_ptr
                     .swap(replacement_ptr, Ordering::AcqRel);
@@ -7518,7 +7515,10 @@ fn write_sid_and_attributes_query(
 }
 
 impl PkmKacsBootToken {
-    fn adjust_groups(&self, entries: &[PkmKacsGroupAdjustEntry]) -> Result<[u64; GROUP_MASK_WORDS], i32> {
+    fn adjust_groups(
+        &self,
+        entries: &[PkmKacsGroupAdjustEntry],
+    ) -> Result<[u64; GROUP_MASK_WORDS], i32> {
         let _guard = self.lock_mutation();
         let previous_state = self.current_group_enabled_mask_locked();
         let modified_id = self.modified_id.load(Ordering::Relaxed);
@@ -7631,8 +7631,8 @@ impl PkmKacsBootToken {
         if source_was_restricted && restricted_sid_views.is_empty() {
             return Err(-EINVAL);
         }
-        let restricted = !restricted_sid_views.is_empty()
-            || !restricted_device_group_views.is_empty();
+        let restricted =
+            !restricted_sid_views.is_empty() || !restricted_device_group_views.is_empty();
         // KC-14: build every fallible leaf-Vec clone BEFORE committing any raw
         // allocation (default_dacl_ptr / own_sd_ptr / session ref / token_ptr) so
         // a clone failure unwinds via `?` while only owned Vecs are live — nothing
@@ -7792,9 +7792,7 @@ impl PkmKacsBootToken {
             source_name: self.source_name,
             source_id: self.source_id,
             origin: self.origin,
-            interactivity_scope: AtomicU32::new(
-                self.interactivity_scope.load(Ordering::Relaxed),
-            ),
+            interactivity_scope: AtomicU32::new(self.interactivity_scope.load(Ordering::Relaxed)),
             projected_uid: self.projected_uid,
             projected_gid: self.projected_gid,
             projected_supplementary_gids,
@@ -7848,10 +7846,10 @@ impl PkmKacsBootToken {
                 .as_ref()
                 .map(|sid| sid.as_bytes().len())
                 .unwrap_or(0)),
-            TOKEN_CLASS_CAPABILITIES => sid_and_attributes_query_len(
-                self.confinement_capability_views.as_slice(),
-            )
-            .ok_or(-EINVAL),
+            TOKEN_CLASS_CAPABILITIES => {
+                sid_and_attributes_query_len(self.confinement_capability_views.as_slice())
+                    .ok_or(-EINVAL)
+            }
             TOKEN_CLASS_MANDATORY_POLICY => Ok(4),
             TOKEN_CLASS_LOGON_TYPE => Ok(4),
             TOKEN_CLASS_LOGON_SID => self
@@ -8087,10 +8085,11 @@ fn emit_internal_access_check_events(
         return Ok(());
     }
 
-    let audit_events = own_audit_events(state.audit_events.as_slice()).map_err(|err| match err {
-        KacsError::AllocationFailure => -ENOMEM,
-        _ => -EACCES,
-    })?;
+    let audit_events =
+        own_audit_events(state.audit_events.as_slice()).map_err(|err| match err {
+            KacsError::AllocationFailure => -ENOMEM,
+            _ => -EACCES,
+        })?;
     let resolved = AccessCheckAbiResolved {
         token: access_token,
         default_pip: effective_pip,
@@ -8236,10 +8235,7 @@ fn link_tokens_on_logon_session(
     Ok(())
 }
 
-fn get_linked_token(
-    token: &PkmKacsBootToken,
-    return_actual: bool,
-) -> Result<*const c_void, i32> {
+fn get_linked_token(token: &PkmKacsBootToken, return_actual: bool) -> Result<*const c_void, i32> {
     let token_ptr = (token as *const PkmKacsBootToken).cast::<c_void>();
 
     // KC-16: resolve the partner and take a reference to it UNDER the session-
@@ -8846,10 +8842,11 @@ fn emit_file_set_sd_audit_events(
             return Ok(());
         }
 
-        let audit_events = own_audit_events(state.audit_events.as_slice()).map_err(|err| match err {
-            KacsError::AllocationFailure => -ENOMEM,
-            _ => -EACCES,
-        })?;
+        let audit_events =
+            own_audit_events(state.audit_events.as_slice()).map_err(|err| match err {
+                KacsError::AllocationFailure => -ENOMEM,
+                _ => -EACCES,
+            })?;
         let resolved = AccessCheckAbiResolved {
             token: &access_token,
             default_pip: pip,
@@ -9522,9 +9519,7 @@ pub extern "C" fn kacs_rust_token_is_remote_shutdown_origin(token: *const c_void
 /// policy bit.
 pub extern "C" fn kacs_rust_token_has_new_process_min(token: *const c_void) -> bool {
     unsafe { PkmKacsBootToken::from_ptr(token) }
-        .map(|value| {
-            (value.mandatory_policy & TOKEN_MANDATORY_POLICY_NEW_PROCESS_MIN) != 0
-        })
+        .map(|value| (value.mandatory_policy & TOKEN_MANDATORY_POLICY_NEW_PROCESS_MIN) != 0)
         .unwrap_or(false)
 }
 
@@ -9875,9 +9870,8 @@ pub extern "C" fn kacs_rust_emit_descriptor_changed(chg: *const PkmKacsSdChangeV
     };
     let object = match chg.kind {
         1 => DescriptorObject::File {
-            path: (!chg.file_path.is_null() && chg.file_path_len != 0).then(|| unsafe {
-                core::slice::from_raw_parts(chg.file_path, chg.file_path_len)
-            }),
+            path: (!chg.file_path.is_null() && chg.file_path_len != 0)
+                .then(|| unsafe { core::slice::from_raw_parts(chg.file_path, chg.file_path_len) }),
         },
         2 => {
             let Some(target) = (unsafe { PkmKacsBootToken::from_ptr(chg.object_token) }) else {
@@ -10038,7 +10032,11 @@ pub extern "C" fn kacs_rust_emit_descriptor_rejected(
             let ids = token.audit_subject_ids();
             token.with_access_token(|access_token| {
                 crate::kmes_payload::emit_descriptor_rejected_to_kmes(
-                    Some((&access_token, &ids, pip_context_from_abi(pip_type, pip_trust))),
+                    Some((
+                        &access_token,
+                        &ids,
+                        pip_context_from_abi(pip_type, pip_trust),
+                    )),
                     inode,
                     device,
                     sd_len,
@@ -10061,9 +10059,9 @@ pub extern "C" fn kacs_rust_token_own_sd_copy(
     out_sd_ptr: *mut *const u8,
     out_sd_len: *mut usize,
 ) -> i32 {
-    let (Some(out_sd_ptr), Some(out_sd_len)) =
-        (unsafe { out_sd_ptr.as_mut() }, unsafe { out_sd_len.as_mut() })
-    else {
+    let (Some(out_sd_ptr), Some(out_sd_len)) = (unsafe { out_sd_ptr.as_mut() }, unsafe {
+        out_sd_len.as_mut()
+    }) else {
         return -EINVAL;
     };
     *out_sd_ptr = null();
@@ -10355,9 +10353,7 @@ pub extern "C" fn kacs_rust_kunit_create_process_sd_with_everyone_mask(
     let Some(token) = (unsafe { PkmKacsBootToken::from_ptr(token_ptr) }) else {
         return null();
     };
-    let Ok((ptr, len)) =
-        build_everyone_mask_only_process_sd_bytes(token, everyone_mask)
-    else {
+    let Ok((ptr, len)) = build_everyone_mask_only_process_sd_bytes(token, everyone_mask) else {
         return null();
     };
 
@@ -10390,9 +10386,7 @@ pub extern "C" fn kacs_rust_kunit_create_read_only_socket_sd(
 #[no_mangle]
 /// Builds the descriptor that says who may write into the base layer while
 /// it has no metadata key (LCS §5.3.4).
-pub extern "C" fn kacs_rust_create_lcs_base_layer_default_sd(
-    len_out: *mut usize,
-) -> *const u8 {
+pub extern "C" fn kacs_rust_create_lcs_base_layer_default_sd(len_out: *mut usize) -> *const u8 {
     let Ok((ptr, len)) = build_lcs_base_layer_default_sd_bytes() else {
         return null();
     };
@@ -10672,8 +10666,7 @@ pub extern "C" fn kacs_rust_kunit_create_resource_claim_exists_file_sd(
     let Ok(claim_name) = core::str::from_utf8(claim_name_bytes) else {
         return null();
     };
-    let Ok((ptr, len)) =
-        build_resource_claim_exists_file_sd_bytes(token, claim_name, allow_mask)
+    let Ok((ptr, len)) = build_resource_claim_exists_file_sd_bytes(token, claim_name, allow_mask)
     else {
         return null();
     };
@@ -10976,9 +10969,7 @@ pub extern "C" fn kacs_rust_check_file_sd_with_intent_audit(
             if let Some(granted_out) = unsafe { granted_out.as_mut() } {
                 *granted_out = outcome.granted;
             }
-            if let Some(continuous_audit_out) =
-                unsafe { continuous_audit_out.as_mut() }
-            {
+            if let Some(continuous_audit_out) = unsafe { continuous_audit_out.as_mut() } {
                 *continuous_audit_out = outcome.continuous_audit_mask;
             }
             0
@@ -11295,9 +11286,7 @@ pub extern "C" fn kacs_rust_granted_file_sd_with_intent_audit(
             if let Some(granted_out) = unsafe { granted_out.as_mut() } {
                 *granted_out = outcome.granted;
             }
-            if let Some(continuous_audit_out) =
-                unsafe { continuous_audit_out.as_mut() }
-            {
+            if let Some(continuous_audit_out) = unsafe { continuous_audit_out.as_mut() } {
                 *continuous_audit_out = outcome.continuous_audit_mask;
             }
             0
@@ -11518,10 +11507,7 @@ pub extern "C" fn kacs_rust_validate_sd_bytes(sd_ptr: *const u8, sd_len: usize) 
 
 #[no_mangle]
 /// Validates one complete stored/effective self-relative SD blob.
-pub extern "C" fn kacs_rust_validate_stored_sd_bytes(
-    sd_ptr: *const u8,
-    sd_len: usize,
-) -> i32 {
+pub extern "C" fn kacs_rust_validate_stored_sd_bytes(sd_ptr: *const u8, sd_len: usize) -> i32 {
     if sd_ptr.is_null() || sd_len == 0 {
         return -EINVAL;
     }
@@ -11829,7 +11815,13 @@ pub extern "C" fn kacs_rust_merge_file_sd(
 
     let current_sd_bytes = unsafe { core::slice::from_raw_parts(current_sd_ptr, current_sd_len) };
     let input_sd_bytes = unsafe { core::slice::from_raw_parts(input_sd_ptr, input_sd_len) };
-    match merge_process_sd_bytes(subject, current_sd_bytes, security_info, input_sd_bytes, true) {
+    match merge_process_sd_bytes(
+        subject,
+        current_sd_bytes,
+        security_info,
+        input_sd_bytes,
+        true,
+    ) {
         Ok((ptr, len)) => {
             *out_sd_ptr = ptr.cast_const();
             *out_sd_len = len;
@@ -11875,8 +11867,7 @@ pub extern "C" fn kacs_rust_merge_cached_file_sd(
         return -EINVAL;
     }
 
-    let current_sd_bytes =
-        unsafe { core::slice::from_raw_parts(current_sd_ptr, current_sd_len) };
+    let current_sd_bytes = unsafe { core::slice::from_raw_parts(current_sd_ptr, current_sd_len) };
     let current_sd = match cached_file_sd_descriptor(current_sd_bytes, layout) {
         Ok(sd) => sd,
         Err(err) => return err,
@@ -11934,7 +11925,13 @@ pub extern "C" fn kacs_rust_merge_process_sd(
 
     let current_sd_bytes = unsafe { core::slice::from_raw_parts(current_sd_ptr, current_sd_len) };
     let input_sd_bytes = unsafe { core::slice::from_raw_parts(input_sd_ptr, input_sd_len) };
-    match merge_process_sd_bytes(subject, current_sd_bytes, security_info, input_sd_bytes, true) {
+    match merge_process_sd_bytes(
+        subject,
+        current_sd_bytes,
+        security_info,
+        input_sd_bytes,
+        true,
+    ) {
         Ok((ptr, len)) => {
             *out_sd_ptr = ptr.cast_const();
             *out_sd_len = len;
@@ -12380,7 +12377,10 @@ pub extern "C" fn kacs_rust_token_adjust_privs(
 
 #[no_mangle]
 /// Adjusts a live token's interactive session id and bumps `modified_id`.
-pub extern "C" fn kacs_rust_token_adjust_interactivity_scope(token: *const c_void, logon_session_id: u32) -> i32 {
+pub extern "C" fn kacs_rust_token_adjust_interactivity_scope(
+    token: *const c_void,
+    logon_session_id: u32,
+) -> i32 {
     let Some(token) = (unsafe { PkmKacsBootToken::from_ptr(token) }) else {
         return -EACCES;
     };
@@ -12542,9 +12542,7 @@ pub extern "C" fn kacs_rust_token_allows_uid0_projection(token: *const c_void) -
 
 #[no_mangle]
 /// Returns the number of precomputed supplementary GIDs stored on the token.
-pub extern "C" fn kacs_rust_token_projected_supplementary_gid_count(
-    token: *const c_void,
-) -> usize {
+pub extern "C" fn kacs_rust_token_projected_supplementary_gid_count(token: *const c_void) -> usize {
     unsafe { PkmKacsBootToken::from_ptr(token) }
         .map(|value| value.projected_supplementary_gids.len())
         .unwrap_or(0)

@@ -135,7 +135,8 @@ static bool stratafs_capture_actor(struct dir_context *ctx, const char *name,
 		return false;
 
 	capture->error = stratafs_dir_cache_add(&capture->dir->cache, name, len,
-					       type, capture->participant_index);
+						type,
+						capture->participant_index);
 	return !capture->error;
 }
 
@@ -144,7 +145,8 @@ stratafs_resolve_captured_entries(struct stratafs_capture_context *capture)
 {
 	struct stratafs_dir_entry *entry, *next;
 
-	list_for_each_entry_safe(entry, next, &capture->dir->cache.entries, list) {
+	list_for_each_entry_safe(entry, next, &capture->dir->cache.entries,
+				 list) {
 		struct path child;
 		int ret;
 
@@ -162,7 +164,7 @@ stratafs_resolve_captured_entries(struct stratafs_capture_context *capture)
 			continue;
 		}
 		ret = stratafs_provider_ino(file_inode(capture->outer)->i_sb,
-					   &child, &entry->ino);
+					    &child, &entry->ino);
 		path_put(&child);
 		if (ret)
 			return ret;
@@ -208,7 +210,8 @@ static int stratafs_capture_entries(struct file *file,
 					       iterate_dir(real, &capture.ctx));
 		fput(real);
 		if (!ret)
-			ret = stratafs_dir_open_result("capture", capture.error);
+			ret = stratafs_dir_open_result("capture",
+						       capture.error);
 		/*
 		 * Never look names up from the filldir actor.  iterate_dir() holds
 		 * the provider inode's i_rwsem while invoking it, and stacked
@@ -266,8 +269,8 @@ static int stratafs_dir_open(struct inode *inode, struct file *file)
 				 .path[STRATAFS_SB(inode->i_sb)->create_index]);
 	ret = stratafs_dir_open_result(
 		"list-authorization",
-		stratafs_check_paths_access(&dir->participants,
-			STRATAFS_SB(inode->i_sb)->count,
+		stratafs_check_paths_access(
+			&dir->participants, STRATAFS_SB(inode->i_sb)->count,
 			KACS_FILE_TRAVERSE | KACS_FILE_LIST_DIRECTORY));
 	if (ret)
 		goto fail_paths;
@@ -291,8 +294,8 @@ static int stratafs_dir_open(struct inode *inode, struct file *file)
 	if (!ret)
 		origin_read_allowed = true;
 	ret = stratafs_dir_open_result(
-		"settle", stratafs_settle_open_directory(file,
-						    &dir->participants));
+		"settle",
+		stratafs_settle_open_directory(file, &dir->participants));
 	if (ret)
 		goto fail_entries;
 	if (file->f_path.dentry->d_fsdata)
@@ -385,7 +388,8 @@ static int stratafs_check_create_access(struct dentry *parent, bool directory)
 	struct stratafs_sb_info *sbi = STRATAFS_SB(parent->d_sb);
 	struct path target;
 	char *relative;
-	u32 access = directory ? KACS_FILE_ADD_SUBDIRECTORY : KACS_FILE_ADD_FILE;
+	u32 access = directory ? KACS_FILE_ADD_SUBDIRECTORY :
+				 KACS_FILE_ADD_FILE;
 	int ret;
 
 	if (sbi->create_index < 0)
@@ -393,11 +397,11 @@ static int stratafs_check_create_access(struct dentry *parent, bool directory)
 	relative = stratafs_inode_relative(d_inode(parent));
 	if (IS_ERR(relative))
 		return PTR_ERR(relative);
-	ret = stratafs_resolve_one(parent->d_sb, sbi->create_index,
-				   relative, true, &target);
+	ret = stratafs_resolve_one(parent->d_sb, sbi->create_index, relative,
+				   true, &target);
 	if (ret == -ENOENT)
 		ret = stratafs_provider_directory(parent->d_sb, relative,
-						 &target);
+						  &target);
 	kfree(relative);
 	if (ret)
 		return ret == -ENOENT ? -EROFS : ret;
@@ -439,7 +443,7 @@ static int stratafs_install_created(struct dentry *dentry,
 			return -ENOMEM;
 		}
 		dinfo->relative = stratafs_child_relative(parent_info->relative,
-							 &dentry->d_name);
+							  &dentry->d_name);
 		if (IS_ERR(dinfo->relative)) {
 			int ret = PTR_ERR(dinfo->relative);
 
@@ -463,16 +467,16 @@ static int stratafs_rollback_created(const struct path *parent,
 {
 	int ret;
 
-	ret = pkm_kacs_stratafs_begin_created_cleanup(
-		d_inode(parent->dentry), created);
+	ret = pkm_kacs_stratafs_begin_created_cleanup(d_inode(parent->dentry),
+						      created);
 	if (ret)
 		return ret;
 	if (directory)
 		ret = vfs_rmdir(mnt_idmap(parent->mnt), d_inode(parent->dentry),
 				created, NULL);
 	else
-		ret = vfs_unlink(mnt_idmap(parent->mnt), d_inode(parent->dentry),
-				 created, NULL);
+		ret = vfs_unlink(mnt_idmap(parent->mnt),
+				 d_inode(parent->dentry), created, NULL);
 	pkm_kacs_stratafs_end_created_cleanup();
 	return ret;
 }
@@ -499,7 +503,7 @@ static int stratafs_create_common(struct inode *dir, struct dentry *dentry,
 	if (ret) {
 		if (stratafs_arrangement_error(ret))
 			stratafs_audit_refusal(dentry, "create", -1, ret,
-						 false);
+					       false);
 		return ret;
 	}
 	ret = stratafs_ensure_create_parent(dentry->d_parent, &parent);
@@ -520,8 +524,8 @@ static int stratafs_create_common(struct inode *dir, struct dentry *dentry,
 		ret = -EEXIST;
 		goto out_target;
 	}
-	ret = pkm_kacs_stratafs_bind_create_decision(
-		d_inode(parent.dentry), target);
+	ret = pkm_kacs_stratafs_bind_create_decision(d_inode(parent.dentry),
+						     target);
 	if (ret)
 		goto out_target;
 	ret = pkm_kacs_stratafs_rebind_native_create_request(
@@ -546,10 +550,10 @@ static int stratafs_create_common(struct inode *dir, struct dentry *dentry,
 		ret = vfs_symlink(idmap, d_inode(parent.dentry), target, link,
 				  NULL);
 	else
-		ret = vfs_mknod(idmap, d_inode(parent.dentry), target, mode, dev,
-				NULL);
+		ret = vfs_mknod(idmap, d_inode(parent.dentry), target, mode,
+				dev, NULL);
 	pkm_kacs_stratafs_end_native_create_request(dir,
-						   d_inode(parent.dentry));
+						    d_inode(parent.dentry));
 	pkm_kacs_stratafs_end_create_decision();
 	if (ret)
 		goto out_target;
@@ -564,7 +568,8 @@ static int stratafs_create_common(struct inode *dir, struct dentry *dentry,
 
 		if (cleanup_ret)
 			stratafs_audit_refusal(dentry, "create-rollback",
-						 sbi->create_index, cleanup_ret, true);
+					       sbi->create_index, cleanup_ret,
+					       true);
 		if (cleanup_ret)
 			pr_warn_ratelimited(
 				"stratafs: could not roll back failed create: %d\n",
@@ -590,8 +595,7 @@ static int stratafs_create(struct mnt_idmap *idmap, struct inode *dir,
 	return stratafs_create_common(dir, dentry, S_IFREG | mode, 0, NULL);
 }
 
-static struct dentry *stratafs_mkdir(struct mnt_idmap *idmap,
-				     struct inode *dir,
+static struct dentry *stratafs_mkdir(struct mnt_idmap *idmap, struct inode *dir,
 				     struct dentry *dentry, umode_t mode)
 {
 	int ret = stratafs_create_common(dir, dentry, S_IFDIR | mode, 0, NULL);
@@ -636,7 +640,7 @@ static int stratafs_tmpfile(struct mnt_idmap *idmap, struct inode *dir,
 	if (ret) {
 		if (stratafs_arrangement_error(ret))
 			stratafs_audit_refusal(dentry, "tmpfile", -1, ret,
-						 false);
+					       false);
 		return ret;
 	}
 	ret = stratafs_ensure_create_parent(dentry->d_parent, &parent);
@@ -647,8 +651,8 @@ static int stratafs_tmpfile(struct mnt_idmap *idmap, struct inode *dir,
 		path_put(&parent);
 		goto out_decision;
 	}
-	ret = pkm_kacs_stratafs_bind_create_decision(
-		d_inode(parent.dentry), NULL);
+	ret = pkm_kacs_stratafs_bind_create_decision(d_inode(parent.dentry),
+						     NULL);
 	if (ret) {
 		mnt_drop_write(parent.mnt);
 		path_put(&parent);
@@ -663,12 +667,12 @@ static int stratafs_tmpfile(struct mnt_idmap *idmap, struct inode *dir,
 		ret = PTR_ERR(real);
 		if (stratafs_arrangement_error(ret))
 			stratafs_audit_refusal(dentry, "tmpfile", -1, ret,
-						 false);
+					       false);
 		return ret;
 	}
 
-	inode = stratafs_new_inode(dir->i_sb, &real->f_path,
-				   sbi->create_index, STRATAFS_I(dir)->relative);
+	inode = stratafs_new_inode(dir->i_sb, &real->f_path, sbi->create_index,
+				   STRATAFS_I(dir)->relative);
 	if (IS_ERR(inode)) {
 		ret = PTR_ERR(inode);
 		inode = NULL;
@@ -776,7 +780,7 @@ static int stratafs_merged_empty(struct dentry *dentry)
 	unsigned int i;
 	int ret;
 
-/*
+	/*
 	 * follow_final = false: a stratum holding the name as a symlink is
 	 * masked, exactly as any other non-directory is. PCSA §3.3 -- "a
 	 * stratum that holds the name as a non-directory does not participate
@@ -789,13 +793,12 @@ static int stratafs_merged_empty(struct dentry *dentry)
 	 * view, with the access check running against a target the mounter
 	 * never named.
 	 */
-	ret = stratafs_resolve_all(dentry->d_sb, info->relative, false,
-				   &paths);
+	ret = stratafs_resolve_all(dentry->d_sb, info->relative, false, &paths);
 	if (ret)
 		return ret;
 	ret = stratafs_check_paths_access(&paths, sbi->count,
 					  KACS_FILE_TRAVERSE |
-					  KACS_FILE_LIST_DIRECTORY);
+						  KACS_FILE_LIST_DIRECTORY);
 	if (ret)
 		goto out;
 	for (i = 0; i < sbi->count; i++) {
@@ -864,17 +867,15 @@ static int stratafs_remove(struct inode *dir, struct dentry *dentry,
 		   pkm_kacs_stratafs_delete_on_close_active(dentry);
 	created_cleanup = pkm_kacs_stratafs_created_cleanup_active(dentry);
 	if (sb_rdonly(dir->i_sb)) {
-		stratafs_audit_refusal(dentry,
-					 directory ? "rmdir" : "unlink", -1,
-					 -EROFS, deferred || created_cleanup);
+		stratafs_audit_refusal(dentry, directory ? "rmdir" : "unlink",
+				       -1, -EROFS, deferred || created_cleanup);
 		return -EROFS;
 	}
 	if (!dinfo || !dinfo->relative) {
 		if (deferred || created_cleanup)
 			stratafs_audit_refusal(dentry,
-						 directory ? "rmdir" : "unlink", -1,
-						 -ESTALE,
-						 true);
+					       directory ? "rmdir" : "unlink",
+					       -1, -ESTALE, true);
 		return -ESTALE;
 	}
 	basename = strrchr(dinfo->relative, '/');
@@ -882,18 +883,17 @@ static int stratafs_remove(struct inode *dir, struct dentry *dentry,
 	if (!*basename) {
 		if (deferred || created_cleanup)
 			stratafs_audit_refusal(dentry,
-						 directory ? "rmdir" : "unlink", -1,
-						 -ESTALE,
-						 true);
+					       directory ? "rmdir" : "unlink",
+					       -1, -ESTALE, true);
 		return -ESTALE;
 	}
 	q = (struct qstr)QSTR_INIT(basename, strlen(basename));
 	ret = stratafs_get_provider(dentry, &provider, &index);
 	if (ret) {
 		if (deferred || created_cleanup)
-			stratafs_audit_refusal(
-				dentry, directory ? "rmdir" : "unlink", -1, ret,
-				true);
+			stratafs_audit_refusal(dentry,
+					       directory ? "rmdir" : "unlink",
+					       -1, ret, true);
 		return ret;
 	}
 	if (!stratafs_stratum_accepts(dir->i_sb, index, &provider)) {
@@ -905,8 +905,8 @@ static int stratafs_remove(struct inode *dir, struct dentry *dentry,
 		if (ret)
 			goto out_provider;
 	}
-	ret = stratafs_resolve_one(dir->i_sb, index, parent_info->relative, true,
-				   &provider_parent);
+	ret = stratafs_resolve_one(dir->i_sb, index, parent_info->relative,
+				   true, &provider_parent);
 	if (ret) {
 		if (deferred && (ret == -ENOENT || ret == -ENOTDIR))
 			ret = 0;
@@ -975,9 +975,8 @@ out_provider:
 	path_put(&provider);
 	if (((deferred || created_cleanup) && ret) ||
 	    stratafs_arrangement_error(ret))
-		stratafs_audit_refusal(dentry,
-					 directory ? "rmdir" : "unlink", index,
-					 ret, deferred || created_cleanup);
+		stratafs_audit_refusal(dentry, directory ? "rmdir" : "unlink",
+				       index, ret, deferred || created_cleanup);
 	return ret;
 }
 
@@ -1059,7 +1058,7 @@ static int stratafs_directory_provider_only(struct dentry *dentry,
 		return ret;
 	ret = stratafs_check_paths_access(&paths, sbi->count,
 					  KACS_FILE_TRAVERSE |
-					  KACS_FILE_LIST_DIRECTORY);
+						  KACS_FILE_LIST_DIRECTORY);
 	if (ret)
 		goto out;
 	if (!(paths.present & BIT_ULL(provider_index)) ||
@@ -1119,13 +1118,11 @@ static int stratafs_link(struct dentry *old_dentry, struct inode *dir,
 	int ret;
 
 	if (sb_rdonly(dir->i_sb)) {
-		stratafs_audit_refusal(new_dentry, "link", -1, -EROFS,
-					 false);
+		stratafs_audit_refusal(new_dentry, "link", -1, -EROFS, false);
 		return -EROFS;
 	}
 	if (old_dentry->d_sb != dir->i_sb) {
-		stratafs_audit_refusal(new_dentry, "link", -1, -EXDEV,
-					 false);
+		stratafs_audit_refusal(new_dentry, "link", -1, -EXDEV, false);
 		return -EXDEV;
 	}
 	ret = stratafs_get_provider(old_dentry, &source, &provider_index);
@@ -1135,7 +1132,8 @@ static int stratafs_link(struct dentry *old_dentry, struct inode *dir,
 		struct stratafs_dentry_info *new_info = new_dentry->d_fsdata;
 		struct stratafs_paths existing;
 
-		if ((int)provider_index != STRATAFS_SB(dir->i_sb)->create_index) {
+		if ((int)provider_index !=
+		    STRATAFS_SB(dir->i_sb)->create_index) {
 			ret = -EXDEV;
 			goto out_source;
 		}
@@ -1171,7 +1169,8 @@ static int stratafs_link(struct dentry *old_dentry, struct inode *dir,
 		goto out_source;
 	}
 	ret = stratafs_resolve_one(dir->i_sb, provider_index,
-				   dest_info->relative, true, &destination_parent);
+				   dest_info->relative, true,
+				   &destination_parent);
 	if (ret || !d_is_dir(destination_parent.dentry)) {
 		if (!ret)
 			path_put(&destination_parent);
@@ -1222,12 +1221,13 @@ create_link:
 					       provider_index);
 	path_put(&created);
 	if (ret) {
-		int cleanup_ret = stratafs_rollback_created(
-			&destination_parent, target, false);
+		int cleanup_ret = stratafs_rollback_created(&destination_parent,
+							    target, false);
 
 		if (cleanup_ret)
 			stratafs_audit_refusal(new_dentry, "link-rollback",
-						 provider_index, cleanup_ret, true);
+					       provider_index, cleanup_ret,
+					       true);
 		if (cleanup_ret)
 			pr_warn_ratelimited(
 				"stratafs: could not roll back failed link: %d\n",
@@ -1245,7 +1245,7 @@ out_source:
 	path_put(&source);
 	if (stratafs_arrangement_error(ret))
 		stratafs_audit_refusal(new_dentry, "link", provider_index, ret,
-					 false);
+				       false);
 	return ret;
 }
 
@@ -1286,19 +1286,19 @@ static int stratafs_supersede_rename(struct dentry *old_dentry,
 	    source_index != (unsigned int)sbi->create_index ||
 	    !stratafs_stratum_accepts(old_dentry->d_sb, source_index, source)) {
 		stratafs_audit_refusal(new_dentry, "supersede", source_index,
-					 -EROFS, false);
+				       -EROFS, false);
 		return -EROFS;
 	}
 	if (old_dentry->d_parent != new_dentry->d_parent) {
 		stratafs_audit_refusal(new_dentry, "supersede", source_index,
-					 -EXDEV, false);
+				       -EXDEV, false);
 		return -EXDEV;
 	}
 	if (!old_info || !old_info->relative ||
 	    !STRATAFS_I(d_inode(old_dentry)))
 		return -ESTALE;
-	supersede_file = pkm_kacs_stratafs_supersede_file(old_dentry,
-							 new_dentry);
+	supersede_file =
+		pkm_kacs_stratafs_supersede_file(old_dentry, new_dentry);
 	if (!supersede_file)
 		return -EACCES;
 	file_dinfo = file_dentry((struct file *)supersede_file)->d_fsdata;
@@ -1358,10 +1358,10 @@ static int stratafs_supersede_rename(struct dentry *old_dentry,
 	if (ret)
 		goto out_create_parent;
 	create_write_held = true;
-	old_q.hash = full_name_hash(create_parent.dentry, old_q.name,
-				    old_q.len);
-	new_q.hash = full_name_hash(create_parent.dentry, new_q.name,
-				    new_q.len);
+	old_q.hash =
+		full_name_hash(create_parent.dentry, old_q.name, old_q.len);
+	new_q.hash =
+		full_name_hash(create_parent.dentry, new_q.name, new_q.len);
 	rd.mnt_idmap = mnt_idmap(create_parent.mnt);
 	rd.old_parent = create_parent.dentry;
 	rd.new_parent = create_parent.dentry;
@@ -1371,16 +1371,18 @@ static int stratafs_supersede_rename(struct dentry *old_dentry,
 	if (d_inode(rd.old_dentry) != d_inode(source->dentry) ||
 	    (target_index == source_index &&
 	     d_inode(rd.new_dentry) != d_inode(target.dentry)) ||
-	    (target_index != source_index && d_really_is_positive(rd.new_dentry))) {
+	    (target_index != source_index &&
+	     d_really_is_positive(rd.new_dentry))) {
 		ret = -ESTALE;
 		goto out_rename;
 	}
 	ret = stratafs_test_hook(STRATAFS_HOOK_SUPERSEDE_PUBLISH);
 	if (ret)
 		goto out_rename;
-	ret = pkm_kacs_stratafs_begin_supersede_rename(
-		d_inode(rd.old_parent), rd.old_dentry,
-		d_inode(rd.new_parent), rd.new_dentry);
+	ret = pkm_kacs_stratafs_begin_supersede_rename(d_inode(rd.old_parent),
+						       rd.old_dentry,
+						       d_inode(rd.new_parent),
+						       rd.new_dentry);
 	if (!ret)
 		ret = vfs_rename(&rd);
 	pkm_kacs_stratafs_end_supersede_phase();
@@ -1428,7 +1430,7 @@ out_remove:
 out_after_publish:
 	if (ret && published) {
 		stratafs_audit_refusal(new_dentry, "supersede-removal",
-					 target_index, ret, false);
+				       target_index, ret, false);
 		pr_warn_ratelimited(
 			"stratafs: supersede published replacement but could not remove provider: %d\n",
 			ret);
@@ -1446,7 +1448,8 @@ out_after_publish:
 		file_dinfo->relative = new_drelative;
 		file_dinfo->unnamed = false;
 		new_drelative = NULL;
-		spin_unlock(&file_dentry((struct file *)supersede_file)->d_lock);
+		spin_unlock(
+			&file_dentry((struct file *)supersede_file)->d_lock);
 		old_irelative = file_iinfo->relative;
 		file_iinfo->relative = new_irelative;
 		new_irelative = NULL;
@@ -1470,8 +1473,8 @@ out_relative:
 	kfree(outer_drelative);
 	kfree(outer_irelative);
 	if (stratafs_arrangement_error(ret) && !published)
-		stratafs_audit_refusal(new_dentry, "supersede",
-					 source_index, ret, false);
+		stratafs_audit_refusal(new_dentry, "supersede", source_index,
+				       ret, false);
 	return ret;
 }
 
@@ -1479,7 +1482,8 @@ out_relative:
 /* Native open constructs a same-parent create-stratum source itself. Drive
  * the internal rename entry directly to check its defensive boundary too.
  */
-static void stratafs_kunit_supersede_source_and_parent_guards(struct kunit *test)
+static void
+stratafs_kunit_supersede_source_and_parent_guards(struct kunit *test)
 {
 	struct supersede_fixture {
 		struct super_block merged_sb;
@@ -1530,21 +1534,29 @@ static void stratafs_kunit_supersede_source_and_parent_guards(struct kunit *test
 	f->source.mnt = &f->mnt;
 	f->source.dentry = &f->backing;
 
-	KUNIT_EXPECT_EQ(test, stratafs_supersede_rename(
-		&f->old, &f->new, &f->source, 0), -EROFS);
+	KUNIT_EXPECT_EQ(test,
+			stratafs_supersede_rename(&f->old, &f->new, &f->source,
+						  0),
+			-EROFS);
 	f->sbi.strata[1].flags |= STRATAFS_F_RO;
-	KUNIT_EXPECT_EQ(test, stratafs_supersede_rename(
-		&f->old, &f->new, &f->source, 1), -EROFS);
+	KUNIT_EXPECT_EQ(test,
+			stratafs_supersede_rename(&f->old, &f->new, &f->source,
+						  1),
+			-EROFS);
 	f->sbi.strata[1].flags &= ~STRATAFS_F_RO;
 	f->new.d_parent = &f->parent[1];
-	KUNIT_EXPECT_EQ(test, stratafs_supersede_rename(
-		&f->old, &f->new, &f->source, 1), -EXDEV);
+	KUNIT_EXPECT_EQ(test,
+			stratafs_supersede_rename(&f->old, &f->new, &f->source,
+						  1),
+			-EXDEV);
 	f->new.d_parent = &f->parent[0];
 	/* Valid arrangement reaches the next, independent requirement: an
 	 * active native-open supersede context. Nothing can mutate here.
 	 */
-	KUNIT_EXPECT_EQ(test, stratafs_supersede_rename(
-		&f->old, &f->new, &f->source, 1), -EACCES);
+	KUNIT_EXPECT_EQ(test,
+			stratafs_supersede_rename(&f->old, &f->new, &f->source,
+						  1),
+			-EACCES);
 }
 
 static struct kunit_case stratafs_supersede_cases[] = {
@@ -1587,12 +1599,11 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 
 	if (flags & RENAME_WHITEOUT) {
 		stratafs_audit_refusal(new_dentry, "rename", -1, -EINVAL,
-					 false);
+				       false);
 		return -EINVAL;
 	}
 	if (sb_rdonly(old_dir->i_sb)) {
-		stratafs_audit_refusal(old_dentry, "rename", -1, -EROFS,
-					 false);
+		stratafs_audit_refusal(old_dentry, "rename", -1, -EROFS, false);
 		return -EROFS;
 	}
 	ret = stratafs_get_provider(old_dentry, &source, &provider_index);
@@ -1600,7 +1611,7 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 		return ret;
 	if (pkm_kacs_stratafs_supersede_active(old_dentry, new_dentry)) {
 		ret = stratafs_supersede_rename(old_dentry, new_dentry, &source,
-						 provider_index);
+						provider_index);
 		goto out_source;
 	}
 	if (!stratafs_stratum_accepts(old_dir->i_sb, provider_index, &source)) {
@@ -1630,7 +1641,7 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 	}
 	if ((flags & RENAME_EXCHANGE) &&
 	    !stratafs_stratum_accepts(old_dir->i_sb, provider_index,
-				       &destination)) {
+				      &destination)) {
 		ret = -EROFS;
 		goto out_destination;
 	}
@@ -1640,11 +1651,13 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 		goto out_destination;
 	}
 	ret = stratafs_resolve_one(old_dir->i_sb, provider_index,
-				   old_parent_info->relative, true, &old_parent);
+				   old_parent_info->relative, true,
+				   &old_parent);
 	if (ret)
 		goto out_destination;
 	ret = stratafs_resolve_one(new_dir->i_sb, provider_index,
-				   new_parent_info->relative, true, &new_parent);
+				   new_parent_info->relative, true,
+				   &new_parent);
 	if (ret || !d_is_dir(new_parent.dentry)) {
 		if (!ret)
 			path_put(&new_parent);
@@ -1664,12 +1677,14 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 	 */
 	mnt_drop_write(old_parent.mnt);
 	if (d_is_dir(old_dentry)) {
-		ret = stratafs_directory_provider_only(old_dentry, provider_index);
+		ret = stratafs_directory_provider_only(old_dentry,
+						       provider_index);
 		if (ret)
 			goto out_new_parent;
 	}
 	if ((flags & RENAME_EXCHANGE) && d_is_dir(new_dentry)) {
-		ret = stratafs_directory_provider_only(new_dentry, provider_index);
+		ret = stratafs_directory_provider_only(new_dentry,
+						       provider_index);
 		if (ret)
 			goto out_new_parent;
 	}
@@ -1731,8 +1746,8 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 		trace_stratafs_rename_stale(
 			STRATAFS_SB(old_dir->i_sb)->mount_cookie,
 			d_inode(source.dentry)->i_ino,
-			d_inode(rd.old_dentry) ?
-				d_inode(rd.old_dentry)->i_ino : 0);
+			d_inode(rd.old_dentry) ? d_inode(rd.old_dentry)->i_ino :
+						 0);
 		ret = -ESTALE;
 		goto out_rename;
 	}
@@ -1746,7 +1761,8 @@ static int stratafs_rename(struct mnt_idmap *idmap, struct inode *old_dir,
 		stratafs_replace_relative(old_dentry, &old_new_drelative,
 					  &old_new_irelative);
 		if (flags & RENAME_EXCHANGE) {
-			stratafs_replace_relative(new_dentry, &new_new_drelative,
+			stratafs_replace_relative(new_dentry,
+						  &new_new_drelative,
 						  &new_new_irelative);
 			d_exchange(old_dentry, new_dentry);
 		} else {
@@ -1772,8 +1788,8 @@ out_source:
 	kfree(new_new_irelative);
 	if (stratafs_arrangement_error(ret) &&
 	    !pkm_kacs_stratafs_supersede_active(old_dentry, new_dentry))
-		stratafs_audit_refusal(new_dentry, "rename", provider_index, ret,
-					 false);
+		stratafs_audit_refusal(new_dentry, "rename", provider_index,
+				       ret, false);
 	return ret;
 }
 

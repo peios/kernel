@@ -119,9 +119,10 @@ struct pkm_kacs_stratafs_copy_up {
 
 static bool pkm_kacs_copy_up_staging_binding_valid(
 	const struct pkm_kacs_stratafs_copy_up *context);
-static bool pkm_kacs_copy_up_staging_path(
-	const struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *path, const struct inode *inode);
+static bool
+pkm_kacs_copy_up_staging_path(const struct pkm_kacs_stratafs_copy_up *context,
+			      const struct path *path,
+			      const struct inode *inode);
 
 static bool pkm_kacs_copy_up_path_valid(const struct path *path)
 {
@@ -129,7 +130,7 @@ static bool pkm_kacs_copy_up_path_valid(const struct path *path)
 }
 
 static bool pkm_kacs_copy_up_path_matches(const struct path *left,
-					   const struct path *right)
+					  const struct path *right)
 {
 	return left && right && left->mnt && right->mnt && left->dentry &&
 	       right->dentry && path_equal(left, right);
@@ -151,31 +152,32 @@ static struct inode *pkm_kacs_copy_up_pin_path_inode(const struct path *path)
 	return inode;
 }
 
-static bool pkm_kacs_copy_up_path_inode_matches(
-	const struct path *left, const struct path *right,
-	const struct inode *pinned_inode)
+static bool
+pkm_kacs_copy_up_path_inode_matches(const struct path *left,
+				    const struct path *right,
+				    const struct inode *pinned_inode)
 {
-	return pinned_inode &&
-	       pkm_kacs_copy_up_path_matches(left, right) &&
+	return pinned_inode && pkm_kacs_copy_up_path_matches(left, right) &&
 	       d_inode(right->dentry) == pinned_inode;
 }
 
-static bool pkm_kacs_copy_up_dentry_matches_path(
-	const struct dentry *dentry, const struct path *path)
+static bool pkm_kacs_copy_up_dentry_matches_path(const struct dentry *dentry,
+						 const struct path *path)
 {
 	return dentry && path && path->dentry == dentry;
 }
 
-static bool pkm_kacs_copy_up_inode_matches_path(
-	const struct inode *inode, const struct path *path,
-	const struct inode *pinned_inode)
+static bool
+pkm_kacs_copy_up_inode_matches_path(const struct inode *inode,
+				    const struct path *path,
+				    const struct inode *pinned_inode)
 {
 	return inode && inode == pinned_inode && path && path->dentry &&
 	       d_inode(path->dentry) == pinned_inode;
 }
 
 static bool pkm_kacs_copy_up_qstr_equal(const struct qstr *left,
-					 const struct qstr *right)
+					const struct qstr *right)
 {
 	return left && right && left->len == right->len &&
 	       !memcmp(left->name, right->name, left->len);
@@ -194,7 +196,7 @@ static bool pkm_kacs_copy_up_mode_supported(umode_t mode)
 }
 
 static bool pkm_kacs_copy_up_read_mask_allowed(const struct inode *inode,
-						int mask)
+					       int mask)
 {
 	int allowed = MAY_READ | MAY_OPEN | MAY_ACCESS | MAY_NOT_BLOCK;
 
@@ -212,7 +214,7 @@ static bool pkm_kacs_copy_up_parent_mask_allowed(int mask)
 }
 
 static bool pkm_kacs_copy_up_staging_mask_allowed(const struct inode *inode,
-						   int mask)
+						  int mask)
 {
 	int allowed = MAY_READ | MAY_WRITE | MAY_APPEND | MAY_OPEN |
 		      MAY_ACCESS | MAY_NOT_BLOCK;
@@ -222,10 +224,10 @@ static bool pkm_kacs_copy_up_staging_mask_allowed(const struct inode *inode,
 	return (mask & ~allowed) == 0;
 }
 
-static int pkm_kacs_copy_up_copy_effective_sd(const struct path *path,
-					       const struct inode *expected_inode,
-					       u8 **bytes_out,
-					       size_t *len_out)
+static int
+pkm_kacs_copy_up_copy_effective_sd(const struct path *path,
+				   const struct inode *expected_inode,
+				   u8 **bytes_out, size_t *len_out)
 {
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct pkm_kacs_inode_security *inode_sec;
@@ -277,10 +279,9 @@ static int pkm_kacs_copy_up_copy_effective_sd(const struct path *path,
 }
 
 static int pkm_kacs_copy_up_read_capability(const struct path *path,
-					     const struct inode *expected_inode,
-					     u8 **bytes_out,
-					     size_t *len_out,
-					     bool *present_out)
+					    const struct inode *expected_inode,
+					    u8 **bytes_out, size_t *len_out,
+					    bool *present_out)
 {
 	struct inode *inode;
 	ssize_t len;
@@ -296,8 +297,8 @@ static int pkm_kacs_copy_up_read_capability(const struct path *path,
 	*present_out = false;
 	inode = d_inode(path->dentry);
 
-	len = vfs_getxattr(mnt_idmap(path->mnt), path->dentry,
-			   XATTR_NAME_CAPS, NULL, 0);
+	len = vfs_getxattr(mnt_idmap(path->mnt), path->dentry, XATTR_NAME_CAPS,
+			   NULL, 0);
 	if (len == -ENODATA || len == -EOPNOTSUPP)
 		return 0;
 	if (len < 0)
@@ -308,8 +309,8 @@ static int pkm_kacs_copy_up_read_capability(const struct path *path,
 	bytes = kmalloc(len, GFP_NOFS);
 	if (!bytes)
 		return -ENOMEM;
-	read = vfs_getxattr(mnt_idmap(path->mnt), path->dentry,
-			    XATTR_NAME_CAPS, bytes, len);
+	read = vfs_getxattr(mnt_idmap(path->mnt), path->dentry, XATTR_NAME_CAPS,
+			    bytes, len);
 	if (read < 0) {
 		kfree(bytes);
 		return (int)read;
@@ -326,8 +327,7 @@ static int pkm_kacs_copy_up_read_capability(const struct path *path,
 	return 0;
 }
 
-static struct pkm_kacs_stratafs_copy_up *
-pkm_kacs_copy_up_current(void)
+static struct pkm_kacs_stratafs_copy_up *pkm_kacs_copy_up_current(void)
 {
 	if (!current || !current->security)
 		return NULL;
@@ -339,16 +339,16 @@ bool pkm_kacs_copy_up_active(void)
 	return pkm_kacs_copy_up_current() != NULL;
 }
 
-static bool pkm_kacs_copy_up_owned(
-	const struct pkm_kacs_stratafs_copy_up *context)
+static bool
+pkm_kacs_copy_up_owned(const struct pkm_kacs_stratafs_copy_up *context)
 {
 	return context && pkm_kacs_copy_up_current() == context &&
 	       atomic_read(&context->attached) == 1;
 }
 
-static int pkm_kacs_copy_up_arm_phase_locked(
-	struct pkm_kacs_stratafs_copy_up *context,
-	enum pkm_kacs_copy_up_phase phase)
+static int
+pkm_kacs_copy_up_arm_phase_locked(struct pkm_kacs_stratafs_copy_up *context,
+				  enum pkm_kacs_copy_up_phase phase)
 {
 	if (context->phase != PKM_KACS_COPY_UP_PHASE_NONE)
 		return -EBUSY;
@@ -360,8 +360,8 @@ static int pkm_kacs_copy_up_arm_phase_locked(
 	return 0;
 }
 
-static void pkm_kacs_copy_up_clear_phase_locked(
-	struct pkm_kacs_stratafs_copy_up *context)
+static void
+pkm_kacs_copy_up_clear_phase_locked(struct pkm_kacs_stratafs_copy_up *context)
 {
 	struct dentry *phase_dentry;
 
@@ -380,7 +380,8 @@ static void pkm_kacs_copy_up_clear_phase_locked(
 	if (context->phase_parent_pinned) {
 		context->phase_parent_pinned = false;
 		path_put(&context->phase_parent);
-		memset(&context->phase_parent, 0, sizeof(context->phase_parent));
+		memset(&context->phase_parent, 0,
+		       sizeof(context->phase_parent));
 	}
 	if (context->phase_parent_inode) {
 		iput(context->phase_parent_inode);
@@ -411,8 +412,7 @@ static void pkm_kacs_copy_up_clear_phase_locked(
 	context->capability_clone_hook_seen = false;
 }
 
-static void pkm_kacs_copy_up_destroy(
-	struct pkm_kacs_stratafs_copy_up *context)
+static void pkm_kacs_copy_up_destroy(struct pkm_kacs_stratafs_copy_up *context)
 {
 	struct pkm_kacs_copy_up_created *created;
 	struct pkm_kacs_copy_up_created *next;
@@ -460,8 +460,7 @@ pkm_kacs_stratafs_copy_up_get(struct pkm_kacs_stratafs_copy_up *context)
 	return context;
 }
 
-void pkm_kacs_stratafs_copy_up_put(
-	struct pkm_kacs_stratafs_copy_up *context)
+void pkm_kacs_stratafs_copy_up_put(struct pkm_kacs_stratafs_copy_up *context)
 {
 	if (context && refcount_dec_and_test(&context->refs))
 		pkm_kacs_copy_up_destroy(context);
@@ -469,7 +468,8 @@ void pkm_kacs_stratafs_copy_up_put(
 
 static struct pkm_kacs_stratafs_copy_up *
 pkm_kacs_copy_up_alloc(const struct path *provider,
-		       struct inode *provider_inode, u8 *sd_bytes, size_t sd_len)
+		       struct inode *provider_inode, u8 *sd_bytes,
+		       size_t sd_len)
 {
 	struct pkm_kacs_stratafs_copy_up *context;
 
@@ -494,8 +494,7 @@ pkm_kacs_copy_up_alloc(const struct path *provider,
 	return context;
 }
 
-int pkm_kacs_stratafs_copy_up_enter(
-	struct pkm_kacs_stratafs_copy_up *context)
+int pkm_kacs_stratafs_copy_up_enter(struct pkm_kacs_stratafs_copy_up *context)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -514,8 +513,7 @@ int pkm_kacs_stratafs_copy_up_enter(
 	return 0;
 }
 
-void pkm_kacs_stratafs_copy_up_leave(
-	struct pkm_kacs_stratafs_copy_up *context)
+void pkm_kacs_stratafs_copy_up_leave(struct pkm_kacs_stratafs_copy_up *context)
 {
 	struct pkm_kacs_task_security *task_sec;
 
@@ -568,12 +566,12 @@ pkm_kacs_stratafs_copy_up_begin(const struct path *provider)
 	provider_inode = pkm_kacs_copy_up_pin_path_inode(provider);
 	if (IS_ERR(provider_inode))
 		return ERR_CAST(provider_inode);
-	ret = pkm_kacs_copy_up_copy_effective_sd(
-		provider, provider_inode, &sd_bytes, &sd_len);
+	ret = pkm_kacs_copy_up_copy_effective_sd(provider, provider_inode,
+						 &sd_bytes, &sd_len);
 	if (ret)
 		goto out_put_provider;
-	context = pkm_kacs_copy_up_alloc(
-		provider, provider_inode, sd_bytes, sd_len);
+	context = pkm_kacs_copy_up_alloc(provider, provider_inode, sd_bytes,
+					 sd_len);
 	if (IS_ERR(context)) {
 		kfree(sd_bytes);
 		ret = PTR_ERR(context);
@@ -589,8 +587,7 @@ pkm_kacs_stratafs_copy_up_begin(const struct path *provider)
 	if (!ret)
 		ret = pkm_kacs_copy_up_read_capability(
 			&context->provider, context->provider_inode,
-			&capability, &capability_len,
-			&capability_present);
+			&capability, &capability_len, &capability_present);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 	if (ret) {
 		pkm_kacs_stratafs_copy_up_leave(context);
@@ -609,7 +606,7 @@ out_put_provider:
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 struct pkm_kacs_stratafs_copy_up *
 pkm_kacs_kunit_copy_up_begin_with_sd(const struct path *provider,
-				      const u8 *sd_bytes, size_t sd_len)
+				     const u8 *sd_bytes, size_t sd_len)
 {
 	struct pkm_kacs_stratafs_copy_up *context;
 	struct inode *provider_inode;
@@ -626,8 +623,8 @@ pkm_kacs_kunit_copy_up_begin_with_sd(const struct path *provider,
 		kfree(copy);
 		return ERR_CAST(provider_inode);
 	}
-	context = pkm_kacs_copy_up_alloc(
-		provider, provider_inode, copy, sd_len);
+	context =
+		pkm_kacs_copy_up_alloc(provider, provider_inode, copy, sd_len);
 	if (IS_ERR(context)) {
 		iput(provider_inode);
 		kfree(copy);
@@ -642,9 +639,9 @@ pkm_kacs_kunit_copy_up_begin_with_sd(const struct path *provider,
 }
 #endif
 
-static int pkm_kacs_copy_up_begin_simple_phase(
-	struct pkm_kacs_stratafs_copy_up *context,
-	enum pkm_kacs_copy_up_phase phase)
+static int
+pkm_kacs_copy_up_begin_simple_phase(struct pkm_kacs_stratafs_copy_up *context,
+				    enum pkm_kacs_copy_up_phase phase)
 {
 	int ret = 0;
 
@@ -664,9 +661,9 @@ int pkm_kacs_stratafs_copy_up_begin_source_read(
 }
 
 static int pkm_kacs_copy_up_begin_create_common(
-	struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *provider, const struct path *destination_parent,
-	struct dentry *destination, umode_t mode, bool anonymous)
+	struct pkm_kacs_stratafs_copy_up *context, const struct path *provider,
+	const struct path *destination_parent, struct dentry *destination,
+	umode_t mode, bool anonymous)
 {
 	struct inode *parent_inode;
 	struct inode *provider_inode;
@@ -680,10 +677,9 @@ static int pkm_kacs_copy_up_begin_create_common(
 	    !S_ISDIR(d_inode(destination_parent->dentry)->i_mode) ||
 	    !pkm_kacs_copy_up_mode_supported(mode))
 		return -EINVAL;
-	if (!anonymous &&
-	    (!destination || d_inode(destination) ||
-	     !d_is_negative(destination) ||
-	     destination->d_parent != destination_parent->dentry))
+	if (!anonymous && (!destination || d_inode(destination) ||
+			   !d_is_negative(destination) ||
+			   destination->d_parent != destination_parent->dentry))
 		return -EINVAL;
 	if (anonymous && destination)
 		return -EINVAL;
@@ -704,7 +700,7 @@ static int pkm_kacs_copy_up_begin_create_common(
 			goto out_put_parent;
 		}
 		sd_bytes = kmemdup(context->provider_sd,
-				     context->provider_sd_len, GFP_NOFS);
+				   context->provider_sd_len, GFP_NOFS);
 		if (!sd_bytes) {
 			ret = -ENOMEM;
 			goto out_put_parent;
@@ -719,8 +715,8 @@ static int pkm_kacs_copy_up_begin_create_common(
 		goto out_put_parent;
 
 	mutex_lock(&context->lock);
-	ret = pkm_kacs_copy_up_arm_phase_locked(
-		context, PKM_KACS_COPY_UP_PHASE_CREATE);
+	ret = pkm_kacs_copy_up_arm_phase_locked(context,
+						PKM_KACS_COPY_UP_PHASE_CREATE);
 	if (ret)
 		goto out_unlock;
 	if (context->pending_created_inode) {
@@ -760,8 +756,9 @@ int pkm_kacs_stratafs_copy_up_begin_create(
 	const struct path *destination_parent, struct dentry *destination,
 	umode_t mode)
 {
-	return pkm_kacs_copy_up_begin_create_common(
-		context, provider, destination_parent, destination, mode, false);
+	return pkm_kacs_copy_up_begin_create_common(context, provider,
+						    destination_parent,
+						    destination, mode, false);
 }
 
 int pkm_kacs_stratafs_copy_up_begin_anonymous_create(
@@ -779,9 +776,10 @@ int pkm_kacs_stratafs_copy_up_begin_anonymous_create(
  * with the provider SD without turning the phase into a filesystem-wide
  * exemption.
  */
-int pkm_kacs_copy_up_dentry_create_files_as(
-	struct dentry *dentry, int mode, const struct qstr *name,
-	const struct cred *old, struct cred *new)
+int pkm_kacs_copy_up_dentry_create_files_as(struct dentry *dentry, int mode,
+					    const struct qstr *name,
+					    const struct cred *old,
+					    struct cred *new)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool matches;
@@ -798,7 +796,7 @@ int pkm_kacs_copy_up_dentry_create_files_as(
 		return 0;
 
 	matches = context->phase_anonymous ? !context->phase_dentry :
-					      dentry == context->phase_dentry;
+					     dentry == context->phase_dentry;
 	if (!matches)
 		return 0;
 	if (d_inode(dentry) || !d_is_negative(dentry) ||
@@ -819,11 +817,9 @@ void pkm_kacs_copy_up_post_create_tmpfile(struct mnt_idmap *idmap,
 	(void)idmap;
 	if (!context || !inode ||
 	    context->phase != PKM_KACS_COPY_UP_PHASE_CREATE ||
-	    !context->phase_anonymous ||
-	    !context->phase_stacked_create_seen ||
+	    !context->phase_anonymous || !context->phase_stacked_create_seen ||
 	    !context->phase_stacked_sd_initialized ||
-	    context->pending_created_inode ||
-	    !context->phase_parent_inode ||
+	    context->pending_created_inode || !context->phase_parent_inode ||
 	    inode->i_sb != context->phase_parent_inode->i_sb ||
 	    (inode->i_mode & S_IFMT) != (context->phase_mode & S_IFMT))
 		return;
@@ -862,7 +858,8 @@ pkm_kacs_copy_up_created_alloc(const struct path *parent,
 }
 
 int pkm_kacs_stratafs_copy_up_confirm_named_create(
-	struct pkm_kacs_stratafs_copy_up *context, const struct path *created_path)
+	struct pkm_kacs_stratafs_copy_up *context,
+	const struct path *created_path)
 {
 	struct pkm_kacs_copy_up_created *created;
 	struct inode *inode;
@@ -876,7 +873,8 @@ int pkm_kacs_stratafs_copy_up_confirm_named_create(
 	    created_path->mnt != context->phase_parent.mnt ||
 	    created_path->dentry != context->phase_dentry ||
 	    created_path->dentry->d_parent != context->phase_parent.dentry ||
-	    d_inode(context->phase_parent.dentry) != context->phase_parent_inode ||
+	    d_inode(context->phase_parent.dentry) !=
+		    context->phase_parent_inode ||
 	    (inode->i_mode & S_IFMT) != (context->phase_mode & S_IFMT))
 		return -ESTALE;
 
@@ -890,9 +888,9 @@ int pkm_kacs_stratafs_copy_up_confirm_named_create(
 	    context->pending_created_inode)
 		return -EACCES;
 
-	created = pkm_kacs_copy_up_created_alloc(
-		&context->phase_parent, context->phase_parent_inode,
-		created_path->dentry, inode);
+	created = pkm_kacs_copy_up_created_alloc(&context->phase_parent,
+						 context->phase_parent_inode,
+						 created_path->dentry, inode);
 	if (!created)
 		return -ENOMEM;
 	context->pending_created_inode = igrab(inode);
@@ -959,8 +957,7 @@ int pkm_kacs_stratafs_copy_up_bind_staging(
 }
 
 int pkm_kacs_stratafs_copy_up_rebind_staging(
-	struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *published)
+	struct pkm_kacs_stratafs_copy_up *context, const struct path *published)
 {
 	struct inode *published_inode;
 	struct dentry *published_parent;
@@ -1003,10 +1000,10 @@ static int pkm_kacs_copy_up_adopt_file_security(
 	struct pkm_kacs_stratafs_copy_up *file_context;
 
 	if (!context || !outer_sec || !backing_sec || !backing_auth ||
-	    !outer_sec->managed ||
-	    outer_sec->copy_up_context ||
+	    !outer_sec->managed || outer_sec->copy_up_context ||
 	    backing_sec->copy_up_context != context ||
-	    backing_sec->copy_up_phase_generation != context->phase_generation ||
+	    backing_sec->copy_up_phase_generation !=
+		    context->phase_generation ||
 	    backing_auth->managed || backing_auth->inherited)
 		return -EACCES;
 
@@ -1033,14 +1030,13 @@ int pkm_kacs_stratafs_copy_up_adopt_backing_file(
 	struct pkm_kacs_backing_file_security *backing_auth;
 	const struct path *user_path;
 
-	if (!pkm_kacs_copy_up_owned(context) || !outer_file ||
-	    !backing_file || !outer_file->f_security ||
-	    !backing_file->f_security ||
+	if (!pkm_kacs_copy_up_owned(context) || !outer_file || !backing_file ||
+	    !outer_file->f_security || !backing_file->f_security ||
 	    !(backing_file->f_mode & FMODE_BACKING))
 		return -EINVAL;
 	if (context->phase != PKM_KACS_COPY_UP_PHASE_NONE ||
-	    !pkm_kacs_copy_up_staging_path(
-		    context, &backing_file->f_path, file_inode(backing_file)))
+	    !pkm_kacs_copy_up_staging_path(context, &backing_file->f_path,
+					   file_inode(backing_file)))
 		return -ESTALE;
 	user_path = backing_file_user_path(backing_file);
 	if (!user_path || !path_equal(user_path, &outer_file->f_path) ||
@@ -1059,8 +1055,8 @@ int pkm_kacs_stratafs_copy_up_adopt_backing_file(
 	 * it.  Exact staging and user-path bindings above prevent this from
 	 * becoming a general snapshot-cloning primitive.
 	 */
-	return pkm_kacs_copy_up_adopt_file_security(
-		context, outer_sec, backing_sec, backing_auth);
+	return pkm_kacs_copy_up_adopt_file_security(context, outer_sec,
+						    backing_sec, backing_auth);
 }
 
 int pkm_kacs_stratafs_copy_up_begin_populate(
@@ -1113,16 +1109,16 @@ int pkm_kacs_stratafs_copy_up_set_capability(
 	if (!value_copy)
 		return -ENOMEM;
 
-	ret = pkm_kacs_copy_up_validate_capability_clone(
-		context, value_copy, size);
+	ret = pkm_kacs_copy_up_validate_capability_clone(context, value_copy,
+							 size);
 	if (ret)
 		goto out;
 
 	/* Re-read immediately before installation so a revoked value is stale. */
-	ret = pkm_kacs_copy_up_read_capability(
-		&context->provider, context->provider_inode,
-		&current_value, &current_size,
-		&current_present);
+	ret = pkm_kacs_copy_up_read_capability(&context->provider,
+					       context->provider_inode,
+					       &current_value, &current_size,
+					       &current_present);
 	if (ret)
 		goto out;
 	if (!current_present || current_size != size ||
@@ -1134,8 +1130,8 @@ int pkm_kacs_stratafs_copy_up_set_capability(
 	context->capability_clone_hook_seen = false;
 	context->capability_clone_active = true;
 	ret = vfs_setxattr(mnt_idmap(context->staging.mnt),
-			   context->staging.dentry, XATTR_NAME_CAPS,
-			   value_copy, size, XATTR_CREATE);
+			   context->staging.dentry, XATTR_NAME_CAPS, value_copy,
+			   size, XATTR_CREATE);
 	context->capability_clone_active = false;
 	context->capability_clone_hook_seen = false;
 out:
@@ -1144,10 +1140,11 @@ out:
 	return ret;
 }
 
-static int pkm_kacs_copy_up_begin_publish(
-	struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *destination_parent, struct dentry *destination,
-	enum pkm_kacs_copy_up_phase phase)
+static int
+pkm_kacs_copy_up_begin_publish(struct pkm_kacs_stratafs_copy_up *context,
+			       const struct path *destination_parent,
+			       struct dentry *destination,
+			       enum pkm_kacs_copy_up_phase phase)
 {
 	struct inode *parent_inode;
 	char *phase_name = NULL;
@@ -1162,7 +1159,7 @@ static int pkm_kacs_copy_up_begin_publish(
 		return -EINVAL;
 	if (phase == PKM_KACS_COPY_UP_PHASE_PUBLISH_RENAME) {
 		phase_name = kmemdup_nul(destination->d_name.name,
-					   destination->d_name.len, GFP_NOFS);
+					 destination->d_name.len, GFP_NOFS);
 		if (!phase_name)
 			return -ENOMEM;
 	}
@@ -1253,10 +1250,10 @@ int pkm_kacs_stratafs_copy_up_finish_publish(
 	published_parent = published->dentry->d_parent;
 
 	mutex_lock(&context->lock);
-	object_matches = pkm_kacs_copy_up_published_object_matches(context,
-								 published);
-	if (!object_matches ||
-	    !context->phase_parent_pinned || !context->phase_dentry ||
+	object_matches =
+		pkm_kacs_copy_up_published_object_matches(context, published);
+	if (!object_matches || !context->phase_parent_pinned ||
+	    !context->phase_dentry ||
 	    published->mnt != context->phase_parent.mnt ||
 	    published_parent != context->phase_parent.dentry ||
 	    d_inode(published_parent) != context->phase_parent_inode ||
@@ -1298,8 +1295,8 @@ static bool pkm_kacs_copy_up_cleanup_target_tracked_locked(
 	    pkm_kacs_copy_up_path_inode_matches(
 		    &context->staging_parent, parent,
 		    context->staging_parent_inode) &&
-	    pkm_kacs_copy_up_path_inode_matches(
-		    &context->staging, &victim_path, context->staging_inode) &&
+	    pkm_kacs_copy_up_path_inode_matches(&context->staging, &victim_path,
+						context->staging_inode) &&
 	    parent_inode == context->staging_parent_inode &&
 	    victim_inode == context->staging_inode)
 		return true;
@@ -1359,8 +1356,8 @@ int pkm_kacs_stratafs_copy_up_begin_cleanup(
 		ret = -ESTALE;
 		goto out;
 	}
-	ret = pkm_kacs_copy_up_arm_phase_locked(
-		context, PKM_KACS_COPY_UP_PHASE_CLEANUP);
+	ret = pkm_kacs_copy_up_arm_phase_locked(context,
+						PKM_KACS_COPY_UP_PHASE_CLEANUP);
 	if (ret)
 		goto out;
 	context->phase_parent = *parent;
@@ -1411,8 +1408,8 @@ int pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
 		ret = -ESTALE;
 		goto out_unlock;
 	}
-	ret = pkm_kacs_copy_up_arm_phase_locked(
-		context, PKM_KACS_COPY_UP_PHASE_CLEANUP);
+	ret = pkm_kacs_copy_up_arm_phase_locked(context,
+						PKM_KACS_COPY_UP_PHASE_CLEANUP);
 	if (ret)
 		goto out_unlock;
 	context->phase_parent = *parent;
@@ -1459,15 +1456,15 @@ void pkm_kacs_stratafs_copy_up_end_phase(
  * the phase.  This also keeps MAY_NOT_BLOCK inode_permission genuinely
  * non-blocking.
  */
-static bool pkm_kacs_copy_up_source_dentry(
-	const struct pkm_kacs_stratafs_copy_up *context,
-	const struct dentry *dentry)
+static bool
+pkm_kacs_copy_up_source_dentry(const struct pkm_kacs_stratafs_copy_up *context,
+			       const struct dentry *dentry)
 {
 	switch (context->phase) {
 	case PKM_KACS_COPY_UP_PHASE_SOURCE_READ:
 	case PKM_KACS_COPY_UP_PHASE_POPULATE:
 		return pkm_kacs_copy_up_dentry_matches_path(
-			dentry, &context->provider) &&
+			       dentry, &context->provider) &&
 		       d_inode(dentry) == context->provider_inode;
 	case PKM_KACS_COPY_UP_PHASE_CREATE:
 		return context->phase_provider_pinned &&
@@ -1493,18 +1490,20 @@ static bool pkm_kacs_copy_up_staging_binding_valid(
 		       context->staging_parent_inode;
 }
 
-static bool pkm_kacs_copy_up_staging_dentry(
-	const struct pkm_kacs_stratafs_copy_up *context,
-	const struct dentry *dentry)
+static bool
+pkm_kacs_copy_up_staging_dentry(const struct pkm_kacs_stratafs_copy_up *context,
+				const struct dentry *dentry)
 {
 	return pkm_kacs_copy_up_staging_binding_valid(context) &&
-	       pkm_kacs_copy_up_dentry_matches_path(dentry, &context->staging) &&
+	       pkm_kacs_copy_up_dentry_matches_path(dentry,
+						    &context->staging) &&
 	       d_inode(dentry) == context->staging_inode;
 }
 
-static bool pkm_kacs_copy_up_staging_path(
-	const struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *path, const struct inode *inode)
+static bool
+pkm_kacs_copy_up_staging_path(const struct pkm_kacs_stratafs_copy_up *context,
+			      const struct path *path,
+			      const struct inode *inode)
 {
 	return pkm_kacs_copy_up_staging_binding_valid(context) &&
 	       inode == context->staging_inode &&
@@ -1512,7 +1511,7 @@ static bool pkm_kacs_copy_up_staging_path(
 }
 
 bool pkm_kacs_copy_up_allows_inode_permission(const struct inode *inode,
-					       int mask)
+					      int mask)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed = false;
@@ -1522,14 +1521,16 @@ bool pkm_kacs_copy_up_allows_inode_permission(const struct inode *inode,
 	switch (context->phase) {
 	case PKM_KACS_COPY_UP_PHASE_SOURCE_READ:
 		allowed = pkm_kacs_copy_up_inode_matches_path(
-			inode, &context->provider, context->provider_inode) &&
+				  inode, &context->provider,
+				  context->provider_inode) &&
 			  pkm_kacs_copy_up_read_mask_allowed(inode, mask);
 		break;
 	case PKM_KACS_COPY_UP_PHASE_CREATE:
 		if (pkm_kacs_copy_up_inode_matches_path(
 			    inode, &context->phase_provider,
 			    context->phase_provider_inode))
-			allowed = pkm_kacs_copy_up_read_mask_allowed(inode, mask);
+			allowed =
+				pkm_kacs_copy_up_read_mask_allowed(inode, mask);
 		else if (pkm_kacs_copy_up_inode_matches_path(
 				 inode, &context->phase_parent,
 				 context->phase_parent_inode))
@@ -1538,28 +1539,29 @@ bool pkm_kacs_copy_up_allows_inode_permission(const struct inode *inode,
 	case PKM_KACS_COPY_UP_PHASE_POPULATE:
 		if (pkm_kacs_copy_up_inode_matches_path(
 			    inode, &context->provider, context->provider_inode))
-			allowed = pkm_kacs_copy_up_read_mask_allowed(inode, mask);
+			allowed =
+				pkm_kacs_copy_up_read_mask_allowed(inode, mask);
 		else if (pkm_kacs_copy_up_staging_binding_valid(context) &&
 			 pkm_kacs_copy_up_inode_matches_path(
 				 inode, &context->staging,
 				 context->staging_inode))
 			allowed = pkm_kacs_copy_up_staging_mask_allowed(inode,
-							   mask);
+									mask);
 		break;
 	case PKM_KACS_COPY_UP_PHASE_PUBLISH_LINK:
 	case PKM_KACS_COPY_UP_PHASE_PUBLISH_RENAME:
 		if (!pkm_kacs_copy_up_staging_binding_valid(context))
 			break;
 		if (pkm_kacs_copy_up_inode_matches_path(
-			    inode, &context->staging,
-			    context->staging_inode))
-			allowed = pkm_kacs_copy_up_read_mask_allowed(inode, mask);
+			    inode, &context->staging, context->staging_inode))
+			allowed =
+				pkm_kacs_copy_up_read_mask_allowed(inode, mask);
 		else if (pkm_kacs_copy_up_inode_matches_path(
 				 inode, &context->phase_parent,
 				 context->phase_parent_inode))
 			allowed = pkm_kacs_copy_up_parent_mask_allowed(mask);
 		else if (context->phase ==
-			 PKM_KACS_COPY_UP_PHASE_PUBLISH_RENAME &&
+				 PKM_KACS_COPY_UP_PHASE_PUBLISH_RENAME &&
 			 pkm_kacs_copy_up_inode_matches_path(
 				 inode, &context->staging_parent,
 				 context->staging_parent_inode))
@@ -1578,8 +1580,7 @@ bool pkm_kacs_copy_up_allows_inode_permission(const struct inode *inode,
 }
 
 bool pkm_kacs_copy_up_allows_create(const struct inode *dir,
-				     const struct dentry *dentry,
-				     umode_t mode)
+				    const struct dentry *dentry, umode_t mode)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed = false;
@@ -1588,8 +1589,8 @@ bool pkm_kacs_copy_up_allows_create(const struct inode *dir,
 		return false;
 	if (context->phase == PKM_KACS_COPY_UP_PHASE_CREATE &&
 	    !context->phase_anonymous && !context->phase_create_seen &&
-	    pkm_kacs_copy_up_inode_matches_path(
-		    dir, &context->phase_parent, context->phase_parent_inode) &&
+	    pkm_kacs_copy_up_inode_matches_path(dir, &context->phase_parent,
+						context->phase_parent_inode) &&
 	    context->phase_dentry == dentry &&
 	    dentry->d_parent == context->phase_parent.dentry &&
 	    !d_inode(dentry) && d_is_negative(dentry) &&
@@ -1601,10 +1602,9 @@ bool pkm_kacs_copy_up_allows_create(const struct inode *dir,
 }
 
 int pkm_kacs_copy_up_init_security(const struct inode *inode,
-				    const struct inode *dir,
-				    const struct qstr *qstr,
-				    const u8 **sd_bytes,
-				    size_t *sd_len)
+				   const struct inode *dir,
+				   const struct qstr *qstr, const u8 **sd_bytes,
+				   size_t *sd_len)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	struct pkm_kacs_copy_up_created *created = NULL;
@@ -1651,7 +1651,8 @@ int pkm_kacs_copy_up_init_security(const struct inode *inode,
 		}
 		if (!context->phase_anonymous) {
 			created = pkm_kacs_copy_up_created_alloc(
-				&context->phase_parent, context->phase_parent_inode,
+				&context->phase_parent,
+				context->phase_parent_inode,
 				context->phase_dentry, (struct inode *)inode);
 			if (!created) {
 				matched = -ENOMEM;
@@ -1687,8 +1688,8 @@ out:
 }
 
 bool pkm_kacs_copy_up_allows_link(const struct dentry *old_dentry,
-				   const struct inode *dir,
-				   const struct dentry *new_dentry)
+				  const struct inode *dir,
+				  const struct dentry *new_dentry)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed;
@@ -1705,22 +1706,19 @@ bool pkm_kacs_copy_up_allows_link(const struct dentry *old_dentry,
 			  context->phase_parent_inode) &&
 		  context->phase_dentry == new_dentry &&
 		  new_dentry->d_parent == context->phase_parent.dentry &&
-		  !d_inode(new_dentry) &&
-		  d_is_negative(new_dentry);
+		  !d_inode(new_dentry) && d_is_negative(new_dentry);
 	return allowed;
 }
 
 bool pkm_kacs_copy_up_allows_unlink(const struct inode *dir,
-				     const struct dentry *dentry,
-				     bool directory)
+				    const struct dentry *dentry, bool directory)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed;
 
 	if (!context)
 		return false;
-	allowed = context->phase == PKM_KACS_COPY_UP_PHASE_CLEANUP &&
-		  dentry &&
+	allowed = context->phase == PKM_KACS_COPY_UP_PHASE_CLEANUP && dentry &&
 		  context->phase_directory == directory &&
 		  pkm_kacs_copy_up_inode_matches_path(
 			  dir, &context->phase_parent,
@@ -1734,9 +1732,9 @@ bool pkm_kacs_copy_up_allows_unlink(const struct inode *dir,
 }
 
 bool pkm_kacs_copy_up_allows_rename(const struct inode *old_dir,
-				     const struct dentry *old_dentry,
-				     const struct inode *new_dir,
-				     const struct dentry *new_dentry)
+				    const struct dentry *old_dentry,
+				    const struct inode *new_dir,
+				    const struct dentry *new_dentry)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed;
@@ -1757,8 +1755,7 @@ bool pkm_kacs_copy_up_allows_rename(const struct inode *old_dir,
 			  context->phase_parent_inode) &&
 		  context->phase_dentry == new_dentry &&
 		  new_dentry->d_parent == context->phase_parent.dentry &&
-		  !d_inode(new_dentry) &&
-		  d_is_negative(new_dentry);
+		  !d_inode(new_dentry) && d_is_negative(new_dentry);
 	return allowed;
 }
 
@@ -1774,7 +1771,8 @@ bool pkm_kacs_copy_up_allows_readlink(const struct dentry *dentry)
 }
 
 static bool pkm_kacs_copy_up_file_path_allowed(
-	const struct pkm_kacs_stratafs_copy_up *context, const struct file *file)
+	const struct pkm_kacs_stratafs_copy_up *context,
+	const struct file *file)
 {
 	const struct path *path;
 
@@ -1784,8 +1782,10 @@ static bool pkm_kacs_copy_up_file_path_allowed(
 	switch (context->phase) {
 	case PKM_KACS_COPY_UP_PHASE_SOURCE_READ:
 		return pkm_kacs_copy_up_path_inode_matches(
-			path, &context->provider, context->provider_inode) &&
-		       file_inode((struct file *)file) == context->provider_inode;
+			       path, &context->provider,
+			       context->provider_inode) &&
+		       file_inode((struct file *)file) ==
+			       context->provider_inode;
 	case PKM_KACS_COPY_UP_PHASE_CREATE:
 		if (!context->phase_anonymous)
 			return context->phase_create_seen &&
@@ -1795,19 +1795,20 @@ static bool pkm_kacs_copy_up_file_path_allowed(
 			       d_is_positive(path->dentry) &&
 			       context->pending_created_inode ==
 				       file_inode((struct file *)file) &&
-			       (file_inode((struct file *)file)->i_mode & S_IFMT) ==
-				       (context->phase_mode & S_IFMT);
-		return path->dentry && path->dentry->d_parent ==
-					context->phase_parent.dentry &&
+			       (file_inode((struct file *)file)->i_mode &
+				S_IFMT) == (context->phase_mode & S_IFMT);
+		return path->dentry &&
+		       path->dentry->d_parent == context->phase_parent.dentry &&
 		       path->mnt == context->phase_parent.mnt &&
 		       d_is_positive(path->dentry) &&
-		       context->pending_created_inode == file_inode(
-			       (struct file *)file) &&
+		       context->pending_created_inode ==
+			       file_inode((struct file *)file) &&
 		       (file_inode((struct file *)file)->i_mode & S_IFMT) ==
 			       (context->phase_mode & S_IFMT);
 	case PKM_KACS_COPY_UP_PHASE_POPULATE:
 		return (pkm_kacs_copy_up_path_inode_matches(
-				path, &context->provider, context->provider_inode) &&
+				path, &context->provider,
+				context->provider_inode) &&
 			file_inode((struct file *)file) ==
 				context->provider_inode) ||
 		       pkm_kacs_copy_up_staging_path(
@@ -1818,7 +1819,8 @@ static bool pkm_kacs_copy_up_file_path_allowed(
 }
 
 static bool pkm_kacs_copy_up_file_mode_allowed(
-	const struct pkm_kacs_stratafs_copy_up *context, const struct file *file)
+	const struct pkm_kacs_stratafs_copy_up *context,
+	const struct file *file)
 {
 	bool provider;
 
@@ -1867,8 +1869,7 @@ int pkm_kacs_stratafs_copy_up_resume_source_directory(
 	return allowed ? 0 : -EACCES;
 }
 
-enum pkm_kacs_copy_up_file_access
-pkm_kacs_copy_up_file_open(struct file *file)
+enum pkm_kacs_copy_up_file_access pkm_kacs_copy_up_file_open(struct file *file)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	struct pkm_kacs_stratafs_copy_up *file_context;
@@ -1899,8 +1900,7 @@ pkm_kacs_copy_up_file_open(struct file *file)
 		if (!file_context)
 			return PKM_KACS_COPY_UP_FILE_DENY;
 		file_sec->copy_up_context = file_context;
-		file_sec->copy_up_phase_generation =
-			context->phase_generation;
+		file_sec->copy_up_phase_generation = context->phase_generation;
 		file_sec->managed = 1;
 		file_sec->granted_access = 0;
 		file_sec->continuous_audit_mask = 0;
@@ -1928,9 +1928,9 @@ pkm_kacs_copy_up_file_permission(const struct file *file, int mask)
 
 	allowed = pkm_kacs_copy_up_file_path_allowed(context, file) &&
 		  pkm_kacs_copy_up_file_mode_allowed(context, file);
-	if (allowed && pkm_kacs_copy_up_path_inode_matches(
-			       &file->f_path, &context->provider,
-			       context->provider_inode))
+	if (allowed &&
+	    pkm_kacs_copy_up_path_inode_matches(
+		    &file->f_path, &context->provider, context->provider_inode))
 		allowed = pkm_kacs_copy_up_read_mask_allowed(file_inode(file),
 							     mask);
 	else if (allowed && context->phase_provider_pinned &&
@@ -1940,8 +1940,8 @@ pkm_kacs_copy_up_file_permission(const struct file *file, int mask)
 		allowed = pkm_kacs_copy_up_read_mask_allowed(file_inode(file),
 							     mask);
 	else if (allowed)
-		allowed = pkm_kacs_copy_up_staging_mask_allowed(file_inode(file),
-								mask);
+		allowed = pkm_kacs_copy_up_staging_mask_allowed(
+			file_inode(file), mask);
 	return allowed ? PKM_KACS_COPY_UP_FILE_ALLOW :
 			 PKM_KACS_COPY_UP_FILE_DENY;
 }
@@ -1965,15 +1965,15 @@ pkm_kacs_copy_up_file_metadata(const struct file *file, bool write)
 	    file_sec->copy_up_phase_generation != context->phase_generation)
 		return PKM_KACS_COPY_UP_FILE_DENY;
 
-	source = pkm_kacs_copy_up_path_inode_matches(
-		&file->f_path, &context->provider, context->provider_inode) &&
+	source = pkm_kacs_copy_up_path_inode_matches(&file->f_path,
+						     &context->provider,
+						     context->provider_inode) &&
 		 file_inode((struct file *)file) == context->provider_inode;
 	staging = pkm_kacs_copy_up_staging_path(
 		context, &file->f_path, file_inode((struct file *)file));
 	if (context->phase == PKM_KACS_COPY_UP_PHASE_POPULATE)
 		allowed = write ? staging : (source || staging);
-	else if (!write &&
-		 context->phase == PKM_KACS_COPY_UP_PHASE_SOURCE_READ)
+	else if (!write && context->phase == PKM_KACS_COPY_UP_PHASE_SOURCE_READ)
 		allowed = source;
 	return allowed ? PKM_KACS_COPY_UP_FILE_ALLOW :
 			 PKM_KACS_COPY_UP_FILE_DENY;
@@ -2034,8 +2034,8 @@ bool pkm_kacs_copy_up_allows_path_getattr(const struct path *path)
 		allowed = pkm_kacs_copy_up_path_inode_matches(
 				  path, &context->provider,
 				  context->provider_inode) ||
-			  pkm_kacs_copy_up_staging_path(
-				  context, path, d_inode(path->dentry));
+			  pkm_kacs_copy_up_staging_path(context, path,
+							d_inode(path->dentry));
 		break;
 	default:
 		break;
@@ -2056,7 +2056,7 @@ bool pkm_kacs_copy_up_allows_setattr(const struct dentry *dentry)
 }
 
 bool pkm_kacs_copy_up_allows_getxattr(const struct dentry *dentry,
-				       const char *name)
+				      const char *name)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed;
@@ -2069,7 +2069,7 @@ bool pkm_kacs_copy_up_allows_getxattr(const struct dentry *dentry,
 }
 
 bool pkm_kacs_copy_up_allows_setxattr(const struct dentry *dentry,
-				       const char *name)
+				      const char *name)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 	bool allowed;
@@ -2082,14 +2082,13 @@ bool pkm_kacs_copy_up_allows_setxattr(const struct dentry *dentry,
 		   pkm_kacs_copy_up_staging_dentry(context, dentry)) ||
 		  (context->phase == PKM_KACS_COPY_UP_PHASE_ORPHAN_MARKER &&
 		   !strcmp(name, STRATAFS_STAGING_XATTR) &&
-		   pkm_kacs_copy_up_dentry_matches_path(
-			   dentry, &context->provider) &&
+		   pkm_kacs_copy_up_dentry_matches_path(dentry,
+							&context->provider) &&
 		   d_inode(dentry) == context->provider_inode);
 	return allowed;
 }
 
-bool pkm_kacs_copy_up_allows_capability_setxattr(
-	const struct dentry *dentry)
+bool pkm_kacs_copy_up_allows_capability_setxattr(const struct dentry *dentry)
 {
 	struct pkm_kacs_stratafs_copy_up *context = pkm_kacs_copy_up_current();
 
@@ -2115,11 +2114,10 @@ bool pkm_kacs_copy_up_allows_capability_use(
 
 	if (!context || !target_ns)
 		return false;
-	namespace_matches = target_ns == context->capability_user_ns ||
-			    (context->staging_inode &&
-			     context->staging_inode->i_sb &&
-			     target_ns ==
-				     context->staging_inode->i_sb->s_user_ns);
+	namespace_matches =
+		target_ns == context->capability_user_ns ||
+		(context->staging_inode && context->staging_inode->i_sb &&
+		 target_ns == context->staging_inode->i_sb->s_user_ns);
 
 	return namespace_matches &&
 	       context->phase == PKM_KACS_COPY_UP_PHASE_POPULATE &&
@@ -2147,9 +2145,10 @@ static void pkm_kacs_kunit_init_copy_up_inode_ref(struct inode *inode)
 	atomic_set(&inode->i_count, 1);
 }
 
-static void pkm_kacs_kunit_init_copy_up_dentry(
-	struct dentry *dentry, struct inode *inode, struct dentry *parent,
-	const char *name)
+static void pkm_kacs_kunit_init_copy_up_dentry(struct dentry *dentry,
+					       struct inode *inode,
+					       struct dentry *parent,
+					       const char *name)
 {
 	struct qstr *qstr;
 
@@ -2167,8 +2166,9 @@ static void pkm_kacs_kunit_init_copy_up_dentry(
 		dentry->d_flags = DCACHE_REGULAR_TYPE;
 }
 
-static void pkm_kacs_kunit_init_copy_up_context(
-	struct pkm_kacs_stratafs_copy_up *context, struct path *provider)
+static void
+pkm_kacs_kunit_init_copy_up_context(struct pkm_kacs_stratafs_copy_up *context,
+				    struct path *provider)
 {
 	memset(context, 0, sizeof(*context));
 	refcount_set(&context->refs, 1);
@@ -2214,10 +2214,9 @@ static void pkm_kunit_copy_up_scope_is_exact(struct kunit *test)
 					   "parent");
 	pkm_kacs_kunit_init_copy_up_dentry(&stage, &stage_inode, &parent,
 					   "stage");
-	pkm_kacs_kunit_init_copy_up_dentry(&wrong, &wrong_inode, NULL,
-					   "wrong");
-	pkm_kacs_kunit_init_copy_up_dentry(&materialized, &wrong_inode,
-					   &parent, "materialized");
+	pkm_kacs_kunit_init_copy_up_dentry(&wrong, &wrong_inode, NULL, "wrong");
+	pkm_kacs_kunit_init_copy_up_dentry(&materialized, &wrong_inode, &parent,
+					   "materialized");
 	pkm_kacs_kunit_init_copy_up_dentry(&target, NULL, &parent, "target");
 	pkm_kacs_kunit_init_copy_up_dentry(&other_target, NULL, &parent,
 					   "other");
@@ -2240,28 +2239,25 @@ static void pkm_kunit_copy_up_scope_is_exact(struct kunit *test)
 	task_sec->copy_up_context = &context;
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_SOURCE_READ;
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_inode_permission(&provider_inode,
-							 MAY_READ));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(&provider_inode,
-							 MAY_WRITE));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(&wrong_inode,
-							 MAY_READ));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_inode_permission(
+					&provider_inode, MAY_READ));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_inode_permission(
+					 &provider_inode, MAY_WRITE));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_inode_permission(
+					 &wrong_inode, MAY_READ));
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_getattr(&provider));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_getattr(&wrong));
 	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_path_getattr(&provider_path));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_path_getattr(&alias_provider_path));
+			  pkm_kacs_copy_up_allows_path_getattr(&provider_path));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_path_getattr(
+					 &alias_provider_path));
 	provider.d_inode = &wrong_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_getattr(&provider));
 	provider.d_inode = &provider_inode;
-	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_getxattr(
-		&provider, "user.copy"));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_getxattr(&provider,
+								 "user.copy"));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_getxattr(
-		&provider, "security.peios.sd"));
+					 &provider, "security.peios.sd"));
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_POPULATE;
 	context.staging = stage_path;
@@ -2273,59 +2269,64 @@ static void pkm_kunit_copy_up_scope_is_exact(struct kunit *test)
 	context.provider_capability_len = sizeof(provider_capability);
 	context.provider_capability_present = true;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_copy_up_validate_capability_clone(
-			&context, provider_capability,
-			sizeof(provider_capability)), 0);
+			pkm_kacs_copy_up_validate_capability_clone(
+				&context, provider_capability,
+				sizeof(provider_capability)),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_copy_up_validate_capability_clone(
-			&context, wrong_capability, sizeof(wrong_capability)),
-		-ESTALE);
+			pkm_kacs_copy_up_validate_capability_clone(
+				&context, wrong_capability,
+				sizeof(wrong_capability)),
+			-ESTALE);
 	context.provider_capability_present = false;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_copy_up_validate_capability_clone(
-			&context, provider_capability,
-			sizeof(provider_capability)), -ESTALE);
+			pkm_kacs_copy_up_validate_capability_clone(
+				&context, provider_capability,
+				sizeof(provider_capability)),
+			-ESTALE);
 	context.provider_capability_present = true;
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_setattr(&stage));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setattr(&provider));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setxattr(
-		&stage, "security.capability"));
-	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_setxattr(
-		&nop_mnt_idmap, &stage, "security.capability", "x", 1, 0),
-		-EPERM);
+					 &stage, "security.capability"));
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_inode_setxattr(&nop_mnt_idmap, &stage,
+						"security.capability", "x", 1,
+						0),
+			-EPERM);
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setxattr(
-		&stage, "security.peios.sd"));
+					 &stage, "security.peios.sd"));
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_setxattr(
-		&stage, STRATAFS_STAGING_XATTR));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_setxattr(&wrong, "user.copy"));
+					&stage, STRATAFS_STAGING_XATTR));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setxattr(&wrong,
+								  "user.copy"));
 	context.capability_clone_active = true;
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_capability_use(
+					current_user_ns()));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_capability_use(NULL));
 	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_capability_use(current_user_ns()));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_capability_use(NULL));
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_capability_setxattr(&stage));
+			  pkm_kacs_copy_up_allows_capability_setxattr(&stage));
 	context.capability_clone_active = false;
 	context.capability_clone_hook_seen = false;
 	stage.d_inode = &wrong_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setattr(&stage));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_capability_use(current_user_ns()));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_capability_use(
+					 current_user_ns()));
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_copy_up_validate_capability_clone(
-			&context, provider_capability,
-			sizeof(provider_capability)), -EPERM);
+			pkm_kacs_copy_up_validate_capability_clone(
+				&context, provider_capability,
+				sizeof(provider_capability)),
+			-EPERM);
 	stage.d_inode = &stage_inode;
 	stage.d_parent = &wrong;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setattr(&stage));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_capability_use(current_user_ns()));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_capability_use(
+					 current_user_ns()));
 	stage.d_parent = &parent;
 	parent.d_inode = &wrong_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setattr(&stage));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_capability_use(current_user_ns()));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_capability_use(
+					 current_user_ns()));
 	parent.d_inode = &parent_inode;
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_CREATE;
@@ -2345,16 +2346,16 @@ static void pkm_kunit_copy_up_scope_is_exact(struct kunit *test)
 
 		target.d_inode = &stage_inode;
 		target.d_flags = DCACHE_REGULAR_TYPE;
-		KUNIT_EXPECT_FALSE(test,
-			pkm_kacs_copy_up_file_path_allowed(&context, &stage_file));
+		KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_file_path_allowed(
+						 &context, &stage_file));
 		context.phase_create_seen = true;
 		context.phase_init_security_seen = true;
 		context.pending_created_inode = &wrong_inode;
-		KUNIT_EXPECT_FALSE(test,
-			pkm_kacs_copy_up_file_path_allowed(&context, &stage_file));
+		KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_file_path_allowed(
+						 &context, &stage_file));
 		context.pending_created_inode = &stage_inode;
-		KUNIT_EXPECT_TRUE(test,
-			pkm_kacs_copy_up_file_path_allowed(&context, &stage_file));
+		KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_file_path_allowed(
+						&context, &stage_file));
 		target.d_inode = NULL;
 		target.d_flags = 0;
 		context.pending_created_inode = NULL;
@@ -2373,74 +2374,76 @@ static void pkm_kunit_copy_up_scope_is_exact(struct kunit *test)
 	created.parent_inode = &parent_inode;
 	list_add_tail(&created.node, &context.created_objects);
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_link(
-		&stage, &parent_inode, &target));
+					&stage, &parent_inode, &target));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_link(
-		&stage, &parent_inode, &other_target));
+					 &stage, &parent_inode, &other_target));
 	target.d_parent = &wrong;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_link(
-		&stage, &parent_inode, &target));
+					 &stage, &parent_inode, &target));
 	target.d_parent = &parent;
 	target.d_inode = &wrong_inode;
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_link(
-		&stage, &parent_inode, &target));
+					 &stage, &parent_inode, &target));
 	target.d_inode = NULL;
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_PUBLISH_RENAME;
-	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_rename(
-		&parent_inode, &stage, &parent_inode, &target));
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_rename(
-		&parent_inode, &wrong, &parent_inode, &target));
+	KUNIT_EXPECT_TRUE(
+		test, pkm_kacs_copy_up_allows_rename(&parent_inode, &stage,
+						     &parent_inode, &target));
+	KUNIT_EXPECT_FALSE(
+		test, pkm_kacs_copy_up_allows_rename(&parent_inode, &wrong,
+						     &parent_inode, &target));
 	stage.d_parent = &wrong;
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_rename(
-		&parent_inode, &stage, &parent_inode, &target));
+	KUNIT_EXPECT_FALSE(
+		test, pkm_kacs_copy_up_allows_rename(&parent_inode, &stage,
+						     &parent_inode, &target));
 	stage.d_parent = &parent;
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_CLEANUP;
 	context.phase_dentry = &stage;
 	context.phase_inode = &stage_inode;
 	context.phase_directory = false;
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_cleanup_target_tracked_locked(
-			&context, &parent_path, &parent_inode, &stage,
-			&stage_inode));
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_cleanup_target_tracked_locked(
-			&context, &parent_path, &parent_inode, &materialized,
-			&wrong_inode));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_cleanup_target_tracked_locked(
-			&context, &parent_path, &parent_inode, &provider,
-			&provider_inode));
-	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_unlink(
-		&parent_inode, &stage, false));
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_unlink(
-		&parent_inode, &stage, true));
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_unlink(
-		&parent_inode, &wrong, false));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_cleanup_target_tracked_locked(
+					&context, &parent_path, &parent_inode,
+					&stage, &stage_inode));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_cleanup_target_tracked_locked(
+					&context, &parent_path, &parent_inode,
+					&materialized, &wrong_inode));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_cleanup_target_tracked_locked(
+					 &context, &parent_path, &parent_inode,
+					 &provider, &provider_inode));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_unlink(&parent_inode,
+							       &stage, false));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_unlink(&parent_inode,
+								&stage, true));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_unlink(&parent_inode,
+								&wrong, false));
 	stage.d_inode = &wrong_inode;
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_unlink(
-		&parent_inode, &stage, false));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_unlink(&parent_inode,
+								&stage, false));
 	stage.d_inode = &stage_inode;
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_ORPHAN_MARKER;
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_setxattr(
-		&provider, STRATAFS_STAGING_XATTR));
+					&provider, STRATAFS_STAGING_XATTR));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setxattr(&provider,
+								  "user.copy"));
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setxattr(
-		&provider, "user.copy"));
-	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_setxattr(
-		&stage, STRATAFS_STAGING_XATTR));
+					 &stage, STRATAFS_STAGING_XATTR));
 	context.phase = PKM_KACS_COPY_UP_PHASE_NONE;
-	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_setxattr(
-		&nop_mnt_idmap, &provider, STRATAFS_STAGING_XATTR,
-		"x", 1, 0), -EPERM);
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_inode_setxattr(&nop_mnt_idmap, &provider,
+						STRATAFS_STAGING_XATTR, "x", 1,
+						0),
+			-EPERM);
 
 	task_sec->copy_up_context = NULL;
 	list_del(&created.node);
 	mutex_destroy(&context.lock);
 }
 
-static void pkm_kunit_copy_up_exact_sd_is_installed_and_cached(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_exact_sd_is_installed_and_cached(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct pkm_kacs_stratafs_copy_up context;
@@ -2464,14 +2467,15 @@ static void pkm_kunit_copy_up_exact_sd_is_installed_and_cached(
 	int ret;
 
 	KUNIT_ASSERT_NULL(test, task_sec->copy_up_context);
-	inode_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_inode +
-			      sizeof(struct pkm_kacs_inode_security), GFP_KERNEL);
+	inode_blob =
+		kunit_kzalloc(test,
+			      pkm_blob_sizes.lbs_inode +
+				      sizeof(struct pkm_kacs_inode_security),
+			      GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, inode_blob);
 	created_inode.i_security = inode_blob;
 	pkm_kacs_kunit_init_copy_up_inode_ref(&created_inode);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_inode_alloc_security(&created_inode), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_inode_alloc_security(&created_inode), 0);
 
 	pkm_kacs_kunit_init_copy_up_dentry(&provider, &provider_inode, NULL,
 					   "provider");
@@ -2499,17 +2503,16 @@ static void pkm_kunit_copy_up_exact_sd_is_installed_and_cached(
 	task_sec->copy_up_context = &context;
 
 	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_create(
-		&parent_inode, &target, S_IFDIR));
-	ret = pkm_kacs_copy_up_allows_create(
-		&parent_inode, &target, S_IFREG);
+					 &parent_inode, &target, S_IFDIR));
+	ret = pkm_kacs_copy_up_allows_create(&parent_inode, &target, S_IFREG);
 	KUNIT_EXPECT_TRUE(test, ret);
 	if (!ret)
 		goto out;
 	/* The synthetic KUnit path has no real mount references to pin. */
 	context.phase_anonymous = true;
-	ret = pkm_kacs_inode_init_security(
-		&created_inode, &parent_inode, &target.d_name,
-		xattrs, &xattr_count);
+	ret = pkm_kacs_inode_init_security(&created_inode, &parent_inode,
+					   &target.d_name, xattrs,
+					   &xattr_count);
 	KUNIT_EXPECT_EQ(test, ret, 0);
 	if (ret)
 		goto out;
@@ -2539,9 +2542,11 @@ static void pkm_kunit_copy_up_exact_sd_is_installed_and_cached(
 		pkm_kacs_inode_sd_cache_free(cache);
 	}
 
-	KUNIT_EXPECT_EQ(test, pkm_kacs_copy_up_init_security(
-		&created_inode, &parent_inode, &target.d_name,
-		&retry_sd, &retry_len), -EACCES);
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_copy_up_init_security(
+				&created_inode, &parent_inode, &target.d_name,
+				&retry_sd, &retry_len),
+			-EACCES);
 	KUNIT_EXPECT_NULL(test, retry_sd);
 	KUNIT_EXPECT_EQ(test, retry_len, (size_t)0);
 
@@ -2557,8 +2562,8 @@ out:
 	mutex_destroy(&context.lock);
 }
 
-static void pkm_kunit_copy_up_stacked_tmpfile_binds_outer_inode(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_stacked_tmpfile_binds_outer_inode(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct pkm_kacs_stratafs_copy_up context;
@@ -2588,9 +2593,11 @@ static void pkm_kunit_copy_up_stacked_tmpfile_binds_outer_inode(
 	int ret;
 
 	KUNIT_ASSERT_NULL(test, task_sec->copy_up_context);
-	real_inode_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_inode +
-			      sizeof(struct pkm_kacs_inode_security), GFP_KERNEL);
+	real_inode_blob =
+		kunit_kzalloc(test,
+			      pkm_blob_sizes.lbs_inode +
+				      sizeof(struct pkm_kacs_inode_security),
+			      GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, real_inode_blob);
 	real_inode.i_security = real_inode_blob;
 	pkm_kacs_kunit_init_copy_up_inode_ref(&real_inode);
@@ -2599,10 +2606,10 @@ static void pkm_kunit_copy_up_stacked_tmpfile_binds_outer_inode(
 
 	pkm_kacs_kunit_init_copy_up_dentry(&provider, &provider_inode, NULL,
 					   "provider");
-	pkm_kacs_kunit_init_copy_up_dentry(
-		&outer_parent, &outer_parent_inode, NULL, "outer-parent");
-	pkm_kacs_kunit_init_copy_up_dentry(
-		&outer_tmpfile, NULL, &outer_parent, "/");
+	pkm_kacs_kunit_init_copy_up_dentry(&outer_parent, &outer_parent_inode,
+					   NULL, "outer-parent");
+	pkm_kacs_kunit_init_copy_up_dentry(&outer_tmpfile, NULL, &outer_parent,
+					   "/");
 	provider_mnt.mnt_root = &provider;
 	provider_mnt.mnt_idmap = &nop_mnt_idmap;
 	outer_mnt.mnt_root = &outer_parent;
@@ -2626,20 +2633,21 @@ static void pkm_kunit_copy_up_stacked_tmpfile_binds_outer_inode(
 	context.phase_sd_len = sizeof(pkm_kunit_system_read_sd);
 	task_sec->copy_up_context = &context;
 
-	ret = pkm_kacs_copy_up_dentry_create_files_as(
-		&outer_tmpfile, S_IFREG | 0600, &outer_tmpfile.d_name,
-		NULL, NULL);
+	ret = pkm_kacs_copy_up_dentry_create_files_as(&outer_tmpfile,
+						      S_IFREG | 0600,
+						      &outer_tmpfile.d_name,
+						      NULL, NULL);
 	KUNIT_ASSERT_EQ(test, ret, 0);
 	KUNIT_EXPECT_TRUE(test, context.phase_stacked_create_seen);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_copy_up_dentry_create_files_as(
-			&outer_tmpfile, S_IFREG | 0600,
-			&outer_tmpfile.d_name, NULL, NULL),
-		-EACCES);
+			pkm_kacs_copy_up_dentry_create_files_as(
+				&outer_tmpfile, S_IFREG | 0600,
+				&outer_tmpfile.d_name, NULL, NULL),
+			-EACCES);
 
-	ret = pkm_kacs_inode_init_security(
-		&real_inode, &real_parent_inode, &outer_tmpfile.d_name,
-		xattrs, &xattr_count);
+	ret = pkm_kacs_inode_init_security(&real_inode, &real_parent_inode,
+					   &outer_tmpfile.d_name, xattrs,
+					   &xattr_count);
 	KUNIT_ASSERT_EQ(test, ret, 0);
 	KUNIT_ASSERT_EQ(test, xattr_count, 1);
 	KUNIT_EXPECT_TRUE(test, context.phase_stacked_sd_initialized);
@@ -2683,9 +2691,10 @@ static void pkm_kunit_copy_up_internal_file_fails_closed(struct kunit *test)
 	void *file_blob;
 
 	KUNIT_ASSERT_NULL(test, task_sec->copy_up_context);
-	file_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_file +
-			      sizeof(struct pkm_kacs_file_security), GFP_KERNEL);
+	file_blob = kunit_kzalloc(test,
+				  pkm_blob_sizes.lbs_file +
+					  sizeof(struct pkm_kacs_file_security),
+				  GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, file_blob);
 	pkm_kacs_kunit_init_copy_up_dentry(&provider, &provider_inode, NULL,
 					   "provider");
@@ -2709,8 +2718,7 @@ static void pkm_kunit_copy_up_internal_file_fails_closed(struct kunit *test)
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_file(&file)->managed);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file(&file)->granted_access, 0U);
 	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_file_is_internal(&file));
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_fcntl(&file, F_GETFL, 0),
-			-EACCES);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_fcntl(&file, F_GETFL, 0), -EACCES);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_receive(&file), -EACCES);
 	context.phase = PKM_KACS_COPY_UP_PHASE_POPULATE;
 	context.staging = provider_path;
@@ -2718,10 +2726,12 @@ static void pkm_kunit_copy_up_internal_file_fails_closed(struct kunit *test)
 	context.staging_inode = &provider_inode;
 	context.staging_parent_inode = &provider_inode;
 	context.staging_bound = true;
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_sd_xattr_set(
-		&file, "security.capability"), -EPERM);
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_sd_xattr_remove(
-		&file, "security.capability"), 0);
+	KUNIT_EXPECT_EQ(
+		test, pkm_kacs_file_sd_xattr_set(&file, "security.capability"),
+		-EPERM);
+	KUNIT_EXPECT_EQ(
+		test,
+		pkm_kacs_file_sd_xattr_remove(&file, "security.capability"), 0);
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_NONE;
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(&file, MAY_READ),
@@ -2739,8 +2749,8 @@ static void pkm_kunit_copy_up_internal_file_fails_closed(struct kunit *test)
 	mutex_destroy(&context.lock);
 }
 
-static void pkm_kunit_copy_up_source_directory_resume_is_exact(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_source_directory_resume_is_exact(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct pkm_kacs_stratafs_copy_up context;
@@ -2754,9 +2764,10 @@ static void pkm_kunit_copy_up_source_directory_resume_is_exact(
 	void *file_blob;
 
 	KUNIT_ASSERT_NULL(test, task_sec->copy_up_context);
-	file_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_file +
-			      sizeof(struct pkm_kacs_file_security), GFP_KERNEL);
+	file_blob = kunit_kzalloc(test,
+				  pkm_blob_sizes.lbs_file +
+					  sizeof(struct pkm_kacs_file_security),
+				  GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, file_blob);
 	pkm_kacs_kunit_init_copy_up_dentry(&provider, &provider_inode, NULL,
 					   "provider");
@@ -2780,39 +2791,43 @@ static void pkm_kunit_copy_up_source_directory_resume_is_exact(
 	context.phase = PKM_KACS_COPY_UP_PHASE_NONE;
 	context.phase_generation++;
 	context.phase = PKM_KACS_COPY_UP_PHASE_SOURCE_READ;
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_file_permission(&directory, MAY_READ), -EACCES);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(&directory, MAY_READ),
+			-EACCES);
 
 	directory.f_mode |= FMODE_WRITE;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_resume_source_directory(
-			&context, &directory), -EACCES);
+			pkm_kacs_stratafs_copy_up_resume_source_directory(
+				&context, &directory),
+			-EACCES);
 	directory.f_mode = FMODE_READ;
 	*(struct dentry **)&directory.f_path.dentry = &wrong;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_resume_source_directory(
-			&context, &directory), -EACCES);
+			pkm_kacs_stratafs_copy_up_resume_source_directory(
+				&context, &directory),
+			-EACCES);
 	*(struct dentry **)&directory.f_path.dentry = &provider;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_resume_source_directory(
-			&context, &directory), 0);
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_file_permission(&directory, MAY_READ), 0);
+			pkm_kacs_stratafs_copy_up_resume_source_directory(
+				&context, &directory),
+			0);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(&directory, MAY_READ),
+			0);
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_POPULATE;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_resume_source_directory(
-			&context, &directory), -EACCES);
+			pkm_kacs_stratafs_copy_up_resume_source_directory(
+				&context, &directory),
+			-EACCES);
 	context.phase = PKM_KACS_COPY_UP_PHASE_SOURCE_READ;
 	task_sec->copy_up_context = NULL;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_resume_source_directory(
-			&context, &directory), -EPERM);
+			pkm_kacs_stratafs_copy_up_resume_source_directory(
+				&context, &directory),
+			-EPERM);
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_NONE;
 	pkm_kacs_copy_up_file_release(&directory);
-	KUNIT_EXPECT_NULL(test,
-		pkm_kacs_file(&directory)->copy_up_context);
+	KUNIT_EXPECT_NULL(test, pkm_kacs_file(&directory)->copy_up_context);
 	mutex_destroy(&context.lock);
 }
 
@@ -2827,12 +2842,12 @@ static void pkm_kunit_copy_up_context_is_non_nesting(struct kunit *test)
 	mutex_init(&context.lock);
 	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_copy_up_enter(&context), 0);
 	KUNIT_EXPECT_PTR_EQ(test, task_sec->copy_up_context, &context);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(&context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(&context), 0);
 	KUNIT_EXPECT_EQ(test, context.phase_generation, (u64)1);
 	pkm_kacs_stratafs_copy_up_end_phase(&context);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(&context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(&context), 0);
 	KUNIT_EXPECT_EQ(test, context.phase_generation, (u64)2);
 	pkm_kacs_stratafs_copy_up_end_phase(&context);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_stratafs_copy_up_enter(&context),
@@ -2849,8 +2864,8 @@ static void pkm_kunit_copy_up_context_is_non_nesting(struct kunit *test)
 	mutex_destroy(&context.lock);
 }
 
-static void pkm_kunit_copy_up_adopts_outer_descriptor_snapshot(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_adopts_outer_descriptor_snapshot(struct kunit *test)
 {
 	struct pkm_kacs_stratafs_copy_up context = {};
 	struct pkm_kacs_file_security outer = {
@@ -2867,8 +2882,9 @@ static void pkm_kunit_copy_up_adopts_outer_descriptor_snapshot(
 	refcount_set(&context.refs, 2);
 	context.phase_generation = 7;
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_copy_up_adopt_file_security(
-			&context, &outer, &backing, &backing_auth), 0);
+			pkm_kacs_copy_up_adopt_file_security(
+				&context, &outer, &backing, &backing_auth),
+			0);
 	KUNIT_EXPECT_EQ(test, backing.granted_access, outer.granted_access);
 	KUNIT_EXPECT_EQ(test, backing.continuous_audit_mask,
 			outer.continuous_audit_mask);
@@ -2887,13 +2903,14 @@ static void pkm_kunit_copy_up_adopts_outer_descriptor_snapshot(
 	backing.copy_up_context = &context;
 	backing.copy_up_phase_generation = 7;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_copy_up_adopt_file_security(
-			&context, &outer, &backing, &backing_auth), -EACCES);
-		KUNIT_EXPECT_PTR_EQ(test, backing.copy_up_context, &context);
+			pkm_kacs_copy_up_adopt_file_security(
+				&context, &outer, &backing, &backing_auth),
+			-EACCES);
+	KUNIT_EXPECT_PTR_EQ(test, backing.copy_up_context, &context);
 }
 
-static void pkm_kunit_copy_up_publish_identity_matches_vfs_semantics(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_publish_identity_matches_vfs_semantics(struct kunit *test)
 {
 	struct pkm_kacs_stratafs_copy_up context = {};
 	struct inode inode = { .i_mode = S_IFREG };
@@ -2914,11 +2931,11 @@ static void pkm_kunit_copy_up_publish_identity_matches_vfs_semantics(
 
 	context.phase = PKM_KACS_COPY_UP_PHASE_PUBLISH_LINK;
 	published.dentry = &target;
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_published_object_matches(
+					&context, &published));
 	published.dentry = &stage;
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_published_object_matches(
+					 &context, &published));
 
 	/* vfs_rename() moves the source dentry and changes its name. */
 	stage_name = (struct qstr *)&stage.d_name;
@@ -2926,23 +2943,23 @@ static void pkm_kunit_copy_up_publish_identity_matches_vfs_semantics(
 	stage_name->len = sizeof("target") - 1;
 	context.phase = PKM_KACS_COPY_UP_PHASE_PUBLISH_RENAME;
 	published.dentry = &stage;
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_published_object_matches(
+					&context, &published));
 	published.dentry = &target;
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_published_object_matches(
+					 &context, &published));
 	published.dentry = &other;
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_published_object_matches(
+					 &context, &published));
 
 	stage_name->name = (const u8 *)"wrong";
 	stage_name->len = sizeof("wrong") - 1;
 	published.dentry = &stage;
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_published_object_matches(
+					 &context, &published));
 	context.phase = PKM_KACS_COPY_UP_PHASE_NONE;
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_published_object_matches(&context, &published));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_published_object_matches(
+					 &context, &published));
 }
 
 /*
@@ -2953,8 +2970,8 @@ static void pkm_kunit_copy_up_publish_identity_matches_vfs_semantics(
  * No StrataFS context is armed here, so this exercises the branch that fires
  * for a plain overlayfs copy-up.
  */
-static void pkm_kunit_overlay_copy_up_sd_is_installed_and_cached(
-	struct kunit *test)
+static void
+pkm_kunit_overlay_copy_up_sd_is_installed_and_cached(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct pkm_kacs_cred_security *cred_sec;
@@ -2977,14 +2994,15 @@ static void pkm_kunit_overlay_copy_up_sd_is_installed_and_cached(
 	KUNIT_ASSERT_NOT_NULL(test, current_cred()->security);
 	cred_sec = pkm_kacs_cred(current_cred());
 
-	inode_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_inode +
-			      sizeof(struct pkm_kacs_inode_security), GFP_KERNEL);
+	inode_blob =
+		kunit_kzalloc(test,
+			      pkm_blob_sizes.lbs_inode +
+				      sizeof(struct pkm_kacs_inode_security),
+			      GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, inode_blob);
 	created_inode.i_security = inode_blob;
 	pkm_kacs_kunit_init_copy_up_inode_ref(&created_inode);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_inode_alloc_security(&created_inode), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_inode_alloc_security(&created_inode), 0);
 
 	pkm_kacs_kunit_init_copy_up_dentry(&parent, &parent_inode, NULL,
 					   "parent");
@@ -2995,9 +3013,9 @@ static void pkm_kunit_overlay_copy_up_sd_is_installed_and_cached(
 	cred_sec->pending_create_sd = (u8 *)pkm_kunit_system_read_sd;
 	cred_sec->pending_create_sd_len = sizeof(pkm_kunit_system_read_sd);
 
-	ret = pkm_kacs_inode_init_security(
-		&created_inode, &parent_inode, &target.d_name,
-		xattrs, &xattr_count);
+	ret = pkm_kacs_inode_init_security(&created_inode, &parent_inode,
+					   &target.d_name, xattrs,
+					   &xattr_count);
 
 	/*
 	 * Restored before any assertion can abort the test: the borrowed bytes
@@ -3060,9 +3078,10 @@ static void pkm_kunit_overlay_copy_up_sd_is_not_inherited(struct kunit *test)
 	KUNIT_ASSERT_NOT_NULL(test, current_cred()->security);
 	old_sec = pkm_kacs_cred(current_cred());
 
-	cred_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_cred +
-			      sizeof(struct pkm_kacs_cred_security), GFP_KERNEL);
+	cred_blob = kunit_kzalloc(test,
+				  pkm_blob_sizes.lbs_cred +
+					  sizeof(struct pkm_kacs_cred_security),
+				  GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, cred_blob);
 	new_cred.security = cred_blob;
 
@@ -3106,8 +3125,8 @@ static void pkm_kunit_overlay_copy_up_sd_is_not_inherited(struct kunit *test)
 	pkm_kacs_cred_free(&new_cred);
 
 	/* The same guard on the transfer path. */
-	memset(cred_blob, 0, pkm_blob_sizes.lbs_cred +
-			     sizeof(struct pkm_kacs_cred_security));
+	memset(cred_blob, 0,
+	       pkm_blob_sizes.lbs_cred + sizeof(struct pkm_kacs_cred_security));
 	new_sec->pending_create_sd = (u8 *)pkm_kunit_system_read_sd;
 	new_sec->pending_create_sd_len = sizeof(pkm_kunit_system_read_sd);
 	old_sec->pending_create_sd = (u8 *)pkm_kunit_system_read_sd;
@@ -3136,8 +3155,8 @@ static void pkm_kunit_overlay_copy_up_sd_is_not_inherited(struct kunit *test)
  * that same subject and parent, which is what inode_init_security would have
  * produced had overlayfs not stood between the caller and the create.
  */
-static void pkm_kunit_overlay_create_takes_caller_and_overlay_parent(
-	struct kunit *test)
+static void
+pkm_kunit_overlay_create_takes_caller_and_overlay_parent(struct kunit *test)
 {
 	const void *subject_token;
 	const u8 *parent_sd = NULL;
@@ -3153,10 +3172,10 @@ static void pkm_kunit_overlay_create_takes_caller_and_overlay_parent(
 	KUNIT_ASSERT_PTR_NE(test, subject_token,
 			    pkm_kacs_current_effective_token_ptr());
 
-	parent_sd = pkm_kunit_create_precise_file_sd(subject_token,
-						     PKM_KUNIT_FILE_ADD_FILE |
-						     PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
-						     &parent_sd_len);
+	parent_sd = pkm_kunit_create_precise_file_sd(
+		subject_token,
+		PKM_KUNIT_FILE_ADD_FILE | PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
+		&parent_sd_len);
 	if (!parent_sd) {
 		kacs_rust_token_drop(subject_token);
 		KUNIT_FAIL(test, "parent SD allocation failed");
@@ -3208,10 +3227,10 @@ static void pkm_kunit_overlay_create_without_a_token_defers(struct kunit *test)
 
 	subject_token = kacs_rust_kunit_create_adjustable_privileges_token();
 	KUNIT_ASSERT_NOT_NULL(test, subject_token);
-	parent_sd = pkm_kunit_create_precise_file_sd(subject_token,
-						     PKM_KUNIT_FILE_ADD_FILE |
-						     PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
-						     &parent_sd_len);
+	parent_sd = pkm_kunit_create_precise_file_sd(
+		subject_token,
+		PKM_KUNIT_FILE_ADD_FILE | PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
+		&parent_sd_len);
 	kacs_rust_token_drop(subject_token);
 	if (!parent_sd) {
 		KUNIT_FAIL(test, "parent SD allocation failed");
@@ -3238,8 +3257,8 @@ static void pkm_kunit_overlay_create_without_a_token_defers(struct kunit *test)
  * projection across, or the underlying filesystem stamps the mounter's ids on
  * the new inode and every principal's files come out owned by uid 0.
  */
-static void pkm_kunit_overlay_create_projects_the_callers_ids(
-	struct kunit *test)
+static void
+pkm_kunit_overlay_create_projects_the_callers_ids(struct kunit *test)
 {
 	const void *subject_token;
 	const u8 *parent_sd = NULL;
@@ -3252,10 +3271,10 @@ static void pkm_kunit_overlay_create_projects_the_callers_ids(
 
 	subject_token = kacs_rust_kunit_create_adjustable_privileges_token();
 	KUNIT_ASSERT_NOT_NULL(test, subject_token);
-	parent_sd = pkm_kunit_create_precise_file_sd(subject_token,
-						     PKM_KUNIT_FILE_ADD_FILE |
-						     PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
-						     &parent_sd_len);
+	parent_sd = pkm_kunit_create_precise_file_sd(
+		subject_token,
+		PKM_KUNIT_FILE_ADD_FILE | PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
+		&parent_sd_len);
 	if (!parent_sd) {
 		kacs_rust_token_drop(subject_token);
 		KUNIT_FAIL(test, "parent SD allocation failed");
@@ -3283,8 +3302,8 @@ static void pkm_kunit_overlay_create_projects_the_callers_ids(
  * Same reasoning as the descriptor case above: this hook does not get to
  * decide a tokenless create.
  */
-static void pkm_kunit_overlay_create_without_a_token_keeps_mounter_ids(
-	struct kunit *test)
+static void
+pkm_kunit_overlay_create_without_a_token_keeps_mounter_ids(struct kunit *test)
 {
 	const u8 *parent_sd = NULL;
 	const u8 *pending_sd = NULL;
@@ -3297,10 +3316,10 @@ static void pkm_kunit_overlay_create_without_a_token_keeps_mounter_ids(
 
 	subject_token = kacs_rust_kunit_create_adjustable_privileges_token();
 	KUNIT_ASSERT_NOT_NULL(test, subject_token);
-	parent_sd = pkm_kunit_create_precise_file_sd(subject_token,
-						     PKM_KUNIT_FILE_ADD_FILE |
-						     PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
-						     &parent_sd_len);
+	parent_sd = pkm_kunit_create_precise_file_sd(
+		subject_token,
+		PKM_KUNIT_FILE_ADD_FILE | PKM_KUNIT_FILE_ADD_SUBDIRECTORY,
+		&parent_sd_len);
 	kacs_rust_token_drop(subject_token);
 	if (!parent_sd) {
 		KUNIT_FAIL(test, "parent SD allocation failed");
@@ -3380,10 +3399,10 @@ static void pkm_kunit_post_setxattr_keeps_an_unrelated_cache(struct kunit *test)
 #define PKM_KUNIT_COPY_UP_SD_XATTR "security.peios.sd"
 #define PKM_KUNIT_COPY_UP_FILE_ALL                                            \
 	(KACS_FILE_READ_DATA | KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA | \
-	 KACS_FILE_READ_EA | KACS_FILE_WRITE_EA | KACS_FILE_EXECUTE |          \
-	 KACS_FILE_DELETE_CHILD | KACS_FILE_READ_ATTRIBUTES |                  \
-	 KACS_FILE_WRITE_ATTRIBUTES | KACS_ACCESS_DELETE |                     \
-	 KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC |                    \
+	 KACS_FILE_READ_EA | KACS_FILE_WRITE_EA | KACS_FILE_EXECUTE |         \
+	 KACS_FILE_DELETE_CHILD | KACS_FILE_READ_ATTRIBUTES |                 \
+	 KACS_FILE_WRITE_ATTRIBUTES | KACS_ACCESS_DELETE |                    \
+	 KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC |                   \
 	 KACS_ACCESS_WRITE_OWNER | KACS_ACCESS_SYNCHRONIZE)
 /* A mask bit no MAY_* flag uses: the "unknown bit" of the mask rules. */
 #define PKM_KUNIT_COPY_UP_UNKNOWN_MAY 0x100
@@ -3391,11 +3410,9 @@ static void pkm_kunit_post_setxattr_keeps_an_unrelated_cache(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, (int)(ctx)->phase, (int)(expected))
 
 /* Internal VFS constructor exported for stackable-filesystem users. */
-extern struct file *alloc_empty_backing_file(int flags,
-					      const struct cred *cred,
-					      const struct file *user_file);
-extern void backing_file_set_user_path(struct file *f,
-				       const struct path *path);
+extern struct file *alloc_empty_backing_file(int flags, const struct cred *cred,
+					     const struct file *user_file);
+extern void backing_file_set_user_path(struct file *f, const struct path *path);
 
 struct pkm_kunit_copy_up_tree {
 	struct file_system_type *type;
@@ -3592,8 +3609,7 @@ static int pkm_kunit_copy_up_tree_init(struct pkm_kunit_copy_up_tree *t)
 					   sizeof(pkm_kunit_system_read_sd));
 	if (ret)
 		goto err;
-	ret = pkm_kunit_copy_up_make(t, &t->root, "up", S_IFDIR | 0700,
-				     &t->up);
+	ret = pkm_kunit_copy_up_make(t, &t->root, "up", S_IFDIR | 0700, &t->up);
 	if (ret)
 		goto err;
 	ret = pkm_kunit_copy_up_make(t, &t->root, "elsewhere", S_IFDIR | 0700,
@@ -3641,8 +3657,8 @@ static void pkm_kunit_copy_up_fill_capability(struct vfs_cap_data *cap)
  * value (or its absence).  A provider whose descriptor cannot be resolved
  * fails the phase before anything is created.
  */
-static void pkm_kunit_copy_up_begin_pins_provider_without_a_check(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_begin_pins_provider_without_a_check(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct pkm_kunit_copy_up_tree tree;
@@ -3685,8 +3701,10 @@ static void pkm_kunit_copy_up_begin_pins_provider_without_a_check(
 	/* With a capability on the provider, that value is pinned too. */
 	pkm_kunit_copy_up_fill_capability(&cap);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_raw_setxattr(&tree.provider, XATTR_NAME_CAPS,
-					       &cap, sizeof(cap)), 0);
+			pkm_kunit_copy_up_raw_setxattr(&tree.provider,
+						       XATTR_NAME_CAPS, &cap,
+						       sizeof(cap)),
+			0);
 	context = pkm_kacs_stratafs_copy_up_begin(&tree.provider);
 	KUNIT_ASSERT_FALSE(test, IS_ERR(context));
 	KUNIT_EXPECT_TRUE(test, context->provider_capability_present);
@@ -3705,13 +3723,14 @@ static void pkm_kunit_copy_up_begin_pins_provider_without_a_check(
 				     &bad);
 	KUNIT_ASSERT_EQ(test, ret, 0);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_install_sd(&bad, garbage, sizeof(garbage)),
-		0);
+			pkm_kunit_copy_up_install_sd(&bad, garbage,
+						     sizeof(garbage)),
+			0);
 	pkm_kunit_copy_up_be_subject(&tree);
 	stage = pkm_kunit_copy_up_negative(&tree.up, "stage");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(stage));
-	ret = pkm_kacs_stratafs_copy_up_begin_create(
-		context, &bad, &tree.up, stage, S_IFREG | 0600);
+	ret = pkm_kacs_stratafs_copy_up_begin_create(context, &bad, &tree.up,
+						     stage, S_IFREG | 0600);
 	KUNIT_EXPECT_LT(test, ret, 0);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	KUNIT_EXPECT_FALSE(test, context->phase_provider_pinned);
@@ -3749,8 +3768,8 @@ static int pkm_kunit_copy_up_worker_fn(void *arg)
 	w->inherited = pkm_kacs_task(current)->copy_up_context;
 	w->enter_ret = pkm_kacs_stratafs_copy_up_enter(w->context);
 	if (!w->enter_ret) {
-		w->arm_ret = pkm_kacs_stratafs_copy_up_begin_source_read(
-			w->context);
+		w->arm_ret =
+			pkm_kacs_stratafs_copy_up_begin_source_read(w->context);
 		w->generation = w->context->phase_generation;
 		pkm_kacs_stratafs_copy_up_end_phase(w->context);
 	}
@@ -3779,8 +3798,8 @@ static void pkm_kunit_copy_up_worker_init(struct pkm_kunit_copy_up_worker *w,
  * One context per task, not inherited, transferable to a worker once the
  * originator has left, and cleared of any armed phase by every way out.
  */
-static void pkm_kunit_copy_up_attachment_is_exclusive_and_transferable(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_attachment_is_exclusive_and_transferable(struct kunit *test)
 {
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
 	struct pkm_kunit_copy_up_tree tree;
@@ -3818,8 +3837,8 @@ static void pkm_kunit_copy_up_attachment_is_exclusive_and_transferable(
 	KUNIT_EXPECT_PTR_EQ(test, task_sec->copy_up_context, context);
 
 	/* Leaving with a phase armed clears it. */
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	generation = context->phase_generation;
 	pkm_kacs_stratafs_copy_up_leave(context);
 	KUNIT_EXPECT_NULL(test, task_sec->copy_up_context);
@@ -3829,9 +3848,10 @@ static void pkm_kunit_copy_up_attachment_is_exclusive_and_transferable(
 
 	/* A detached context refuses every phase operation from us. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), -EPERM);
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_populate(context), -EPERM);
+			pkm_kacs_stratafs_copy_up_begin_source_read(context),
+			-EPERM);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_stratafs_copy_up_begin_populate(context),
+			-EPERM);
 	KUNIT_EXPECT_EQ(test, context->phase_generation, generation);
 
 	/* Transfer: the worker enters the refcounted context and drives it. */
@@ -3855,18 +3875,18 @@ static void pkm_kunit_copy_up_attachment_is_exclusive_and_transferable(
 
 	/* Back with us: task exit clears an armed phase and detaches. */
 	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_copy_up_enter(context), 0);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	pkm_kacs_copy_up_task_exit(current);
 	KUNIT_EXPECT_NULL(test, task_sec->copy_up_context);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 
 	/* Exec explicitly clears it: the commit hook detaches the same way. */
 	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_copy_up_enter(context), 0);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
-	KUNIT_EXPECT_EQ(test, pkm_kacs_kunit_exec_committing_creds_for_current(),
-			0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_kunit_exec_committing_creds_for_current(), 0L);
 	KUNIT_EXPECT_NULL(test, task_sec->copy_up_context);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	KUNIT_EXPECT_EQ(test, atomic_read(&context->attached), 0);
@@ -3875,14 +3895,15 @@ static void pkm_kunit_copy_up_attachment_is_exclusive_and_transferable(
 	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_copy_up_enter(context), 0);
 	generation = context->phase_generation;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_create(
-			context, &tree.provider, &tree.up, NULL,
-			S_IFCHR | 0600), -EINVAL);
+			pkm_kacs_stratafs_copy_up_begin_create(
+				context, &tree.provider, &tree.up, NULL,
+				S_IFCHR | 0600),
+			-EINVAL);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	KUNIT_EXPECT_EQ(test, context->phase_generation, generation);
 	/* And completion: end_phase. */
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 
@@ -3912,54 +3933,62 @@ static void pkm_kunit_copy_up_phases_are_exclusive_and_generations_sealed(
 	generation = context->phase_generation;
 	KUNIT_EXPECT_GE(test, generation, 1ULL);
 
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	KUNIT_EXPECT_EQ(test, context->phase_generation, generation + 1);
 	/* A second arm of any kind is refused and consumes no generation. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), -EBUSY);
-	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_stratafs_copy_up_begin_source_read(context),
+			-EBUSY);
+	KUNIT_EXPECT_EQ(
+		test,
 		pkm_kacs_stratafs_copy_up_begin_orphan_marker_cleanup(context),
 		-EBUSY);
 	stage = pkm_kunit_copy_up_negative(&tree.up, "stage");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(stage));
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_create(
-			context, &tree.provider, &tree.up, stage,
-			S_IFREG | 0600), -EBUSY);
+			pkm_kacs_stratafs_copy_up_begin_create(
+				context, &tree.provider, &tree.up, stage,
+				S_IFREG | 0600),
+			-EBUSY);
 	end_creating(stage);
 	KUNIT_EXPECT_EQ(test, context->phase_generation, generation + 1);
-	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_SOURCE_READ);
+	PKM_KUNIT_EXPECT_PHASE(test, context,
+			       PKM_KACS_COPY_UP_PHASE_SOURCE_READ);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 
 	/* Overflowing the generation fails closed. */
 	context->phase_generation = U64_MAX;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context),
-		-EOVERFLOW);
+			pkm_kacs_stratafs_copy_up_begin_source_read(context),
+			-EOVERFLOW);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	context->phase_generation = generation + 1;
 
 	/* Nothing is bound yet: every phase that needs a binding is refused. */
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_populate(context), -EINVAL);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_stratafs_copy_up_begin_populate(context),
+			-EINVAL);
 	stage = pkm_kunit_copy_up_negative(&tree.up, "final");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(stage));
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_publish_link(
-			context, &tree.up, stage), -EINVAL);
+			pkm_kacs_stratafs_copy_up_begin_publish_link(
+				context, &tree.up, stage),
+			-EINVAL);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_publish_rename(
-			context, &tree.up, stage), -EINVAL);
+			pkm_kacs_stratafs_copy_up_begin_publish_rename(
+				context, &tree.up, stage),
+			-EINVAL);
 	end_creating(stage);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_rebind_staging(context, &tree.provider),
-		-ESTALE);
+			pkm_kacs_stratafs_copy_up_rebind_staging(
+				context, &tree.provider),
+			-ESTALE);
 	/* The provider is not a retained creation nor the staging object. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_cleanup(
-			context, &tree.root, tree.provider.dentry, false),
-		-ESTALE);
+			pkm_kacs_stratafs_copy_up_begin_cleanup(
+				context, &tree.root, tree.provider.dentry,
+				false),
+			-ESTALE);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	KUNIT_EXPECT_EQ(test, context->phase_generation, generation + 1);
 
@@ -4008,9 +4037,10 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	KUNIT_ASSERT_FALSE(test, IS_ERR(other));
 
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_create(
-			context, &tree.provider, &tree.up, stage,
-			S_IFREG | 0600), 0);
+			pkm_kacs_stratafs_copy_up_begin_create(
+				context, &tree.provider, &tree.up, stage,
+				S_IFREG | 0600),
+			0);
 	KUNIT_EXPECT_TRUE(test, context->phase_provider_pinned);
 	KUNIT_EXPECT_PTR_EQ(test, context->phase_provider_inode,
 			    d_inode(tree.provider.dentry));
@@ -4023,7 +4053,8 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	KUNIT_EXPECT_TRUE(test, d_is_negative(other));
 	KUNIT_EXPECT_FALSE(test, context->phase_create_seen);
 	/* The right name with the wrong object type: refused, not consumed. */
-	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_mkdir(up_inode, stage, S_IFDIR | 0700),
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_inode_mkdir(up_inode, stage, S_IFDIR | 0700),
 			-EACCES);
 	KUNIT_EXPECT_TRUE(test, d_is_negative(stage));
 	KUNIT_EXPECT_FALSE(test, context->phase_create_seen);
@@ -4055,7 +4086,8 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 		d_inode(stage), pkm_kacs_inode(d_inode(stage)));
 	KUNIT_EXPECT_NOT_NULL(test, cache);
 	if (cache) {
-		KUNIT_EXPECT_EQ(test, cache->state, (u8)PKM_KACS_INODE_SD_VALID);
+		KUNIT_EXPECT_EQ(test, cache->state,
+				(u8)PKM_KACS_INODE_SD_VALID);
 		KUNIT_EXPECT_EQ(test, cache->len,
 				(size_t)sizeof(pkm_kunit_system_read_sd));
 		if (cache->len == sizeof(pkm_kunit_system_read_sd))
@@ -4069,26 +4101,30 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 			-EACCES);
 	/* A direct filesystem: the outer confirmation is already satisfied. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_confirm_named_create(context,
-							       &stage_path), 0);
+			pkm_kacs_stratafs_copy_up_confirm_named_create(
+				context, &stage_path),
+			0);
 	dput(other);
 	end_creating(stage);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 
 	/* -- bind and populate ----------------------------------------- */
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_bind_staging(context, &stage_path), 0);
+			pkm_kacs_stratafs_copy_up_bind_staging(context,
+							       &stage_path),
+			0);
 	KUNIT_EXPECT_TRUE(test, context->staging_bound);
 	KUNIT_EXPECT_PTR_EQ(test, context->staging_inode, d_inode(stage));
 	KUNIT_EXPECT_PTR_EQ(test, context->staging_parent_inode, up_inode);
 	KUNIT_EXPECT_NULL(test, context->pending_created_inode);
 	/* Binding is one-shot. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_bind_staging(context, &stage_path),
-		-EBUSY);
+			pkm_kacs_stratafs_copy_up_bind_staging(context,
+							       &stage_path),
+			-EBUSY);
 
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_populate(context), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_copy_up_begin_populate(context),
+			0);
 	/*
 	 * Masks, at the predicate (inode_permission itself evaluates only
 	 * traverse and pathname-socket writes, so it cannot show a refusal
@@ -4096,45 +4132,50 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	 * needs, not execute on a regular file, and not an unknown bit; the
 	 * provider is read-only; the parent is not admitted in this phase.
 	 */
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_inode_permission(
+					d_inode(stage),
+					MAY_READ | MAY_WRITE | MAY_APPEND));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_inode_permission(
+					 d_inode(stage), MAY_EXEC));
+	KUNIT_EXPECT_FALSE(test,
+			   pkm_kacs_copy_up_allows_inode_permission(
+				   d_inode(stage),
+				   MAY_WRITE | PKM_KUNIT_COPY_UP_UNKNOWN_MAY));
 	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_inode_permission(
-			d_inode(stage), MAY_READ | MAY_WRITE | MAY_APPEND));
+			  pkm_kacs_copy_up_allows_inode_permission(
+				  d_inode(tree.provider.dentry), MAY_READ));
 	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(d_inode(stage),
-							 MAY_EXEC));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(
-			d_inode(stage), MAY_WRITE | PKM_KUNIT_COPY_UP_UNKNOWN_MAY));
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_inode_permission(
-			d_inode(tree.provider.dentry), MAY_READ));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(
-			d_inode(tree.provider.dentry), MAY_WRITE));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(up_inode,
-							 MAY_WRITE | MAY_EXEC));
+			   pkm_kacs_copy_up_allows_inode_permission(
+				   d_inode(tree.provider.dentry), MAY_WRITE));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_inode_permission(
+					 up_inode, MAY_WRITE | MAY_EXEC));
 	/* A traverse of the parent is evaluated normally and refused. */
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_permission(up_inode, MAY_EXEC),
 			-EACCES);
 	/* Eligible xattrs land on the staged object only. */
 	KUNIT_EXPECT_EQ(test,
-		vfs_setxattr(idmap, stage, "user.copy", "x", 1, 0), 0);
+			vfs_setxattr(idmap, stage, "user.copy", "x", 1, 0), 0);
 	KUNIT_EXPECT_EQ(test,
-		vfs_setxattr(idmap, tree.provider.dentry, "user.copy", "x", 1,
-			     0), -EACCES);
+			vfs_setxattr(idmap, tree.provider.dentry, "user.copy",
+				     "x", 1, 0),
+			-EACCES);
 	/* The canonical descriptor, a POSIX ACL and a raw capability stay
 	 * denied inside the context. */
 	KUNIT_EXPECT_NE(test,
-		pkm_kacs_inode_setxattr(idmap, stage, PKM_KUNIT_COPY_UP_SD_XATTR,
-					pkm_kunit_system_read_sd,
-					sizeof(pkm_kunit_system_read_sd), 0), 0);
+			pkm_kacs_inode_setxattr(
+				idmap, stage, PKM_KUNIT_COPY_UP_SD_XATTR,
+				pkm_kunit_system_read_sd,
+				sizeof(pkm_kunit_system_read_sd), 0),
+			0);
 	KUNIT_EXPECT_NE(test,
-		pkm_kacs_inode_setxattr(idmap, stage, XATTR_NAME_POSIX_ACL_ACCESS,
-					"x", 1, 0), 0);
+			pkm_kacs_inode_setxattr(idmap, stage,
+						XATTR_NAME_POSIX_ACL_ACCESS,
+						"x", 1, 0),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_inode_setxattr(idmap, stage, XATTR_NAME_CAPS, "x", 1,
-					0), -EPERM);
+			pkm_kacs_inode_setxattr(idmap, stage, XATTR_NAME_CAPS,
+						"x", 1, 0),
+			-EPERM);
 
 	/*
 	 * Parent substitution invalidates the binding while the staged
@@ -4156,11 +4197,11 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	pkm_kunit_copy_up_be_subject(&tree);
 	KUNIT_EXPECT_PTR_EQ(test, context->staging.dentry, stage);
 	KUNIT_EXPECT_PTR_EQ(test, context->staging_inode, d_inode(stage));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_copy_up_allows_inode_permission(d_inode(stage),
-							 MAY_WRITE));
+	KUNIT_EXPECT_FALSE(test, pkm_kacs_copy_up_allows_inode_permission(
+					 d_inode(stage), MAY_WRITE));
 	KUNIT_EXPECT_EQ(test,
-		vfs_setxattr(idmap, stage, "user.copy2", "x", 1, 0), -EACCES);
+			vfs_setxattr(idmap, stage, "user.copy2", "x", 1, 0),
+			-EACCES);
 	/* Moving it back restores the binding. */
 	pkm_kunit_copy_up_be_system(&tree);
 	trap = lock_rename(tree.up.dentry, tree.elsewhere.dentry);
@@ -4177,11 +4218,10 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	unlock_rename(tree.up.dentry, tree.elsewhere.dentry);
 	dput(other);
 	pkm_kunit_copy_up_be_subject(&tree);
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_copy_up_allows_inode_permission(d_inode(stage),
-							 MAY_WRITE));
+	KUNIT_EXPECT_TRUE(test, pkm_kacs_copy_up_allows_inode_permission(
+					d_inode(stage), MAY_WRITE));
 	KUNIT_EXPECT_EQ(test,
-		vfs_setxattr(idmap, stage, "user.copy2", "x", 1, 0), 0);
+			vfs_setxattr(idmap, stage, "user.copy2", "x", 1, 0), 0);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 
 	/* -- publish by link ------------------------------------------- */
@@ -4190,11 +4230,13 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	final = pkm_kunit_copy_up_negative(&tree.up, "wrong");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(final));
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_publish_link(context, &tree.up,
-							     final), 0);
+			pkm_kacs_stratafs_copy_up_begin_publish_link(
+				context, &tree.up, final),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_finish_publish(context, &stage_path),
-		-ESTALE);
+			pkm_kacs_stratafs_copy_up_finish_publish(context,
+								 &stage_path),
+			-ESTALE);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	KUNIT_EXPECT_EQ(test, vfs_link(stage, idmap, up_inode, final, NULL),
 			-EACCES);
@@ -4204,8 +4246,9 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	final = pkm_kunit_copy_up_negative(&tree.up, "final");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(final));
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_publish_link(context, &tree.up,
-							     final), 0);
+			pkm_kacs_stratafs_copy_up_begin_publish_link(
+				context, &tree.up, final),
+			0);
 	/* Only the armed destination: another negative name is refused. */
 	other = lookup_noperm(&QSTR("other"), tree.up.dentry);
 	KUNIT_ASSERT_FALSE(test, IS_ERR(other));
@@ -4216,8 +4259,9 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	final_path.mnt = mntget(tree.mnt);
 	final_path.dentry = dget(final);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_finish_publish(context, &final_path),
-		0);
+			pkm_kacs_stratafs_copy_up_finish_publish(context,
+								 &final_path),
+			0);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	/* The link case rebinds the staging identity to the published name. */
 	KUNIT_EXPECT_PTR_EQ(test, context->staging.dentry, final);
@@ -4226,24 +4270,28 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 
 	/* -- rebind ---------------------------------------------------- */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_rebind_staging(context, &final_path),
-		0);
+			pkm_kacs_stratafs_copy_up_rebind_staging(context,
+								 &final_path),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_rebind_staging(context, &tree.provider),
-		-ESTALE);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+			pkm_kacs_stratafs_copy_up_rebind_staging(
+				context, &tree.provider),
+			-ESTALE);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_rebind_staging(context, &final_path),
-		-ESTALE);
+			pkm_kacs_stratafs_copy_up_rebind_staging(context,
+								 &final_path),
+			-ESTALE);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 
 	/* -- cleanup --------------------------------------------------- */
 	/* The old staging name is a retained creation: cleanup may take it. */
 	inode_lock_nested(up_inode, I_MUTEX_PARENT);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_cleanup(context, &tree.up, stage,
-							false), 0);
+			pkm_kacs_stratafs_copy_up_begin_cleanup(
+				context, &tree.up, stage, false),
+			0);
 	/* ...the directory flavour of the same victim is a mismatch. */
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, stage), 0);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, final), -EACCES);
@@ -4256,13 +4304,15 @@ static void pkm_kunit_copy_up_named_flow_is_exact_and_exempt(struct kunit *test)
 	/* The bound staging object (now the published name) is admitted;
 	 * the provider, under its own parent, never is. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_cleanup(context, &tree.up, final,
-							false), 0);
+			pkm_kacs_stratafs_copy_up_begin_cleanup(
+				context, &tree.up, final, false),
+			0);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_cleanup(
-			context, &tree.root, tree.provider.dentry, false),
-		-ESTALE);
+			pkm_kacs_stratafs_copy_up_begin_cleanup(
+				context, &tree.root, tree.provider.dentry,
+				false),
+			-ESTALE);
 
 	pkm_kacs_stratafs_copy_up_leave(context);
 	pkm_kacs_stratafs_copy_up_put(context);
@@ -4307,16 +4357,20 @@ static void pkm_kunit_copy_up_anonymous_object_must_be_bound(struct kunit *test)
 	/* The provider carries a capability for the clone to copy. */
 	pkm_kunit_copy_up_fill_capability(&cap);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_raw_setxattr(&tree.provider, XATTR_NAME_CAPS,
-					       &cap, sizeof(cap)), 0);
+			pkm_kunit_copy_up_raw_setxattr(&tree.provider,
+						       XATTR_NAME_CAPS, &cap,
+						       sizeof(cap)),
+			0);
 	context = pkm_kacs_stratafs_copy_up_begin(&tree.provider);
 	KUNIT_ASSERT_FALSE(test, IS_ERR(context));
 	KUNIT_ASSERT_TRUE(test, context->provider_capability_present);
 
 	/* -- anonymous create ------------------------------------------ */
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_anonymous_create(
-			context, &tree.provider, &tree.up, S_IFREG | 0600), 0);
+			pkm_kacs_stratafs_copy_up_begin_anonymous_create(
+				context, &tree.provider, &tree.up,
+				S_IFREG | 0600),
+			0);
 	tmp = kernel_tmpfile_open(idmap, &tree.up, S_IFREG | 0600, O_RDWR,
 				  current_cred());
 	KUNIT_ASSERT_FALSE(test, IS_ERR(tmp));
@@ -4336,29 +4390,35 @@ static void pkm_kunit_copy_up_anonymous_object_must_be_bound(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(tmp, MAY_WRITE), 0);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 	/* Between phases it conveys nothing. */
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(tmp, MAY_WRITE), -EACCES);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(tmp, MAY_WRITE),
+			-EACCES);
 
 	/* Unbound, the anonymous object can be used by no later phase. */
+	KUNIT_EXPECT_EQ(test, pkm_kacs_stratafs_copy_up_begin_populate(context),
+			-EINVAL);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_populate(context), -EINVAL);
-	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_cleanup(
-			context, &tree.up, tmp->f_path.dentry, false), -ESTALE);
+			pkm_kacs_stratafs_copy_up_begin_cleanup(
+				context, &tree.up, tmp->f_path.dentry, false),
+			-ESTALE);
 	final = pkm_kunit_copy_up_negative(&tree.up, "anon");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(final));
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_publish_link(context, &tree.up,
-							     final), -EINVAL);
+			pkm_kacs_stratafs_copy_up_begin_publish_link(
+				context, &tree.up, final),
+			-EINVAL);
 	end_creating(final);
 
 	/* -- bind, populate, clone ------------------------------------- */
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_bind_staging(context, &tmp->f_path), 0);
+			pkm_kacs_stratafs_copy_up_bind_staging(context,
+							       &tmp->f_path),
+			0);
 	KUNIT_EXPECT_PTR_EQ(test, context->staging_inode, file_inode(tmp));
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_populate(context), 0);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_stratafs_copy_up_begin_populate(context),
+			0);
 	/* A file sealed to the create generation does not come back. */
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(tmp, MAY_WRITE), -EACCES);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(tmp, MAY_WRITE),
+			-EACCES);
 	/* One opened in this phase, on the bound object, is the way in. */
 	writer = dentry_open(&tmp->f_path, O_WRONLY, current_cred());
 	KUNIT_ASSERT_FALSE(test, IS_ERR(writer));
@@ -4370,51 +4430,60 @@ static void pkm_kunit_copy_up_anonymous_object_must_be_bound(struct kunit *test)
 	pkm_kunit_copy_up_fill_capability(&other_cap);
 	other_cap.data[0].permitted = cpu_to_le32(1U << CAP_CHOWN);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_set_capability(
-			context, &other_cap, sizeof(other_cap)), -ESTALE);
-	KUNIT_ASSERT_EQ(test,
+			pkm_kacs_stratafs_copy_up_set_capability(
+				context, &other_cap, sizeof(other_cap)),
+			-ESTALE);
+	KUNIT_ASSERT_EQ(
+		test,
 		pkm_kunit_copy_up_raw_setxattr(&tree.provider, XATTR_NAME_CAPS,
 					       &other_cap, sizeof(other_cap)),
 		0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_set_capability(
-			context, &cap, sizeof(cap)), -ESTALE);
+			pkm_kacs_stratafs_copy_up_set_capability(context, &cap,
+								 sizeof(cap)),
+			-ESTALE);
 	KUNIT_EXPECT_LT(test,
-		pkm_kunit_copy_up_raw_getxattr(&tmp->f_path, XATTR_NAME_CAPS,
-					       got, sizeof(got)), (ssize_t)0);
+			pkm_kunit_copy_up_raw_getxattr(&tmp->f_path,
+						       XATTR_NAME_CAPS, got,
+						       sizeof(got)),
+			(ssize_t)0);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_raw_setxattr(&tree.provider, XATTR_NAME_CAPS,
-					       &cap, sizeof(cap)), 0);
+			pkm_kunit_copy_up_raw_setxattr(&tree.provider,
+						       XATTR_NAME_CAPS, &cap,
+						       sizeof(cap)),
+			0);
 	ret = pkm_kacs_stratafs_copy_up_set_capability(context, &cap,
 						       sizeof(cap));
 	KUNIT_EXPECT_EQ(test, ret, 0);
 	KUNIT_EXPECT_FALSE(test, context->capability_clone_active);
 	if (!ret) {
 		KUNIT_EXPECT_EQ(test,
-			pkm_kunit_copy_up_raw_getxattr(&tmp->f_path,
-						       XATTR_NAME_CAPS, got,
-						       sizeof(got)),
-			(ssize_t)sizeof(cap));
+				pkm_kunit_copy_up_raw_getxattr(
+					&tmp->f_path, XATTR_NAME_CAPS, got,
+					sizeof(got)),
+				(ssize_t)sizeof(cap));
 		KUNIT_EXPECT_MEMEQ(test, got, &cap, sizeof(cap));
 		/* XATTR_CREATE: a second install is the VFS's refusal. */
 		KUNIT_EXPECT_EQ(test,
-			pkm_kacs_stratafs_copy_up_set_capability(
-				context, &cap, sizeof(cap)), -EEXIST);
+				pkm_kacs_stratafs_copy_up_set_capability(
+					context, &cap, sizeof(cap)),
+				-EEXIST);
 	}
 	__fput_sync(writer);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 
 	/* -- adoption, before publication ------------------------------ */
-	outer_blob = kunit_kzalloc(test, pkm_blob_sizes.lbs_file +
-					     sizeof(struct pkm_kacs_file_security),
-				   GFP_KERNEL);
+	outer_blob = kunit_kzalloc(
+		test,
+		pkm_blob_sizes.lbs_file + sizeof(struct pkm_kacs_file_security),
+		GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, outer_blob);
 	outer.f_security = outer_blob;
 	outer.f_inode = d_inode(tree.provider.dentry);
 	*(struct path *)&outer.f_path = tree.provider;
 	pkm_kacs_file(&outer)->managed = 1;
 	pkm_kacs_file(&outer)->granted_access = KACS_FILE_READ_DATA |
-						 KACS_FILE_WRITE_DATA;
+						KACS_FILE_WRITE_DATA;
 	pkm_kacs_file(&outer)->continuous_audit_mask = KACS_FILE_WRITE_DATA;
 	backing = alloc_empty_backing_file(O_RDWR, current_cred(), &outer);
 	KUNIT_ASSERT_FALSE(test, IS_ERR(backing));
@@ -4429,17 +4498,19 @@ static void pkm_kunit_copy_up_anonymous_object_must_be_bound(struct kunit *test)
 	backing_sec->copy_up_context = pkm_kacs_stratafs_copy_up_get(context);
 	backing_sec->copy_up_phase_generation = context->phase_generation;
 	/* Not while a phase is armed... */
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	backing_sec->copy_up_phase_generation = context->phase_generation;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_adopt_backing_file(context, &outer,
-							     backing), -ESTALE);
+			pkm_kacs_stratafs_copy_up_adopt_backing_file(
+				context, &outer, backing),
+			-ESTALE);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 	/* ...but on the still-bound staging binding, idle, it transfers. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_adopt_backing_file(context, &outer,
-							     backing), 0);
+			pkm_kacs_stratafs_copy_up_adopt_backing_file(
+				context, &outer, backing),
+			0);
 	KUNIT_EXPECT_NULL(test, backing_sec->copy_up_context);
 	KUNIT_EXPECT_EQ(test, backing_sec->granted_access,
 			pkm_kacs_file(&outer)->granted_access);
@@ -4450,15 +4521,18 @@ static void pkm_kunit_copy_up_anonymous_object_must_be_bound(struct kunit *test)
 	final = pkm_kunit_copy_up_negative(&tree.up, "anon");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(final));
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_publish_link(context, &tree.up,
-							     final), 0);
-	KUNIT_ASSERT_EQ(test,
+			pkm_kacs_stratafs_copy_up_begin_publish_link(
+				context, &tree.up, final),
+			0);
+	KUNIT_ASSERT_EQ(
+		test,
 		vfs_link(tmp->f_path.dentry, idmap, up_inode, final, NULL), 0);
 	final_path.mnt = mntget(tree.mnt);
 	final_path.dentry = dget(final);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_finish_publish(context, &final_path),
-		0);
+			pkm_kacs_stratafs_copy_up_finish_publish(context,
+								 &final_path),
+			0);
 	end_creating(final);
 	KUNIT_EXPECT_PTR_EQ(test, context->staging.dentry, final_path.dentry);
 
@@ -4475,8 +4549,8 @@ static void pkm_kunit_copy_up_anonymous_object_must_be_bound(struct kunit *test)
  * orphan phases were armed for, and orphan deletion is bound to the exact
  * dentry, inode and parent supplied.
  */
-static void pkm_kunit_copy_up_orphan_recovery_binds_the_marker_object(
-	struct kunit *test)
+static void
+pkm_kunit_copy_up_orphan_recovery_binds_the_marker_object(struct kunit *test)
 {
 	static const char marker[] = "1";
 	struct pkm_kacs_task_security *task_sec = pkm_kacs_task(current);
@@ -4493,65 +4567,82 @@ static void pkm_kunit_copy_up_orphan_recovery_binds_the_marker_object(
 	up_inode = d_inode(tree.up.dentry);
 	pkm_kunit_copy_up_be_system(&tree);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_make(&tree, &tree.up, "orphan",
-				       S_IFREG | 0600, &orphan), 0);
+			pkm_kunit_copy_up_make(&tree, &tree.up, "orphan",
+					       S_IFREG | 0600, &orphan),
+			0);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_make(&tree, &tree.up, "sibling",
-				       S_IFREG | 0600, &sibling), 0);
-	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_copy_up_make(&tree, &tree.up, "sibling",
+					       S_IFREG | 0600, &sibling),
+			0);
+	KUNIT_ASSERT_EQ(
+		test,
 		pkm_kunit_copy_up_raw_setxattr(&orphan, STRATAFS_STAGING_XATTR,
-					       marker, sizeof(marker) - 1), 0);
-	KUNIT_ASSERT_EQ(test,
+					       marker, sizeof(marker) - 1),
+		0);
+	KUNIT_ASSERT_EQ(
+		test,
 		pkm_kunit_copy_up_raw_setxattr(&sibling, STRATAFS_STAGING_XATTR,
-					       marker, sizeof(marker) - 1), 0);
+					       marker, sizeof(marker) - 1),
+		0);
 	pkm_kunit_copy_up_be_subject(&tree);
 
 	/* Caller-originated marker traffic is denied, context or not. */
 	KUNIT_EXPECT_NE(test,
-		pkm_kacs_inode_removexattr(idmap, orphan.dentry,
-					   STRATAFS_STAGING_XATTR), 0);
+			pkm_kacs_inode_removexattr(idmap, orphan.dentry,
+						   STRATAFS_STAGING_XATTR),
+			0);
 	context = pkm_kacs_stratafs_copy_up_begin(&orphan);
 	KUNIT_ASSERT_FALSE(test, IS_ERR(context));
 	KUNIT_EXPECT_NE(test,
-		pkm_kacs_inode_removexattr(idmap, orphan.dentry,
-					   STRATAFS_STAGING_XATTR), 0);
+			pkm_kacs_inode_removexattr(idmap, orphan.dentry,
+						   STRATAFS_STAGING_XATTR),
+			0);
 
 	/* Marker cleanup admits a write as well as a removal -- on the exact
 	 * orphan only, and only of the marker. */
-	KUNIT_ASSERT_EQ(test,
+	KUNIT_ASSERT_EQ(
+		test,
 		pkm_kacs_stratafs_copy_up_begin_orphan_marker_cleanup(context),
 		0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_inode_setxattr(idmap, orphan.dentry,
-					STRATAFS_STAGING_XATTR, marker,
-					sizeof(marker) - 1, 0), 0);
+			pkm_kacs_inode_setxattr(idmap, orphan.dentry,
+						STRATAFS_STAGING_XATTR, marker,
+						sizeof(marker) - 1, 0),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_inode_removexattr(idmap, orphan.dentry,
-					   STRATAFS_STAGING_XATTR), 0);
+			pkm_kacs_inode_removexattr(idmap, orphan.dentry,
+						   STRATAFS_STAGING_XATTR),
+			0);
 	KUNIT_EXPECT_NE(test,
-		pkm_kacs_inode_removexattr(idmap, sibling.dentry,
-					   STRATAFS_STAGING_XATTR), 0);
+			pkm_kacs_inode_removexattr(idmap, sibling.dentry,
+						   STRATAFS_STAGING_XATTR),
+			0);
 	KUNIT_EXPECT_NE(test,
-		pkm_kacs_inode_setxattr(idmap, orphan.dentry, "user.other", "x",
-					1, 0), 0);
+			pkm_kacs_inode_setxattr(idmap, orphan.dentry,
+						"user.other", "x", 1, 0),
+			0);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 
 	/* Orphan deletion: wrong victim, wrong parent, wrong type, then the
 	 * exact binding. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
-			context, &tree.up, sibling.dentry, false), -ESTALE);
+			pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
+				context, &tree.up, sibling.dentry, false),
+			-ESTALE);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
-			context, &tree.root, orphan.dentry, false), -ESTALE);
+			pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
+				context, &tree.root, orphan.dentry, false),
+			-ESTALE);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
-			context, &tree.up, orphan.dentry, true), -ESTALE);
+			pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
+				context, &tree.up, orphan.dentry, true),
+			-ESTALE);
 	PKM_KUNIT_EXPECT_PHASE(test, context, PKM_KACS_COPY_UP_PHASE_NONE);
 	inode_lock_nested(up_inode, I_MUTEX_PARENT);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
-			context, &tree.up, orphan.dentry, false), 0);
+			pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
+				context, &tree.up, orphan.dentry, false),
+			0);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, sibling.dentry),
 			-EACCES);
 	KUNIT_EXPECT_EQ(test, vfs_unlink(idmap, up_inode, orphan.dentry, NULL),
@@ -4593,8 +4684,8 @@ static void pkm_kunit_copy_up_internal_file_is_denied_the_listed_operations(
 	if (!IS_ERR(file))
 		__fput_sync(file);
 
-	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kacs_stratafs_copy_up_begin_source_read(context), 0);
 	writer = dentry_open(&tree.provider, O_WRONLY, current_cred());
 	KUNIT_EXPECT_TRUE(test, IS_ERR(writer));
 	if (!IS_ERR(writer))
@@ -4606,7 +4697,8 @@ static void pkm_kunit_copy_up_internal_file_is_denied_the_listed_operations(
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file(file)->granted_access, 0U);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file(file)->continuous_audit_mask, 0U);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(file, MAY_READ), 0);
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(file, MAY_WRITE), -EACCES);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(file, MAY_WRITE),
+			-EACCES);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_statfs(file), -EACCES);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_truncate(file), -EACCES);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_fsync(file), -EACCES);
@@ -4616,7 +4708,8 @@ static void pkm_kunit_copy_up_internal_file_is_denied_the_listed_operations(
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_fcntl(file, F_GETFL, 0), -EACCES);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_file_receive(file), -EACCES);
 	pkm_kacs_stratafs_copy_up_end_phase(context);
-	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(file, MAY_READ), -EACCES);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_file_permission(file, MAY_READ),
+			-EACCES);
 	__fput_sync(file);
 
 	pkm_kacs_stratafs_copy_up_leave(context);
@@ -4624,7 +4717,6 @@ static void pkm_kunit_copy_up_internal_file_is_denied_the_listed_operations(
 	pkm_kunit_copy_up_tree_exit(&tree);
 	KUNIT_EXPECT_NULL(test, task_sec->copy_up_context);
 }
-
 
 /*
  * Deferred deletion: at final close the synchronous internal scope admits
@@ -4654,11 +4746,13 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 	root_inode = d_inode(tree.root.dentry);
 	pkm_kunit_copy_up_be_system(&tree);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_make(&tree, &tree.up, "victim", S_IFREG | 0600,
-				       &victim), 0);
+			pkm_kunit_copy_up_make(&tree, &tree.up, "victim",
+					       S_IFREG | 0600, &victim),
+			0);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_make(&tree, &tree.up, "entry", S_IFREG | 0600,
-				       &entry), 0);
+			pkm_kunit_copy_up_make(&tree, &tree.up, "entry",
+					       S_IFREG | 0600, &entry),
+			0);
 	/* The outer handle whose final close carries the deletion. */
 	outer = dentry_open(&victim, O_RDONLY, current_cred());
 	KUNIT_ASSERT_FALSE(test, IS_ERR(outer));
@@ -4667,19 +4761,21 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 	/* No scope: the subject is refused, as anyone would be. */
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, victim.dentry),
 			-EACCES);
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_stratafs_delete_on_close_active(victim.dentry));
+	KUNIT_EXPECT_FALSE(
+		test, pkm_kacs_stratafs_delete_on_close_active(victim.dentry));
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_delete_on_close_bind_provider(
-			victim.dentry, &tree.up, entry.dentry), -EPERM);
+			pkm_kacs_stratafs_delete_on_close_bind_provider(
+				victim.dentry, &tree.up, entry.dentry),
+			-EPERM);
 
 	/* Armed for that outer file, as the final-close path arms it. */
 	task_sec->delete_on_close_file = outer;
-	KUNIT_EXPECT_TRUE(test,
-		pkm_kacs_stratafs_delete_on_close_active(victim.dentry));
-	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_stratafs_delete_on_close_active(entry.dentry));
-	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, victim.dentry), 0);
+	KUNIT_EXPECT_TRUE(
+		test, pkm_kacs_stratafs_delete_on_close_active(victim.dentry));
+	KUNIT_EXPECT_FALSE(
+		test, pkm_kacs_stratafs_delete_on_close_active(entry.dentry));
+	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, victim.dentry),
+			0);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(root_inode, victim.dentry),
 			-EACCES);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, entry.dentry),
@@ -4687,17 +4783,21 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 
 	/* The provider entry is bound once, to the exact parent and target. */
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_delete_on_close_bind_provider(
-			entry.dentry, &tree.up, entry.dentry), -EPERM);
+			pkm_kacs_stratafs_delete_on_close_bind_provider(
+				entry.dentry, &tree.up, entry.dentry),
+			-EPERM);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_delete_on_close_bind_provider(
-			victim.dentry, &tree.root, entry.dentry), -EPERM);
+			pkm_kacs_stratafs_delete_on_close_bind_provider(
+				victim.dentry, &tree.root, entry.dentry),
+			-EPERM);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kacs_stratafs_delete_on_close_bind_provider(
-			victim.dentry, &tree.up, entry.dentry), 0);
+			pkm_kacs_stratafs_delete_on_close_bind_provider(
+				victim.dentry, &tree.up, entry.dentry),
+			0);
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_stratafs_delete_on_close_bind_provider(
-			victim.dentry, &tree.up, victim.dentry), -EBUSY);
+			pkm_kacs_stratafs_delete_on_close_bind_provider(
+				victim.dentry, &tree.up, victim.dentry),
+			-EBUSY);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, entry.dentry), 0);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(root_inode, entry.dentry),
 			-EACCES);
@@ -4716,8 +4816,8 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 	inode_unlock(up_inode);
 	recreated = start_creating(idmap, tree.up.dentry, &QSTR("entry"));
 	KUNIT_ASSERT_FALSE(test, IS_ERR(recreated));
-	KUNIT_ASSERT_EQ(test, vfs_create(idmap, recreated, S_IFREG | 0600, NULL),
-			0);
+	KUNIT_ASSERT_EQ(test,
+			vfs_create(idmap, recreated, S_IFREG | 0600, NULL), 0);
 	recreated = end_creating_keep(recreated);
 	pkm_kunit_copy_up_be_subject(&tree);
 	KUNIT_EXPECT_TRUE(test, d_is_positive(recreated));
@@ -4726,7 +4826,8 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 			-EACCES);
 	if (d_is_positive(entry.dentry) && d_inode(entry.dentry) != entry_inode)
 		KUNIT_EXPECT_EQ(test,
-			pkm_kacs_inode_unlink(up_inode, entry.dentry), -EACCES);
+				pkm_kacs_inode_unlink(up_inode, entry.dentry),
+				-EACCES);
 	dput(recreated);
 	/* The outer entry, likewise substituted, is refused too. */
 	pkm_kunit_copy_up_be_system(&tree);
@@ -4736,13 +4837,13 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 	inode_unlock(up_inode);
 	recreated = start_creating(idmap, tree.up.dentry, &QSTR("victim"));
 	KUNIT_ASSERT_FALSE(test, IS_ERR(recreated));
-	KUNIT_ASSERT_EQ(test, vfs_create(idmap, recreated, S_IFREG | 0600, NULL),
-			0);
+	KUNIT_ASSERT_EQ(test,
+			vfs_create(idmap, recreated, S_IFREG | 0600, NULL), 0);
 	recreated = end_creating_keep(recreated);
 	pkm_kunit_copy_up_be_subject(&tree);
 	KUNIT_EXPECT_PTR_NE(test, recreated, victim.dentry);
 	KUNIT_EXPECT_FALSE(test,
-		pkm_kacs_stratafs_delete_on_close_active(recreated));
+			   pkm_kacs_stratafs_delete_on_close_active(recreated));
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, recreated),
 			-EACCES);
 	dput(recreated);
@@ -4768,17 +4869,18 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
  * pending descriptor.  The blob is primed with an allocation the way
  * pkm_kacs_inode_copy_up() leaves it, and cred_free is what frees it.
  */
-static void pkm_kunit_overlay_release_frees_the_pending_descriptor(
-	struct kunit *test)
+static void
+pkm_kunit_overlay_release_frees_the_pending_descriptor(struct kunit *test)
 {
 	struct pkm_kacs_cred_security *sec;
 	struct cred cred = {};
 	void *cred_blob;
 	u8 *pending;
 
-	cred_blob = kunit_kzalloc(
-		test, pkm_blob_sizes.lbs_cred +
-			      sizeof(struct pkm_kacs_cred_security), GFP_KERNEL);
+	cred_blob = kunit_kzalloc(test,
+				  pkm_blob_sizes.lbs_cred +
+					  sizeof(struct pkm_kacs_cred_security),
+				  GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, cred_blob);
 	cred.security = cred_blob;
 	KUNIT_ASSERT_EQ(test, pkm_kacs_cred_alloc_blank(&cred, GFP_KERNEL), 0);
@@ -4830,8 +4932,9 @@ static void pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op(
 	up_inode = d_inode(tree.up.dentry);
 	pkm_kunit_copy_up_be_system(&tree);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_make(&tree, &tree.up, "doomed", S_IFREG | 0600,
-				       &doomed), 0);
+			pkm_kunit_copy_up_make(&tree, &tree.up, "doomed",
+					       S_IFREG | 0600, &doomed),
+			0);
 	doomed_inode = d_inode(doomed.dentry);
 	/* The handle whose final close carries the deletion. */
 	outer = dentry_open(&doomed, O_RDONLY, current_cred());
@@ -4853,8 +4956,8 @@ static void pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op(
 	/* A name re-created since names another inode, and is left alone. */
 	recreated = start_creating(idmap, tree.up.dentry, &QSTR("doomed"));
 	KUNIT_ASSERT_FALSE(test, IS_ERR(recreated));
-	KUNIT_ASSERT_EQ(test, vfs_create(idmap, recreated, S_IFREG | 0600, NULL),
-			0);
+	KUNIT_ASSERT_EQ(test,
+			vfs_create(idmap, recreated, S_IFREG | 0600, NULL), 0);
 	recreated = end_creating_keep(recreated);
 	KUNIT_EXPECT_PTR_NE(test, d_inode(recreated), doomed_inode);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_unlink_delete_on_close_file(outer), 0L);
@@ -4874,8 +4977,8 @@ static void pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op(
  * the stored bytes do not move; the same write succeeds once the mount is
  * writable again (PEI-795).
  */
-static void pkm_kunit_set_sd_through_a_read_only_mount_is_erofs(
-	struct kunit *test)
+static void
+pkm_kunit_set_sd_through_a_read_only_mount_is_erofs(struct kunit *test)
 {
 	struct pkm_kunit_copy_up_tree tree;
 	const void *token;
@@ -4890,13 +4993,15 @@ static void pkm_kunit_set_sd_through_a_read_only_mount_is_erofs(
 	token = pkm_kacs_current_effective_token_ptr();
 	KUNIT_ASSERT_NOT_NULL(test, token);
 	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_make(&tree, &tree.up, "target", S_IFREG | 0600,
-				       &target), 0);
-	before = pkm_kunit_create_precise_file_sd(token, PKM_KUNIT_COPY_UP_FILE_ALL,
-						  &before_len);
+			pkm_kunit_copy_up_make(&tree, &tree.up, "target",
+					       S_IFREG | 0600, &target),
+			0);
+	before = pkm_kunit_create_precise_file_sd(
+		token, PKM_KUNIT_COPY_UP_FILE_ALL, &before_len);
 	KUNIT_ASSERT_NOT_NULL(test, before);
-	KUNIT_ASSERT_EQ(test,
-		pkm_kunit_copy_up_install_sd(&target, before, before_len), 0);
+	KUNIT_ASSERT_EQ(
+		test, pkm_kunit_copy_up_install_sd(&target, before, before_len),
+		0);
 	input = pkm_kunit_create_precise_file_sd(token, KACS_FILE_READ_DATA,
 						 &input_len);
 	KUNIT_ASSERT_NOT_NULL(test, input);
@@ -4904,16 +5009,18 @@ static void pkm_kunit_set_sd_through_a_read_only_mount_is_erofs(
 	/* A read-only bind of the tree: the mount flag, not the superblock. */
 	tree.mnt->mnt_flags |= MNT_READONLY;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_set_path_file_sd_core(token, &target,
-					       KACS_SECINFO_DACL, input,
-					       input_len), (long)-EROFS);
+			pkm_kacs_set_path_file_sd_core(token, &target,
+						       KACS_SECINFO_DACL, input,
+						       input_len),
+			(long)-EROFS);
 	pkm_kunit_copy_up_expect_sd_xattr_eq(test, &target, before, before_len);
 
 	tree.mnt->mnt_flags &= ~MNT_READONLY;
 	KUNIT_EXPECT_EQ(test,
-		pkm_kacs_set_path_file_sd_core(token, &target,
-					       KACS_SECINFO_DACL, input,
-					       input_len), 0L);
+			pkm_kacs_set_path_file_sd_core(token, &target,
+						       KACS_SECINFO_DACL, input,
+						       input_len),
+			0L);
 
 	pkm_kacs_free((void *)input);
 	pkm_kacs_free((void *)before);
@@ -4927,8 +5034,8 @@ static void pkm_kunit_set_sd_through_a_read_only_mount_is_erofs(
  * descriptor (EBADF, which ended the syscall before the file-target
  * resolver -- the one that accepts O_PATH -- was reached) (PEI-695).
  */
-static void pkm_kunit_token_fd_clone_treats_o_path_as_not_a_token(
-	struct kunit *test)
+static void
+pkm_kunit_token_fd_clone_treats_o_path_as_not_a_token(struct kunit *test)
 {
 	struct pkm_kunit_copy_up_tree tree;
 	const void *token = NULL;
@@ -4956,7 +5063,8 @@ static void pkm_kunit_token_fd_clone_treats_o_path_as_not_a_token(
 }
 
 static struct kunit_case pkm_kunit_copy_up_cases[] = {
-	KUNIT_CASE(pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op),
+	KUNIT_CASE(
+		pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op),
 	KUNIT_CASE(pkm_kunit_set_sd_through_a_read_only_mount_is_erofs),
 	KUNIT_CASE(pkm_kunit_token_fd_clone_treats_o_path_as_not_a_token),
 	KUNIT_CASE(pkm_kunit_copy_up_scope_is_exact),
@@ -4969,12 +5077,15 @@ static struct kunit_case pkm_kunit_copy_up_cases[] = {
 	KUNIT_CASE(pkm_kunit_copy_up_publish_identity_matches_vfs_semantics),
 	KUNIT_CASE(pkm_kunit_copy_up_begin_pins_provider_without_a_check),
 	KUNIT_CASE(pkm_kunit_copy_up_attachment_is_exclusive_and_transferable),
-	KUNIT_CASE(pkm_kunit_copy_up_phases_are_exclusive_and_generations_sealed),
+	KUNIT_CASE(
+		pkm_kunit_copy_up_phases_are_exclusive_and_generations_sealed),
 	KUNIT_CASE(pkm_kunit_copy_up_named_flow_is_exact_and_exempt),
 	KUNIT_CASE(pkm_kunit_copy_up_anonymous_object_must_be_bound),
 	KUNIT_CASE(pkm_kunit_copy_up_orphan_recovery_binds_the_marker_object),
-	KUNIT_CASE(pkm_kunit_copy_up_internal_file_is_denied_the_listed_operations),
-	KUNIT_CASE(pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry),
+	KUNIT_CASE(
+		pkm_kunit_copy_up_internal_file_is_denied_the_listed_operations),
+	KUNIT_CASE(
+		pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry),
 	KUNIT_CASE(pkm_kunit_overlay_copy_up_sd_is_installed_and_cached),
 	KUNIT_CASE(pkm_kunit_overlay_copy_up_sd_is_not_inherited),
 	KUNIT_CASE(pkm_kunit_overlay_create_takes_caller_and_overlay_parent),

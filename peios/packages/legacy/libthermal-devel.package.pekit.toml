@@ -1,0 +1,17 @@
+# libthermal-devel — libthermal development files: header, static lib, pkg-config.
+# (The .so is unversioned and ships in the runtime libthermal package, so it is not
+# duplicated here.)
+
+[package]
+name = "dev.peios.libthermal-devel"
+license = "LGPL-2.1-or-later"
+description = "libthermal - development files (header, static lib, pkg-config)"
+
+[dependencies]
+"dev.peios.libthermal" = "= {{release}}"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.libthermal-devel/COPYING"
+"tools:usr/include/thermal/thermal.h" = "usr/include/thermal/thermal.h"
+"tools:usr/lib/x86_64-linux-peios/libthermal.a"            = "usr/lib/x86_64-linux-peios/libthermal.a"
+"tools:usr/lib/x86_64-linux-peios/pkgconfig/libthermal.pc" = "usr/lib/x86_64-linux-peios/pkgconfig/libthermal.pc"

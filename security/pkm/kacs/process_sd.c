@@ -10,16 +10,16 @@
 
 #include <trace/events/kacs.h>
 
-struct pkm_kacs_process_sd *pkm_kacs_process_sd_get(
-	struct pkm_kacs_process_sd *process_sd)
+struct pkm_kacs_process_sd *
+pkm_kacs_process_sd_get(struct pkm_kacs_process_sd *process_sd)
 {
 	if (process_sd)
 		refcount_inc(&process_sd->refs);
 	return process_sd;
 }
 
-struct pkm_kacs_process_sd *pkm_kacs_process_sd_wrap_bytes(
-	const u8 *bytes, size_t len)
+struct pkm_kacs_process_sd *pkm_kacs_process_sd_wrap_bytes(const u8 *bytes,
+							   size_t len)
 {
 	struct pkm_kacs_process_sd *process_sd;
 

@@ -42,10 +42,10 @@
  */
 
 /* KACS access rights for mount namespaces. */
-#define KACS_MNTNS_MOUNT		0x00000001U /* change the mount table */
-#define KACS_MNTNS_ENTER		0x00000002U /* join the namespace with setns(2) */
+#define KACS_MNTNS_MOUNT 0x00000001U /* change the mount table */
+#define KACS_MNTNS_ENTER 0x00000002U /* join the namespace with setns(2) */
 
-#define KACS_MNTNS_ALL_ACCESS \
+#define KACS_MNTNS_ALL_ACCESS                                             \
 	(KACS_MNTNS_MOUNT | KACS_MNTNS_ENTER | KACS_ACCESS_READ_CONTROL | \
 	 KACS_ACCESS_WRITE_DAC | KACS_ACCESS_WRITE_OWNER)
 

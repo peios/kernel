@@ -356,7 +356,8 @@ fn sanitize_utf8_lossy(bytes: Vec<u8>) -> Result<Vec<u8>, c_long> {
     loop {
         match str::from_utf8(input) {
             Ok(valid) => {
-                out.extend_from_slice(valid.as_bytes()).map_err(|_| ENOMEM)?;
+                out.extend_from_slice(valid.as_bytes())
+                    .map_err(|_| ENOMEM)?;
                 break;
             }
             Err(err) => {
@@ -485,8 +486,7 @@ pub(crate) fn emit_gate_privilege_use_to_kmes(
     let process_info = load_process_info()?;
     let emitter_map = encode_emitter_map(&process_info)?;
     let subject_map = encode_subject_map(token, subject_ids, effective_pip)?;
-    let mut writer =
-        MsgpackWriter::with_capacity(160 + subject_map.len() + emitter_map.len())?;
+    let mut writer = MsgpackWriter::with_capacity(160 + subject_map.len() + emitter_map.len())?;
 
     writer.write_map_len(5 + usize::from(cap.is_some()))?;
     writer.write_key(b"subject")?;
@@ -1163,9 +1163,8 @@ pub(crate) fn emit_config_value_rejected_to_kmes(
         }
         None => None,
     };
-    let mut writer = MsgpackWriter::with_capacity(
-        192 + key_path.len() + name.as_ref().map_or(0, |n| n.len()),
-    )?;
+    let mut writer =
+        MsgpackWriter::with_capacity(192 + key_path.len() + name.as_ref().map_or(0, |n| n.len()))?;
 
     writer.write_map_len(3)?;
     writer.write_key(b"config")?;
@@ -1665,7 +1664,11 @@ pub(crate) fn emit_access_check_events_to_kmes(
     // The policy first, per type: a list whose type is switched off is
     // dropped before the shared maps are built, and with nothing left to
     // write nothing is built at all.
-    let audit_events = if enabled(&ACCESS_CHECKED) { audit_events } else { &[] };
+    let audit_events = if enabled(&ACCESS_CHECKED) {
+        audit_events
+    } else {
+        &[]
+    };
     let privilege_use_events = if enabled(&PRIVILEGE_USED) {
         privilege_use_events
     } else {
@@ -1700,7 +1703,10 @@ pub(crate) fn emit_access_check_events_to_kmes(
     }
 
     if any_caap {
-        for event in caap_diagnostic_events.iter().filter(|event| caap_wanted(*event)) {
+        for event in caap_diagnostic_events
+            .iter()
+            .filter(|event| caap_wanted(*event))
+        {
             let (event_type, payload) = encode_caap_payload(event, &maps)?;
             emit(event_type, payload.as_slice());
         }

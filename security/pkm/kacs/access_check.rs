@@ -309,9 +309,8 @@ fn denials_of(execution: &AccessCheckAbiExecution) -> AccessDenials {
 /// Whether the caller of the AccessCheck syscall was found not to hold
 /// SeAuditPrivilege, so the records its SACL generates are not written.
 fn sacl_audit_suppressed(resolved_ctx: *const PkmKacsResolvedCtx) -> bool {
-    unsafe { resolved_ctx.as_ref() }.is_some_and(|ctx| {
-        ctx.flags & PKM_KACS_RESOLVED_CTX_F_SACL_AUDIT_SUPPRESSED != 0
-    })
+    unsafe { resolved_ctx.as_ref() }
+        .is_some_and(|ctx| ctx.flags & PKM_KACS_RESOLVED_CTX_F_SACL_AUDIT_SUPPRESSED != 0)
 }
 
 /// What the records of a syscall-originated check say about their subject
@@ -726,4 +725,3 @@ fn effective_pip(requested: PipContext, fallback: PipContext) -> PipContext {
         },
     }
 }
-

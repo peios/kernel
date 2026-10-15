@@ -1,0 +1,48 @@
+exports_files([
+    "kernel.bzl",
+    "runner.py",
+    "build-settings.json",
+])
+
+filegroup(
+    name = "sources",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "**/__pycache__/**",
+            "**/*.pyc",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "recipe",
+    srcs = [
+        "build.sh",
+        "build-settings.json",
+        "generate-keys.py",
+        "runner.py",
+        "test-kunit.sh",
+        "verify-config.sh",
+    ] + glob([
+        "config/*",
+        "keys/*",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "style-sources",
+    srcs = glob([
+        "*.py",
+        "*.sh",
+        "*.bzl",
+        "qualification/*.sh",
+        "qualification/*.c",
+    ]) + [
+        "BUILD.bazel",
+        "bazel",
+    ],
+    visibility = ["//visibility:public"],
+)

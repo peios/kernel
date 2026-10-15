@@ -55,8 +55,8 @@ static void pkm_kunit_socket_final_release_from_rcu(struct kunit *test)
 	KUNIT_ASSERT_NOT_NULL(test, token);
 	f = kunit_kzalloc(test, sizeof(*f), GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, f);
-	f->sk.sk_security = kunit_kzalloc(test, pkm_blob_sizes.lbs_sock +
-					 sizeof(*sec), GFP_KERNEL);
+	f->sk.sk_security = kunit_kzalloc(
+		test, pkm_blob_sizes.lbs_sock + sizeof(*sec), GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, f->sk.sk_security);
 	f->sk.sk_family = AF_UNIX;
 	f->sk.sk_type = SOCK_STREAM;
@@ -69,7 +69,8 @@ static void pkm_kunit_socket_final_release_from_rcu(struct kunit *test)
 
 	/* Exercise the live register in task context before final release. */
 	ret = pkm_kacs_sock_getsockopt(&f->sock, KACS_SO_PEER_TOKEN,
-				       KERNEL_SOCKPTR(&fd), KERNEL_SOCKPTR(&len));
+				       KERNEL_SOCKPTR(&fd),
+				       KERNEL_SOCKPTR(&len));
 	KUNIT_ASSERT_EQ(test, ret, -ENODATA);
 	sd = kzalloc_obj(*sd);
 	KUNIT_ASSERT_NOT_NULL(test, sd);
@@ -104,7 +105,6 @@ static void pkm_kunit_socket_final_release_from_rcu(struct kunit *test)
 		KUNIT_EXPECT_TRUE(test, debug_locks);
 }
 
-
 static void pkm_kunit_probe_smoke(struct kunit *test)
 {
 	size_t probe;
@@ -115,34 +115,30 @@ static void pkm_kunit_probe_smoke(struct kunit *test)
 	pr_info("pkm: kunit scaffold smoke passed\n");
 }
 
-
-static void pkm_kunit_live_capable_sys_boot_uses_shutdown_privilege(
-	struct kunit *test)
+static void
+pkm_kunit_live_capable_sys_boot_uses_shutdown_privilege(struct kunit *test)
 {
 	const void *token;
-	struct pkm_kacs_boot_snapshot before = { };
-	struct pkm_kacs_boot_snapshot after = { };
+	struct pkm_kacs_boot_snapshot before = {};
+	struct pkm_kacs_boot_snapshot after = {};
 
 	token = pkm_kacs_current_effective_token_ptr();
 	KUNIT_ASSERT_NOT_NULL(test, token);
-	KUNIT_ASSERT_TRUE(test,
-			  kacs_rust_kunit_token_snapshot(token, &before));
+	KUNIT_ASSERT_TRUE(test, kacs_rust_kunit_token_snapshot(token, &before));
 
 	KUNIT_EXPECT_TRUE(test, capable(CAP_SYS_BOOT));
 
 	KUNIT_ASSERT_TRUE(test, kacs_rust_kunit_token_snapshot(token, &after));
-	KUNIT_EXPECT_EQ(test,
-			after.privileges_used,
+	KUNIT_EXPECT_EQ(test, after.privileges_used,
 			before.privileges_used |
 				PKM_KUNIT_SE_SHUTDOWN_PRIVILEGE);
 }
 
-
-static void pkm_kunit_internal_file_access_sees_device_groups(
-	struct kunit *test)
+static void
+pkm_kunit_internal_file_access_sees_device_groups(struct kunit *test)
 {
-	struct pkm_kacs_token_fd_view with_device = { };
-	struct pkm_kacs_token_fd_view without_device = { };
+	struct pkm_kacs_token_fd_view with_device = {};
+	struct pkm_kacs_token_fd_view without_device = {};
 	const u8 *file_sd;
 	size_t file_sd_len = 0;
 	long with_fd;
@@ -151,8 +147,8 @@ static void pkm_kunit_internal_file_access_sees_device_groups(
 
 	with_fd = pkm_kunit_create_device_condition_token(true, &with_device);
 	KUNIT_ASSERT_GE(test, with_fd, 0L);
-	without_fd = pkm_kunit_create_device_condition_token(false,
-							     &without_device);
+	without_fd =
+		pkm_kunit_create_device_condition_token(false, &without_device);
 	KUNIT_ASSERT_GE(test, without_fd, 0L);
 
 	file_sd = kacs_rust_kunit_create_device_member_file_sd(
@@ -181,9 +177,8 @@ static void pkm_kunit_internal_file_access_sees_device_groups(
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)with_fd), 0);
 }
 
-
-static void pkm_kunit_internal_file_access_uses_restricted_device_groups(
-	struct kunit *test)
+static void
+pkm_kunit_internal_file_access_uses_restricted_device_groups(struct kunit *test)
 {
 	static const struct pkm_kunit_sid_attr_spec restricted_sids[] = {
 		{
@@ -206,8 +201,8 @@ static void pkm_kunit_internal_file_access_uses_restricted_device_groups(
 			.attributes = PKM_KUNIT_SE_GROUP_ENABLED,
 		},
 	};
-	struct pkm_kacs_token_fd_view matching = { };
-	struct pkm_kacs_token_fd_view mismatching = { };
+	struct pkm_kacs_token_fd_view matching = {};
+	struct pkm_kacs_token_fd_view mismatching = {};
 	const u8 *file_sd;
 	size_t file_sd_len = 0;
 	long matching_fd;
@@ -215,13 +210,13 @@ static void pkm_kunit_internal_file_access_uses_restricted_device_groups(
 	u32 granted = 0;
 
 	matching_fd = pkm_kunit_create_condition_token_ex(
-		true, false, false, restricted_sids, ARRAY_SIZE(restricted_sids),
-		restricted_match,
+		true, false, false, restricted_sids,
+		ARRAY_SIZE(restricted_sids), restricted_match,
 		ARRAY_SIZE(restricted_match), &matching);
 	KUNIT_ASSERT_GE(test, matching_fd, 0L);
 	mismatching_fd = pkm_kunit_create_condition_token_ex(
-		true, false, false, restricted_sids, ARRAY_SIZE(restricted_sids),
-		restricted_mismatch,
+		true, false, false, restricted_sids,
+		ARRAY_SIZE(restricted_sids), restricted_mismatch,
 		ARRAY_SIZE(restricted_mismatch), &mismatching);
 	KUNIT_ASSERT_GE(test, mismatching_fd, 0L);
 
@@ -251,14 +246,12 @@ static void pkm_kunit_internal_file_access_uses_restricted_device_groups(
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)matching_fd), 0);
 }
 
-
-static void pkm_kunit_internal_file_access_sees_token_claims(
-	struct kunit *test)
+static void pkm_kunit_internal_file_access_sees_token_claims(struct kunit *test)
 {
 	static const u8 claim_name[] = "KacsGate";
-	struct pkm_kacs_token_fd_view with_user_claim = { };
-	struct pkm_kacs_token_fd_view with_device_claim = { };
-	struct pkm_kacs_token_fd_view without_claim = { };
+	struct pkm_kacs_token_fd_view with_user_claim = {};
+	struct pkm_kacs_token_fd_view with_device_claim = {};
+	struct pkm_kacs_token_fd_view without_claim = {};
 	const u8 *file_sd;
 	size_t file_sd_len = 0;
 	long with_user_fd;
@@ -272,8 +265,8 @@ static void pkm_kunit_internal_file_access_sees_token_claims(
 	with_device_fd = pkm_kunit_create_condition_token(
 		false, false, true, NULL, 0, &with_device_claim);
 	KUNIT_ASSERT_GE(test, with_device_fd, 0L);
-	without_fd = pkm_kunit_create_condition_token(
-		false, false, false, NULL, 0, &without_claim);
+	without_fd = pkm_kunit_create_condition_token(false, false, false, NULL,
+						      0, &without_claim);
 	KUNIT_ASSERT_GE(test, without_fd, 0L);
 
 	file_sd = kacs_rust_kunit_create_claim_exists_file_sd(
@@ -300,8 +293,8 @@ static void pkm_kunit_internal_file_access_sees_token_claims(
 
 	file_sd = kacs_rust_kunit_create_claim_exists_file_sd(
 		with_device_claim.token, PKM_KUNIT_COND_DEVICE_CLAIM,
-		claim_name, sizeof(claim_name) - 1U,
-		PKM_KUNIT_FILE_READ_DATA, &file_sd_len);
+		claim_name, sizeof(claim_name) - 1U, PKM_KUNIT_FILE_READ_DATA,
+		&file_sd_len);
 	KUNIT_ASSERT_NOT_NULL(test, file_sd);
 
 	granted = 0;
@@ -326,19 +319,18 @@ static void pkm_kunit_internal_file_access_sees_token_claims(
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)with_user_fd), 0);
 }
 
-
-static void pkm_kunit_internal_file_access_sees_resource_claims(
-	struct kunit *test)
+static void
+pkm_kunit_internal_file_access_sees_resource_claims(struct kunit *test)
 {
 	static const u8 claim_name[] = "Mandatory";
-	struct pkm_kacs_token_fd_view subject = { };
+	struct pkm_kacs_token_fd_view subject = {};
 	const u8 *file_sd;
 	size_t file_sd_len = 0;
 	long subject_fd;
 	u32 granted = 0;
 
-	subject_fd = pkm_kunit_create_condition_token(false, false, false,
-						      NULL, 0, &subject);
+	subject_fd = pkm_kunit_create_condition_token(false, false, false, NULL,
+						      0, &subject);
 	KUNIT_ASSERT_GE(test, subject_fd, 0L);
 
 	file_sd = kacs_rust_kunit_create_resource_claim_exists_file_sd(
@@ -372,7 +364,6 @@ static void pkm_kunit_internal_file_access_sees_resource_claims(
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)subject_fd), 0);
 }
 
-
 static void pkm_kunit_lcs_private_credentials_accessors(struct kunit *test)
 {
 	static const u8 scopes[2][KACS_LCS_SCOPE_GUID_BYTES] = {
@@ -380,7 +371,7 @@ static void pkm_kunit_lcs_private_credentials_accessors(struct kunit *test)
 		{ 0x20, 0x21, 0x22, 0x23 },
 	};
 	static const char layer[] = "role-service";
-	u8 copied[KACS_LCS_SCOPE_GUID_BYTES] = { };
+	u8 copied[KACS_LCS_SCOPE_GUID_BYTES] = {};
 	const char *name = NULL;
 	const void *token;
 	u32 name_len = 0;
@@ -391,16 +382,14 @@ static void pkm_kunit_lcs_private_credentials_accessors(struct kunit *test)
 
 	KUNIT_EXPECT_EQ(test, kacs_rust_token_lcs_scope_guid_count(token),
 			(u32)ARRAY_SIZE(scopes));
-	KUNIT_ASSERT_EQ(test,
-			kacs_rust_token_lcs_scope_guid(token, 1, copied),
+	KUNIT_ASSERT_EQ(test, kacs_rust_token_lcs_scope_guid(token, 1, copied),
 			0);
 	KUNIT_EXPECT_MEMEQ(test, copied, scopes[1], sizeof(copied));
-	KUNIT_EXPECT_EQ(test,
-			kacs_rust_token_lcs_scope_guid(token, 2, copied),
+	KUNIT_EXPECT_EQ(test, kacs_rust_token_lcs_scope_guid(token, 2, copied),
 			-EINVAL);
 
-	KUNIT_EXPECT_EQ(test,
-			kacs_rust_token_lcs_private_layer_count(token), 1U);
+	KUNIT_EXPECT_EQ(test, kacs_rust_token_lcs_private_layer_count(token),
+			1U);
 	KUNIT_ASSERT_EQ(test,
 			kacs_rust_token_lcs_private_layer(token, 0, &name,
 							  &name_len),
@@ -415,7 +404,6 @@ static void pkm_kunit_lcs_private_credentials_accessors(struct kunit *test)
 
 	kacs_rust_token_drop(token);
 }
-
 
 /*
  * Port reservations (<pkm/net.h>): the inet socket_bind path against the
@@ -507,9 +495,9 @@ static size_t pkm_kunit_port_empty_dacl_sd(u8 *out, size_t cap)
 	if (!fallback || fallback_len < 52 || cap < 52)
 		return 0;
 	memcpy(out, fallback, 52);
-	out[44 + 2] = 8;	/* acl size lo */
+	out[44 + 2] = 8; /* acl size lo */
 	out[44 + 3] = 0;
-	out[44 + 4] = 0;	/* ace count lo */
+	out[44 + 4] = 0; /* ace count lo */
 	out[44 + 5] = 0;
 	return 52;
 }
@@ -526,12 +514,18 @@ static void pkm_kunit_port_fallback_admits_system_only_shape(struct kunit *test)
 	KUNIT_ASSERT_NOT_NULL(test, fallback);
 	KUNIT_EXPECT_EQ(test, fallback_len, (size_t)72);
 
-	KUNIT_ASSERT_EQ(test, pkm_kunit_port_fixture_init(test, &tcp, AF_INET,
-							  IPPROTO_TCP), 0);
-	KUNIT_ASSERT_EQ(test, pkm_kunit_port_fixture_init(test, &udp, AF_INET,
-							  IPPROTO_UDP), 0);
-	KUNIT_ASSERT_EQ(test, pkm_kunit_port_fixture_init(test, &six, AF_INET6,
-							  IPPROTO_TCP), 0);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_port_fixture_init(test, &tcp, AF_INET,
+						    IPPROTO_TCP),
+			0);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_port_fixture_init(test, &udp, AF_INET,
+						    IPPROTO_UDP),
+			0);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_port_fixture_init(test, &six, AF_INET6,
+						    IPPROTO_TCP),
+			0);
 
 	/* SYSTEM may claim anything under the fallback. */
 	KUNIT_EXPECT_EQ(test, pkm_kunit_port_bind4(&tcp, 80), 0);
@@ -573,12 +567,18 @@ static void pkm_kunit_port_published_table_decides(struct kunit *test)
 	KUNIT_ASSERT_EQ(test, kacs_rust_port_table_replace(blob, at), 0);
 	KUNIT_EXPECT_TRUE(test, kacs_rust_port_table_loaded());
 
-	KUNIT_ASSERT_EQ(test, pkm_kunit_port_fixture_init(test, &tcp, AF_INET,
-							  IPPROTO_TCP), 0);
-	KUNIT_ASSERT_EQ(test, pkm_kunit_port_fixture_init(test, &udp, AF_INET,
-							  IPPROTO_UDP), 0);
-	KUNIT_ASSERT_EQ(test, pkm_kunit_port_fixture_init(test, &six, AF_INET6,
-							  IPPROTO_TCP), 0);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_port_fixture_init(test, &tcp, AF_INET,
+						    IPPROTO_TCP),
+			0);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_port_fixture_init(test, &udp, AF_INET,
+						    IPPROTO_UDP),
+			0);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kunit_port_fixture_init(test, &six, AF_INET6,
+						    IPPROTO_TCP),
+			0);
 
 	KUNIT_EXPECT_EQ(test, pkm_kunit_port_bind4(&tcp, 80), -EACCES);
 	KUNIT_EXPECT_NULL(test, pkm_kacs_sock(&tcp.sk)->binder_token);
@@ -625,12 +625,12 @@ static void pkm_kunit_port_published_table_decides(struct kunit *test)
  */
 static void pkm_kunit_port_rejected_table_is_recorded(struct kunit *test)
 {
-	struct pkm_kunit_kmes_event_view view = { };
-	struct pkm_kunit_msgpack_view root = { };
-	struct pkm_kunit_msgpack_view config = { };
-	struct pkm_kunit_msgpack_view key = { };
-	struct pkm_kunit_msgpack_view outcome = { };
-	struct pkm_kunit_msgpack_view policy = { };
+	struct pkm_kunit_kmes_event_view view = {};
+	struct pkm_kunit_msgpack_view root = {};
+	struct pkm_kunit_msgpack_view config = {};
+	struct pkm_kunit_msgpack_view key = {};
+	struct pkm_kunit_msgpack_view outcome = {};
+	struct pkm_kunit_msgpack_view policy = {};
 	const u8 *fallback;
 	size_t fallback_len = 0;
 	u8 empty[64];
@@ -654,19 +654,20 @@ static void pkm_kunit_port_rejected_table_is_recorded(struct kunit *test)
 	at = pkm_kunit_port_blob_append(blob, at, "*:80", empty, empty_len);
 	pkm_kunit_reset_kmes();
 	KUNIT_EXPECT_EQ(test, kacs_rust_port_table_replace(blob, at), -EINVAL);
-	KUNIT_ASSERT_TRUE(test,
-			  pkm_kunit_latest_kacs_event(
-				  test, "kacs.config.value.rejected", buffer,
-				  &view));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_latest_kacs_event(
+					test, "kacs.config.value.rejected",
+					buffer, &view));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
 					test, &view, &root, 3));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
 					test, &root, "config", 2U, &config));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
 					test, &config, "key", 1U, &key));
-	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
-					test, &key, "path",
-					"Machine\\System\\Network\\TcpIp\\PortReservations"));
+	KUNIT_EXPECT_TRUE(
+		test,
+		pkm_kunit_msgpack_expect_str_key(
+			test, &key, "path",
+			"Machine\\System\\Network\\TcpIp\\PortReservations"));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
 					test, &config, "name", "*:80"));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
@@ -677,8 +678,9 @@ static void pkm_kunit_port_rejected_table_is_recorded(struct kunit *test)
 					test, &outcome, "errno", -EINVAL));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
 					test, &root, "policy", 2U, &policy));
-	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bool_key(
-					test, &policy, "previous-retained", true));
+	KUNIT_EXPECT_TRUE(test,
+			  pkm_kunit_msgpack_expect_bool_key(
+				  test, &policy, "previous-retained", true));
 	/* No table was loaded, so the compiled-in one still answers. */
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bool_key(
 					test, &policy, "fallback", true));
@@ -687,18 +689,18 @@ static void pkm_kunit_port_rejected_table_is_recorded(struct kunit *test)
 	at = pkm_kunit_port_blob_append(blob, 0, "tcp:80", empty, empty_len);
 	pkm_kunit_reset_kmes();
 	KUNIT_EXPECT_EQ(test, kacs_rust_port_table_replace(blob, at), -EINVAL);
-	KUNIT_ASSERT_TRUE(test,
-			  pkm_kunit_latest_kacs_event(
-				  test, "kacs.config.value.rejected", buffer,
-				  &view));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_latest_kacs_event(
+					test, "kacs.config.value.rejected",
+					buffer, &view));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
 					test, &view, &root, 3));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
 					test, &root, "config", 1U, &config));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
 					test, &root, "outcome", 2U, &outcome));
-	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
-					test, &outcome, "reason", "missing-default"));
+	KUNIT_EXPECT_TRUE(
+		test, pkm_kunit_msgpack_expect_str_key(test, &outcome, "reason",
+						       "missing-default"));
 	pkm_kunit_reset_kmes();
 }
 
@@ -711,7 +713,6 @@ static void pkm_kunit_net_bind_service_is_allow(struct kunit *test)
 				(1ULL << CAP_NET_BIND_SERVICE),
 			0ULL);
 }
-
 
 /*
  * Section 3.2: kernel-originated work running under the boot credential
@@ -726,15 +727,16 @@ static void pkm_kunit_kernel_work_evaluates_as_system(struct kunit *test)
 
 	KUNIT_ASSERT_NOT_NULL(test, token);
 	KUNIT_EXPECT_NE(test, current->flags & PF_KTHREAD, 0U);
-	KUNIT_ASSERT_EQ(test, kacs_rust_token_user_sid(token, &sid, &sid_len), 0);
+	KUNIT_ASSERT_EQ(test, kacs_rust_token_user_sid(token, &sid, &sid_len),
+			0);
 	KUNIT_EXPECT_EQ(test, sid_len, (size_t)sizeof(pkm_kunit_system_sid));
 	if (sid_len == sizeof(pkm_kunit_system_sid))
 		KUNIT_EXPECT_MEMEQ(test, sid, pkm_kunit_system_sid,
 				   sizeof(pkm_kunit_system_sid));
 	/* A privilege gate and the capability path both answer for SYSTEM. */
-	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_check_capability_for_token(token, CAP_SYS_TIME),
-			0L);
+	KUNIT_EXPECT_EQ(
+		test, pkm_kacs_check_capability_for_token(token, CAP_SYS_TIME),
+		0L);
 	KUNIT_EXPECT_TRUE(test, capable(CAP_SYS_TIME));
 }
 
@@ -744,8 +746,8 @@ static void pkm_kunit_kernel_work_evaluates_as_system(struct kunit *test)
  * credential changes, and every evaluation follows that credential -- not the
  * real one, and not the thread's worker flag.
  */
-static void pkm_kunit_override_creds_credential_is_authoritative(
-	struct kunit *test)
+static void
+pkm_kunit_override_creds_credential_is_authoritative(struct kunit *test)
 {
 	const void *boot = pkm_kacs_current_effective_token_ptr();
 	struct pkm_kacs_cred_security *sec;
@@ -757,9 +759,8 @@ static void pkm_kunit_override_creds_credential_is_authoritative(
 	KUNIT_ASSERT_TRUE(test, capable(CAP_SYS_BOOT));
 	token = kacs_rust_kunit_create_adjustable_privileges_token();
 	KUNIT_ASSERT_NOT_NULL(test, token);
-	KUNIT_ASSERT_FALSE(test,
-		kacs_rust_token_has_enabled_privilege(
-			token, KACS_SE_SHUTDOWN_PRIVILEGE));
+	KUNIT_ASSERT_FALSE(test, kacs_rust_token_has_enabled_privilege(
+					 token, KACS_SE_SHUTDOWN_PRIVILEGE));
 	cred = prepare_creds();
 	if (!cred) {
 		kacs_rust_token_drop(token);
@@ -774,7 +775,8 @@ static void pkm_kunit_override_creds_credential_is_authoritative(
 
 	saved = override_creds(cred);
 	KUNIT_EXPECT_NE(test, current->flags & PF_KTHREAD, 0U);
-	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_effective_token_ptr(), token);
+	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_effective_token_ptr(),
+			    token);
 	KUNIT_EXPECT_PTR_EQ(test, pkm_kacs_current_primary_token_ptr(), boot);
 	/* What the boot token could do, this credential cannot. */
 	KUNIT_EXPECT_FALSE(test, capable(CAP_SYS_BOOT));
@@ -795,32 +797,32 @@ static void pkm_kunit_override_creds_credential_is_authoritative(
  * the recorder made to fail, every gate refuses the operation it was
  * admitting a moment before.
  */
-static void pkm_kunit_privilege_use_record_failure_fails_the_gate(
-	struct kunit *test)
+static void
+pkm_kunit_privilege_use_record_failure_fails_the_gate(struct kunit *test)
 {
 	const void *token = pkm_kacs_current_effective_token_ptr();
 
 	KUNIT_ASSERT_NOT_NULL(test, token);
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_check_capability_for_subject(token,
-								    CAP_SYS_TIME),
+			pkm_kacs_kunit_check_capability_for_subject(
+				token, CAP_SYS_TIME),
 			0L);
 	KUNIT_ASSERT_TRUE(test,
 			  pkm_kacs_kunit_may_manage_volumes_for_subject(token));
 
 	pkm_kacs_kunit_set_fail_mark_privileges_used(true);
 	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_kunit_check_capability_for_subject(token,
-								    CAP_SYS_TIME),
+			pkm_kacs_kunit_check_capability_for_subject(
+				token, CAP_SYS_TIME),
 			(long)-EPERM);
-	KUNIT_EXPECT_FALSE(test,
-			   pkm_kacs_kunit_may_manage_volumes_for_subject(token));
+	KUNIT_EXPECT_FALSE(
+		test, pkm_kacs_kunit_may_manage_volumes_for_subject(token));
 	KUNIT_EXPECT_FALSE(test, capable(CAP_SYS_TIME));
 	pkm_kacs_kunit_set_fail_mark_privileges_used(false);
 
 	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_kunit_check_capability_for_subject(token,
-								    CAP_SYS_TIME),
+			pkm_kacs_kunit_check_capability_for_subject(
+				token, CAP_SYS_TIME),
 			0L);
 	KUNIT_EXPECT_TRUE(test,
 			  pkm_kacs_kunit_may_manage_volumes_for_subject(token));
@@ -833,18 +835,20 @@ static void pkm_kunit_privilege_use_record_failure_fails_the_gate(
  * hook -- so one consultation records the privilege as used twice.  A refused
  * capability records nothing on either path.
  */
-static void pkm_kunit_security_capable_marks_privilege_use_twice(
-	struct kunit *test)
+static void
+pkm_kunit_security_capable_marks_privilege_use_twice(struct kunit *test)
 {
 	pkm_kacs_kunit_mark_privileges_used_calls(true);
 	KUNIT_EXPECT_EQ(test,
 			security_capable(current_cred(), &init_user_ns,
-					 CAP_SYS_TIME, CAP_OPT_NONE), 0);
+					 CAP_SYS_TIME, CAP_OPT_NONE),
+			0);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_kunit_mark_privileges_used_calls(true),
 			2U);
 	KUNIT_EXPECT_NE(test,
 			security_capable(current_cred(), &init_user_ns,
-					 CAP_SETFCAP, CAP_OPT_NONE), 0);
+					 CAP_SETFCAP, CAP_OPT_NONE),
+			0);
 	KUNIT_EXPECT_EQ(test, pkm_kacs_kunit_mark_privileges_used_calls(true),
 			0U);
 }
@@ -859,7 +863,7 @@ static void pkm_kunit_security_capable_marks_privilege_use_twice(
 static void pkm_kunit_stratafs_audit_emission_is_best_effort(struct kunit *test)
 {
 	static const char sentinel[] = "PKM_KUNIT_SENTINEL";
-	struct pkm_kmes_kunit_snapshot snapshot = { };
+	struct pkm_kmes_kunit_snapshot snapshot = {};
 	char *long_op;
 	char *long_path;
 
@@ -877,12 +881,14 @@ static void pkm_kunit_stratafs_audit_emission_is_best_effort(struct kunit *test)
 			(size_t)0);
 	KUNIT_EXPECT_EQ(test,
 			pkm_kacs_kunit_stratafs_refusal_payload(
-				NULL, 0, "/f", long_op, 0, "lo", -EACCES, false),
+				NULL, 0, "/f", long_op, 0, "lo", -EACCES,
+				false),
 			(size_t)0);
 	long_op[63] = '\0';
 	KUNIT_EXPECT_GT(test,
 			pkm_kacs_kunit_stratafs_refusal_payload(
-				NULL, 0, "/f", long_op, 0, "lo", -EACCES, false),
+				NULL, 0, "/f", long_op, 0, "lo", -EACCES,
+				false),
 			(size_t)0);
 	long_op[63] = 'o';
 
@@ -916,14 +922,14 @@ static void pkm_kunit_stratafs_audit_emission_is_best_effort(struct kunit *test)
  * reduced record without the paths is written in its place, keeping the
  * stratum indices, the operation and the outcome.
  */
-static void pkm_kunit_stratafs_audit_reduced_record_on_alloc_failure(
-	struct kunit *test)
+static void
+pkm_kunit_stratafs_audit_reduced_record_on_alloc_failure(struct kunit *test)
 {
-	struct pkm_kunit_kmes_event_view view = { };
-	struct pkm_kunit_msgpack_view root = { };
-	struct pkm_kunit_msgpack_view role = { };
-	struct pkm_kunit_msgpack_view stratum = { };
-	struct pkm_kunit_msgpack_view operation = { };
+	struct pkm_kunit_kmes_event_view view = {};
+	struct pkm_kunit_msgpack_view root = {};
+	struct pkm_kunit_msgpack_view role = {};
+	struct pkm_kunit_msgpack_view stratum = {};
+	struct pkm_kunit_msgpack_view operation = {};
 	u8 *buffer;
 
 	buffer = kunit_kzalloc(test, PKM_KUNIT_KMES_CAPTURE_BYTES, GFP_KERNEL);
@@ -932,15 +938,14 @@ static void pkm_kunit_stratafs_audit_reduced_record_on_alloc_failure(
 	pkm_kunit_reset_kmes();
 	pkm_kacs_kunit_stratafs_fail_next_alloc(true);
 	pkm_kacs_stratafs_audit_copy_up("/f", 1, "lo", 0, "up", -ENOSPC);
-	KUNIT_ASSERT_TRUE(test,
-			  pkm_kunit_latest_kacs_event(
-				  test, "stratafs.file.copied-up", buffer,
-				  &view));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_latest_kacs_event(
+					test, "stratafs.file.copied-up", buffer,
+					&view));
 	/* source, destination, outcome: no object, no stratum paths. */
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
 					test, &view, &root, 3));
-	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_absent_key(
-					test, &root, "object"));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_absent_key(test, &root,
+								    "object"));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
 					test, &root, "source", 1U, &role));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
@@ -956,19 +961,19 @@ static void pkm_kunit_stratafs_audit_reduced_record_on_alloc_failure(
 
 	pkm_kunit_reset_kmes();
 	pkm_kacs_kunit_stratafs_fail_next_alloc(true);
-	pkm_kacs_stratafs_audit_mutation_refused("/f", "write", 2, "lo",
-						 -EROFS, false);
-	KUNIT_ASSERT_TRUE(test,
-			  pkm_kunit_latest_kacs_event(
-				  test, "stratafs.mutation.refused", buffer,
-				  &view));
+	pkm_kacs_stratafs_audit_mutation_refused("/f", "write", 2, "lo", -EROFS,
+						 false);
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_latest_kacs_event(
+					test, "stratafs.mutation.refused",
+					buffer, &view));
 	/* operation, source, outcome */
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
 					test, &view, &root, 3));
-	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_absent_key(
-					test, &root, "object"));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &root, "operation", 1U, &operation));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_absent_key(test, &root,
+								    "object"));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_kunit_msgpack_require_map_key(
+				  test, &root, "operation", 1U, &operation));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
 					test, &operation, "name", "write"));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
@@ -987,18 +992,20 @@ static void pkm_kunit_stratafs_audit_reduced_record_on_alloc_failure(
  * validates it -- so the encoder is probed directly: it refuses the payload,
  * and the emitter drops the event on that refusal.
  */
-static void pkm_kunit_logon_session_destroyed_encoder_drops_non_utf8(
-	struct kunit *test)
+static void
+pkm_kunit_logon_session_destroyed_encoder_drops_non_utf8(struct kunit *test)
 {
 	static const u8 valid[] = "Peios";
 	static const u8 invalid[] = { 'P', 0xff, 0xfe, 'x' };
 
 	KUNIT_EXPECT_EQ(test,
 			kacs_rust_kunit_encode_logon_session_destroyed_probe(
-				valid, sizeof(valid) - 1), 0L);
+				valid, sizeof(valid) - 1),
+			0L);
 	KUNIT_EXPECT_EQ(test,
 			kacs_rust_kunit_encode_logon_session_destroyed_probe(
-				invalid, sizeof(invalid)), (long)-EIO);
+				invalid, sizeof(invalid)),
+			(long)-EIO);
 }
 
 static struct kunit_case pkm_kunit_misc_cases[] = {
@@ -1010,7 +1017,8 @@ static struct kunit_case pkm_kunit_misc_cases[] = {
 	KUNIT_CASE(pkm_kunit_probe_smoke),
 	KUNIT_CASE(pkm_kunit_live_capable_sys_boot_uses_shutdown_privilege),
 	KUNIT_CASE(pkm_kunit_internal_file_access_sees_device_groups),
-	KUNIT_CASE(pkm_kunit_internal_file_access_uses_restricted_device_groups),
+	KUNIT_CASE(
+		pkm_kunit_internal_file_access_uses_restricted_device_groups),
 	KUNIT_CASE(pkm_kunit_internal_file_access_sees_token_claims),
 	KUNIT_CASE(pkm_kunit_internal_file_access_sees_resource_claims),
 	KUNIT_CASE(pkm_kunit_lcs_private_credentials_accessors),

@@ -26,8 +26,9 @@
 
 #include <trace/events/kacs.h>
 
-static int pkm_kacs_check_bprm_file_execute_for_subject(
-	const void *subject_token, struct linux_binprm *bprm)
+static int
+pkm_kacs_check_bprm_file_execute_for_subject(const void *subject_token,
+					     struct linux_binprm *bprm)
 {
 	struct inode *inode;
 	struct file *file;
@@ -89,8 +90,8 @@ static long pkm_kacs_exec_file_integrity_label(const struct file *file,
 
 	inode = file_inode(file);
 	if (!inode || !inode->i_security) {
-		trace_kacs_exec(false, false, 0, 0,
-				KACS_EXEC_INTEGRITY_NO_ISEC, -EACCES);
+		trace_kacs_exec(false, false, 0, 0, KACS_EXEC_INTEGRITY_NO_ISEC,
+				-EACCES);
 		return -EACCES;
 	}
 
@@ -103,10 +104,11 @@ static long pkm_kacs_exec_file_integrity_label(const struct file *file,
 					KACS_EXEC_INTEGRITY_NO_CACHE, -EACCES);
 			return -EACCES;
 		}
-		if (cache->state != PKM_KACS_INODE_SD_VALID ||
-		    !cache->bytes || cache->len == 0) {
+		if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
+		    cache->len == 0) {
 			trace_kacs_exec(false, false, 0, 0,
-					KACS_EXEC_INTEGRITY_INVALID_SD, -EACCES);
+					KACS_EXEC_INTEGRITY_INVALID_SD,
+					-EACCES);
 			ret = -EACCES;
 		} else {
 			ret = kacs_rust_cached_file_sd_integrity_label(
@@ -129,7 +131,8 @@ static long pkm_kacs_apply_exec_primary_token(const void *primary_token,
 	long ret;
 
 	if (!primary_token || !new) {
-		trace_kacs_exec(false, false, 0, 0, KACS_EXEC_BAD_ARGS, -EACCES);
+		trace_kacs_exec(false, false, 0, 0, KACS_EXEC_BAD_ARGS,
+				-EACCES);
 		return -EACCES;
 	}
 
@@ -151,9 +154,9 @@ static long pkm_kacs_apply_exec_primary_token(const void *primary_token,
 					primary_token, file_integrity,
 					&exec_token);
 				if (ret) {
-					trace_kacs_exec(false, false, 0, 0,
-							KACS_EXEC_NPM_DERIVE_FAIL,
-							ret);
+					trace_kacs_exec(
+						false, false, 0, 0,
+						KACS_EXEC_NPM_DERIVE_FAIL, ret);
 					return ret;
 				}
 				npm_derived = true;
@@ -194,20 +197,14 @@ static long pkm_kacs_apply_exec_primary_token(const void *primary_token,
  */
 bool pkm_kacs_umh_exec_denied(bool usermodehelper, u32 exec_pip_trust)
 {
-	return usermodehelper &&
-	       exec_pip_trust < PKM_KACS_PIP_TRUST_PEIOS_TCB;
+	return usermodehelper && exec_pip_trust < PKM_KACS_PIP_TRUST_PEIOS_TCB;
 }
 
-long pkm_kacs_bprm_creds_from_file_core(const void *subject_token,
-					const void *primary_token,
-					const struct file *file,
-					struct cred *new,
-					const struct cred *old,
-					bool require_file_for_npm,
-					bool stage_exec_pip,
-					bool usermodehelper,
-					unsigned int bprm_unsafe,
-					bool project_primary_ids)
+long pkm_kacs_bprm_creds_from_file_core(
+	const void *subject_token, const void *primary_token,
+	const struct file *file, struct cred *new, const struct cred *old,
+	bool require_file_for_npm, bool stage_exec_pip, bool usermodehelper,
+	unsigned int bprm_unsafe, bool project_primary_ids)
 {
 	bool uid_changed;
 	bool gid_changed;
@@ -217,7 +214,8 @@ long pkm_kacs_bprm_creds_from_file_core(const void *subject_token,
 	long ret;
 
 	if (!new || !old) {
-		trace_kacs_exec(false, false, 0, 0, KACS_EXEC_BAD_ARGS, -EACCES);
+		trace_kacs_exec(false, false, 0, 0, KACS_EXEC_BAD_ARGS,
+				-EACCES);
 		return -EACCES;
 	}
 
@@ -295,11 +293,10 @@ long pkm_kacs_bprm_creds_from_file_core(const void *subject_token,
 		const struct pkm_kacs_process_state *state =
 			pkm_kacs_current_process_state();
 
-		if (state &&
-		    pkm_kacs_exec_pip_cap_for_unsafe(
-			    bprm_unsafe, READ_ONCE(state->pip_type),
-			    READ_ONCE(state->pip_trust), &exec_pip_type,
-			    &exec_pip_trust))
+		if (state && pkm_kacs_exec_pip_cap_for_unsafe(
+				     bprm_unsafe, READ_ONCE(state->pip_type),
+				     READ_ONCE(state->pip_trust),
+				     &exec_pip_type, &exec_pip_trust))
 			trace_kacs_exec(false, false, exec_pip_type,
 					exec_pip_trust,
 					KACS_EXEC_PIP_CAPPED_UNSAFE, 0);
@@ -380,7 +377,7 @@ long pkm_kacs_bprm_creds_from_file_core(const void *subject_token,
 	}
 
 	ret = pkm_kacs_apply_exec_primary_token(primary_token, file, new,
-					       require_file_for_npm);
+						require_file_for_npm);
 	if (ret)
 		return ret;
 
@@ -394,8 +391,7 @@ long pkm_kacs_bprm_creds_from_file_core(const void *subject_token,
 
 bool pkm_kacs_exec_pip_cap_for_unsafe(unsigned int bprm_unsafe,
 				      u32 current_pip_type,
-				      u32 current_pip_trust,
-				      u32 *exec_pip_type,
+				      u32 current_pip_trust, u32 *exec_pip_type,
 				      u32 *exec_pip_trust)
 {
 	if (!exec_pip_type || !exec_pip_trust)
@@ -432,11 +428,10 @@ int pkm_kacs_bprm_creds_from_file(struct linux_binprm *bprm,
 	 */
 	if (pending && current_cred() == current_real_cred())
 		subject_token = primary_token;
-	ret = pkm_kacs_bprm_creds_from_file_core(subject_token,
-						 primary_token, file, bprm->cred,
-						 current_cred(), true, true,
-						 pkm_kacs_current_is_usermodehelper(),
-						 bprm->unsafe, pending);
+	ret = pkm_kacs_bprm_creds_from_file_core(
+		subject_token, primary_token, file, bprm->cred, current_cred(),
+		true, true, pkm_kacs_current_is_usermodehelper(), bprm->unsafe,
+		pending);
 	kacs_rust_token_drop(primary_token);
 	return ret;
 }

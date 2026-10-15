@@ -44,9 +44,7 @@
 
 #include <linux/unaligned.h>
 
-
 #include <pkm/token.h>
-
 
 #include "../kacs/token_runtime.h"
 
@@ -60,7 +58,6 @@
 
 #include "transaction_fd.h"
 
-
 extern size_t lcs_rust_kunit_probe(void);
 
 extern int lcs_rust_write_backup_key_record_frame(
@@ -72,7 +69,6 @@ extern int lcs_rust_write_backup_layer_manifest_record_frame(
 	u8 *dst, size_t dst_len, const struct pkm_lcs_runtime_limits *limits,
 	const u8 *name, size_t name_len, u32 precedence, u8 enabled,
 	const u8 *owner_sid, size_t owner_sid_len, size_t *written_out);
-
 
 struct pkm_lcs_kunit_audit_caller_summary {
 	u8 effective_token_guid[16];
@@ -87,7 +83,6 @@ struct pkm_lcs_kunit_audit_caller_summary {
 	u32 integrity_level;
 };
 
-
 extern int lcs_rust_key_open_audit_payload(
 	const struct pkm_lcs_kunit_audit_caller_summary *caller,
 	const u8 key_guid[16], u32 requested_access, u32 granted_access,
@@ -101,8 +96,8 @@ extern int lcs_rust_backup_start_audit_payload(
 
 extern int lcs_rust_backup_complete_audit_payload(
 	const struct pkm_lcs_kunit_audit_caller_summary *caller,
-	const u8 key_guid[16], u32 result_errno, u8 *output,
-	size_t output_len, size_t *written_out);
+	const u8 key_guid[16], u32 result_errno, u8 *output, size_t output_len,
+	size_t *written_out);
 
 extern int lcs_rust_restore_start_audit_payload(
 	const struct pkm_lcs_kunit_audit_caller_summary *caller,
@@ -111,16 +106,13 @@ extern int lcs_rust_restore_start_audit_payload(
 
 extern int lcs_rust_restore_complete_audit_payload(
 	const struct pkm_lcs_kunit_audit_caller_summary *caller,
-	const u8 key_guid[16], u32 result_errno, u8 *output,
-	size_t output_len, size_t *written_out);
-
+	const u8 key_guid[16], u32 result_errno, u8 *output, size_t output_len,
+	size_t *written_out);
 
 void pkm_lcs_kunit_build_status_response(struct kunit *test, u8 *frame,
-						size_t frame_len,
-						u64 request_id,
-						u16 request_op, u32 status,
-						size_t *built_len);
-
+					 size_t frame_len, u64 request_id,
+					 u16 request_op, u32 status,
+					 size_t *built_len);
 
 struct pkm_lcs_kunit_usercopy_ctx {
 	const void *fault_src;
@@ -131,7 +123,6 @@ struct pkm_lcs_kunit_usercopy_ctx {
 	unsigned int writes;
 	unsigned int strnlens;
 };
-
 
 struct pkm_lcs_kunit_walk_source_step {
 	const char *expected_child;
@@ -153,7 +144,6 @@ struct pkm_lcs_kunit_walk_source_step {
 	bool second_symlink;
 };
 
-
 struct pkm_lcs_kunit_walk_source_script {
 	struct file *file;
 	const struct pkm_lcs_kunit_walk_source_step *steps;
@@ -164,7 +154,6 @@ struct pkm_lcs_kunit_walk_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_read_key_source_script {
 	/* Optional entry handshake for scripts expected to receive no request. */
@@ -186,14 +175,12 @@ struct pkm_lcs_kunit_read_key_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_transaction_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_delete_key_ioctl_source_script
 		*delete_key_lookup_after;
 	struct pkm_lcs_kunit_walk_source_script *hide_key_lookup_after;
-	struct pkm_lcs_kunit_delete_layer_source_script
-		*delete_layer_after;
+	struct pkm_lcs_kunit_delete_layer_source_script *delete_layer_after;
 	bool expect_layer_refresh;
 	bool expect_delete_layer;
 	struct pkm_lcs_kunit_layer_metadata_refresh_source_script
@@ -208,7 +195,6 @@ struct pkm_lcs_kunit_transaction_source_script {
 	bool reset_runtime_limits_before_response;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_backup_snapshot_source_script {
 	struct file *file;
@@ -231,14 +217,12 @@ struct pkm_lcs_kunit_backup_snapshot_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_backup_call_script {
 	long key_fd;
 	const void *token;
 	struct reg_backup_args args;
 	long result;
 };
-
 
 struct pkm_lcs_kunit_flush_source_script {
 	struct file *file;
@@ -251,7 +235,6 @@ struct pkm_lcs_kunit_flush_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_drop_key_source_script {
 	struct file *file;
 	const u8 *expected_guid;
@@ -263,7 +246,6 @@ struct pkm_lcs_kunit_drop_key_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_delete_layer_source_script {
 	struct file *file;
@@ -281,7 +263,6 @@ struct pkm_lcs_kunit_delete_layer_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_path_entry_source_script {
 	struct file *file;
 	const u8 *expected_parent_guid;
@@ -297,11 +278,10 @@ struct pkm_lcs_kunit_path_entry_source_script {
 	int result;
 };
 
-
-void pkm_lcs_kunit_append_set_value_log_for_layer(
-	struct kunit *test, int fd, const u8 root_guid[16],
-	const char *layer, u64 sequence);
-
+void pkm_lcs_kunit_append_set_value_log_for_layer(struct kunit *test, int fd,
+						  const u8 root_guid[16],
+						  const char *layer,
+						  u64 sequence);
 
 struct pkm_lcs_kunit_set_security_source_script {
 	struct file *file;
@@ -318,7 +298,6 @@ struct pkm_lcs_kunit_set_security_source_script {
 	bool expect_begin;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_query_values_source_script {
 	struct file *file;
@@ -348,7 +327,6 @@ struct pkm_lcs_kunit_query_values_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_set_value_source_script {
 	struct file *file;
 	const u8 *expected_guid;
@@ -367,7 +345,6 @@ struct pkm_lcs_kunit_set_value_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_delete_value_source_script {
 	struct file *file;
 	const u8 *expected_guid;
@@ -380,7 +357,6 @@ struct pkm_lcs_kunit_delete_value_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_blanket_tombstone_source_script {
 	struct file *file;
@@ -395,7 +371,6 @@ struct pkm_lcs_kunit_blanket_tombstone_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_set_value_ioctl_source_script {
 	struct file *file;
@@ -432,7 +407,6 @@ struct pkm_lcs_kunit_set_value_ioctl_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_layer_metadata_refresh_source_script {
 	struct file *file;
 	const u8 *expected_guid;
@@ -452,7 +426,6 @@ struct pkm_lcs_kunit_layer_metadata_refresh_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_layer_create_watch_source_script {
 	struct pkm_lcs_kunit_walk_source_script lookup;
 	struct pkm_lcs_kunit_layer_metadata_refresh_source_script refresh;
@@ -462,7 +435,6 @@ struct pkm_lcs_kunit_layer_create_watch_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_set_security_layer_refresh_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_set_security_source_script set_security;
@@ -471,7 +443,6 @@ struct pkm_lcs_kunit_set_security_layer_refresh_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_delete_value_ioctl_source_script {
 	struct file *file;
@@ -501,7 +472,6 @@ struct pkm_lcs_kunit_delete_value_ioctl_source_script {
 	bool expect_begin;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_blanket_tombstone_ioctl_source_script {
 	struct file *file;
@@ -538,7 +508,6 @@ struct pkm_lcs_kunit_blanket_tombstone_ioctl_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_delete_key_ioctl_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_transaction_source_script begin;
@@ -563,7 +532,6 @@ struct pkm_lcs_kunit_delete_key_ioctl_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_enum_children_source_script {
 	struct file *file;
 	const u8 *expected_parent_guid;
@@ -587,7 +555,6 @@ struct pkm_lcs_kunit_enum_children_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_layer_metadata_refresh_all_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_enum_children_source_script enum_children;
@@ -600,7 +567,6 @@ struct pkm_lcs_kunit_layer_metadata_refresh_all_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_source_bootstrap_source_script {
 	struct file *file;
@@ -618,14 +584,14 @@ struct pkm_lcs_kunit_source_bootstrap_source_script {
 	 */
 	struct pkm_lcs_kunit_walk_source_script events_walk;
 	struct pkm_lcs_kunit_walk_source_script layers_walk;
-	struct pkm_lcs_kunit_layer_metadata_refresh_all_source_script layers_refresh;
+	struct pkm_lcs_kunit_layer_metadata_refresh_all_source_script
+		layers_refresh;
 	bool expect_kmes_query;
 	bool expect_layers_refresh;
 	u32 reads;
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_symlink_follow_source_script {
 	struct file *file;
@@ -640,7 +606,6 @@ struct pkm_lcs_kunit_symlink_follow_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_hide_key_ioctl_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_transaction_source_script begin;
@@ -653,14 +618,12 @@ struct pkm_lcs_kunit_hide_key_ioctl_source_script {
 	int result;
 };
 
-
 enum pkm_lcs_kunit_symlink_sequence_op_code {
 	PKM_LCS_KUNIT_SYMLINK_SEQ_LOOKUP = 1,
 	PKM_LCS_KUNIT_SYMLINK_SEQ_QUERY_DEFAULT = 2,
 	PKM_LCS_KUNIT_SYMLINK_SEQ_READ_KEY = 3,
 	PKM_LCS_KUNIT_SYMLINK_SEQ_ENUM_CHILDREN = 4,
 };
-
 
 struct pkm_lcs_kunit_symlink_sequence_op {
 	enum pkm_lcs_kunit_symlink_sequence_op_code op;
@@ -683,7 +646,6 @@ struct pkm_lcs_kunit_symlink_sequence_op {
 	bool include_second_query_value;
 };
 
-
 struct pkm_lcs_kunit_symlink_sequence_source_script {
 	struct file *file;
 	const struct pkm_lcs_kunit_symlink_sequence_op *ops;
@@ -694,7 +656,6 @@ struct pkm_lcs_kunit_symlink_sequence_source_script {
 	bool reset_limits_after_write;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_create_source_script {
 	struct file *file;
@@ -719,7 +680,6 @@ struct pkm_lcs_kunit_create_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_create_layer_refresh_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_create_source_script create;
@@ -728,7 +688,6 @@ struct pkm_lcs_kunit_create_layer_refresh_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_read_then_create_source_script {
 	struct file *file;
@@ -740,7 +699,6 @@ struct pkm_lcs_kunit_read_then_create_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_walk_then_read_source_script {
 	struct file *file;
 	struct pkm_lcs_kunit_walk_source_script walk;
@@ -749,7 +707,6 @@ struct pkm_lcs_kunit_walk_then_read_source_script {
 	u32 writes;
 	int result;
 };
-
 
 struct pkm_lcs_kunit_walk_then_query_values_source_script {
 	struct file *file;
@@ -761,18 +718,16 @@ struct pkm_lcs_kunit_walk_then_query_values_source_script {
 	int result;
 };
 
-
 long pkm_lcs_kunit_commit_queued_timeout(struct kunit *test, int fd);
 
 void pkm_lcs_kunit_setup_registered_source(struct kunit *test,
-						  struct file *file,
-						  const void **token_out);
+					   struct file *file,
+					   const void **token_out);
 
 void pkm_lcs_kunit_flush_deferred_key_fd_release(void);
 
 struct task_struct *pkm_lcs_kunit_kthread_run(int (*threadfn)(void *),
-						     void *data,
-						     const char *name);
+					      void *data, const char *name);
 
 int pkm_lcs_kunit_kthread_stop(struct task_struct *task);
 
@@ -780,8 +735,7 @@ int pkm_lcs_kunit_walk_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_walk_then_read_source_thread(void *raw_script);
 
-int
-pkm_lcs_kunit_walk_then_query_values_source_thread(void *raw_script);
+int pkm_lcs_kunit_walk_then_query_values_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_read_key_source_thread(void *raw_script);
 
@@ -803,8 +757,7 @@ int pkm_lcs_kunit_layer_create_watch_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_delete_value_ioctl_source_thread(void *raw_script);
 
-int
-pkm_lcs_kunit_blanket_tombstone_ioctl_source_thread(void *raw_script);
+int pkm_lcs_kunit_blanket_tombstone_ioctl_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_delete_key_ioctl_source_thread(void *raw_script);
 
@@ -812,8 +765,7 @@ int pkm_lcs_kunit_hide_key_ioctl_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_enum_children_source_thread(void *raw_script);
 
-int
-pkm_lcs_kunit_layer_metadata_refresh_all_source_thread(void *raw_script);
+int pkm_lcs_kunit_layer_metadata_refresh_all_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_source_bootstrap_source_thread(void *raw_script);
 
@@ -849,53 +801,48 @@ int pkm_lcs_kunit_enum_children_source_build_response(
 	const struct pkm_lcs_kunit_enum_children_source_script *script,
 	u64 request_id, u8 *response, size_t response_len, size_t *built_len);
 
-int pkm_lcs_kunit_walk_source_append(void *dst, size_t dst_len,
-					    size_t *offset, const void *src,
-					    size_t src_len);
+int pkm_lcs_kunit_walk_source_append(void *dst, size_t dst_len, size_t *offset,
+				     const void *src, size_t src_len);
 
-int pkm_lcs_kunit_walk_source_append_u8(u8 *dst, size_t dst_len,
-					       size_t *offset, u8 value);
+int pkm_lcs_kunit_walk_source_append_u8(u8 *dst, size_t dst_len, size_t *offset,
+					u8 value);
 
 int pkm_lcs_kunit_walk_source_append_u32(u8 *dst, size_t dst_len,
-						size_t *offset, u32 value);
+					 size_t *offset, u32 value);
 
 int pkm_lcs_kunit_walk_source_append_u64(u8 *dst, size_t dst_len,
-						size_t *offset, u64 value);
+					 size_t *offset, u64 value);
 
-int pkm_lcs_kunit_walk_source_append_len_prefixed(
-	u8 *dst, size_t dst_len, size_t *offset, const void *src,
-	size_t src_len);
+int pkm_lcs_kunit_walk_source_append_len_prefixed(u8 *dst, size_t dst_len,
+						  size_t *offset,
+						  const void *src,
+						  size_t src_len);
 
-void pkm_lcs_kunit_expect_drop_key_request(
-	struct kunit *test, struct file *file,
-	const u8 guid[PKM_LCS_GUID_BYTES]);
-
+void pkm_lcs_kunit_expect_drop_key_request(struct kunit *test,
+					   struct file *file,
+					   const u8 guid[PKM_LCS_GUID_BYTES]);
 
 struct pkm_lcs_kunit_backup_output_file {
 	u8 data[1024];
 	size_t len;
 };
 
-
 struct pkm_lcs_kunit_restore_input_file {
 	u8 data[512];
 	size_t len;
 };
 
-
-void pkm_lcs_kunit_build_register_args(
-	struct reg_src_register_args *args, struct reg_src_hive_entry *hive,
-	const char *name, u8 root_guid_first, u64 max_sequence);
-
+void pkm_lcs_kunit_build_register_args(struct reg_src_register_args *args,
+				       struct reg_src_hive_entry *hive,
+				       const char *name, u8 root_guid_first,
+				       u64 max_sequence);
 
 struct pkm_lcs_kunit_self_config_default {
 	const char *name;
 	u32 value;
 };
 
-
 long pkm_lcs_kunit_publish_key_fd_with_depth(u32 depth);
-
 
 struct pkm_lcs_kunit_restore_layer_record {
 	const char *name;
@@ -904,7 +851,6 @@ struct pkm_lcs_kunit_restore_layer_record {
 	const u8 *owner_sid;
 	size_t owner_sid_len;
 };
-
 
 struct pkm_lcs_kunit_restore_data_record {
 	u16 record_type;
@@ -921,16 +867,13 @@ struct pkm_lcs_kunit_restore_data_record {
 	bool hidden;
 };
 
-
 int pkm_lcs_kunit_restore_stream_build_with_root_keys(
 	struct pkm_lcs_kunit_restore_input_file *input, bool include_unknown,
 	u32 root_key_count, bool root_volatile, bool root_symlink);
 
-
 void pkm_lcs_kunit_expect_source_validation_audit(
 	struct kunit *test, const char *validation_class,
 	const u8 key_guid[RSI_GUID_SIZE]);
-
 
 struct pkm_lcs_kunit_restore_txn_source_script {
 	struct file *file;
@@ -939,7 +882,8 @@ struct pkm_lcs_kunit_restore_txn_source_script {
 	struct pkm_lcs_kunit_path_entry_source_script delete_entry;
 	struct pkm_lcs_kunit_enum_children_source_script child_enum_children;
 	struct pkm_lcs_kunit_path_entry_source_script child_delete_entry;
-	struct pkm_lcs_kunit_enum_children_source_script grandchild_enum_children;
+	struct pkm_lcs_kunit_enum_children_source_script
+		grandchild_enum_children;
 	struct pkm_lcs_kunit_query_values_source_script grandchild_query_values;
 	struct pkm_lcs_kunit_drop_key_source_script grandchild_drop_key;
 	struct pkm_lcs_kunit_query_values_source_script child_query_values;
@@ -951,9 +895,11 @@ struct pkm_lcs_kunit_restore_txn_source_script {
 	struct pkm_lcs_kunit_set_value_source_script replay_root_value;
 	struct pkm_lcs_kunit_blanket_tombstone_source_script replay_root_blanket;
 	struct pkm_lcs_kunit_create_source_script replay_non_root_create;
-	struct pkm_lcs_kunit_path_entry_source_script replay_non_root_hidden_path;
+	struct pkm_lcs_kunit_path_entry_source_script
+		replay_non_root_hidden_path;
 	struct pkm_lcs_kunit_set_value_source_script replay_non_root_value;
-	struct pkm_lcs_kunit_blanket_tombstone_source_script replay_non_root_blanket;
+	struct pkm_lcs_kunit_blanket_tombstone_source_script
+		replay_non_root_blanket;
 	const u8 *expected_root_write_sd;
 	size_t expected_root_write_sd_len;
 	u64 expected_root_last_write_time;
@@ -991,13 +937,11 @@ struct pkm_lcs_kunit_restore_txn_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_guid_sequence {
 	const u8 (*guids)[16];
 	u32 count;
 	u32 calls;
 };
-
 
 struct pkm_lcs_kunit_walk_then_read_create_source_script {
 	struct file *file;
@@ -1010,7 +954,6 @@ struct pkm_lcs_kunit_walk_then_read_create_source_script {
 	int result;
 };
 
-
 struct pkm_lcs_kunit_blocking_source_read_script {
 	struct file *file;
 	u8 *buf;
@@ -1019,7 +962,6 @@ struct pkm_lcs_kunit_blocking_source_read_script {
 	struct completion started;
 	struct completion done;
 };
-
 
 struct pkm_lcs_kunit_txn_create_flow_source_script {
 	struct file *file;
@@ -1036,9 +978,7 @@ struct pkm_lcs_kunit_txn_create_flow_source_script {
 	int result;
 };
 
-
 #define PKM_LCS_KUNIT_RUNTIME_RESPONSE_SIZE 1024U
-
 
 struct pkm_lcs_kunit_poll_capture {
 	poll_table table;
@@ -1046,7 +986,6 @@ struct pkm_lcs_kunit_poll_capture {
 	wait_queue_head_t *wait_address;
 	unsigned int calls;
 };
-
 
 struct pkm_lcs_kunit_slot_wait_round_trip_script {
 	struct pkm_lcs_source_response_result response;
@@ -1056,31 +995,30 @@ struct pkm_lcs_kunit_slot_wait_round_trip_script {
 	long ret;
 };
 
-
 /* Helper prototypes (definitions in kunit_common.c). */
 
 bool pkm_lcs_kunit_usercopy_read(void *raw_ctx, void *dst,
-					const void __user *src, size_t len);
+				 const void __user *src, size_t len);
 
 bool pkm_lcs_kunit_usercopy_write(void *raw_ctx, void __user *dst,
-					 const void *src, size_t len);
+				  const void *src, size_t len);
 
-size_t pkm_lcs_kunit_usercopy_strnlen(void *raw_ctx,
-					     const char __user *src,
-					     size_t max);
+size_t pkm_lcs_kunit_usercopy_strnlen(void *raw_ctx, const char __user *src,
+				      size_t max);
 
-struct pkm_lcs_usercopy_ops pkm_lcs_kunit_usercopy_ops(
-	struct pkm_lcs_kunit_usercopy_ctx *ctx);
+struct pkm_lcs_usercopy_ops
+pkm_lcs_kunit_usercopy_ops(struct pkm_lcs_kunit_usercopy_ctx *ctx);
 
-ssize_t pkm_lcs_kunit_backup_output_write_iter(
-	struct kiocb *iocb, struct iov_iter *from);
+ssize_t pkm_lcs_kunit_backup_output_write_iter(struct kiocb *iocb,
+					       struct iov_iter *from);
 
-ssize_t pkm_lcs_kunit_restore_input_read_iter(
-	struct kiocb *iocb, struct iov_iter *to);
+ssize_t pkm_lcs_kunit_restore_input_read_iter(struct kiocb *iocb,
+					      struct iov_iter *to);
 
-void pkm_lcs_kunit_build_register_args(
-	struct reg_src_register_args *args, struct reg_src_hive_entry *hive,
-	const char *name, u8 root_guid_first, u64 max_sequence);
+void pkm_lcs_kunit_build_register_args(struct reg_src_register_args *args,
+				       struct reg_src_hive_entry *hive,
+				       const char *name, u8 root_guid_first,
+				       u64 max_sequence);
 
 void pkm_lcs_kunit_build_private_register_args(
 	struct reg_src_register_args *args, struct reg_src_hive_entry *hive,
@@ -1097,10 +1035,11 @@ long pkm_lcs_kunit_retry_open_resolution_prepare(
 	const u8 root_guid[RSI_GUID_SIZE], const char *child_name);
 
 bool pkm_lcs_kunit_buffer_contains(const u8 *buffer, size_t buffer_len,
-					  const char *needle);
+				   const char *needle);
 
-void pkm_lcs_kunit_expect_latest_lcs_event(
-	struct kunit *test, const char *event_type, const char *payload_field);
+void pkm_lcs_kunit_expect_latest_lcs_event(struct kunit *test,
+					   const char *event_type,
+					   const char *payload_field);
 
 void pkm_lcs_kunit_expect_latest_kmes_origin_event(
 	struct kunit *test, const char *event_type, u8 expected_map_prefix,
@@ -1112,10 +1051,8 @@ void pkm_lcs_kunit_expect_runtime_limits_defaults(
 void pkm_lcs_kunit_fill_self_config_defaults(
 	struct pkm_lcs_self_config_entry *entries);
 
-bool pkm_lcs_kunit_buffer_contains_bytes(const u8 *buffer,
-						size_t buffer_len,
-						const u8 *needle,
-						size_t needle_len);
+bool pkm_lcs_kunit_buffer_contains_bytes(const u8 *buffer, size_t buffer_len,
+					 const u8 *needle, size_t needle_len);
 
 long pkm_lcs_kunit_publish_key_fd_with_access(u32 granted_access);
 
@@ -1126,7 +1063,7 @@ long pkm_lcs_kunit_publish_key_fd_for_source(
 	const u8 key_guid[PKM_LCS_GUID_BYTES], u32 granted_access);
 
 long pkm_lcs_kunit_publish_key_fd_from_path(
-	u32 source_id, u32 granted_access, const char * const *path,
+	u32 source_id, u32 granted_access, const char *const *path,
 	const u8 (*ancestors)[PKM_LCS_GUID_BYTES], u32 depth);
 
 long pkm_lcs_kunit_publish_key_fd_with_depth(u32 depth);
@@ -1134,16 +1071,15 @@ long pkm_lcs_kunit_publish_key_fd_with_depth(u32 depth);
 void pkm_lcs_kunit_expect_set_value_success(
 	struct kunit *test, struct file *file, int fd, const void *token,
 	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	const u8 guid[RSI_GUID_SIZE], const char *value_name,
-	const u8 *data, size_t data_len, u32 value_type);
+	const struct reg_set_value_args *args, const u8 guid[RSI_GUID_SIZE],
+	const char *value_name, const u8 *data, size_t data_len,
+	u32 value_type);
 
 void pkm_lcs_kunit_expect_set_value_layer_refresh_success(
 	struct kunit *test, struct file *file, int fd, const void *token,
 	const struct pkm_lcs_usercopy_ops *ops,
-	const struct reg_set_value_args *args,
-	const u8 guid[RSI_GUID_SIZE], const char *value_name,
-	const u8 *data, size_t data_len, u32 value_type,
+	const struct reg_set_value_args *args, const u8 guid[RSI_GUID_SIZE],
+	const char *value_name, const u8 *data, size_t data_len, u32 value_type,
 	const char *layer_name, const u8 *metadata_sd, size_t metadata_sd_len,
 	u32 refresh_precedence, u32 refresh_enabled);
 
@@ -1156,8 +1092,8 @@ int pkm_lcs_kunit_restore_input_fd(
 	struct pkm_lcs_kunit_restore_input_file *input);
 
 int pkm_lcs_kunit_restore_stream_append(
-	struct pkm_lcs_kunit_restore_input_file *input,
-	const void *src, size_t len);
+	struct pkm_lcs_kunit_restore_input_file *input, const void *src,
+	size_t len);
 
 int pkm_lcs_kunit_restore_stream_append_u16(
 	struct pkm_lcs_kunit_restore_input_file *input, u16 value);
@@ -1172,8 +1108,8 @@ int pkm_lcs_kunit_restore_stream_append_s64(
 	struct pkm_lcs_kunit_restore_input_file *input, s64 value);
 
 int pkm_lcs_kunit_restore_stream_append_record_header(
-	struct pkm_lcs_kunit_restore_input_file *input,
-	u16 record_type, u32 record_len);
+	struct pkm_lcs_kunit_restore_input_file *input, u16 record_type,
+	u32 record_len);
 
 int pkm_lcs_kunit_restore_stream_append_key_record(
 	struct pkm_lcs_kunit_restore_input_file *input,
@@ -1212,8 +1148,7 @@ int pkm_lcs_kunit_restore_stream_build_with_data_records(
 	const struct pkm_lcs_kunit_restore_data_record *records,
 	u32 record_count);
 
-long pkm_lcs_kunit_publish_source_one_key_fd_with_access(
-	u32 granted_access);
+long pkm_lcs_kunit_publish_source_one_key_fd_with_access(u32 granted_access);
 
 long pkm_lcs_kunit_publish_source_one_backup_key_fd(void);
 
@@ -1225,8 +1160,8 @@ long pkm_lcs_kunit_publish_restarted_missing_backup_restore_fd(
 	struct file *resumed_file, const void **source_token_out);
 
 ssize_t pkm_lcs_kunit_backup_snapshot_read_source_request(
-	struct pkm_lcs_kunit_backup_snapshot_source_script *script,
-	u8 *request, size_t request_len);
+	struct pkm_lcs_kunit_backup_snapshot_source_script *script, u8 *request,
+	size_t request_len);
 
 int pkm_lcs_kunit_backup_snapshot_write_status(
 	struct pkm_lcs_kunit_backup_snapshot_source_script *script,
@@ -1283,17 +1218,19 @@ void pkm_lcs_kunit_expect_layer_manifest_record(
 	const char *expected_name, u32 expected_precedence, u8 expected_enabled,
 	const u8 *expected_owner, size_t expected_owner_len);
 
-void pkm_lcs_kunit_expect_key_record(
-	struct kunit *test, const u8 *frame, size_t frame_len,
-	const u8 expected_guid[PKM_LCS_GUID_BYTES], u32 expected_flags,
-	const u8 *expected_sd, size_t expected_sd_len, s64 expected_last_write);
+void pkm_lcs_kunit_expect_key_record(struct kunit *test, const u8 *frame,
+				     size_t frame_len,
+				     const u8 expected_guid[PKM_LCS_GUID_BYTES],
+				     u32 expected_flags, const u8 *expected_sd,
+				     size_t expected_sd_len,
+				     s64 expected_last_write);
 
 void pkm_lcs_kunit_expect_path_entry_record(
 	struct kunit *test, const u8 *frame, size_t frame_len,
 	const u8 expected_parent[PKM_LCS_GUID_BYTES],
 	const char *expected_child_name,
-	const u8 expected_child[PKM_LCS_GUID_BYTES],
-	const char *expected_layer, u64 expected_sequence);
+	const u8 expected_child[PKM_LCS_GUID_BYTES], const char *expected_layer,
+	u64 expected_sequence);
 
 void pkm_lcs_kunit_expect_value_record(
 	struct kunit *test, const u8 *frame, size_t frame_len,
@@ -1315,8 +1252,8 @@ int pkm_lcs_kunit_restore_txn_source_read_request(
 	size_t request_len, ssize_t *count_out);
 
 int pkm_lcs_kunit_restore_txn_source_write_status(
-	struct pkm_lcs_kunit_restore_txn_source_script *script,
-	u64 request_id, u16 request_op, u32 status);
+	struct pkm_lcs_kunit_restore_txn_source_script *script, u64 request_id,
+	u16 request_op, u32 status);
 
 int pkm_lcs_kunit_restore_txn_expect_non_root_create_key(
 	struct pkm_lcs_kunit_restore_txn_source_script *script);
@@ -1336,33 +1273,31 @@ void pkm_lcs_kunit_expect_restore_stream_result(
 	struct kunit *test, struct pkm_lcs_kunit_restore_input_file *input,
 	long expected_ret);
 
-void
-pkm_lcs_kunit_expect_restore_root_flag_result_with_sequence(
+void pkm_lcs_kunit_expect_restore_root_flag_result_with_sequence(
 	struct kunit *test, struct pkm_lcs_kunit_restore_input_file *input,
 	long expected_ret, bool target_volatile, bool target_symlink,
 	bool override_sequence, u64 next_sequence_override,
 	bool expect_root_hidden_replay, u64 *sequence_after_out);
 
-void
-pkm_lcs_kunit_expect_restore_root_flag_result(
+void pkm_lcs_kunit_expect_restore_root_flag_result(
 	struct kunit *test, struct pkm_lcs_kunit_restore_input_file *input,
 	long expected_ret, bool target_volatile, bool target_symlink);
 
 long pkm_lcs_kunit_restore_precedence_publish_layers_root(
-	struct kunit *test, const char * const *path,
+	struct kunit *test, const char *const *path,
 	u8 ancestors[4][PKM_LCS_GUID_BYTES]);
 
 u32 pkm_lcs_kunit_write_direct_watch_event(u8 *dst, size_t dst_len,
-						  u32 event_type,
-						  const char *name);
+					   u32 event_type, const char *name);
 
-void pkm_lcs_kunit_expect_drop_key_request(
-	struct kunit *test, struct file *file,
-	const u8 guid[PKM_LCS_GUID_BYTES]);
+void pkm_lcs_kunit_expect_drop_key_request(struct kunit *test,
+					   struct file *file,
+					   const u8 guid[PKM_LCS_GUID_BYTES]);
 
 void pkm_lcs_kunit_create_missing_parent_resolution_set_sd(
-	struct kunit *test, struct pkm_lcs_create_missing_parent_resolution *result,
-	const u8 *sd, size_t sd_len);
+	struct kunit *test,
+	struct pkm_lcs_create_missing_parent_resolution *result, const u8 *sd,
+	size_t sd_len);
 
 void pkm_lcs_kunit_guid_sequence_generate(void *raw_ctx, u8 guid[16]);
 
@@ -1370,36 +1305,37 @@ struct pkm_lcs_key_guid_generator
 pkm_lcs_kunit_guid_generator(struct pkm_lcs_kunit_guid_sequence *sequence);
 
 void pkm_lcs_kunit_setup_registered_source(struct kunit *test,
-						  struct file *file,
-						  const void **token_out);
+					   struct file *file,
+					   const void **token_out);
 
 struct task_struct *pkm_lcs_kunit_kthread_run(int (*threadfn)(void *),
-						     void *data,
-						     const char *name);
+					      void *data, const char *name);
 
 int pkm_lcs_kunit_kthread_stop(struct task_struct *task);
 
 void pkm_lcs_kunit_build_lookup_frame(struct kunit *test, u8 *frame,
-					     size_t frame_len, u64 request_id,
-					     const char *child_name,
-					     size_t *built_len);
+				      size_t frame_len, u64 request_id,
+				      const char *child_name,
+				      size_t *built_len);
 
 void pkm_lcs_kunit_build_status_response(struct kunit *test, u8 *frame,
-						size_t frame_len,
-						u64 request_id, u16 request_op,
-						u32 status, size_t *built_len);
+					 size_t frame_len, u64 request_id,
+					 u16 request_op, u32 status,
+					 size_t *built_len);
 
 int pkm_lcs_kunit_create_source_read_request(
 	struct pkm_lcs_kunit_create_source_script *script, u8 *request,
 	size_t request_len, ssize_t *count);
 
-int pkm_lcs_kunit_create_source_expect_bytes(
-	const u8 *request, size_t request_len, size_t *offset,
-	const void *expected, size_t expected_len);
+int pkm_lcs_kunit_create_source_expect_bytes(const u8 *request,
+					     size_t request_len, size_t *offset,
+					     const void *expected,
+					     size_t expected_len);
 
-int pkm_lcs_kunit_create_source_expect_string(
-	const u8 *request, size_t request_len, size_t *offset,
-	const char *expected);
+int pkm_lcs_kunit_create_source_expect_string(const u8 *request,
+					      size_t request_len,
+					      size_t *offset,
+					      const char *expected);
 
 int pkm_lcs_kunit_flush_source_thread(void *data);
 
@@ -1426,42 +1362,39 @@ int pkm_lcs_kunit_create_source_write_status(
 int pkm_lcs_kunit_create_source_thread(void *raw_script);
 
 void pkm_lcs_kunit_rsi_append_bytes(struct kunit *test, u8 *frame,
+				    size_t frame_len, size_t *offset,
+				    const void *bytes, size_t len);
+
+void pkm_lcs_kunit_rsi_append_u8(struct kunit *test, u8 *frame,
+				 size_t frame_len, size_t *offset, u8 value);
+
+void pkm_lcs_kunit_rsi_append_u32(struct kunit *test, u8 *frame,
+				  size_t frame_len, size_t *offset, u32 value);
+
+void pkm_lcs_kunit_rsi_append_u64(struct kunit *test, u8 *frame,
+				  size_t frame_len, size_t *offset, u64 value);
+
+void pkm_lcs_kunit_rsi_append_len_prefixed(struct kunit *test, u8 *frame,
 					   size_t frame_len, size_t *offset,
 					   const void *bytes, size_t len);
 
-void pkm_lcs_kunit_rsi_append_u8(struct kunit *test, u8 *frame,
-					size_t frame_len, size_t *offset,
-					u8 value);
-
-void pkm_lcs_kunit_rsi_append_u32(struct kunit *test, u8 *frame,
-					 size_t frame_len, size_t *offset,
-					 u32 value);
-
-void pkm_lcs_kunit_rsi_append_u64(struct kunit *test, u8 *frame,
-					 size_t frame_len, size_t *offset,
-					 u64 value);
-
-void pkm_lcs_kunit_rsi_append_len_prefixed(
-	struct kunit *test, u8 *frame, size_t frame_len, size_t *offset,
-	const void *bytes, size_t len);
-
 void pkm_lcs_kunit_rsi_response_begin(struct kunit *test, u8 *frame,
-					     size_t frame_len, u64 request_id,
-					     u16 response_op, u32 status,
-					     size_t *offset);
+				      size_t frame_len, u64 request_id,
+				      u16 response_op, u32 status,
+				      size_t *offset);
 
 void pkm_lcs_kunit_rsi_finish_response(struct kunit *test, u8 *frame,
-					      size_t offset,
-					      size_t *built_len);
+				       size_t offset, size_t *built_len);
 
 void pkm_lcs_kunit_rsi_append_lookup_path_entry(
 	struct kunit *test, u8 *frame, size_t frame_len, size_t *offset,
 	const char *layer_name, u8 target_type, const u8 guid[RSI_GUID_SIZE],
 	u64 sequence);
 
-void pkm_lcs_kunit_rsi_append_lookup_metadata(
-	struct kunit *test, u8 *frame, size_t frame_len, size_t *offset,
-	const u8 guid[RSI_GUID_SIZE], const u8 *sd, size_t sd_len);
+void pkm_lcs_kunit_rsi_append_lookup_metadata(struct kunit *test, u8 *frame,
+					      size_t frame_len, size_t *offset,
+					      const u8 guid[RSI_GUID_SIZE],
+					      const u8 *sd, size_t sd_len);
 
 void pkm_lcs_kunit_rsi_append_lookup_metadata_ex(
 	struct kunit *test, u8 *frame, size_t frame_len, size_t *offset,
@@ -1473,26 +1406,27 @@ void pkm_lcs_kunit_rsi_append_query_value_entry(
 	const char *value_name, const char *layer_name, u32 value_type,
 	const u8 *data, size_t data_len, u64 sequence);
 
-void pkm_lcs_kunit_rsi_append_query_blanket(
-	struct kunit *test, u8 *frame, size_t frame_len, size_t *offset,
-	const char *layer_name, u64 sequence);
+void pkm_lcs_kunit_rsi_append_query_blanket(struct kunit *test, u8 *frame,
+					    size_t frame_len, size_t *offset,
+					    const char *layer_name,
+					    u64 sequence);
 
-int pkm_lcs_kunit_walk_source_append(void *dst, size_t dst_len,
-					    size_t *offset, const void *src,
-					    size_t src_len);
+int pkm_lcs_kunit_walk_source_append(void *dst, size_t dst_len, size_t *offset,
+				     const void *src, size_t src_len);
 
-int pkm_lcs_kunit_walk_source_append_u8(u8 *dst, size_t dst_len,
-					       size_t *offset, u8 value);
+int pkm_lcs_kunit_walk_source_append_u8(u8 *dst, size_t dst_len, size_t *offset,
+					u8 value);
 
 int pkm_lcs_kunit_walk_source_append_u32(u8 *dst, size_t dst_len,
-						size_t *offset, u32 value);
+					 size_t *offset, u32 value);
 
 int pkm_lcs_kunit_walk_source_append_u64(u8 *dst, size_t dst_len,
-						size_t *offset, u64 value);
+					 size_t *offset, u64 value);
 
-int pkm_lcs_kunit_walk_source_append_len_prefixed(
-	u8 *dst, size_t dst_len, size_t *offset, const void *src,
-	size_t src_len);
+int pkm_lcs_kunit_walk_source_append_len_prefixed(u8 *dst, size_t dst_len,
+						  size_t *offset,
+						  const void *src,
+						  size_t src_len);
 
 int pkm_lcs_kunit_walk_source_build_response(
 	const struct pkm_lcs_kunit_walk_source_step *step, u64 request_id,
@@ -1513,15 +1447,14 @@ int pkm_lcs_kunit_read_then_create_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_walk_then_read_source_thread(void *raw_script);
 
-int
-pkm_lcs_kunit_walk_then_query_values_source_thread(void *raw_script);
+int pkm_lcs_kunit_walk_then_query_values_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_walk_then_read_create_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_query_values_source_append_value(
-	u8 *response, size_t response_len, size_t *offset, const char *value_name,
-	const char *layer_name, u32 value_type, const u8 *data, size_t data_len,
-	u64 sequence);
+	u8 *response, size_t response_len, size_t *offset,
+	const char *value_name, const char *layer_name, u32 value_type,
+	const u8 *data, size_t data_len, u64 sequence);
 
 int pkm_lcs_kunit_query_values_source_build_response(
 	const struct pkm_lcs_kunit_query_values_source_script *script,
@@ -1566,8 +1499,7 @@ int pkm_lcs_kunit_layer_metadata_refresh_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_layer_create_watch_source_thread(void *raw_script);
 
-int pkm_lcs_kunit_set_security_layer_refresh_source_thread(
-	void *raw_script);
+int pkm_lcs_kunit_set_security_layer_refresh_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_create_layer_refresh_source_thread(void *raw_script);
 
@@ -1578,8 +1510,8 @@ int pkm_lcs_kunit_delete_value_source_thread(void *raw_script);
 int pkm_lcs_kunit_blanket_tombstone_source_thread(void *raw_script);
 
 ssize_t pkm_lcs_kunit_set_value_ioctl_source_read(
-	struct pkm_lcs_kunit_set_value_ioctl_source_script *script,
-	u8 *request, size_t request_len);
+	struct pkm_lcs_kunit_set_value_ioctl_source_script *script, u8 *request,
+	size_t request_len);
 
 int pkm_lcs_kunit_set_value_ioctl_source_write_status(
 	struct pkm_lcs_kunit_set_value_ioctl_source_script *script,
@@ -1590,20 +1522,20 @@ int pkm_lcs_kunit_set_value_ioctl_source_write_empty_values(
 	u64 request_id);
 
 int pkm_lcs_kunit_set_value_ioctl_source_handle_query(
-	struct pkm_lcs_kunit_set_value_ioctl_source_script *script,
-	u8 *request, size_t request_len);
+	struct pkm_lcs_kunit_set_value_ioctl_source_script *script, u8 *request,
+	size_t request_len);
 
 int pkm_lcs_kunit_set_value_ioctl_source_handle_set_value(
-	struct pkm_lcs_kunit_set_value_ioctl_source_script *script,
-	u8 *request, size_t request_len, bool *continue_after_set);
+	struct pkm_lcs_kunit_set_value_ioctl_source_script *script, u8 *request,
+	size_t request_len, bool *continue_after_set);
 
 int pkm_lcs_kunit_set_value_ioctl_source_handle_write_key(
-	struct pkm_lcs_kunit_set_value_ioctl_source_script *script,
-	u8 *request, size_t request_len);
+	struct pkm_lcs_kunit_set_value_ioctl_source_script *script, u8 *request,
+	size_t request_len);
 
 int pkm_lcs_kunit_set_value_ioctl_source_handle_layer_refresh(
-	struct pkm_lcs_kunit_set_value_ioctl_source_script *script,
-	u8 *request, size_t request_len);
+	struct pkm_lcs_kunit_set_value_ioctl_source_script *script, u8 *request,
+	size_t request_len);
 
 int pkm_lcs_kunit_set_value_ioctl_source_thread(void *raw_script);
 
@@ -1641,8 +1573,7 @@ int pkm_lcs_kunit_blanket_tombstone_ioctl_source_write_status(
 	struct pkm_lcs_kunit_blanket_tombstone_ioctl_source_script *script,
 	u64 request_id, u16 request_op, u32 status);
 
-int
-pkm_lcs_kunit_blanket_tombstone_ioctl_source_write_query_response(
+int pkm_lcs_kunit_blanket_tombstone_ioctl_source_write_query_response(
 	struct pkm_lcs_kunit_blanket_tombstone_ioctl_source_script *script,
 	u64 request_id, bool after);
 
@@ -1658,8 +1589,7 @@ int pkm_lcs_kunit_blanket_tombstone_ioctl_source_handle_write_key(
 	struct pkm_lcs_kunit_blanket_tombstone_ioctl_source_script *script,
 	u8 *request, size_t request_len);
 
-int
-pkm_lcs_kunit_blanket_tombstone_ioctl_source_thread(void *raw_script);
+int pkm_lcs_kunit_blanket_tombstone_ioctl_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_enum_children_source_build_response(
 	const struct pkm_lcs_kunit_enum_children_source_script *script,
@@ -1667,8 +1597,7 @@ int pkm_lcs_kunit_enum_children_source_build_response(
 
 int pkm_lcs_kunit_enum_children_source_thread(void *raw_script);
 
-int pkm_lcs_kunit_layer_metadata_refresh_all_source_thread(
-	void *raw_script);
+int pkm_lcs_kunit_layer_metadata_refresh_all_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_source_bootstrap_handle_layer_refresh_all(
 	struct pkm_lcs_kunit_source_bootstrap_source_script *script);
@@ -1706,8 +1635,8 @@ int pkm_lcs_kunit_delete_key_ioctl_source_handle_parent_write(
 int pkm_lcs_kunit_delete_key_ioctl_source_thread(void *raw_script);
 
 ssize_t pkm_lcs_kunit_symlink_follow_read_request(
-	struct pkm_lcs_kunit_symlink_follow_source_script *script,
-	u8 *request, size_t request_len);
+	struct pkm_lcs_kunit_symlink_follow_source_script *script, u8 *request,
+	size_t request_len);
 
 int pkm_lcs_kunit_symlink_follow_write_response(
 	struct pkm_lcs_kunit_symlink_follow_source_script *script,
@@ -1719,8 +1648,8 @@ int pkm_lcs_kunit_symlink_follow_handle_lookup(
 	size_t request_len, u8 *response, size_t response_len);
 
 int pkm_lcs_kunit_symlink_follow_handle_query(
-	struct pkm_lcs_kunit_symlink_follow_source_script *script,
-	u8 *request, size_t request_len, u8 *response, size_t response_len);
+	struct pkm_lcs_kunit_symlink_follow_source_script *script, u8 *request,
+	size_t request_len, u8 *response, size_t response_len);
 
 int pkm_lcs_kunit_symlink_follow_source_thread(void *raw_script);
 
@@ -1756,8 +1685,7 @@ int pkm_lcs_kunit_symlink_sequence_source_thread(void *raw_script);
 
 int pkm_lcs_kunit_blocking_source_read_thread(void *raw_script);
 
-void pkm_lcs_kunit_source_fd_force_closing(
-	struct pkm_lcs_source_fd *source_fd);
+void pkm_lcs_kunit_source_fd_force_closing(struct pkm_lcs_source_fd *source_fd);
 
 int pkm_lcs_kunit_transaction_source_thread(void *data);
 
@@ -1789,27 +1717,29 @@ long pkm_lcs_kunit_abort_round_trip_default(
 	struct pkm_lcs_source_enqueue_result *enqueue);
 
 void pkm_lcs_kunit_append_one_create_log(struct kunit *test, int fd,
-						const u8 root_guid[16],
-						u64 sequence);
+					 const u8 root_guid[16], u64 sequence);
 
-void pkm_lcs_kunit_append_set_value_log_for_layer(
-	struct kunit *test, int fd, const u8 root_guid[16],
-	const char *layer, u64 sequence);
+void pkm_lcs_kunit_append_set_value_log_for_layer(struct kunit *test, int fd,
+						  const u8 root_guid[16],
+						  const char *layer,
+						  u64 sequence);
 
-void pkm_lcs_kunit_commit_timeout_late_response(
-	struct kunit *test, u32 status);
+void pkm_lcs_kunit_commit_timeout_late_response(struct kunit *test, u32 status);
 
-void pkm_lcs_kunit_commit_timeout_late_create_watch(
-	struct kunit *test, u32 status, bool expect_event);
+void pkm_lcs_kunit_commit_timeout_late_create_watch(struct kunit *test,
+						    u32 status,
+						    bool expect_event);
 
-void pkm_lcs_kunit_commit_timeout_closed_fd_late_response(
-	struct kunit *test, u32 status);
+void pkm_lcs_kunit_commit_timeout_closed_fd_late_response(struct kunit *test,
+							  u32 status);
 
 void pkm_lcs_kunit_create_missing_set_child_path(
-	struct kunit *test, struct pkm_lcs_create_missing_parent_resolution *res);
+	struct kunit *test,
+	struct pkm_lcs_create_missing_parent_resolution *res);
 
 void pkm_lcs_kunit_create_missing_set_layer_metadata_child_path(
-	struct kunit *test, struct pkm_lcs_create_missing_parent_resolution *res);
+	struct kunit *test,
+	struct pkm_lcs_create_missing_parent_resolution *res);
 
 long pkm_lcs_kunit_dispatch_status_only_waitable_request(
 	u16 op_code, struct pkm_lcs_source_response_waiter *waiter,
@@ -1821,60 +1751,48 @@ void pkm_lcs_kunit_expect_source_validation_audit(
 	struct kunit *test, const char *validation_class,
 	const u8 key_guid[RSI_GUID_SIZE]);
 
-void pkm_lcs_kunit_poll_capture_queue(
-	struct file *file, wait_queue_head_t *wait_address,
-	struct poll_table_struct *table);
+void pkm_lcs_kunit_poll_capture_queue(struct file *file,
+				      wait_queue_head_t *wait_address,
+				      struct poll_table_struct *table);
 
 int pkm_lcs_kunit_slot_wait_round_trip_thread(void *raw_script);
 
 /* Shared const test data (small; duplicated per TU is fine). */
 
 static __maybe_unused const u8 pkm_lcs_kunit_system_sid[] = {
-	0x01, 0x01, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x12, 0x00, 0x00, 0x00,
 };
-
 
 static __maybe_unused const u8 pkm_lcs_kunit_everyone_sid[] = {
-	0x01, 0x01, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x01,
-	0x00, 0x00, 0x00, 0x00,
+	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
 };
-
 
 static __maybe_unused const u8 pkm_lcs_kunit_owner_only_sd[] = {
-	0x01, 0x00, 0x00, 0x80,
-	0x14, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00,
-	0x01, 0x01, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01, 0x00, 0x00, 0x80, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x12, 0x00, 0x00, 0x00,
 };
 
-
-static __maybe_unused const u8 pkm_lcs_kunit_kmes_watch_guid[RSI_GUID_SIZE] = { 0x6b };
-
+static __maybe_unused const u8 pkm_lcs_kunit_kmes_watch_guid[RSI_GUID_SIZE] = {
+	0x6b
+};
 
 struct pkm_lcs_kunit_delete_key_ioctl_source_script;
 
 struct pkm_lcs_kunit_delete_layer_source_script;
 
+static __maybe_unused const struct file_operations
+	pkm_lcs_kunit_non_key_fops = {};
 
-static __maybe_unused const struct file_operations pkm_lcs_kunit_non_key_fops = { };
+static __maybe_unused const struct file_operations
+	pkm_lcs_kunit_backup_output_fops = {
+		.write_iter = pkm_lcs_kunit_backup_output_write_iter,
+	};
 
-
-static __maybe_unused const struct file_operations pkm_lcs_kunit_backup_output_fops = {
-	.write_iter = pkm_lcs_kunit_backup_output_write_iter,
-};
-
-
-static __maybe_unused const struct file_operations pkm_lcs_kunit_restore_input_fops = {
-	.read_iter = pkm_lcs_kunit_restore_input_read_iter,
-};
-
+static __maybe_unused const struct file_operations
+	pkm_lcs_kunit_restore_input_fops = {
+		.read_iter = pkm_lcs_kunit_restore_input_read_iter,
+	};
 
 static __maybe_unused const struct pkm_lcs_kunit_self_config_default
 	pkm_lcs_kunit_self_config_defaults[] = {
@@ -1899,55 +1817,193 @@ static __maybe_unused const struct pkm_lcs_kunit_self_config_default
 		{ "MaxTransactionWatchEventBurst", 4096U },
 	};
 
+static __maybe_unused const u8
+	pkm_lcs_kunit_restore_header_root_guid[PKM_LCS_GUID_BYTES] = {
+		0x61,
+	};
 
-static __maybe_unused const u8 pkm_lcs_kunit_restore_header_root_guid[PKM_LCS_GUID_BYTES] = {
-	0x61,
-};
-
-static __maybe_unused const u8 pkm_lcs_kunit_restore_target_guid[PKM_LCS_GUID_BYTES] = {
-	0x52,
-};
-
+static __maybe_unused const u8
+	pkm_lcs_kunit_restore_target_guid[PKM_LCS_GUID_BYTES] = {
+		0x52,
+	};
 
 static __maybe_unused const u8 pkm_lcs_kunit_parent_sd_ci_generic_read[] = {
 	/* SECURITY_DESCRIPTOR_RELATIVE */
-	0x01, 0x00, 0x04, 0x80, 0x14, 0x00, 0x00, 0x00,
-	0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x2c, 0x00, 0x00, 0x00,
+	0x01,
+	0x00,
+	0x04,
+	0x80,
+	0x14,
+	0x00,
+	0x00,
+	0x00,
+	0x20,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x2c,
+	0x00,
+	0x00,
+	0x00,
 	/* Owner: S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 	/* Group: S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 	/* DACL: one CONTAINER_INHERIT allow ACE for Everyone GENERIC_READ. */
-	0x02, 0x00, 0x1c, 0x00, 0x01, 0x00, 0x00, 0x00,
-	0x00, 0x02, 0x14, 0x00, 0x00, 0x00, 0x00, 0x80,
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	0x00, 0x00, 0x00, 0x00,
+	0x02,
+	0x00,
+	0x1c,
+	0x00,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x02,
+	0x14,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x80,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
 };
 
-
-static __maybe_unused const u8 pkm_lcs_kunit_parent_sd_create_subkey_ci_generic_read[] = {
-	/* SECURITY_DESCRIPTOR_RELATIVE */
-	0x01, 0x00, 0x04, 0x80, 0x14, 0x00, 0x00, 0x00,
-	0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x2c, 0x00, 0x00, 0x00,
-	/* Owner: S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
-	/* Group: S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
-	/* DACL: explicit create-subkey plus inheritable generic-read. */
-	0x02, 0x00, 0x30, 0x00, 0x02, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x14, 0x00, 0x04, 0x00, 0x00, 0x00,
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	0x00, 0x00, 0x00, 0x00,
-	0x00, 0x02, 0x14, 0x00, 0x00, 0x00, 0x00, 0x80,
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	0x00, 0x00, 0x00, 0x00,
-};
-
+static __maybe_unused const u8
+	pkm_lcs_kunit_parent_sd_create_subkey_ci_generic_read[] = {
+		/* SECURITY_DESCRIPTOR_RELATIVE */
+		0x01,
+		0x00,
+		0x04,
+		0x80,
+		0x14,
+		0x00,
+		0x00,
+		0x00,
+		0x20,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x2c,
+		0x00,
+		0x00,
+		0x00,
+		/* Owner: S-1-5-18 */
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x12,
+		0x00,
+		0x00,
+		0x00,
+		/* Group: S-1-5-18 */
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x12,
+		0x00,
+		0x00,
+		0x00,
+		/* DACL: explicit create-subkey plus inheritable generic-read. */
+		0x02,
+		0x00,
+		0x30,
+		0x00,
+		0x02,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x14,
+		0x00,
+		0x04,
+		0x00,
+		0x00,
+		0x00,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x02,
+		0x14,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x80,
+		0x01,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+	};
 
 #endif /* PKM_LCS_KUNIT_COMMON_H */

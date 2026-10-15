@@ -606,7 +606,10 @@ fn parse_condition(
 /// Builds a `BadPattern`/`BadOperator` error; if allocating the message
 /// context itself fails, degrades to `Alloc`.
 fn mk_error(path: &PkmString, key: &str, pattern: bool) -> BuildError {
-    match (crate::pnp_core::pkm_alloc::TryClone::try_clone(path), str_to_pkm(key)) {
+    match (
+        crate::pnp_core::pkm_alloc::TryClone::try_clone(path),
+        str_to_pkm(key),
+    ) {
         (Ok(rule), Ok(key)) => {
             if pattern {
                 BuildError::BadPattern { rule, key }

@@ -14,11 +14,11 @@
 #include "../kacs/token_runtime.h"
 #include "source_device.h"
 
-extern int lcs_rust_open_preflight(
-	u32 desired_access, u32 flags,
-	struct pkm_lcs_open_preflight_plan *plan);
-extern int lcs_rust_validate_key_create_flags(
-	u32 flags, struct pkm_lcs_key_create_options *options);
+extern int lcs_rust_open_preflight(u32 desired_access, u32 flags,
+				   struct pkm_lcs_open_preflight_plan *plan);
+extern int
+lcs_rust_validate_key_create_flags(u32 flags,
+				   struct pkm_lcs_key_create_options *options);
 extern int lcs_rust_plan_key_guid_assignment(
 	const u8 candidate_guid[16], const u8 (*active_key_guids)[16],
 	size_t active_key_guid_count,
@@ -26,14 +26,12 @@ extern int lcs_rust_plan_key_guid_assignment(
 extern int lcs_rust_select_layer_metadata_sd(
 	const u8 *layer_name, u32 layer_name_len,
 	const struct pkm_lcs_layer_metadata_sd_view *metadata,
-	size_t metadata_count,
-	const struct pkm_lcs_runtime_limits *limits,
+	size_t metadata_count, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_layer_metadata_sd_selection *selection);
 extern int lcs_rust_key_open_access_plan(
 	const void *subject_token, const u8 *sd_ptr, size_t sd_len,
-	u32 desired_access, u32 pip_type, u32 pip_trust,
-	const void *caap_cache, u8 record_privilege_use,
-	struct pkm_lcs_key_open_access_plan *plan);
+	u32 desired_access, u32 pip_type, u32 pip_trust, const void *caap_cache,
+	u8 record_privilege_use, struct pkm_lcs_key_open_access_plan *plan);
 
 long pkm_lcs_open_preflight(u32 desired_access, u32 flags,
 			    struct pkm_lcs_open_preflight_plan *plan)
@@ -66,9 +64,10 @@ long pkm_lcs_create_preflight(u32 desired_access, u32 flags,
 	return ret;
 }
 
-static long pkm_lcs_key_open_access_check(
-	const void *token, const u8 *sd, size_t sd_len, u32 desired_access,
-	bool record_privilege_use, struct pkm_lcs_key_open_access_plan *plan)
+static long
+pkm_lcs_key_open_access_check(const void *token, const u8 *sd, size_t sd_len,
+			      u32 desired_access, bool record_privilege_use,
+			      struct pkm_lcs_key_open_access_plan *plan)
 {
 	const void *caap_cache = NULL;
 	u32 pip_type = 0;
@@ -149,13 +148,13 @@ long pkm_lcs_base_layer_write_access_check_for_token(
 		return pkm_lcs_layer_write_access_check_for_token(
 			token, base_metadata_sd, base_metadata_sd_len, plan);
 
-	default_sd = kacs_rust_create_lcs_base_layer_default_sd(
-		&default_sd_len);
+	default_sd =
+		kacs_rust_create_lcs_base_layer_default_sd(&default_sd_len);
 	if (!default_sd || !default_sd_len)
 		return -ENOMEM;
 
-	ret = pkm_lcs_layer_write_access_check_for_token(
-		token, default_sd, default_sd_len, plan);
+	ret = pkm_lcs_layer_write_access_check_for_token(token, default_sd,
+							 default_sd_len, plan);
 	pkm_kacs_free((void *)default_sd);
 	return ret;
 }
@@ -168,7 +167,7 @@ long pkm_lcs_create_layer_write_access_check_for_token_with_limits(
 	u32 metadata_count, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_key_open_access_plan *plan)
 {
-	struct pkm_lcs_layer_metadata_sd_selection selection = { };
+	struct pkm_lcs_layer_metadata_sd_selection selection = {};
 	const struct pkm_lcs_layer_metadata_sd_view *selected;
 	bool names_base_layer = false;
 	long ret;
@@ -200,9 +199,10 @@ long pkm_lcs_create_layer_write_access_check_for_token_with_limits(
 	if (metadata_count && !metadata)
 		return -EINVAL;
 
-	ret = lcs_rust_select_layer_metadata_sd(
-		(const u8 *)target->name, target->name_len, metadata,
-		metadata_count, limits, &selection);
+	ret = lcs_rust_select_layer_metadata_sd((const u8 *)target->name,
+						target->name_len, metadata,
+						metadata_count, limits,
+						&selection);
 	if (ret)
 		return ret;
 	if (selection.index >= metadata_count)
@@ -232,8 +232,8 @@ long pkm_lcs_live_layer_write_access_check_for_token(
 	const void *token, const struct pkm_lcs_create_layer_target *target,
 	struct pkm_lcs_key_open_access_plan *plan)
 {
-	struct pkm_lcs_layer_target_admission_plan target_plan = { };
-	struct pkm_lcs_layer_snapshot snapshot = { };
+	struct pkm_lcs_layer_target_admission_plan target_plan = {};
+	struct pkm_lcs_layer_snapshot snapshot = {};
 	struct pkm_lcs_runtime_limits limits;
 	long ret;
 
@@ -300,8 +300,10 @@ long pkm_lcs_assign_new_key_guid(
 	     attempt++) {
 		memset(candidate, 0, sizeof(candidate));
 		generate(generate_ctx, candidate);
-		ret = lcs_rust_plan_key_guid_assignment(
-			candidate, active_key_guids, active_key_guid_count, plan);
+		ret = lcs_rust_plan_key_guid_assignment(candidate,
+							active_key_guids,
+							active_key_guid_count,
+							plan);
 		if (!ret)
 			return 0;
 		if (ret != -EIO)
@@ -309,8 +311,7 @@ long pkm_lcs_assign_new_key_guid(
 	}
 
 	memset(plan, 0, sizeof(*plan));
-	trace_lcs_assign_key_guid(0, attempt,
-				  PKM_LCS_KEY_GUID_ASSIGNMENT_MAX_ATTEMPTS,
-				  -EIO);
+	trace_lcs_assign_key_guid(
+		0, attempt, PKM_LCS_KEY_GUID_ASSIGNMENT_MAX_ATTEMPTS, -EIO);
 	return -EIO;
 }

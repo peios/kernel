@@ -27,6 +27,8 @@
  * returns 0 (rebuild). The root returns 1 and is not traced. `ino` is
  * the merged inode number, or 0 for a negative dentry.
  */
+/* Preserve the trace macro tables and field/assignment layout. */
+/* clang-format off */
 TRACE_EVENT(stratafs_d_revalidate,
 
 	TP_PROTO(u64 cookie, u64 ino, bool rcu, int ret),
@@ -105,6 +107,7 @@ TRACE_EVENT(stratafs_rename_stale,
 	TP_printk("cookie=0x%llx walk_ino=%llu found_ino=%llu",
 		__entry->cookie, __entry->walk_ino, __entry->found_ino)
 );
+/* clang-format on */
 
 #endif /* _TRACE_STRATAFS_H */
 

@@ -54,7 +54,7 @@ long pkm_lcs_source_dispatch_lookup_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -112,14 +112,14 @@ long pkm_lcs_source_dispatch_lookup_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
-	ret = pkm_lcs_rsi_build_lookup_request(
-		request->frame, frame_len, request_id, txn_id, parent_guid,
-		child_name, child_name_len, limits, &built);
+	ret = pkm_lcs_rsi_build_lookup_request(request->frame, frame_len,
+					       request_id, txn_id, parent_guid,
+					       child_name, child_name_len,
+					       limits, &built);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -159,7 +159,7 @@ long pkm_lcs_source_dispatch_read_key_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -210,8 +210,7 @@ long pkm_lcs_source_dispatch_read_key_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -221,8 +220,8 @@ long pkm_lcs_source_dispatch_read_key_request_with_waiter(
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -257,7 +256,7 @@ long pkm_lcs_source_dispatch_enum_children_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
 	struct pkm_lcs_source_fd *source_fd;
@@ -303,14 +302,13 @@ long pkm_lcs_source_dispatch_enum_children_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
-	ret = pkm_lcs_rsi_build_enum_children_request(
-		request->frame, frame_len, request_id, txn_id, parent_guid,
-		&built);
+	ret = pkm_lcs_rsi_build_enum_children_request(request->frame, frame_len,
+						      request_id, txn_id,
+						      parent_guid, &built);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -352,7 +350,7 @@ long pkm_lcs_source_dispatch_query_values_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -411,20 +409,20 @@ long pkm_lcs_source_dispatch_query_values_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
-	ret = pkm_lcs_rsi_build_query_values_request(
-		request->frame, frame_len, request_id, txn_id, guid,
-		value_name, value_name_len, query_all, limits, &built);
+	ret = pkm_lcs_rsi_build_query_values_request(request->frame, frame_len,
+						     request_id, txn_id, guid,
+						     value_name, value_name_len,
+						     query_all, limits, &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -455,15 +453,15 @@ out_unlock_table:
 
 long pkm_lcs_source_dispatch_set_value_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const char *value_name, u32 value_name_len,
-	const char *layer_name, u32 layer_name_len, u32 value_type,
-	const u8 *data, size_t data_len, u64 sequence, u64 expected_sequence,
+	const char *value_name, u32 value_name_len, const char *layer_name,
+	u32 layer_name_len, u32 value_type, const u8 *data, size_t data_len,
+	u64 sequence, u64 expected_sequence,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_source_key_mutation_late_effect_input *late_effect,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -490,11 +488,9 @@ long pkm_lcs_source_dispatch_set_value_request_with_waiter(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)value_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)value_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)layer_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)layer_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
 	    check_add_overflow(frame_len, data_len, &frame_len) ||
@@ -534,22 +530,20 @@ long pkm_lcs_source_dispatch_set_value_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_rsi_build_set_value_request(
-		request->frame, frame_len, request_id, txn_id, guid,
-		value_name, value_name_len, layer_name, layer_name_len,
-		value_type, data, data_len, sequence, expected_sequence,
-		limits, &built);
+		request->frame, frame_len, request_id, txn_id, guid, value_name,
+		value_name_len, layer_name, layer_name_len, value_type, data,
+		data_len, sequence, expected_sequence, limits, &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 	ret = pkm_lcs_source_in_flight_set_key_late_effect_locked(
@@ -557,8 +551,8 @@ long pkm_lcs_source_dispatch_set_value_request_with_waiter(
 	if (ret) {
 		struct pkm_lcs_source_in_flight_request *record;
 
-		record = pkm_lcs_source_in_flight_find_locked(
-			source_fd, built.request_id);
+		record = pkm_lcs_source_in_flight_find_locked(source_fd,
+							      built.request_id);
 		if (record)
 			pkm_lcs_source_in_flight_release_locked(source_fd,
 								record);
@@ -592,13 +586,12 @@ out_unlock_table:
 
 long pkm_lcs_source_dispatch_delete_value_entry_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const char *value_name, u32 value_name_len,
-	const char *layer_name, u32 layer_name_len,
-	const struct pkm_lcs_runtime_limits *limits,
+	const char *value_name, u32 value_name_len, const char *layer_name,
+	u32 layer_name_len, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -622,11 +615,9 @@ long pkm_lcs_source_dispatch_delete_value_entry_request_with_waiter(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)value_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)value_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)layer_name_len,
-			       &frame_len))
+	    check_add_overflow(frame_len, (size_t)layer_name_len, &frame_len))
 		return -EOVERFLOW;
 
 	request = pkm_lcs_source_request_zalloc(sizeof(*request));
@@ -661,21 +652,19 @@ long pkm_lcs_source_dispatch_delete_value_entry_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_rsi_build_delete_value_entry_request(
-		request->frame, frame_len, request_id, txn_id, guid,
-		value_name, value_name_len, layer_name, layer_name_len,
-		limits, &built);
+		request->frame, frame_len, request_id, txn_id, guid, value_name,
+		value_name_len, layer_name, layer_name_len, limits, &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -711,7 +700,7 @@ long pkm_lcs_source_dispatch_set_blanket_tombstone_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -734,8 +723,7 @@ long pkm_lcs_source_dispatch_set_blanket_tombstone_request_with_waiter(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)layer_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)layer_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u8), &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u64), &frame_len))
 		return -EOVERFLOW;
@@ -772,20 +760,19 @@ long pkm_lcs_source_dispatch_set_blanket_tombstone_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_rsi_build_set_blanket_tombstone_request(
-		request->frame, frame_len, request_id, txn_id, guid,
-		layer_name, layer_name_len, set, sequence, limits, &built);
+		request->frame, frame_len, request_id, txn_id, guid, layer_name,
+		layer_name_len, set, sequence, limits, &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -820,7 +807,7 @@ long pkm_lcs_source_dispatch_drop_key_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -871,8 +858,7 @@ long pkm_lcs_source_dispatch_drop_key_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -882,8 +868,8 @@ long pkm_lcs_source_dispatch_drop_key_request_with_waiter(
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -914,14 +900,13 @@ out_unlock_table:
 
 long pkm_lcs_source_dispatch_create_entry_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 parent_guid[RSI_GUID_SIZE],
-	const char *child_name, u32 child_name_len,
-	const char *layer_name, u32 layer_name_len,
-	const u8 child_guid[RSI_GUID_SIZE], u64 sequence,
+	const char *child_name, u32 child_name_len, const char *layer_name,
+	u32 layer_name_len, const u8 child_guid[RSI_GUID_SIZE], u64 sequence,
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -945,13 +930,10 @@ long pkm_lcs_source_dispatch_create_entry_request_with_waiter(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)child_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)child_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)layer_name_len,
-			       &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)RSI_GUID_SIZE,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)layer_name_len, &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u64), &frame_len))
 		return -EOVERFLOW;
 
@@ -987,8 +969,7 @@ long pkm_lcs_source_dispatch_create_entry_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -1032,14 +1013,13 @@ out_unlock_table:
 
 long pkm_lcs_source_dispatch_hide_delete_entry_request_with_waiter(
 	u32 source_id, u64 txn_id, bool hide,
-	const u8 parent_guid[RSI_GUID_SIZE],
-	const char *child_name, u32 child_name_len,
-	const char *layer_name, u32 layer_name_len, u64 sequence,
-	const struct pkm_lcs_runtime_limits *limits,
+	const u8 parent_guid[RSI_GUID_SIZE], const char *child_name,
+	u32 child_name_len, const char *layer_name, u32 layer_name_len,
+	u64 sequence, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -1063,13 +1043,10 @@ long pkm_lcs_source_dispatch_hide_delete_entry_request_with_waiter(
 	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)child_name_len,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)child_name_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)layer_name_len,
-			       &frame_len) ||
-	    (hide && check_add_overflow(frame_len, sizeof(u64),
-					&frame_len)))
+	    check_add_overflow(frame_len, (size_t)layer_name_len, &frame_len) ||
+	    (hide && check_add_overflow(frame_len, sizeof(u64), &frame_len)))
 		return -EOVERFLOW;
 
 	request = pkm_lcs_source_request_zalloc(sizeof(*request));
@@ -1104,8 +1081,7 @@ long pkm_lcs_source_dispatch_hide_delete_entry_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -1156,14 +1132,13 @@ out_unlock_table:
 
 long pkm_lcs_source_dispatch_create_key_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const char *name, u32 name_len,
-	const u8 parent_guid[RSI_GUID_SIZE], const u8 *sd, size_t sd_len,
-	bool volatile_key, bool symlink,
+	const char *name, u32 name_len, const u8 parent_guid[RSI_GUID_SIZE],
+	const u8 *sd, size_t sd_len, bool volatile_key, bool symlink,
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -1189,8 +1164,7 @@ long pkm_lcs_source_dispatch_create_key_request_with_waiter(
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
 	    check_add_overflow(frame_len, (size_t)name_len, &frame_len) ||
-	    check_add_overflow(frame_len, (size_t)RSI_GUID_SIZE,
-			       &frame_len) ||
+	    check_add_overflow(frame_len, (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
 	    check_add_overflow(frame_len, sd_len, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u8), &frame_len) ||
@@ -1229,21 +1203,21 @@ long pkm_lcs_source_dispatch_create_key_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
-	ret = pkm_lcs_rsi_build_create_key_request(
-		request->frame, frame_len, request_id, txn_id, guid, name,
-		name_len, parent_guid, sd, sd_len, volatile_key, symlink,
-		limits, &built);
+	ret = pkm_lcs_rsi_build_create_key_request(request->frame, frame_len,
+						   request_id, txn_id, guid,
+						   name, name_len, parent_guid,
+						   sd, sd_len, volatile_key,
+						   symlink, limits, &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -1273,14 +1247,14 @@ out_unlock_table:
 }
 
 long pkm_lcs_source_dispatch_write_key_request_with_waiter(
-	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const u8 *sd, size_t sd_len, u64 last_write_time,
+	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE], const u8 *sd,
+	size_t sd_len, u64 last_write_time,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_source_key_mutation_late_effect_input *late_effect,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -1304,9 +1278,8 @@ long pkm_lcs_source_dispatch_write_key_request_with_waiter(
 			       (size_t)RSI_GUID_SIZE, &frame_len) ||
 	    check_add_overflow(frame_len, sizeof(u32), &frame_len))
 		return -EOVERFLOW;
-	if (sd_len &&
-	    (check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
-	     check_add_overflow(frame_len, sd_len, &frame_len)))
+	if (sd_len && (check_add_overflow(frame_len, sizeof(u32), &frame_len) ||
+		       check_add_overflow(frame_len, sd_len, &frame_len)))
 		return -EOVERFLOW;
 	if (check_add_overflow(frame_len, sizeof(u64), &frame_len))
 		return -EOVERFLOW;
@@ -1343,20 +1316,20 @@ long pkm_lcs_source_dispatch_write_key_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
-	ret = pkm_lcs_rsi_build_write_key_request(
-		request->frame, frame_len, request_id, txn_id, guid, sd,
-		sd_len, last_write_time, &built);
+	ret = pkm_lcs_rsi_build_write_key_request(request->frame, frame_len,
+						  request_id, txn_id, guid, sd,
+						  sd_len, last_write_time,
+						  &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		guid, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, guid,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 	ret = pkm_lcs_source_in_flight_set_key_late_effect_locked(
@@ -1364,8 +1337,8 @@ long pkm_lcs_source_dispatch_write_key_request_with_waiter(
 	if (ret) {
 		struct pkm_lcs_source_in_flight_request *record;
 
-		record = pkm_lcs_source_in_flight_find_locked(
-			source_fd, built.request_id);
+		record = pkm_lcs_source_in_flight_find_locked(source_fd,
+							      built.request_id);
 		if (record)
 			pkm_lcs_source_in_flight_release_locked(source_fd,
 								record);
@@ -1400,11 +1373,12 @@ out_unlock_table:
 long pkm_lcs_source_dispatch_transaction_request_with_waiter(
 	u32 source_id, u16 op_code, u64 transaction_id, u32 mode,
 	const struct pkm_lcs_runtime_limits *limits,
-	const struct pkm_lcs_source_restore_commit_late_effect_input *late_effect,
+	const struct pkm_lcs_source_restore_commit_late_effect_input
+		*late_effect,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -1476,8 +1450,7 @@ long pkm_lcs_source_dispatch_transaction_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -1511,10 +1484,13 @@ long pkm_lcs_source_dispatch_transaction_request_with_waiter(
 		goto out_unlock_queue;
 
 	if (op_code == RSI_BEGIN_TRANSACTION) {
-		ret = pkm_lcs_source_transaction_bind(transaction_id, source_fd);
+		ret = pkm_lcs_source_transaction_bind(transaction_id,
+						      source_fd);
 		if (ret) {
-			pkm_lcs_source_in_flight_release_locked(source_fd,
-				pkm_lcs_source_in_flight_find_locked(source_fd, built.request_id));
+			pkm_lcs_source_in_flight_release_locked(
+				source_fd,
+				pkm_lcs_source_in_flight_find_locked(
+					source_fd, built.request_id));
 			if (waiter)
 				WRITE_ONCE(waiter->attached, false);
 			goto out_unlock_queue;
@@ -1539,14 +1515,14 @@ out_unlock_queue:
 out_unlock_table:
 	pkm_lcs_source_table_unlock();
 	pkm_lcs_source_queued_request_free(request);
-	trace_lcs_rsi_request(source_id,
-			      op_code == RSI_BEGIN_TRANSACTION ?
-				      LCS_OP_TXN_BEGIN :
-			      op_code == RSI_COMMIT_TRANSACTION ?
-				      LCS_OP_TXN_COMMIT : LCS_OP_TXN_ABORT,
-			      transaction_id, result ? result->request_id : 0,
-			      result ? result->queue_depth : 0,
-			      result ? result->in_flight_count : 0, ret);
+	trace_lcs_rsi_request(
+		source_id,
+		op_code == RSI_BEGIN_TRANSACTION  ? LCS_OP_TXN_BEGIN :
+		op_code == RSI_COMMIT_TRANSACTION ? LCS_OP_TXN_COMMIT :
+						    LCS_OP_TXN_ABORT,
+		transaction_id, result ? result->request_id : 0,
+		result ? result->queue_depth : 0,
+		result ? result->in_flight_count : 0, ret);
 	return ret;
 }
 
@@ -1556,7 +1532,7 @@ long pkm_lcs_source_dispatch_flush_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_runtime_limits effective_limits;
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
@@ -1576,8 +1552,8 @@ long pkm_lcs_source_dispatch_flush_request_with_waiter(
 	}
 	if (hive_name_len > PKM_LCS_MAX_HIVE_NAME_BYTES_HARD)
 		return -ENAMETOOLONG;
-	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
-			       sizeof(u32), &frame_len) ||
+	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE, sizeof(u32),
+			       &frame_len) ||
 	    check_add_overflow(frame_len, (size_t)hive_name_len, &frame_len))
 		return -EOVERFLOW;
 
@@ -1613,20 +1589,19 @@ long pkm_lcs_source_dispatch_flush_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
-	ret = pkm_lcs_rsi_build_flush_request(
-		request->frame, frame_len, request_id, 0, hive_name,
-		hive_name_len, &built);
+	ret = pkm_lcs_rsi_build_flush_request(request->frame, frame_len,
+					      request_id, 0, hive_name,
+					      hive_name_len, &built);
 	if (ret)
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		NULL, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, NULL,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -1661,7 +1636,7 @@ long pkm_lcs_source_dispatch_delete_layer_request_with_waiter(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request built = { };
+	struct pkm_lcs_rsi_built_request built = {};
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
 	struct pkm_lcs_source_fd *source_fd;
@@ -1683,8 +1658,8 @@ long pkm_lcs_source_dispatch_delete_layer_request_with_waiter(
 		return -EINVAL;
 	if (layer_name_len > PKM_LCS_MAX_LAYER_NAME_BYTES_HARD)
 		return -ENAMETOOLONG;
-	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE,
-			       sizeof(u32), &frame_len) ||
+	if (check_add_overflow((size_t)RSI_REQUEST_HEADER_SIZE, sizeof(u32),
+			       &frame_len) ||
 	    check_add_overflow(frame_len, (size_t)layer_name_len, &frame_len))
 		return -EOVERFLOW;
 
@@ -1720,8 +1695,7 @@ long pkm_lcs_source_dispatch_delete_layer_request_with_waiter(
 	}
 
 	request_id = source_fd->next_request_id;
-	ret = pkm_lcs_source_request_id_successor(request_id,
-						  &next_request_id);
+	ret = pkm_lcs_source_request_id_successor(request_id, &next_request_id);
 	if (ret)
 		goto out_unlock_queue;
 
@@ -1732,8 +1706,8 @@ long pkm_lcs_source_dispatch_delete_layer_request_with_waiter(
 		goto out_unlock_queue;
 
 	ret = pkm_lcs_source_in_flight_insert_locked(
-		source_fd, built.request_id, built.txn_id, built.op_code,
-		NULL, limits, NULL, waiter);
+		source_fd, built.request_id, built.txn_id, built.op_code, NULL,
+		limits, NULL, waiter);
 	if (ret)
 		goto out_unlock_queue;
 

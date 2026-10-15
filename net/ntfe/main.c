@@ -67,7 +67,7 @@ static const struct nf_hook_ops peios_ntfe_inet_hooks[] = {
 struct peios_ntfe_dev_hooks {
 	struct list_head list;
 	int ifindex;
-	struct nf_hook_ops ops[2];	/* ingress, egress */
+	struct nf_hook_ops ops[2]; /* ingress, egress */
 };
 
 static LIST_HEAD(peios_ntfe_devs);
@@ -133,7 +133,7 @@ static void peios_ntfe_detach_device(struct net_device *dev)
 }
 
 static int peios_ntfe_netdev_event(struct notifier_block *nb,
-				  unsigned long event, void *ptr)
+				   unsigned long event, void *ptr)
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	int ret;
@@ -226,7 +226,8 @@ static int __init peios_ntfe_init(void)
 	pr_info("ntfe: seats registered; generation %llu%s\n",
 		ntfe_rust_generation(),
 		ntfe_rust_generation() == 0 ?
-			" — no policy loaded, not enforcing" : "");
+			" — no policy loaded, not enforcing" :
+			"");
 	return 0;
 }
 

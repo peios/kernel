@@ -267,7 +267,11 @@ impl Principal for KernelPrincipal {
 ///
 /// # Safety
 /// As `KernelPrincipal::new`.
-unsafe fn principal_for(kind: u8, token: *const c_void, guid: &[u8; 16]) -> Option<KernelPrincipal> {
+unsafe fn principal_for(
+    kind: u8,
+    token: *const c_void,
+    guid: &[u8; 16],
+) -> Option<KernelPrincipal> {
     if kind != LOCAL_PROGRAM || token.is_null() {
         return None;
     }
@@ -359,8 +363,7 @@ extern "C" {
 }
 
 fn c_str_slice(buf: &[c_char]) -> &str {
-    let bytes: &[u8] =
-        unsafe { core::slice::from_raw_parts(buf.as_ptr().cast::<u8>(), buf.len()) };
+    let bytes: &[u8] = unsafe { core::slice::from_raw_parts(buf.as_ptr().cast::<u8>(), buf.len()) };
     let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
     core::str::from_utf8(&bytes[..end]).unwrap_or("")
 }
@@ -1020,7 +1023,14 @@ pub extern "C" fn ntfe_rust_evaluate(
     let Ok(mut snapshot) = snapshot_from_c(snap_c) else {
         return -ENOMEM;
     };
-    if resolve_machinery(forest, snap_c, &mut snapshot, local.as_ref(), remote.as_ref()).is_err()
+    if resolve_machinery(
+        forest,
+        snap_c,
+        &mut snapshot,
+        local.as_ref(),
+        remote.as_ref(),
+    )
+    .is_err()
     {
         return -ENOMEM;
     }

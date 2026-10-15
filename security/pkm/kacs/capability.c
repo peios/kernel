@@ -69,8 +69,7 @@ void pkm_kacs_raise_allow_compat_caps(struct cred *cred)
 	pkm_kacs_raise_allow_kernel_caps(&cred->cap_bset);
 }
 
-void pkm_kacs_capget_fixup(kernel_cap_t *effective,
-			   kernel_cap_t *inheritable,
+void pkm_kacs_capget_fixup(kernel_cap_t *effective, kernel_cap_t *inheritable,
 			   kernel_cap_t *permitted)
 {
 	pkm_kacs_raise_allow_kernel_caps(effective);
@@ -80,8 +79,7 @@ void pkm_kacs_capget_fixup(kernel_cap_t *effective,
 
 long pkm_kacs_proc_status_cap_fixup(kernel_cap_t *inheritable,
 				    kernel_cap_t *permitted,
-				    kernel_cap_t *effective,
-				    kernel_cap_t *bset,
+				    kernel_cap_t *effective, kernel_cap_t *bset,
 				    kernel_cap_t *ambient)
 {
 	if (!inheritable || !permitted || !effective || !bset || !ambient)
@@ -127,10 +125,8 @@ bool pkm_kacs_allow_caps_present(const kernel_cap_t *caps)
 	return cap_raised(*caps, CAP_CHOWN) &&
 	       cap_raised(*caps, CAP_DAC_OVERRIDE) &&
 	       cap_raised(*caps, CAP_DAC_READ_SEARCH) &&
-	       cap_raised(*caps, CAP_FOWNER) &&
-	       cap_raised(*caps, CAP_FSETID) &&
-	       cap_raised(*caps, CAP_KILL) &&
-	       cap_raised(*caps, CAP_SETGID) &&
+	       cap_raised(*caps, CAP_FOWNER) && cap_raised(*caps, CAP_FSETID) &&
+	       cap_raised(*caps, CAP_KILL) && cap_raised(*caps, CAP_SETGID) &&
 	       cap_raised(*caps, CAP_SETUID) &&
 	       cap_raised(*caps, CAP_NET_BROADCAST) &&
 	       cap_raised(*caps, CAP_IPC_OWNER) &&
@@ -245,7 +241,7 @@ static u64 pkm_kacs_cap_required_privilege(int cap)
 long pkm_kacs_check_capability_for_token(const void *subject_token, int cap)
 {
 	return pkm_kacs_check_capability_for_token_held(subject_token, cap,
-						       NULL);
+							NULL);
 }
 
 /*
@@ -268,7 +264,8 @@ long pkm_kacs_check_capability_for_token_held(const void *subject_token,
 		trace_kacs_capability(cap, 0, KACS_CAP_ALLOW_GRANT, 0);
 		return 0;
 	}
-	if (cap == CAP_SETPCAP || cap == CAP_SETFCAP || cap == CAP_MAC_OVERRIDE) {
+	if (cap == CAP_SETPCAP || cap == CAP_SETFCAP ||
+	    cap == CAP_MAC_OVERRIDE) {
 		trace_kacs_capability(cap, 0, KACS_CAP_HARD_DENY, -EPERM);
 		return -EPERM;
 	}
@@ -280,7 +277,8 @@ long pkm_kacs_check_capability_for_token_held(const void *subject_token,
 		return -EPERM;
 	if (cap == CAP_SYS_BOOT) {
 		remote_shutdown_origin =
-			kacs_rust_token_is_remote_shutdown_origin(subject_token);
+			kacs_rust_token_is_remote_shutdown_origin(
+				subject_token);
 		if (remote_shutdown_origin < 0)
 			return -EPERM;
 	}
@@ -299,11 +297,11 @@ long pkm_kacs_check_capability_for_token_held(const void *subject_token,
 	}
 	if (remote_shutdown_origin > 0) {
 		if (!kacs_rust_token_has_enabled_privilege(
-			    subject_token,
-			    KACS_SE_REMOTE_SHUTDOWN_PRIVILEGE)) {
+			    subject_token, KACS_SE_REMOTE_SHUTDOWN_PRIVILEGE)) {
 			trace_kacs_capability(cap,
 					      KACS_SE_REMOTE_SHUTDOWN_PRIVILEGE,
-					      KACS_CAP_PRIV_NOT_ENABLED, -EPERM);
+					      KACS_CAP_PRIV_NOT_ENABLED,
+					      -EPERM);
 			return -EPERM;
 		}
 		held |= KACS_SE_REMOTE_SHUTDOWN_PRIVILEGE;
@@ -380,7 +378,8 @@ bool pkm_kacs_note_privilege_use(const struct cred *cred, unsigned int bit,
 	/* The policy first: noting a use claims it and queues task work. */
 	if (!pkm_kmes_event_enabled(PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED))
 		return false;
-	if (!held || (opts & CAP_OPT_NOAUDIT) || bit > PKM_KACS_PRIV_USE_VOLUME_BIT)
+	if (!held || (opts & CAP_OPT_NOAUDIT) ||
+	    bit > PKM_KACS_PRIV_USE_VOLUME_BIT)
 		return false;
 	if (!in_task() || (current->flags & PF_KTHREAD) || !current->security)
 		return false;
@@ -454,8 +453,8 @@ static u64 pkm_kacs_priv_use_privileges(const void *token, unsigned int bit)
 
 static void pkm_kacs_priv_use_task_work(struct callback_head *work)
 {
-	struct pkm_kacs_task_security *tsec =
-		container_of(work, struct pkm_kacs_task_security, priv_use_work);
+	struct pkm_kacs_task_security *tsec = container_of(
+		work, struct pkm_kacs_task_security, priv_use_work);
 	const void *token = tsec->priv_use_token;
 	u64 pending = tsec->priv_use_pending;
 	u32 pip_type = 0;
@@ -484,8 +483,9 @@ static void pkm_kacs_priv_use_task_work(struct callback_head *work)
 				bit == PKM_KACS_PRIV_USE_VOLUME_BIT ?
 					PKM_KACS_PRIV_USE_OP_VOLUME_MOUNT :
 					PKM_KACS_PRIV_USE_OP_LINUX_CAP,
-				bit == PKM_KACS_PRIV_USE_VOLUME_BIT ? CAP_SYS_ADMIN :
-								      (int)bit,
+				bit == PKM_KACS_PRIV_USE_VOLUME_BIT ?
+					CAP_SYS_ADMIN :
+					(int)bit,
 				one, pip_type, pip_trust);
 		}
 	}
@@ -527,9 +527,8 @@ long pkm_kacs_capset_core(const void *subject_token, struct cred *new,
 	new->cap_effective = *effective;
 	new->cap_inheritable = *inheritable;
 	new->cap_permitted = *permitted;
-	new->cap_ambient = cap_intersect(new->cap_ambient,
-					 cap_intersect(*permitted,
-						       *inheritable));
+	new->cap_ambient = cap_intersect(
+		new->cap_ambient, cap_intersect(*permitted, *inheritable));
 	pkm_kacs_raise_allow_compat_caps(new);
 	return 0;
 }
@@ -560,7 +559,8 @@ long pkm_kacs_prctl_capability_guard_core(const void *subject_token,
 		case PR_CAP_AMBIENT_IS_SET:
 			return 0;
 		case PR_CAP_AMBIENT_CLEAR_ALL:
-			return (ambient_mask & pkm_kacs_allow_cap_mask_u64()) != 0 ?
+			return (ambient_mask & pkm_kacs_allow_cap_mask_u64()) !=
+					       0 ?
 				       -EPERM :
 				       0;
 		case PR_CAP_AMBIENT_RAISE:
@@ -616,8 +616,8 @@ bool pkm_kacs_may_manage_volumes_for_token(const void *subject_token)
 	u64 held;
 
 	if (!subject_token) {
-		trace_kacs_capability(CAP_SYS_ADMIN, privilege, KACS_CAP_CAPABLE,
-				      -EPERM);
+		trace_kacs_capability(CAP_SYS_ADMIN, privilege,
+				      KACS_CAP_CAPABLE, -EPERM);
 		return false;
 	}
 
@@ -629,8 +629,8 @@ bool pkm_kacs_may_manage_volumes_for_token(const void *subject_token)
 		return false;
 	}
 	if (!kacs_rust_token_mark_privileges_used(subject_token, held)) {
-		trace_kacs_capability(CAP_SYS_ADMIN, held, KACS_CAP_USE_MARK_FAIL,
-				      -EPERM);
+		trace_kacs_capability(CAP_SYS_ADMIN, held,
+				      KACS_CAP_USE_MARK_FAIL, -EPERM);
 		return false;
 	}
 
@@ -667,9 +667,8 @@ long pkm_kacs_capable_in_cred_ns(const struct cred *cred,
 }
 
 long pkm_kacs_capable_in_cred_ns_held(const struct cred *cred,
-				      struct user_namespace *target_ns,
-				      int cap, unsigned int opts,
-				      u64 *held_out)
+				      struct user_namespace *target_ns, int cap,
+				      unsigned int opts, u64 *held_out)
 {
 	const struct pkm_kacs_cred_security *sec;
 
@@ -702,7 +701,7 @@ long pkm_kacs_capable_in_cred_ns_held(const struct cred *cred,
 	    pkm_kacs_copy_up_allows_capability_use(target_ns))
 		return 0;
 	return pkm_kacs_check_capability_for_token_held(sec->token, cap,
-						       held_out);
+							held_out);
 }
 
 long pkm_kacs_capget_for_task(const struct task_struct *target,
@@ -750,9 +749,8 @@ long pkm_kacs_capget_for_task(const struct task_struct *target,
 	return ret;
 }
 
-int pkm_kacs_capable(const struct cred *cred,
-		     struct user_namespace *target_ns, int cap,
-		     unsigned int opts)
+int pkm_kacs_capable(const struct cred *cred, struct user_namespace *target_ns,
+		     int cap, unsigned int opts)
 {
 	u64 held = 0;
 	long ret;
@@ -766,7 +764,8 @@ int pkm_kacs_capable(const struct cred *cred,
 	ret = pkm_kacs_capable_in_cred_ns_held(cred, target_ns, cap, opts,
 					       &held);
 	if (!ret && held)
-		pkm_kacs_note_privilege_use(cred, (unsigned int)cap, held, opts);
+		pkm_kacs_note_privilege_use(cred, (unsigned int)cap, held,
+					    opts);
 	return (int)ret;
 }
 
@@ -780,15 +779,14 @@ int pkm_kacs_capset(struct cred *new, const struct cred *old,
 
 	(void)old;
 	subject_token = pkm_kacs_current_effective_token_ptr();
-	ret = pkm_kacs_capset_core(subject_token, new, effective,
-				   inheritable, permitted);
+	ret = pkm_kacs_capset_core(subject_token, new, effective, inheritable,
+				   permitted);
 	trace_kacs_capability(0, 0, KACS_CAP_CAPSET, ret);
 	return (int)ret;
 }
 
 long pkm_kacs_prctl_capability_guard(int option, unsigned long arg2,
-				     unsigned long arg3,
-				     unsigned long arg4,
+				     unsigned long arg3, unsigned long arg4,
 				     unsigned long arg5)
 {
 	const struct cred *cred = current_cred();
@@ -803,9 +801,9 @@ long pkm_kacs_prctl_capability_guard(int option, unsigned long arg2,
 
 	sec = pkm_kacs_cred(cred);
 	ambient_mask = pkm_kacs_kernel_cap_to_u64(&cred->cap_ambient);
-	ret = pkm_kacs_prctl_capability_guard_core(
-		sec ? sec->token : NULL, ambient_mask, option, arg2, arg3,
-		arg4, arg5);
+	ret = pkm_kacs_prctl_capability_guard_core(sec ? sec->token : NULL,
+						   ambient_mask, option, arg2,
+						   arg3, arg4, arg5);
 	trace_kacs_capability(0, 0, KACS_CAP_PRCTL_GUARD, ret);
 	return ret;
 }

@@ -143,8 +143,7 @@ long pkm_lcs_source_registration_copy_from_user(
 		return -ENOSPC;
 	}
 	if (check_mul_overflow((size_t)args.hive_count,
-			       sizeof(struct reg_src_hive_entry),
-			       &hives_bytes))
+			       sizeof(struct reg_src_hive_entry), &hives_bytes))
 		return -EOVERFLOW;
 
 	hives_ptr = (const void __user *)(unsigned long)args.hives_ptr;
@@ -198,8 +197,7 @@ out_free_wire:
 
 long pkm_lcs_source_registration_validate_copied(
 	const struct pkm_lcs_source_registration_copy *registration,
-	bool caller_has_tcb,
-	struct pkm_lcs_source_registration_plan_copy *plan)
+	bool caller_has_tcb, struct pkm_lcs_source_registration_plan_copy *plan)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -222,7 +220,7 @@ static long pkm_lcs_source_registration_publish_locked(
 	struct pkm_lcs_source_registration_result *result)
 {
 	struct pkm_lcs_source_slot_view_buffer view_buffer;
-	struct pkm_lcs_source_registration_plan_copy plan = { };
+	struct pkm_lcs_source_registration_plan_copy plan = {};
 	struct pkm_lcs_source_slot *slot;
 	bool sequence_initialized;
 	u64 next_sequence;
@@ -313,8 +311,10 @@ static long pkm_lcs_source_registration_publish_locked(
 	ret = 0;
 	trace_lcs_registration_publish(
 		slot->source_id, result ? result->resumed_source_id : 0,
-		plan.decision == PKM_LCS_SOURCE_REGISTRATION_DECISION_RESUME_DOWN ?
-			LCS_REG_RESUME_DOWN : LCS_REG_NEW,
+		plan.decision ==
+				PKM_LCS_SOURCE_REGISTRATION_DECISION_RESUME_DOWN ?
+			LCS_REG_RESUME_DOWN :
+			LCS_REG_NEW,
 		hive_count_snapshot, ret);
 
 out_views:
@@ -401,11 +401,12 @@ static long pkm_lcs_source_bootstrap_work_prepare(
 }
 
 static long pkm_lcs_source_register_file_for_token_core(
-	const void *token, struct file *file, const struct pkm_lcs_usercopy_ops *ops,
+	const void *token, struct file *file,
+	const struct pkm_lcs_usercopy_ops *ops,
 	const struct reg_src_register_args __user *uargs, bool queue_bootstrap)
 {
-	struct pkm_lcs_source_registration_copy registration = { };
-	struct pkm_lcs_source_registration_result publish = { };
+	struct pkm_lcs_source_registration_copy registration = {};
+	struct pkm_lcs_source_registration_result publish = {};
 	struct pkm_lcs_source_bootstrap_work *bootstrap_work = NULL;
 	struct pkm_lcs_runtime_limits limits;
 	struct pkm_lcs_source_fd *source_fd;
@@ -446,9 +447,8 @@ static long pkm_lcs_source_register_file_for_token_core(
 
 	pkm_lcs_source_sequence_gate_lock();
 	pkm_lcs_source_table_lock();
-	ret = pkm_lcs_source_registration_publish_locked(source_fd,
-							&registration, &limits,
-							&publish);
+	ret = pkm_lcs_source_registration_publish_locked(
+		source_fd, &registration, &limits, &publish);
 	pkm_lcs_source_table_unlock();
 	pkm_lcs_source_sequence_gate_unlock();
 	if (ret)
@@ -460,7 +460,8 @@ static long pkm_lcs_source_register_file_for_token_core(
 		ret = pkm_lcs_source_replay_pending_layer_deletes_with_limits(
 			publish.resumed_source_id, &limits);
 		if (ret) {
-			pkm_lcs_source_mark_down_by_id(publish.resumed_source_id);
+			pkm_lcs_source_mark_down_by_id(
+				publish.resumed_source_id);
 			ret = -EIO;
 			trace_lcs_source_register(publish.resumed_source_id,
 						  publish.resumed_source_id,
@@ -471,18 +472,21 @@ static long pkm_lcs_source_register_file_for_token_core(
 		ret = pkm_lcs_key_fd_dispatch_source_overflow_with_limits(
 			publish.resumed_source_id, &limits, &watch_count);
 		if (ret) {
-			pkm_lcs_source_mark_down_by_id(publish.resumed_source_id);
+			pkm_lcs_source_mark_down_by_id(
+				publish.resumed_source_id);
 			ret = -EIO;
 			trace_lcs_source_register(publish.resumed_source_id,
 						  publish.resumed_source_id,
-						  LCS_REG_OVERFLOW_FAIL, 0, ret);
+						  LCS_REG_OVERFLOW_FAIL, 0,
+						  ret);
 			goto out_bootstrap;
 		}
 	}
 
 	if (bootstrap_work) {
 		bootstrap_work->source_id = publish.source_id;
-		INIT_WORK(&bootstrap_work->work, pkm_lcs_source_bootstrap_workfn);
+		INIT_WORK(&bootstrap_work->work,
+			  pkm_lcs_source_bootstrap_workfn);
 		queue_work(pkm_lcs_bootstrap_wq, &bootstrap_work->work);
 		bootstrap_work = NULL;
 	}
@@ -495,7 +499,8 @@ out_registration:
 }
 
 long pkm_lcs_source_register_file_for_token(
-	const void *token, struct file *file, const struct pkm_lcs_usercopy_ops *ops,
+	const void *token, struct file *file,
+	const struct pkm_lcs_usercopy_ops *ops,
 	const struct reg_src_register_args __user *uargs)
 {
 	return pkm_lcs_source_register_file_for_token_core(token, file, ops,
@@ -503,7 +508,8 @@ long pkm_lcs_source_register_file_for_token(
 }
 
 long pkm_lcs_source_register_file_for_token_with_bootstrap(
-	const void *token, struct file *file, const struct pkm_lcs_usercopy_ops *ops,
+	const void *token, struct file *file,
+	const struct pkm_lcs_usercopy_ops *ops,
 	const struct reg_src_register_args __user *uargs)
 {
 	return pkm_lcs_source_register_file_for_token_core(token, file, ops,

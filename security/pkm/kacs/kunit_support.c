@@ -100,16 +100,16 @@
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 #define PKM_KACS_KUNIT_FILE_SD_ADMIN_MASK                                     \
-	(KACS_FILE_READ_DATA | KACS_FILE_WRITE_DATA |                \
-	 KACS_FILE_APPEND_DATA | KACS_FILE_READ_EA |                \
-	 KACS_FILE_WRITE_EA | KACS_FILE_EXECUTE |                  \
-	 KACS_FILE_DELETE_CHILD | KACS_FILE_READ_ATTRIBUTES |       \
-	 KACS_FILE_WRITE_ATTRIBUTES | KACS_ACCESS_DELETE |              \
-	 KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC |                 \
+	(KACS_FILE_READ_DATA | KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA | \
+	 KACS_FILE_READ_EA | KACS_FILE_WRITE_EA | KACS_FILE_EXECUTE |         \
+	 KACS_FILE_DELETE_CHILD | KACS_FILE_READ_ATTRIBUTES |                 \
+	 KACS_FILE_WRITE_ATTRIBUTES | KACS_ACCESS_DELETE |                    \
+	 KACS_ACCESS_READ_CONTROL | KACS_ACCESS_WRITE_DAC |                   \
 	 KACS_ACCESS_WRITE_OWNER)
 #endif
 
-static __maybe_unused atomic64_t pkm_kacs_kunit_native_identity_counter = ATOMIC64_INIT(0);
+static __maybe_unused atomic64_t pkm_kacs_kunit_native_identity_counter =
+	ATOMIC64_INIT(0);
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 void pkm_kacs_kunit_set_current_pip_context(u32 pip_type, u32 pip_trust)
@@ -136,7 +136,7 @@ int pkm_kmes_kunit_set_current_process_rate_tokens(u32 tokens)
 		return -EACCES;
 
 	return pkm_kmes_rate_bucket_kunit_set_tokens(state->kmes_rate_bucket,
-						    tokens);
+						     tokens);
 }
 
 int pkm_kmes_kunit_set_current_process_rate_refill_frozen(bool frozen)
@@ -162,7 +162,7 @@ int pkm_kmes_kunit_get_current_process_rate_tokens(u32 *tokens_out)
 		return -EACCES;
 
 	return pkm_kmes_rate_bucket_kunit_get_tokens(state->kmes_rate_bucket,
-						    tokens_out);
+						     tokens_out);
 }
 
 int pkm_kacs_kunit_set_current_process_mitigation_bits(u32 mitigation_bits)
@@ -187,9 +187,10 @@ int pkm_kacs_kunit_token_eval_context_allowed(u32 task_context, u32 has_cred,
 					      u32 has_security_blob,
 					      u32 has_token)
 {
-	return pkm_kacs_subjective_cred_context_allowed(
-		       task_context != 0, has_cred != 0,
-		       has_security_blob != 0, has_token != 0) ?
+	return pkm_kacs_subjective_cred_context_allowed(task_context != 0,
+							has_cred != 0,
+							has_security_blob != 0,
+							has_token != 0) ?
 		       1 :
 		       0;
 }
@@ -274,16 +275,14 @@ long pkm_kacs_kunit_clone_token_lifecycle_probe(
 		child_real_cred = prepared;
 	}
 
-	ret = pkm_kacs_apply_clone_token_lifecycle(&child_cred,
-						   &child_real_cred,
-						   clone_flags);
+	ret = pkm_kacs_apply_clone_token_lifecycle(
+		&child_cred, &child_real_cred, clone_flags);
 	if (ret)
 		goto out;
 
 	child_token = pkm_kacs_cred(child_cred)->token;
 	if (!child_token ||
-	    !kacs_rust_kunit_token_snapshot(child_token,
-					    child_effective_out)) {
+	    !kacs_rust_kunit_token_snapshot(child_token, child_effective_out)) {
 		ret = -EACCES;
 		goto out;
 	}
@@ -317,8 +316,8 @@ static long pkm_kacs_kunit_clone_mutation_probe(
 
 	memset(out, 0, sizeof(*out));
 
-	source_token = kacs_rust_token_deep_copy(
-		pkm_kacs_current_primary_token_ptr());
+	source_token =
+		kacs_rust_token_deep_copy(pkm_kacs_current_primary_token_ptr());
 	if (!source_token)
 		return -ENOMEM;
 
@@ -342,15 +341,16 @@ static long pkm_kacs_kunit_clone_mutation_probe(
 	}
 	out->child_token_is_source = child_token == source_token;
 
-	if (!kacs_rust_kunit_token_snapshot(source_token, &out->source_before) ||
+	if (!kacs_rust_kunit_token_snapshot(source_token,
+					    &out->source_before) ||
 	    !kacs_rust_kunit_token_snapshot(child_token, &out->child_before)) {
 		ret = -EACCES;
 		goto out;
 	}
 
 	next_interactivity_scope = out->source_before.interactivity_scope ^ 1U;
-	ret = kacs_rust_token_adjust_interactivity_scope(source_token,
-						next_interactivity_scope);
+	ret = kacs_rust_token_adjust_interactivity_scope(
+		source_token, next_interactivity_scope);
 	if (ret)
 		goto out;
 
@@ -364,14 +364,15 @@ static long pkm_kacs_kunit_clone_mutation_probe(
 
 	next_interactivity_scope =
 		out->child_after_source_mutation.interactivity_scope ^ 2U;
-	ret = kacs_rust_token_adjust_interactivity_scope(child_token, next_interactivity_scope);
+	ret = kacs_rust_token_adjust_interactivity_scope(
+		child_token, next_interactivity_scope);
 	if (ret)
 		goto out;
 
 	if (!kacs_rust_kunit_token_snapshot(
 		    source_token, &out->source_after_child_mutation) ||
-	    !kacs_rust_kunit_token_snapshot(
-		    child_token, &out->child_after_child_mutation))
+	    !kacs_rust_kunit_token_snapshot(child_token,
+					    &out->child_after_child_mutation))
 		ret = -EACCES;
 
 out:
@@ -406,8 +407,7 @@ void pkm_kacs_kunit_put_process_state(const void *state_ptr)
 }
 
 int pkm_kacs_kunit_process_state_snapshot(
-	const void *state_ptr,
-	struct pkm_kacs_kunit_process_state_view *out)
+	const void *state_ptr, struct pkm_kacs_kunit_process_state_view *out)
 {
 	const struct pkm_kacs_process_state *state = state_ptr;
 
@@ -417,7 +417,8 @@ int pkm_kacs_kunit_process_state_snapshot(
 	out->state_ptr = state;
 	memcpy(out->process_guid, state->process_guid,
 	       sizeof(out->process_guid));
-	out->process_sd_ptr = state->process_sd ? state->process_sd->bytes : NULL;
+	out->process_sd_ptr = state->process_sd ? state->process_sd->bytes :
+						  NULL;
 	out->process_sd_len = state->process_sd ? state->process_sd->len : 0;
 	out->rate_bucket_ptr = state->kmes_rate_bucket;
 	out->pip_type = READ_ONCE(state->pip_type);
@@ -425,8 +426,6 @@ int pkm_kacs_kunit_process_state_snapshot(
 	out->mitigation_bits = pkm_kacs_process_state_mitigation_bits(state);
 	return 0;
 }
-
-
 
 long pkm_kacs_kunit_read_securityfs_logon_sessions_for_subject(
 	const void *subject_token, u8 *buf, size_t buf_len,
@@ -443,15 +442,14 @@ long pkm_kacs_kunit_read_securityfs_logon_sessions_for_subject(
 	if (ret)
 		return ret;
 
-	ret = kacs_rust_check_securityfs_logon_sessions_read(subject_token, pip_type,
-						       pip_trust);
+	ret = kacs_rust_check_securityfs_logon_sessions_read(
+		subject_token, pip_type, pip_trust);
 	if (ret)
 		return ret;
 
 	return kacs_rust_securityfs_logon_sessions_listing(buf, buf_len,
-						    required_out);
+							   required_out);
 }
-
 
 long pkm_kacs_kunit_get_process_sd_for_subject(
 	const struct pkm_kacs_kunit_process_sd_get_args *args,
@@ -474,10 +472,11 @@ long pkm_kacs_kunit_get_process_sd_for_subject(
 	target_state.process_sd = &process_sd;
 	spin_lock_init(&target_state.mitigation_lock);
 
-	return pkm_kacs_query_process_sd_core(
-		args->subject_token, &caller_state, &target_state,
-		args->self_target != 0, args->security_info, out_sd_ptr,
-		out_sd_len);
+	return pkm_kacs_query_process_sd_core(args->subject_token,
+					      &caller_state, &target_state,
+					      args->self_target != 0,
+					      args->security_info, out_sd_ptr,
+					      out_sd_len);
 }
 
 long pkm_kacs_kunit_set_process_sd_for_subject(
@@ -505,8 +504,8 @@ long pkm_kacs_kunit_set_process_sd_for_subject(
 	if (!copied_bytes)
 		return -ENOMEM;
 
-	current_sd = pkm_kacs_process_sd_wrap_bytes(copied_bytes,
-						       args->target_process_sd_len);
+	current_sd = pkm_kacs_process_sd_wrap_bytes(
+		copied_bytes, args->target_process_sd_len);
 	if (!current_sd) {
 		kfree(copied_bytes);
 		return -ENOMEM;
@@ -548,8 +547,8 @@ out:
 	return ret;
 }
 
-static struct pkm_kacs_inode_sd_cache *pkm_kacs_kunit_file_sd_cache_alloc(
-	const u8 *sd_ptr, size_t sd_len, u32 state)
+static struct pkm_kacs_inode_sd_cache *
+pkm_kacs_kunit_file_sd_cache_alloc(const u8 *sd_ptr, size_t sd_len, u32 state)
 {
 	struct pkm_kacs_inode_sd_cache *cache;
 	const u8 *copied_bytes = NULL;
@@ -568,10 +567,10 @@ static struct pkm_kacs_inode_sd_cache *pkm_kacs_kunit_file_sd_cache_alloc(
 		return cache;
 	case PKM_KACS_KUNIT_FILE_SD_MISSING:
 		return pkm_kacs_inode_sd_cache_alloc(PKM_KACS_INODE_SD_MISSING,
-						      NULL, 0);
+						     NULL, 0);
 	case PKM_KACS_KUNIT_FILE_SD_CORRUPT:
 		return pkm_kacs_inode_sd_cache_alloc(PKM_KACS_INODE_SD_CORRUPT,
-						      NULL, 0);
+						     NULL, 0);
 	default:
 		return NULL;
 	}
@@ -635,19 +634,15 @@ long pkm_kacs_kunit_set_file_sd_for_subject(
 		pkm_kacs_inode_sd_cache_free(cache);
 		return ret;
 	}
-	ret = pkm_kacs_prepare_new_file_sd_core(args->subject_token, cache,
-						args->security_info,
-						args->input_sd_ptr,
-						args->input_sd_len, true,
-						caap_cache,
-						&result_sd,
-						&result_sd_len);
+	ret = pkm_kacs_prepare_new_file_sd_core(
+		args->subject_token, cache, args->security_info,
+		args->input_sd_ptr, args->input_sd_len, true, caap_cache,
+		&result_sd, &result_sd_len);
 	pkm_kacs_caap_cache_unlock();
 	if (!ret) {
 		if (args->target_file_sd_state != PKM_KACS_KUNIT_FILE_SD_VALID)
 			(void)kacs_rust_token_mark_privileges_used(
-				args->subject_token,
-				KACS_SE_RESTORE_PRIVILEGE);
+				args->subject_token, KACS_SE_RESTORE_PRIVILEGE);
 		*out_sd_ptr = result_sd;
 		*out_sd_len = result_sd_len;
 	}
@@ -677,8 +672,7 @@ static void pkm_kacs_kunit_cleanup_file_mount_state(
 
 long pkm_kacs_kunit_open_then_change_sd_for_subject(
 	const struct pkm_kacs_kunit_file_sd_set_args *args,
-	u32 *cached_grant_out, long *new_open_ret_out,
-	u32 *new_open_grant_out)
+	u32 *cached_grant_out, long *new_open_ret_out, u32 *new_open_grant_out)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_sd_cache *cache;
@@ -713,8 +707,8 @@ long pkm_kacs_kunit_open_then_change_sd_for_subject(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -735,8 +729,7 @@ long pkm_kacs_kunit_open_then_change_sd_for_subject(
 	*cached_grant_out = file_sec->granted_access;
 
 	ret = pkm_kacs_set_file_sd_core(args->subject_token, &state->file,
-					args->security_info,
-					args->input_sd_ptr,
+					args->security_info, args->input_sd_ptr,
 					args->input_sd_len);
 	if (ret)
 		goto out_cleanup;
@@ -770,8 +763,8 @@ long pkm_kacs_kunit_open_then_change_sd_for_subject(
 	if (*new_open_ret_out == 0) {
 		file_sec = pkm_kacs_file(&reopened);
 		*new_open_grant_out = file_sec && file_sec->managed ?
-					       file_sec->granted_access :
-					       0;
+					      file_sec->granted_access :
+					      0;
 	}
 	ret = 0;
 
@@ -818,8 +811,8 @@ long pkm_kacs_kunit_open_file_for_subject_audit(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -887,8 +880,8 @@ long pkm_kacs_kunit_open_opath_for_subject(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -973,8 +966,8 @@ long pkm_kacs_kunit_native_open_for_subject(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -1052,11 +1045,10 @@ long pkm_kacs_kunit_native_open_for_subject(
 
 	if (args->create_disposition == KACS_DISPOSITION_SUPERSEDE) {
 		pkm_kacs_init_path_anchor_file(
-			&parent_file,
-			&(struct path){
-				.mnt = &parent_state->mnt,
-				.dentry = &parent_state->dentry,
-			});
+			&parent_file, &(struct path){
+					      .mnt = &parent_state->mnt,
+					      .dentry = &parent_state->dentry,
+				      });
 		ret = pkm_kacs_build_created_file_sd_for_subject(
 			args->subject_token, &parent_file, args->input_sd_ptr,
 			args->input_sd_len, false, prepared.desired_access,
@@ -1336,15 +1328,16 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		}
 
 		ret = pkm_kacs_build_created_file_sd_for_subject(
-			args->subject_token, &parent_state->file, args->input_sd_ptr,
-			args->input_sd_len, false, prepared.desired_access,
-			prepared.privilege_intent, &created_sd, &created_sd_len,
-			NULL);
+			args->subject_token, &parent_state->file,
+			args->input_sd_ptr, args->input_sd_len, false,
+			prepared.desired_access, prepared.privilege_intent,
+			&created_sd, &created_sd_len, NULL);
 		if (ret)
 			goto out;
 
 		cache = pkm_kacs_kunit_file_sd_cache_alloc(
-			created_sd, created_sd_len, PKM_KACS_KUNIT_FILE_SD_VALID);
+			created_sd, created_sd_len,
+			PKM_KACS_KUNIT_FILE_SD_VALID);
 		if (!cache) {
 			ret = -EINVAL;
 			goto out;
@@ -1358,8 +1351,8 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		}
 
 		ret = pkm_kacs_kunit_init_file_mount_state_ex(
-			state, magic, cache, args->mount_policy_override, NULL, 0,
-			mode, true);
+			state, magic, cache, args->mount_policy_override, NULL,
+			0, mode, true);
 		if (ret) {
 			pkm_kacs_inode_sd_cache_free(cache);
 			goto out;
@@ -1368,7 +1361,8 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		out->status = KACS_STATUS_CREATED;
 	} else {
 		if ((args->create_disposition == KACS_DISPOSITION_OPEN_IF ||
-		     args->create_disposition == KACS_DISPOSITION_OVERWRITE_IF) &&
+		     args->create_disposition ==
+			     KACS_DISPOSITION_OVERWRITE_IF) &&
 		    args->input_sd_ptr && args->input_sd_len != 0)
 			return -EINVAL;
 		if (args->create_disposition != KACS_DISPOSITION_OPEN &&
@@ -1390,8 +1384,8 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		}
 
 		ret = pkm_kacs_kunit_init_file_mount_state_ex(
-			state, magic, cache, args->mount_policy_override, NULL, 0,
-			mode, true);
+			state, magic, cache, args->mount_policy_override, NULL,
+			0, mode, true);
 		if (ret) {
 			pkm_kacs_inode_sd_cache_free(cache);
 			goto out;
@@ -1399,13 +1393,15 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 
 		if (args->parent_file_sd_ptr && args->parent_file_sd_len != 0) {
 			parent_cache = pkm_kacs_kunit_file_sd_cache_alloc(
-				args->parent_file_sd_ptr, args->parent_file_sd_len,
+				args->parent_file_sd_ptr,
+				args->parent_file_sd_len,
 				args->parent_file_sd_state);
 			if (!parent_cache) {
 				ret = -EINVAL;
 				goto out;
 			}
-			parent_state = kzalloc(sizeof(*parent_state), GFP_KERNEL);
+			parent_state =
+				kzalloc(sizeof(*parent_state), GFP_KERNEL);
 			if (!parent_state) {
 				pkm_kacs_inode_sd_cache_free(parent_cache);
 				ret = -ENOMEM;
@@ -1413,7 +1409,8 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 			}
 			ret = pkm_kacs_kunit_init_file_mount_state_ex(
 				parent_state, magic, parent_cache,
-				args->mount_policy_override, NULL, 0, S_IFDIR, true);
+				args->mount_policy_override, NULL, 0, S_IFDIR,
+				true);
 			if (ret) {
 				pkm_kacs_inode_sd_cache_free(parent_cache);
 				goto out;
@@ -1442,9 +1439,8 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		goto out;
 
 	file_sec = pkm_kacs_file(&state->file);
-	out->granted_access = file_sec && file_sec->managed ?
-				      file_sec->granted_access :
-				      0;
+	out->granted_access =
+		file_sec && file_sec->managed ? file_sec->granted_access : 0;
 
 	inode_sec = pkm_kacs_inode(&state->inode);
 	out->pending_before_release =
@@ -1494,7 +1490,7 @@ out:
 	return ret;
 }
 
-static const struct file_operations pkm_kacs_kunit_delete_on_close_fops = { };
+static const struct file_operations pkm_kacs_kunit_delete_on_close_fops = {};
 
 static int pkm_kacs_kunit_dup_fd_same_file(int fd)
 {
@@ -1602,9 +1598,8 @@ long pkm_kacs_kunit_delete_on_close_dup_lineage_for_subject(
 		goto out_inode;
 
 	file_sec = pkm_kacs_file(file);
-	out->granted_access = file_sec && file_sec->managed ?
-				      file_sec->granted_access :
-				      0;
+	out->granted_access =
+		file_sec && file_sec->managed ? file_sec->granted_access : 0;
 	out->status = prepared.status;
 	out->pending_before_release =
 		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
@@ -1631,8 +1626,7 @@ long pkm_kacs_kunit_delete_on_close_dup_lineage_for_subject(
 	out->pending_after_duplicate_close =
 		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-	out->unlink_calls_after_duplicate_close =
-		inode_sec->kunit_unlink_calls;
+	out->unlink_calls_after_duplicate_close = inode_sec->kunit_unlink_calls;
 #endif
 
 	ret = close_fd((unsigned int)fd);
@@ -1667,12 +1661,10 @@ out_cache:
 	return ret;
 }
 
-static void pkm_kacs_kunit_native_identity_paths(char *dir_path,
-						 size_t dir_path_len,
-						 char *target_path,
-						 size_t target_path_len,
-						 char *link_path,
-						 size_t link_path_len)
+static void
+pkm_kacs_kunit_native_identity_paths(char *dir_path, size_t dir_path_len,
+				     char *target_path, size_t target_path_len,
+				     char *link_path, size_t link_path_len)
 {
 	u64 id = (u64)atomic64_inc_return(
 		&pkm_kacs_kunit_native_identity_counter);
@@ -1791,8 +1783,8 @@ static void pkm_kacs_kunit_cleanup_native_identity_paths(
 }
 
 static long pkm_kacs_kunit_install_live_inode_sd(struct inode *inode,
-						const u8 *sd_bytes,
-						size_t sd_len)
+						 const u8 *sd_bytes,
+						 size_t sd_len)
 {
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 	struct pkm_kacs_inode_security *sec;
@@ -1863,8 +1855,7 @@ static long pkm_kacs_kunit_create_live_file(const void *subject_token,
 	static const char payload[] = "kacs-id";
 	struct pkm_kacs_native_open_prepared prepared = {};
 	struct kacs_open_how how = {
-		.desired_access = KACS_FILE_READ_DATA |
-				  KACS_FILE_WRITE_DATA,
+		.desired_access = KACS_FILE_READ_DATA | KACS_FILE_WRITE_DATA,
 		.create_disposition = KACS_DISPOSITION_CREATE,
 	};
 	struct path parent_path = {};
@@ -2037,13 +2028,12 @@ long pkm_kacs_kunit_create_live_file_fd_for_get_sd(
 		goto out_cleanup;
 	}
 
-	ret = pkm_kacs_kunit_install_live_path_sd(dir_path, dir_sd,
-						 dir_sd_len);
+	ret = pkm_kacs_kunit_install_live_path_sd(dir_path, dir_sd, dir_sd_len);
 	if (ret)
 		goto out_cleanup;
 
-	ret = pkm_kacs_kunit_create_live_file(subject_token, target_path,
-					      &file, NULL, NULL);
+	ret = pkm_kacs_kunit_create_live_file(subject_token, target_path, &file,
+					      NULL, NULL);
 	if (ret)
 		goto out_cleanup;
 
@@ -2091,8 +2081,7 @@ out_free_sd:
 	return ret;
 }
 
-static long pkm_kacs_kunit_link_path(const char *oldname,
-				     const char *newname)
+static long pkm_kacs_kunit_link_path(const char *oldname, const char *newname)
 {
 	struct path old_path = {};
 	struct path new_parent_path = {};
@@ -2107,8 +2096,8 @@ static long pkm_kacs_kunit_link_path(const char *oldname,
 	if (ret)
 		return ret;
 
-	new_dentry = start_creating_path(AT_FDCWD, newname, &new_parent_path,
-					 0);
+	new_dentry =
+		start_creating_path(AT_FDCWD, newname, &new_parent_path, 0);
 	if (IS_ERR(new_dentry)) {
 		ret = PTR_ERR(new_dentry);
 		goto out_old;
@@ -2176,8 +2165,7 @@ static long pkm_kacs_kunit_query_live_path_sd(const void *subject_token,
 
 	ret = pkm_kacs_query_path_file_sd_core(
 		subject_token, &path,
-		KACS_SECINFO_OWNER | KACS_SECINFO_GROUP |
-			KACS_SECINFO_DACL,
+		KACS_SECINFO_OWNER | KACS_SECINFO_GROUP | KACS_SECINFO_DACL,
 		sd_out, sd_len_out);
 	path_put(&path);
 	return ret;
@@ -2253,15 +2241,14 @@ long pkm_kacs_kunit_native_overwrite_identity_for_subject(
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_CREATE_FILE;
 	ret = pkm_kacs_kunit_create_live_file(args->subject_token, target_path,
-					     &old_file,
-					     &out->old_inode,
-					     &out->size_before);
+					      &old_file, &out->old_inode,
+					      &out->size_before);
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_INSTALL_TARGET_SD;
-	ret = pkm_kacs_kunit_install_live_path_sd(
-		target_path, args->target_file_sd_ptr,
-		args->target_file_sd_len);
+	ret = pkm_kacs_kunit_install_live_path_sd(target_path,
+						  args->target_file_sd_ptr,
+						  args->target_file_sd_len);
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_LINK;
@@ -2269,9 +2256,8 @@ long pkm_kacs_kunit_native_overwrite_identity_for_subject(
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_QUERY_BEFORE;
-	ret = pkm_kacs_kunit_query_live_path_sd(args->subject_token,
-						target_path, &sd_before,
-						&sd_before_len);
+	ret = pkm_kacs_kunit_query_live_path_sd(
+		args->subject_token, target_path, &sd_before, &sd_before_len);
 	if (ret)
 		goto out;
 
@@ -2290,9 +2276,8 @@ long pkm_kacs_kunit_native_overwrite_identity_for_subject(
 	out->status = status;
 	out->granted_access = pkm_kacs_file(opened_file)->granted_access;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_SNAPSHOT_TARGET;
-	ret = pkm_kacs_kunit_path_snapshot(target_path,
-					   &out->target_inode_after,
-					   &out->size_after);
+	ret = pkm_kacs_kunit_path_snapshot(
+		target_path, &out->target_inode_after, &out->size_after);
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_SNAPSHOT_LINK;
@@ -2303,20 +2288,21 @@ long pkm_kacs_kunit_native_overwrite_identity_for_subject(
 	out->old_fd_inode_after = file_inode(old_file)->i_ino;
 	out->old_fd_size_after = (u64)i_size_read(file_inode(old_file));
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_QUERY_TARGET_AFTER;
-	ret = pkm_kacs_kunit_query_live_path_sd(args->subject_token,
-						target_path, &sd_after,
-						&sd_after_len);
+	ret = pkm_kacs_kunit_query_live_path_sd(
+		args->subject_token, target_path, &sd_after, &sd_after_len);
 	if (ret)
 		goto out;
 
-	out->same_inode_after =
-		out->target_inode_after == out->old_inode ? 1U : 0U;
-	out->hardlink_preserved =
-		out->link_inode_after == out->old_inode ? 1U : 0U;
-	out->old_fd_preserved =
-		out->old_fd_inode_after == out->old_inode ? 1U : 0U;
-	out->sd_preserved = pkm_kacs_kunit_sd_equal(
-		sd_before, sd_before_len, sd_after, sd_after_len) ? 1U : 0U;
+	out->same_inode_after = out->target_inode_after == out->old_inode ? 1U :
+									    0U;
+	out->hardlink_preserved = out->link_inode_after == out->old_inode ? 1U :
+									    0U;
+	out->old_fd_preserved = out->old_fd_inode_after == out->old_inode ? 1U :
+									    0U;
+	out->sd_preserved = pkm_kacs_kunit_sd_equal(sd_before, sd_before_len,
+						    sd_after, sd_after_len) ?
+				    1U :
+				    0U;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_NONE;
 	ret = 0;
 
@@ -2394,15 +2380,14 @@ long pkm_kacs_kunit_native_supersede_identity_for_subject(
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_CREATE_FILE;
 	ret = pkm_kacs_kunit_create_live_file(args->subject_token, target_path,
-					     &old_file,
-					     &out->old_inode,
-					     &out->size_before);
+					      &old_file, &out->old_inode,
+					      &out->size_before);
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_INSTALL_TARGET_SD;
-	ret = pkm_kacs_kunit_install_live_path_sd(
-		target_path, args->target_file_sd_ptr,
-		args->target_file_sd_len);
+	ret = pkm_kacs_kunit_install_live_path_sd(target_path,
+						  args->target_file_sd_ptr,
+						  args->target_file_sd_len);
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_LINK;
@@ -2410,9 +2395,8 @@ long pkm_kacs_kunit_native_supersede_identity_for_subject(
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_QUERY_BEFORE;
-	ret = pkm_kacs_kunit_query_live_path_sd(args->subject_token,
-						target_path, &old_sd,
-						&old_sd_len);
+	ret = pkm_kacs_kunit_query_live_path_sd(
+		args->subject_token, target_path, &old_sd, &old_sd_len);
 	if (ret)
 		goto out;
 
@@ -2438,9 +2422,8 @@ long pkm_kacs_kunit_native_supersede_identity_for_subject(
 	out->status = status;
 	out->granted_access = pkm_kacs_file(opened_file)->granted_access;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_SNAPSHOT_TARGET;
-	ret = pkm_kacs_kunit_path_snapshot(target_path,
-					   &out->target_inode_after,
-					   &out->size_after);
+	ret = pkm_kacs_kunit_path_snapshot(
+		target_path, &out->target_inode_after, &out->size_after);
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_SNAPSHOT_LINK;
@@ -2457,23 +2440,28 @@ long pkm_kacs_kunit_native_supersede_identity_for_subject(
 	if (ret)
 		goto out;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_QUERY_LINK_AFTER;
-	ret = pkm_kacs_kunit_query_live_path_sd(args->subject_token,
-						link_path, &link_sd_after,
+	ret = pkm_kacs_kunit_query_live_path_sd(args->subject_token, link_path,
+						&link_sd_after,
 						&link_sd_after_len);
 	if (ret)
 		goto out;
 
-	out->same_inode_after =
-		out->target_inode_after == out->old_inode ? 1U : 0U;
-	out->hardlink_preserved =
-		out->link_inode_after == out->old_inode ? 1U : 0U;
-	out->old_fd_preserved =
-		out->old_fd_inode_after == out->old_inode ? 1U : 0U;
-	out->sd_preserved = pkm_kacs_kunit_sd_equal(
-		old_sd, old_sd_len, link_sd_after, link_sd_after_len) ? 1U : 0U;
-	out->sd_recomputed = pkm_kacs_kunit_sd_different(
-		old_sd, old_sd_len, target_sd_after,
-		target_sd_after_len) ? 1U : 0U;
+	out->same_inode_after = out->target_inode_after == out->old_inode ? 1U :
+									    0U;
+	out->hardlink_preserved = out->link_inode_after == out->old_inode ? 1U :
+									    0U;
+	out->old_fd_preserved = out->old_fd_inode_after == out->old_inode ? 1U :
+									    0U;
+	out->sd_preserved = pkm_kacs_kunit_sd_equal(old_sd, old_sd_len,
+						    link_sd_after,
+						    link_sd_after_len) ?
+				    1U :
+				    0U;
+	out->sd_recomputed = pkm_kacs_kunit_sd_different(old_sd, old_sd_len,
+							 target_sd_after,
+							 target_sd_after_len) ?
+				     1U :
+				     0U;
 	out->failure_step = PKM_KACS_KUNIT_NATIVE_ID_STEP_NONE;
 	ret = 0;
 
@@ -2525,8 +2513,8 @@ long pkm_kacs_kunit_get_cached_file_sd_for_subject(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -2585,8 +2573,8 @@ long pkm_kacs_kunit_set_cached_file_sd_for_subject(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -2603,22 +2591,21 @@ long pkm_kacs_kunit_set_cached_file_sd_for_subject(
 #endif
 
 	ret = pkm_kacs_set_file_sd_core(args->subject_token, &state->file,
-					args->security_info,
-					args->input_sd_ptr,
+					args->security_info, args->input_sd_ptr,
 					args->input_sd_len);
 	set_ret = ret;
 	if (ret && !args->fail_xattr_write)
 		goto out_cleanup;
 
 	mutex_lock(&inode_sec->lock);
-	live_cache = rcu_dereference_protected(inode_sec->sd_cache,
-					       lockdep_is_held(&inode_sec->lock));
+	live_cache = rcu_dereference_protected(
+		inode_sec->sd_cache, lockdep_is_held(&inode_sec->lock));
 	if (!live_cache || live_cache->state != PKM_KACS_INODE_SD_VALID ||
 	    !live_cache->bytes || live_cache->len == 0) {
 		ret = -EACCES;
 	} else {
-		result_sd = kmemdup(live_cache->bytes, live_cache->len,
-				    GFP_KERNEL);
+		result_sd =
+			kmemdup(live_cache->bytes, live_cache->len, GFP_KERNEL);
 		if (!result_sd) {
 			ret = -ENOMEM;
 		} else {
@@ -2657,11 +2644,12 @@ static int pkm_kacs_kunit_init_file_mount_state_ex(
 static void pkm_kacs_kunit_cleanup_file_mount_state(
 	struct pkm_kacs_kunit_file_mount_state *state);
 
-int pkm_kacs_kunit_file_sd_cache_cas_loser(
-	const u8 *sd_ptr, size_t sd_len, u32 *first_installed_out,
-	u32 *second_installed_out, size_t *live_len_out)
+int pkm_kacs_kunit_file_sd_cache_cas_loser(const u8 *sd_ptr, size_t sd_len,
+					   u32 *first_installed_out,
+					   u32 *second_installed_out,
+					   size_t *live_len_out)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_inode_sd_cache *first_cache = NULL;
 	struct pkm_kacs_inode_sd_cache *second_cache = NULL;
 	struct pkm_kacs_inode_sd_cache *live_cache;
@@ -2681,8 +2669,8 @@ int pkm_kacs_kunit_file_sd_cache_cas_loser(
 	*live_len_out = 0;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -2693,12 +2681,12 @@ int pkm_kacs_kunit_file_sd_cache_cas_loser(
 		goto out;
 	}
 
-	first_cache = pkm_kacs_inode_sd_cache_alloc(
-		PKM_KACS_INODE_SD_VALID, first_bytes, sd_len);
+	first_cache = pkm_kacs_inode_sd_cache_alloc(PKM_KACS_INODE_SD_VALID,
+						    first_bytes, sd_len);
 	if (first_cache)
 		first_bytes = NULL;
-	second_cache = pkm_kacs_inode_sd_cache_alloc(
-		PKM_KACS_INODE_SD_VALID, second_bytes, sd_len);
+	second_cache = pkm_kacs_inode_sd_cache_alloc(PKM_KACS_INODE_SD_VALID,
+						     second_bytes, sd_len);
 	if (second_cache)
 		second_bytes = NULL;
 	if (!first_cache || !second_cache) {
@@ -2755,11 +2743,11 @@ static int pkm_kacs_kunit_init_file_mount_state_ex(
 
 	memset(state, 0, sizeof(*state));
 	sb_blob_len = pkm_blob_sizes.lbs_superblock +
-		sizeof(struct pkm_kacs_superblock_security);
-	file_blob_len = pkm_blob_sizes.lbs_file +
-		sizeof(struct pkm_kacs_file_security);
+		      sizeof(struct pkm_kacs_superblock_security);
+	file_blob_len =
+		pkm_blob_sizes.lbs_file + sizeof(struct pkm_kacs_file_security);
 	inode_blob_len = pkm_blob_sizes.lbs_inode +
-		sizeof(struct pkm_kacs_inode_security);
+			 sizeof(struct pkm_kacs_inode_security);
 
 	state->sb_blob = kzalloc(sb_blob_len, GFP_KERNEL);
 	if (!state->sb_blob)
@@ -2795,8 +2783,8 @@ static int pkm_kacs_kunit_init_file_mount_state_ex(
 			ret = -EINVAL;
 			goto out_err;
 		}
-		copied_bytes = kmemdup(template_sd_ptr, template_sd_len,
-				       GFP_KERNEL);
+		copied_bytes =
+			kmemdup(template_sd_ptr, template_sd_len, GFP_KERNEL);
 		if (!copied_bytes) {
 			ret = -ENOMEM;
 			goto out_err;
@@ -2867,8 +2855,8 @@ static int pkm_kacs_kunit_init_file_mount_state(
 	struct pkm_kacs_kunit_file_mount_state *state, u64 magic,
 	struct pkm_kacs_inode_sd_cache *cache)
 {
-	return pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, 0, NULL, 0, S_IFREG, false);
+	return pkm_kacs_kunit_init_file_mount_state_ex(state, magic, cache, 0,
+						       NULL, 0, S_IFREG, false);
 }
 
 static void pkm_kacs_kunit_cleanup_file_mount_state(
@@ -2939,7 +2927,8 @@ struct pkm_kacs_kunit_open_snapshot_context {
 	long ret;
 };
 
-static void pkm_kacs_kunit_change_sd_before_open_stamp(struct file *file, void *context)
+static void pkm_kacs_kunit_change_sd_before_open_stamp(struct file *file,
+						       void *context)
 {
 	struct pkm_kacs_kunit_open_snapshot_context *race = context;
 	const struct pkm_kacs_kunit_open_snapshot_args *args = race->args;
@@ -2948,37 +2937,40 @@ static void pkm_kacs_kunit_change_sd_before_open_stamp(struct file *file, void *
 	sec->kunit_open_cache_selected = NULL;
 	race->calls++;
 	/* An independent observer pin lets the fixture check for leaked pins. */
-	race->observed = pkm_kacs_inode_sd_cache_get_current(file_inode(file), sec);
+	race->observed =
+		pkm_kacs_inode_sd_cache_get_current(file_inode(file), sec);
 	if (!race->observed) {
 		race->ret = -ENOENT;
 		return;
 	}
 	mutex_lock(&sec->lock);
-	race->ret = pkm_kacs_kunit_fake_setxattr_locked(sec, args->replacement_sd,
-							args->replacement_sd_len);
+	race->ret = pkm_kacs_kunit_fake_setxattr_locked(
+		sec, args->replacement_sd, args->replacement_sd_len);
 	mutex_unlock(&sec->lock);
 	if (race->ret)
 		return;
 	/* Run the actual post-write invalidation, after selection but before CAAP. */
-	pkm_kacs_inode_post_setxattr(file->f_path.dentry, "security.peios.sd", NULL, 0, 0);
+	pkm_kacs_inode_post_setxattr(file->f_path.dentry, "security.peios.sd",
+				     NULL, 0, 0);
 	if (args->replace_slot)
 		race->ret = pkm_kacs_inode_ensure_effective_cache(file, sec);
 }
 
-static long pkm_kacs_kunit_stamp_snapshot(struct file *file,
-					  const struct pkm_kacs_kunit_open_snapshot_args *args)
+static long pkm_kacs_kunit_stamp_snapshot(
+	struct file *file, const struct pkm_kacs_kunit_open_snapshot_args *args)
 {
 	const void *subject = args->subject_token;
 
 	if (args->native)
-		return pkm_kacs_stamp_native_file_granted_access_for_subject(subject, file,
-									     KACS_FILE_READ_DATA,
-									     0);
-	return pkm_kacs_stamp_file_granted_access_for_subject(args->subject_token, file);
+		return pkm_kacs_stamp_native_file_granted_access_for_subject(
+			subject, file, KACS_FILE_READ_DATA, 0);
+	return pkm_kacs_stamp_file_granted_access_for_subject(
+		args->subject_token, file);
 }
 
-long pkm_kacs_kunit_open_snapshot_race(const struct pkm_kacs_kunit_open_snapshot_args *args,
-				       struct pkm_kacs_kunit_open_snapshot_result *out)
+long pkm_kacs_kunit_open_snapshot_race(
+	const struct pkm_kacs_kunit_open_snapshot_args *args,
+	struct pkm_kacs_kunit_open_snapshot_result *out)
 {
 	struct pkm_kacs_kunit_open_snapshot_context race = { .args = args };
 	struct pkm_kacs_kunit_file_mount_state *state;
@@ -2991,16 +2983,16 @@ long pkm_kacs_kunit_open_snapshot_race(const struct pkm_kacs_kunit_open_snapshot
 	state = kzalloc_obj(*state, GFP_KERNEL);
 	if (!state)
 		return -ENOMEM;
-	ret = pkm_kacs_kunit_init_file_mount_state_ex(state, EXT4_SUPER_MAGIC, NULL,
-						      KACS_MOUNT_POLICY_DENY_MISSING, NULL, 0,
-						      S_IFREG, true);
+	ret = pkm_kacs_kunit_init_file_mount_state_ex(
+		state, EXT4_SUPER_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
+		NULL, 0, S_IFREG, true);
 	if (ret)
 		goto out_free;
 	sec = pkm_kacs_inode(&state->inode);
 	if (args->selected_sd) {
 		mutex_lock(&sec->lock);
-		ret = pkm_kacs_kunit_fake_setxattr_locked(sec, args->selected_sd,
-							  args->selected_sd_len);
+		ret = pkm_kacs_kunit_fake_setxattr_locked(
+			sec, args->selected_sd, args->selected_sd_len);
 		mutex_unlock(&sec->lock);
 		if (ret)
 			goto out_cleanup;
@@ -3011,7 +3003,8 @@ long pkm_kacs_kunit_open_snapshot_race(const struct pkm_kacs_kunit_open_snapshot
 			goto out_cleanup;
 	}
 	sec->kunit_open_cache_context = &race;
-	sec->kunit_open_cache_selected = pkm_kacs_kunit_change_sd_before_open_stamp;
+	sec->kunit_open_cache_selected =
+		pkm_kacs_kunit_change_sd_before_open_stamp;
 	out->first_ret = pkm_kacs_kunit_stamp_snapshot(&state->file, args);
 	sec->kunit_open_cache_selected = NULL;
 	out->first_managed = pkm_kacs_file(&state->file)->managed;
@@ -3034,8 +3027,9 @@ out_free:
 	return ret;
 }
 
-long pkm_kacs_kunit_cold_open_then_set_sd(
-	const void *subject_token, const u8 *sd, size_t sd_len, bool native)
+long pkm_kacs_kunit_cold_open_then_set_sd(const void *subject_token,
+					  const u8 *sd, size_t sd_len,
+					  bool native)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_security *sec;
@@ -3075,9 +3069,10 @@ out_free:
 	return ret;
 }
 
-long pkm_kacs_kunit_corrupt_file_sd_population_twice(
-	const u8 *sd_ptr, size_t sd_len, long *first_ret_out,
-	long *second_ret_out)
+long pkm_kacs_kunit_corrupt_file_sd_population_twice(const u8 *sd_ptr,
+						     size_t sd_len,
+						     long *first_ret_out,
+						     long *second_ret_out)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_security *sec;
@@ -3113,16 +3108,16 @@ long pkm_kacs_kunit_corrupt_file_sd_population_twice(
 		goto out_cleanup;
 
 	state->file.f_mode = FMODE_PATH;
-	first_ret = pkm_kacs_query_file_sd_core(
-		subject_token, &state->file, KACS_SECINFO_DACL, &subset,
-		&subset_len);
+	first_ret = pkm_kacs_query_file_sd_core(subject_token, &state->file,
+						KACS_SECINFO_DACL, &subset,
+						&subset_len);
 	pkm_kacs_free((void *)subset);
 	subset = NULL;
 	subset_len = 0;
 
-	second_ret = pkm_kacs_query_file_sd_core(
-		subject_token, &state->file, KACS_SECINFO_DACL, &subset,
-		&subset_len);
+	second_ret = pkm_kacs_query_file_sd_core(subject_token, &state->file,
+						 KACS_SECINFO_DACL, &subset,
+						 &subset_len);
 	pkm_kacs_free((void *)subset);
 
 	*first_ret_out = first_ret;
@@ -3207,8 +3202,7 @@ long pkm_kacs_kunit_set_file_sd_on_mount_for_subject(
 	}
 
 	ret = pkm_kacs_set_file_sd_core(args->subject_token, &state->file,
-					args->security_info,
-					args->input_sd_ptr,
+					args->security_info, args->input_sd_ptr,
 					args->input_sd_len);
 	pkm_kacs_kunit_cleanup_file_mount_state(state);
 out_free:
@@ -3217,8 +3211,8 @@ out_free:
 }
 
 long pkm_kacs_kunit_get_path_file_sd_on_mount_for_subject(
-	const struct pkm_kacs_kunit_file_sd_get_args *args, u64 magic, u32 flags,
-	const u8 **out_sd_ptr, size_t *out_sd_len)
+	const struct pkm_kacs_kunit_file_sd_get_args *args, u64 magic,
+	u32 flags, const u8 **out_sd_ptr, size_t *out_sd_len)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_sd_cache *cache;
@@ -3260,8 +3254,8 @@ long pkm_kacs_kunit_get_path_file_sd_on_mount_for_subject(
 
 	ret = pkm_kacs_query_path_file_sd_core(args->subject_token,
 					       &state->file.f_path,
-					       args->security_info,
-					       out_sd_ptr, out_sd_len);
+					       args->security_info, out_sd_ptr,
+					       out_sd_len);
 	pkm_kacs_kunit_cleanup_file_mount_state(state);
 out_free:
 	kfree(state);
@@ -3269,7 +3263,8 @@ out_free:
 }
 
 long pkm_kacs_kunit_set_path_file_sd_on_mount_for_subject(
-	const struct pkm_kacs_kunit_file_sd_set_args *args, u64 magic, u32 flags)
+	const struct pkm_kacs_kunit_file_sd_set_args *args, u64 magic,
+	u32 flags)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_sd_cache *cache;
@@ -3306,11 +3301,9 @@ long pkm_kacs_kunit_set_path_file_sd_on_mount_for_subject(
 		goto out_free;
 	}
 
-	ret = pkm_kacs_set_path_file_sd_core(args->subject_token,
-					     &state->file.f_path,
-					     args->security_info,
-					     args->input_sd_ptr,
-					     args->input_sd_len);
+	ret = pkm_kacs_set_path_file_sd_core(
+		args->subject_token, &state->file.f_path, args->security_info,
+		args->input_sd_ptr, args->input_sd_len);
 	pkm_kacs_kunit_cleanup_file_mount_state(state);
 out_free:
 	kfree(state);
@@ -3385,15 +3378,16 @@ long pkm_kacs_kunit_persistent_synthesis_second_query_uses_cache(
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
 		state, TMPFS_MAGIC, NULL,
-		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT, NULL, 0,
-		S_IFREG, true);
+		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		goto out_free;
 
 	state->file.f_mode = FMODE_PATH;
-	*first_ret_out = pkm_kacs_query_file_sd_core(
-		subject_token, &state->file, KACS_SECINFO_DACL, &subset,
-		&subset_len);
+	*first_ret_out = pkm_kacs_query_file_sd_core(subject_token,
+						     &state->file,
+						     KACS_SECINFO_DACL, &subset,
+						     &subset_len);
 	pkm_kacs_free((void *)subset);
 	subset = NULL;
 	subset_len = 0;
@@ -3405,9 +3399,10 @@ long pkm_kacs_kunit_persistent_synthesis_second_query_uses_cache(
 	sec->kunit_fake_xattr_fail_set = true;
 #endif
 
-	*second_ret_out = pkm_kacs_query_file_sd_core(
-		subject_token, &state->file, KACS_SECINFO_DACL, &subset,
-		&subset_len);
+	*second_ret_out = pkm_kacs_query_file_sd_core(subject_token,
+						      &state->file,
+						      KACS_SECINFO_DACL,
+						      &subset, &subset_len);
 	pkm_kacs_free((void *)subset);
 	ret = 0;
 
@@ -3445,8 +3440,8 @@ long pkm_kacs_kunit_persistent_synthesis_pending_entry_persists_on_access(
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
 		state, TMPFS_MAGIC, NULL,
-		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT, NULL, 0,
-		S_IFREG, true);
+		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		goto out_free;
 	sec = pkm_kacs_inode(&state->inode);
@@ -3493,8 +3488,9 @@ out_free:
 	return ret;
 }
 
-long pkm_kacs_kunit_query_file_sd_with_getxattr_errno(
-	const void *subject_token, int getxattr_errno, u32 mount_policy)
+long pkm_kacs_kunit_query_file_sd_with_getxattr_errno(const void *subject_token,
+						      int getxattr_errno,
+						      u32 mount_policy)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_security *sec;
@@ -3510,8 +3506,7 @@ long pkm_kacs_kunit_query_file_sd_with_getxattr_errno(
 		return -ENOMEM;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, TMPFS_MAGIC, NULL, mount_policy, NULL, 0, S_IFREG,
-		true);
+		state, TMPFS_MAGIC, NULL, mount_policy, NULL, 0, S_IFREG, true);
 	if (ret)
 		goto out_free;
 	sec = pkm_kacs_inode(&state->inode);
@@ -3551,8 +3546,8 @@ long pkm_kacs_kunit_persistent_synthesis_deferred_persist(
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
 		state, TMPFS_MAGIC, NULL,
-		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT, NULL, 0,
-		S_IFREG, true);
+		KACS_MOUNT_POLICY_SYNTHESIZE_PERSISTENT, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		goto out_free;
 
@@ -3599,7 +3594,7 @@ int pkm_kacs_kunit_cache_generation_currentness(
 	u32 *synthetic_current_out, u32 *xattr_current_out,
 	u32 *corrupt_current_out, u32 *synthetic_pending_current_out)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_superblock_security *sb_sec;
 	struct pkm_kacs_inode_sd_cache *missing_cache = NULL;
 	struct pkm_kacs_inode_sd_cache *synthetic_cache = NULL;
@@ -3624,8 +3619,7 @@ int pkm_kacs_kunit_cache_generation_currentness(
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
 		&state, TMPFS_MAGIC, NULL,
-		KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL, NULL, 0,
-		S_IFREG, true);
+		KACS_MOUNT_POLICY_SYNTHESIZE_EPHEMERAL, NULL, 0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -3670,26 +3664,22 @@ int pkm_kacs_kunit_cache_generation_currentness(
 		goto out;
 	}
 
-	*missing_current_out = pkm_kacs_inode_sd_cache_current(
-				       &state.sb, missing_cache) ?
-				       1U :
-				       0U;
-	*synthetic_current_out = pkm_kacs_inode_sd_cache_current(
-					 &state.sb, synthetic_cache) ?
-					 1U :
-					 0U;
-	*xattr_current_out = pkm_kacs_inode_sd_cache_current(
-				     &state.sb, xattr_cache) ?
-				     1U :
-				     0U;
-	*corrupt_current_out = pkm_kacs_inode_sd_cache_current(
-				       &state.sb, corrupt_cache) ?
-				       1U :
-				       0U;
-	*synthetic_pending_current_out = pkm_kacs_inode_sd_cache_current(
-						 &state.sb, pending_cache) ?
-						 1U :
-						 0U;
+	*missing_current_out =
+		pkm_kacs_inode_sd_cache_current(&state.sb, missing_cache) ? 1U :
+									    0U;
+	*synthetic_current_out =
+		pkm_kacs_inode_sd_cache_current(&state.sb, synthetic_cache) ?
+			1U :
+			0U;
+	*xattr_current_out =
+		pkm_kacs_inode_sd_cache_current(&state.sb, xattr_cache) ? 1U :
+									  0U;
+	*corrupt_current_out =
+		pkm_kacs_inode_sd_cache_current(&state.sb, corrupt_cache) ? 1U :
+									    0U;
+	*synthetic_pending_current_out =
+		pkm_kacs_inode_sd_cache_current(&state.sb, pending_cache) ? 1U :
+									    0U;
 	ret = 0;
 
 out:
@@ -3705,8 +3695,9 @@ out:
 	return ret;
 }
 
-static long pkm_kacs_kunit_copy_mount_template(
-	const struct kacs_mount_policy_args *args, const u8 **template_out)
+static long
+pkm_kacs_kunit_copy_mount_template(const struct kacs_mount_policy_args *args,
+				   const u8 **template_out)
 {
 	const u8 *template_ptr;
 	const u8 *copy;
@@ -3762,8 +3753,8 @@ long pkm_kacs_kunit_set_mount_policy_for_subject(
 	}
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0,
-		S_IFREG, true);
+		state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		goto out_free;
 
@@ -3838,21 +3829,18 @@ long pkm_kacs_kunit_same_superblock_mount_policy_for_subject(
 		goto out_free;
 
 	second_inode.i_sb = state->file.f_inode->i_sb;
-	ret = pkm_kacs_set_mount_policy_core(subject_token,
-					     state->file.f_inode->i_sb, args,
-					     template_bytes);
+	ret = pkm_kacs_set_mount_policy_core(
+		subject_token, state->file.f_inode->i_sb, args, template_bytes);
 	if (ret)
 		goto out_mount;
 	template_bytes = NULL;
 
-	ret = pkm_kacs_get_mount_policy_snapshot(state->file.f_inode->i_sb,
-						 &first_snapshot,
-						 &first_template);
+	ret = pkm_kacs_get_mount_policy_snapshot(
+		state->file.f_inode->i_sb, &first_snapshot, &first_template);
 	if (ret)
 		goto out_mount;
-	ret = pkm_kacs_get_mount_policy_snapshot(second_inode.i_sb,
-						 &second_snapshot,
-						 &second_template);
+	ret = pkm_kacs_get_mount_policy_snapshot(
+		second_inode.i_sb, &second_snapshot, &second_template);
 	if (ret)
 		goto out_mount;
 
@@ -3888,8 +3876,8 @@ long pkm_kacs_kunit_mount_policy_failure_preserves_state(
 	long failure_ret;
 	long ret;
 
-	if (!initial_args || !failure_args || !failure_ret_out ||
-	    !policy_out || !generation_out || !template_len_out)
+	if (!initial_args || !failure_args || !failure_ret_out || !policy_out ||
+	    !generation_out || !template_len_out)
 		return -EINVAL;
 
 	*failure_ret_out = 0;
@@ -3912,14 +3900,13 @@ long pkm_kacs_kunit_mount_policy_failure_preserves_state(
 	}
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0,
-		S_IFREG, true);
+		state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		goto out_free;
 
 	ret = pkm_kacs_set_mount_policy_core(subject_token, &state->sb,
-					     initial_args,
-					     initial_template);
+					     initial_args, initial_template);
 	if (ret)
 		goto out_mount;
 	initial_template = NULL;
@@ -3957,10 +3944,9 @@ out_free:
 	return ret;
 }
 
-static const struct file_operations pkm_kacs_kunit_mount_policy_fops = { };
+static const struct file_operations pkm_kacs_kunit_mount_policy_fops = {};
 
-long pkm_kacs_kunit_mount_policy_opath_fd_resolves_superblock(
-	u32 *policy_out)
+long pkm_kacs_kunit_mount_policy_opath_fd_resolves_superblock(u32 *policy_out)
 {
 	struct super_block *sb = NULL;
 	struct file *resolved_file = NULL;
@@ -4013,8 +3999,8 @@ u32 pkm_kacs_kunit_next_mount_policy_generation(u32 generation)
 
 long pkm_kacs_kunit_adopt_missing_mount_for_subject(
 	const void *subject_token, const struct kacs_mount_policy_args *args,
-	const u8 **out_sd_ptr, size_t *out_sd_len,
-	u32 *xattr_written_out, long *first_query_ret_out)
+	const u8 **out_sd_ptr, size_t *out_sd_len, u32 *xattr_written_out,
+	long *first_query_ret_out)
 {
 	struct pkm_kacs_kunit_file_mount_state *state;
 	struct pkm_kacs_inode_security *sec;
@@ -4053,9 +4039,9 @@ long pkm_kacs_kunit_adopt_missing_mount_for_subject(
 		goto out_free;
 
 	state->file.f_mode = FMODE_PATH;
-	first_ret = pkm_kacs_query_file_sd_core(
-		subject_token, &state->file, KACS_SECINFO_DACL,
-		&first_sd, &first_sd_len);
+	first_ret = pkm_kacs_query_file_sd_core(subject_token, &state->file,
+						KACS_SECINFO_DACL, &first_sd,
+						&first_sd_len);
 	pkm_kacs_free((void *)first_sd);
 	*first_query_ret_out = first_ret;
 
@@ -4066,8 +4052,8 @@ long pkm_kacs_kunit_adopt_missing_mount_for_subject(
 	template_bytes = NULL;
 
 	ret = pkm_kacs_query_file_sd_core(subject_token, &state->file,
-					  KACS_SECINFO_DACL,
-					  out_sd_ptr, out_sd_len);
+					  KACS_SECINFO_DACL, out_sd_ptr,
+					  out_sd_len);
 	if (!ret) {
 		sec = pkm_kacs_inode(&state->inode);
 #ifdef CONFIG_SECURITY_PKM_KUNIT
@@ -4095,8 +4081,8 @@ static int pkm_kacs_kunit_inode_sd_xattr_check(u32 op, const char *name,
 
 	fs_type.name = ntfs ? "ntfs3" : "tmpfs";
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_UNMANAGED,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_UNMANAGED, NULL, 0,
+		S_IFREG, true);
 	if (ret)
 		return ret;
 	state.sb.s_type = &fs_type;
@@ -4106,8 +4092,8 @@ static int pkm_kacs_kunit_inode_sd_xattr_check(u32 op, const char *name,
 		ret = pkm_kacs_inode_getxattr(&state.dentry, name);
 		break;
 	case 2:
-		ret = pkm_kacs_inode_setxattr(NULL, &state.dentry, name,
-					      value, set_size, 0);
+		ret = pkm_kacs_inode_setxattr(NULL, &state.dentry, name, value,
+					      set_size, 0);
 		break;
 	case 3:
 		ret = pkm_kacs_inode_removexattr(NULL, &state.dentry, name);
@@ -4167,9 +4153,9 @@ int pkm_kacs_kunit_check_inode_remove_acl(void)
 					 XATTR_NAME_POSIX_ACL_ACCESS);
 }
 
-int pkm_kacs_kunit_check_inode_getsecurity_sd(
-	const u8 *sd_ptr, size_t sd_len, const char *name, u8 *out,
-	size_t out_len, size_t *written)
+int pkm_kacs_kunit_check_inode_getsecurity_sd(const u8 *sd_ptr, size_t sd_len,
+					      const char *name, u8 *out,
+					      size_t out_len, size_t *written)
 {
 	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_inode_sd_cache *cache;
@@ -4223,8 +4209,8 @@ static int pkm_kacs_kunit_file_sd_xattr_check(u32 op, const char *name,
 	size_t file_blob_len;
 	int ret;
 
-	file_blob_len = pkm_blob_sizes.lbs_file +
-		sizeof(struct pkm_kacs_file_security);
+	file_blob_len =
+		pkm_blob_sizes.lbs_file + sizeof(struct pkm_kacs_file_security);
 	file_blob = kzalloc(file_blob_len, GFP_KERNEL);
 	if (!file_blob)
 		return -ENOMEM;
@@ -4297,19 +4283,16 @@ long pkm_kacs_kunit_get_token_sd_for_subject(int token_fd,
 	return ret;
 }
 
-long pkm_kacs_kunit_set_token_sd_for_subject(int token_fd,
-					     const void *subject_token,
-					     u32 security_info,
-					     const u8 *input_sd_ptr,
-					     size_t input_sd_len,
-					     const u8 **out_sd_ptr,
-					     size_t *out_sd_len)
+long pkm_kacs_kunit_set_token_sd_for_subject(
+	int token_fd, const void *subject_token, u32 security_info,
+	const u8 *input_sd_ptr, size_t input_sd_len, const u8 **out_sd_ptr,
+	size_t *out_sd_len)
 {
 	const void *target_token = NULL;
 	long ret;
 
-	if (!subject_token || !input_sd_ptr || input_sd_len == 0 || !out_sd_ptr ||
-	    !out_sd_len)
+	if (!subject_token || !input_sd_ptr || input_sd_len == 0 ||
+	    !out_sd_ptr || !out_sd_len)
 		return -EINVAL;
 
 	*out_sd_ptr = NULL;
@@ -4323,28 +4306,23 @@ long pkm_kacs_kunit_set_token_sd_for_subject(int token_fd,
 					 security_info, input_sd_ptr,
 					 input_sd_len);
 	if (!ret)
-		ret = kacs_rust_query_token_sd_subset(target_token,
-						      security_info,
-						      out_sd_ptr,
-						      out_sd_len);
+		ret = kacs_rust_query_token_sd_subset(
+			target_token, security_info, out_sd_ptr, out_sd_len);
 
 	kacs_rust_token_drop(target_token);
 	return ret;
 }
 
-
-
 int pkm_kacs_kunit_check_mmap_snapshot(u32 managed, u32 granted_access,
-				       unsigned long prot,
-				       unsigned long flags)
+				       unsigned long prot, unsigned long flags)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4359,13 +4337,13 @@ int pkm_kacs_kunit_check_mmap_snapshot(u32 managed, u32 granted_access,
 
 int pkm_kacs_kunit_check_mmap_opath(unsigned long prot, unsigned long flags)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4383,13 +4361,13 @@ int pkm_kacs_kunit_check_mprotect_snapshot(u32 managed, u32 granted_access,
 					   unsigned long vm_flags,
 					   unsigned long prot)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4404,8 +4382,7 @@ int pkm_kacs_kunit_check_mprotect_snapshot(u32 managed, u32 granted_access,
 
 int pkm_kacs_kunit_check_file_permission_snapshot(u32 managed,
 						  u32 granted_access,
-						  int file_flags,
-						  int mask)
+						  int file_flags, int mask)
 {
 	return pkm_kacs_kunit_check_file_permission_snapshot_audit(
 		managed, granted_access, 0, file_flags, mask);
@@ -4417,13 +4394,13 @@ int pkm_kacs_kunit_check_file_permission_snapshot_audit(u32 managed,
 							int file_flags,
 							int mask)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4442,13 +4419,13 @@ int pkm_kacs_kunit_check_file_permission_snapshot_for_subject(
 	const void *subject_token, u64 magic, u32 managed, u32 granted_access,
 	int file_flags, int mask)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0,
-		S_IFREG, true);
+		&state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		return ret;
 
@@ -4486,8 +4463,8 @@ long pkm_kacs_kunit_set_file_fd_snapshot(int fd, u32 managed,
 	return 0;
 }
 
-long pkm_kacs_kunit_file_fd_snapshot(
-	int fd, struct pkm_kacs_kunit_file_fd_view *view)
+long pkm_kacs_kunit_file_fd_snapshot(int fd,
+				     struct pkm_kacs_kunit_file_fd_view *view)
 {
 	struct pkm_kacs_file_security *file_sec;
 	struct fd f;
@@ -4541,13 +4518,13 @@ int pkm_kacs_kunit_check_file_write_intent_snapshot_for_subject(
 	const void *subject_token, u64 magic, u32 managed, u32 granted_access,
 	int file_flags, u32 rwf_flags, bool positioned)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0,
-		S_IFREG, true);
+		&state, magic ? magic : TMPFS_MAGIC, NULL, 0, NULL, 0, S_IFREG,
+		true);
 	if (ret)
 		return ret;
 
@@ -4562,17 +4539,19 @@ int pkm_kacs_kunit_check_file_write_intent_snapshot_for_subject(
 	return ret;
 }
 
-int pkm_kacs_kunit_check_file_permission_write_intent(
-	u32 managed, u32 granted_access, int file_flags, u32 rwf_flags,
-	bool positioned)
+int pkm_kacs_kunit_check_file_permission_write_intent(u32 managed,
+						      u32 granted_access,
+						      int file_flags,
+						      u32 rwf_flags,
+						      bool positioned)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4607,13 +4586,13 @@ int pkm_kacs_kunit_check_file_permission_write_intent_mismatch(void)
 		return -ENOMEM;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&fixture->first, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&fixture->first, TMPFS_MAGIC, NULL,
+		KACS_MOUNT_POLICY_DENY_MISSING, NULL, 0, S_IFREG, true);
 	if (ret)
 		goto out_free;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&fixture->second, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&fixture->second, TMPFS_MAGIC, NULL,
+		KACS_MOUNT_POLICY_DENY_MISSING, NULL, 0, S_IFREG, true);
 	if (ret)
 		goto out_first;
 
@@ -4626,8 +4605,8 @@ int pkm_kacs_kunit_check_file_permission_write_intent_mismatch(void)
 
 	ret = pkm_kacs_file_begin_write_intent(&fixture->first.file, 0, true);
 	if (!ret) {
-		ret = pkm_kacs_check_file_permission_snapshot(&fixture->second.file,
-							      MAY_WRITE);
+		ret = pkm_kacs_check_file_permission_snapshot(
+			&fixture->second.file, MAY_WRITE);
 		pkm_kacs_file_end_write_intent(&fixture->first.file);
 	}
 
@@ -4670,17 +4649,16 @@ static int pkm_kacs_kunit_call_file_metadata_op(struct file *file, u32 op,
 	}
 }
 
-int pkm_kacs_kunit_check_file_metadata_snapshot(u32 managed,
-						u32 granted_access, u32 op,
-						const char *name)
+int pkm_kacs_kunit_check_file_metadata_snapshot(u32 managed, u32 granted_access,
+						u32 op, const char *name)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4696,13 +4674,13 @@ int pkm_kacs_kunit_check_file_metadata_snapshot(u32 managed,
 
 int pkm_kacs_kunit_check_file_metadata_opath(u32 op, const char *name)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -4750,13 +4728,13 @@ int pkm_kacs_kunit_check_file_metadata_marker_clears(void)
 		return -ENOMEM;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&fixture->first, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&fixture->first, TMPFS_MAGIC, NULL,
+		KACS_MOUNT_POLICY_DENY_MISSING, NULL, 0, S_IFREG, true);
 	if (ret)
 		goto out_free;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&fixture->second, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&fixture->second, TMPFS_MAGIC, NULL,
+		KACS_MOUNT_POLICY_DENY_MISSING, NULL, 0, S_IFREG, true);
 	if (ret)
 		goto out_first;
 
@@ -4777,7 +4755,7 @@ int pkm_kacs_kunit_check_file_metadata_marker_clears(void)
 	if (ret)
 		goto out;
 	(void)pkm_kacs_inode_setattr(&nop_mnt_idmap, &fixture->first.dentry,
-				      &attr);
+				     &attr);
 	ret = pkm_kacs_kunit_begin_getattr_marker(&fixture->first);
 	if (ret)
 		goto out;
@@ -4845,8 +4823,7 @@ static int pkm_kacs_kunit_call_path_metadata_op(
 			return ret;
 		ret = pkm_kacs_inode_file_getattr(&state->dentry, NULL);
 		if (!ret)
-			ret = pkm_kacs_inode_file_setattr(&state->dentry,
-							  NULL);
+			ret = pkm_kacs_inode_file_setattr(&state->dentry, NULL);
 		pkm_kacs_path_end_metadata(&path);
 		return ret;
 	case PKM_KACS_KUNIT_PATH_METADATA_XATTR_GET:
@@ -4871,13 +4848,12 @@ int pkm_kacs_kunit_check_path_metadata_live(const u8 *target_file_sd_ptr,
 					    u32 target_file_sd_state, u32 op,
 					    u32 mode, const char *name)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_inode_sd_cache *cache;
 	int ret;
 
-	cache = pkm_kacs_kunit_file_sd_cache_alloc(target_file_sd_ptr,
-						   target_file_sd_len,
-						   target_file_sd_state);
+	cache = pkm_kacs_kunit_file_sd_cache_alloc(
+		target_file_sd_ptr, target_file_sd_len, target_file_sd_state);
 	if (!cache)
 		return -EINVAL;
 
@@ -4894,10 +4870,12 @@ int pkm_kacs_kunit_check_path_metadata_live(const u8 *target_file_sd_ptr,
 	return ret;
 }
 
-int pkm_kacs_kunit_check_inode_permission_live(
-	const u8 *target_file_sd_ptr, size_t target_file_sd_len,
-	u32 target_file_sd_state, u32 mount_policy,
-	const void *subject_token, int mask)
+int pkm_kacs_kunit_check_inode_permission_live(const u8 *target_file_sd_ptr,
+					       size_t target_file_sd_len,
+					       u32 target_file_sd_state,
+					       u32 mount_policy,
+					       const void *subject_token,
+					       int mask)
 {
 	return pkm_kacs_kunit_check_inode_permission_live_mode(
 		target_file_sd_ptr, target_file_sd_len, target_file_sd_state,
@@ -4906,19 +4884,18 @@ int pkm_kacs_kunit_check_inode_permission_live(
 
 int pkm_kacs_kunit_check_inode_permission_live_mode(
 	const u8 *target_file_sd_ptr, size_t target_file_sd_len,
-	u32 target_file_sd_state, u32 mount_policy,
-	const void *subject_token, u32 mode, int mask)
+	u32 target_file_sd_state, u32 mount_policy, const void *subject_token,
+	u32 mode, int mask)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_inode_sd_cache *cache;
 	int ret;
 
 	if (!subject_token)
 		return -EINVAL;
 
-	cache = pkm_kacs_kunit_file_sd_cache_alloc(target_file_sd_ptr,
-						   target_file_sd_len,
-						   target_file_sd_state);
+	cache = pkm_kacs_kunit_file_sd_cache_alloc(
+		target_file_sd_ptr, target_file_sd_len, target_file_sd_state);
 	if (!cache)
 		return -EINVAL;
 
@@ -4935,17 +4912,15 @@ int pkm_kacs_kunit_check_inode_permission_live_mode(
 	return ret;
 }
 
-int pkm_kacs_kunit_check_open_by_handle_for_subject(
-	const void *subject_token)
+int pkm_kacs_kunit_check_open_by_handle_for_subject(const void *subject_token)
 {
 	return (int)pkm_kacs_require_enabled_privilege(
 		subject_token, KACS_SE_CHANGE_NOTIFY_PRIVILEGE);
 }
 
 static int pkm_kacs_kunit_init_namespace_state(
-	struct pkm_kacs_kunit_file_mount_state *state,
-	const u8 *sd_ptr, size_t sd_len, u32 sd_state, u64 magic,
-	u32 mount_policy, umode_t mode)
+	struct pkm_kacs_kunit_file_mount_state *state, const u8 *sd_ptr,
+	size_t sd_len, u32 sd_state, u64 magic, u32 mount_policy, umode_t mode)
 {
 	struct pkm_kacs_inode_sd_cache *cache;
 	int ret;
@@ -4977,8 +4952,8 @@ static int pkm_kacs_kunit_namespace_maybe_build_created_sd(
 	*created_sd_out = NULL;
 	*created_sd_len_out = 0;
 	ret = pkm_kacs_build_legacy_created_file_sd_for_subject(
-		args->subject_token, &parent->inode, &parent->dentry,
-		directory, created_sd_out, created_sd_len_out);
+		args->subject_token, &parent->inode, &parent->dentry, directory,
+		created_sd_out, created_sd_len_out);
 	return (int)ret;
 }
 
@@ -5033,10 +5008,12 @@ int pkm_kacs_kunit_post_setxattr_drops_cache(const u8 *sd_ptr, size_t sd_len,
  * @parent_sd_ptr -- the answer the overlay hook above has to match, since it
  * exists to reproduce it from the right inode and the right subject.
  */
-long pkm_kacs_kunit_build_created_sd_for_parent(
-	const void *subject_token, const u8 *parent_sd_ptr,
-	size_t parent_sd_len, bool directory, const u8 **created_sd_out,
-	size_t *created_sd_len_out)
+long pkm_kacs_kunit_build_created_sd_for_parent(const void *subject_token,
+						const u8 *parent_sd_ptr,
+						size_t parent_sd_len,
+						bool directory,
+						const u8 **created_sd_out,
+						size_t *created_sd_len_out)
 {
 	struct pkm_kacs_kunit_file_mount_state parent = {};
 	long ret;
@@ -5074,10 +5051,12 @@ long pkm_kacs_kunit_build_created_sd_for_parent(
  * That is the whole point of the test: on an overlay the two differ, and the
  * caller's is the right one.
  */
-int pkm_kacs_kunit_overlay_create_files_as(
-	const void *subject_token, const u8 *parent_sd_ptr,
-	size_t parent_sd_len, bool directory, const u8 **pending_sd_out,
-	size_t *pending_sd_len_out, u32 *new_uid_out, u32 *new_gid_out)
+int pkm_kacs_kunit_overlay_create_files_as(const void *subject_token,
+					   const u8 *parent_sd_ptr,
+					   size_t parent_sd_len, bool directory,
+					   const u8 **pending_sd_out,
+					   size_t *pending_sd_len_out,
+					   u32 *new_uid_out, u32 *new_gid_out)
 {
 	struct pkm_kacs_kunit_file_mount_state parent = {};
 	struct pkm_kacs_cred_security *old_sec;
@@ -5116,8 +5095,8 @@ int pkm_kacs_kunit_overlay_create_files_as(
 	child_name->name = (const u8 *)"child";
 	child_name->len = 5;
 
-	cred_blob_len = pkm_blob_sizes.lbs_cred +
-			sizeof(struct pkm_kacs_cred_security);
+	cred_blob_len =
+		pkm_blob_sizes.lbs_cred + sizeof(struct pkm_kacs_cred_security);
 	old_blob = kzalloc(cred_blob_len, GFP_KERNEL);
 	new_blob = kzalloc(cred_blob_len, GFP_KERNEL);
 	if (!old_blob || !new_blob) {
@@ -5206,9 +5185,8 @@ int pkm_kacs_kunit_check_namespace_live(
 		return -ENOMEM;
 
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
-	policy = args->mount_policy_override ?
-			 args->mount_policy_override :
-			 KACS_MOUNT_POLICY_DENY_MISSING;
+	policy = args->mount_policy_override ? args->mount_policy_override :
+					       KACS_MOUNT_POLICY_DENY_MISSING;
 	source_mode = args->source_mode ? args->source_mode : S_IFREG;
 	target_mode = args->target_mode ? args->target_mode : S_IFREG;
 	mknod_mode = args->target_mode_set ? args->target_mode : S_IFIFO;
@@ -5233,16 +5211,18 @@ int pkm_kacs_kunit_check_namespace_live(
 	}
 	if (args->source_sd_state != 0) {
 		ret = pkm_kacs_kunit_init_namespace_state(
-			&fixture->source, args->source_sd_ptr, args->source_sd_len,
-			args->source_sd_state, magic, policy, source_mode);
+			&fixture->source, args->source_sd_ptr,
+			args->source_sd_len, args->source_sd_state, magic,
+			policy, source_mode);
 		if (ret)
 			goto out;
 		source_ready = true;
 	}
 	if (args->target_sd_state != 0) {
 		ret = pkm_kacs_kunit_init_namespace_state(
-			&fixture->target, args->target_sd_ptr, args->target_sd_len,
-			args->target_sd_state, magic, policy, target_mode);
+			&fixture->target, args->target_sd_ptr,
+			args->target_sd_len, args->target_sd_state, magic,
+			policy, target_mode);
 		if (ret)
 			goto out;
 		target_ready = true;
@@ -5268,8 +5248,8 @@ int pkm_kacs_kunit_check_namespace_live(
 			&fixture->create_child, false);
 		if (!ret)
 			ret = pkm_kacs_kunit_namespace_maybe_build_created_sd(
-				args, &fixture->old_parent, false, created_sd_out,
-				created_sd_len_out);
+				args, &fixture->old_parent, false,
+				created_sd_out, created_sd_len_out);
 		break;
 	case PKM_KACS_KUNIT_NAMESPACE_MKDIR:
 		if (!old_parent_ready) {
@@ -5281,15 +5261,16 @@ int pkm_kacs_kunit_check_namespace_live(
 			&fixture->create_child, true);
 		if (!ret)
 			ret = pkm_kacs_kunit_namespace_maybe_build_created_sd(
-				args, &fixture->old_parent, true, created_sd_out,
-				created_sd_len_out);
+				args, &fixture->old_parent, true,
+				created_sd_out, created_sd_len_out);
 		break;
 	case PKM_KACS_KUNIT_NAMESPACE_MKNOD:
 		if (!old_parent_ready) {
 			ret = -EINVAL;
 			break;
 		}
-		if (!pkm_kacs_inode_on_unmanaged_mount(&fixture->old_parent.inode) &&
+		if (!pkm_kacs_inode_on_unmanaged_mount(
+			    &fixture->old_parent.inode) &&
 		    !pkm_kacs_special_node_mode_supported(mknod_mode)) {
 			ret = -EOPNOTSUPP;
 			break;
@@ -5299,8 +5280,8 @@ int pkm_kacs_kunit_check_namespace_live(
 			&fixture->create_child, false);
 		if (!ret)
 			ret = pkm_kacs_kunit_namespace_maybe_build_created_sd(
-				args, &fixture->old_parent, false, created_sd_out,
-				created_sd_len_out);
+				args, &fixture->old_parent, false,
+				created_sd_out, created_sd_len_out);
 		break;
 	case PKM_KACS_KUNIT_NAMESPACE_SYMLINK:
 		if (!old_parent_ready) {
@@ -5312,8 +5293,8 @@ int pkm_kacs_kunit_check_namespace_live(
 			&fixture->create_child);
 		if (!ret)
 			ret = pkm_kacs_kunit_namespace_maybe_build_created_sd(
-				args, &fixture->old_parent, false, created_sd_out,
-				created_sd_len_out);
+				args, &fixture->old_parent, false,
+				created_sd_out, created_sd_len_out);
 		break;
 	case PKM_KACS_KUNIT_NAMESPACE_LINK:
 		if (!source_ready || !new_parent_ready) {
@@ -5339,7 +5320,8 @@ int pkm_kacs_kunit_check_namespace_live(
 			ret = -EINVAL;
 			break;
 		}
-		new_dentry = target_ready ? &fixture->target.dentry : &fixture->negative;
+		new_dentry = target_ready ? &fixture->target.dentry :
+					    &fixture->negative;
 		ret = (int)pkm_kacs_authorize_namespace_rename_for_subject(
 			args->subject_token, &fixture->old_parent.inode,
 			&fixture->source.dentry, &fixture->new_parent.inode,
@@ -5394,21 +5376,22 @@ int pkm_kacs_kunit_check_namespace_rename_flags(
 		return -ENOMEM;
 
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
-	policy = args->mount_policy_override ?
-			 args->mount_policy_override :
-			 KACS_MOUNT_POLICY_DENY_MISSING;
+	policy = args->mount_policy_override ? args->mount_policy_override :
+					       KACS_MOUNT_POLICY_DENY_MISSING;
 
-	ret = pkm_kacs_kunit_init_namespace_state(
-		&fixture->old_parent, args->old_parent_sd_ptr,
-		args->old_parent_sd_len, args->old_parent_sd_state, magic,
-		policy, S_IFDIR);
+	ret = pkm_kacs_kunit_init_namespace_state(&fixture->old_parent,
+						  args->old_parent_sd_ptr,
+						  args->old_parent_sd_len,
+						  args->old_parent_sd_state,
+						  magic, policy, S_IFDIR);
 	if (ret)
 		goto out;
 	old_ready = true;
-	ret = pkm_kacs_kunit_init_namespace_state(
-		&fixture->new_parent, args->new_parent_sd_ptr,
-		args->new_parent_sd_len, args->new_parent_sd_state, magic,
-		policy, S_IFDIR);
+	ret = pkm_kacs_kunit_init_namespace_state(&fixture->new_parent,
+						  args->new_parent_sd_ptr,
+						  args->new_parent_sd_len,
+						  args->new_parent_sd_state,
+						  magic, policy, S_IFDIR);
 	if (ret)
 		goto out;
 	new_ready = true;
@@ -5438,13 +5421,13 @@ int pkm_kacs_kunit_check_file_ioctl_snapshot(u32 managed, u32 granted_access,
 					     umode_t mode, unsigned int cmd,
 					     bool compat)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, mode, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, mode, true);
 	if (ret)
 		return ret;
 
@@ -5459,13 +5442,13 @@ int pkm_kacs_kunit_check_file_ioctl_snapshot(u32 managed, u32 granted_access,
 
 int pkm_kacs_kunit_check_file_ioctl_opath(unsigned int cmd, bool compat)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5488,13 +5471,13 @@ int pkm_kacs_kunit_check_file_ioctl_null(void)
 int pkm_kacs_kunit_check_file_lock_snapshot(u32 managed, u32 granted_access,
 					    unsigned int cmd)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5508,17 +5491,16 @@ int pkm_kacs_kunit_check_file_lock_snapshot(u32 managed, u32 granted_access,
 }
 
 int pkm_kacs_kunit_check_file_fcntl_snapshot(u32 managed, u32 granted_access,
-					     int file_flags,
-					     unsigned int cmd,
+					     int file_flags, unsigned int cmd,
 					     unsigned long arg)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5542,16 +5524,15 @@ int pkm_kacs_kunit_check_file_receive(void)
 	return pkm_kacs_file_receive(NULL);
 }
 
-int pkm_kacs_kunit_check_file_truncate_snapshot(u32 managed,
-						u32 granted_access)
+int pkm_kacs_kunit_check_file_truncate_snapshot(u32 managed, u32 granted_access)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5570,16 +5551,15 @@ int pkm_kacs_kunit_check_file_truncate_null(void)
 }
 
 int pkm_kacs_kunit_check_file_fallocate_snapshot(u32 managed,
-						 u32 granted_access,
-						 int mode)
+						 u32 granted_access, int mode)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5601,13 +5581,13 @@ int pkm_kacs_kunit_check_file_continuous_audit_op(
 	u32 op, u32 managed, u32 granted_access, u32 continuous_audit,
 	int file_flags, unsigned long arg0, unsigned long arg1)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5626,8 +5606,7 @@ int pkm_kacs_kunit_check_file_continuous_audit_op(
 		ret = pkm_kacs_check_mmap_snapshot(&state.file, arg0, arg1);
 		break;
 	case PKM_KACS_KUNIT_CONT_AUDIT_OP_MPROTECT:
-		ret = pkm_kacs_check_mprotect_snapshot(&state.file, arg0,
-						       arg1);
+		ret = pkm_kacs_check_mprotect_snapshot(&state.file, arg0, arg1);
 		break;
 	case PKM_KACS_KUNIT_CONT_AUDIT_OP_PERMISSION:
 		ret = pkm_kacs_check_file_permission_snapshot(&state.file,
@@ -5654,7 +5633,7 @@ int pkm_kacs_kunit_check_file_continuous_audit_op(
 		break;
 	case PKM_KACS_KUNIT_CONT_AUDIT_OP_FALLOCATE:
 		ret = pkm_kacs_check_file_fallocate_snapshot(&state.file,
-							    (int)arg0);
+							     (int)arg0);
 		break;
 	default:
 		ret = -EINVAL;
@@ -5669,15 +5648,15 @@ int pkm_kacs_kunit_check_signed_exec_pin_mutation(u32 pinned, u32 managed,
 						  u32 granted_access,
 						  u32 operation)
 {
-	struct pkm_kacs_kunit_file_mount_state state = { };
+	struct pkm_kacs_kunit_file_mount_state state = {};
 	struct pkm_kacs_file_security *file_sec;
 	struct pkm_kacs_inode_security *inode_sec;
-	struct iattr attr = { };
+	struct iattr attr = {};
 	int ret;
 
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING,
-		NULL, 0, S_IFREG, true);
+		&state, TMPFS_MAGIC, NULL, KACS_MOUNT_POLICY_DENY_MISSING, NULL,
+		0, S_IFREG, true);
 	if (ret)
 		return ret;
 
@@ -5693,8 +5672,8 @@ int pkm_kacs_kunit_check_signed_exec_pin_mutation(u32 pinned, u32 managed,
 							      MAY_WRITE);
 		break;
 	case PKM_KACS_KUNIT_PIN_OP_WRITE_INTENT:
-		ret = pkm_kacs_check_file_write_intent_snapshot(&state.file,
-								0, true);
+		ret = pkm_kacs_check_file_write_intent_snapshot(&state.file, 0,
+								true);
 		break;
 	case PKM_KACS_KUNIT_PIN_OP_TRUNCATE:
 		ret = pkm_kacs_check_file_truncate_snapshot(&state.file);
@@ -5708,14 +5687,12 @@ int pkm_kacs_kunit_check_signed_exec_pin_mutation(u32 pinned, u32 managed,
 			&state.file, FALLOC_FL_ALLOCATE_RANGE);
 		break;
 	case PKM_KACS_KUNIT_PIN_OP_IOCTL_MUTATE:
-		ret = pkm_kacs_check_file_ioctl_snapshot(&state.file,
-							 FS_IOC_ZERO_RANGE, 0,
-							 false);
+		ret = pkm_kacs_check_file_ioctl_snapshot(
+			&state.file, FS_IOC_ZERO_RANGE, 0, false);
 		break;
 	case PKM_KACS_KUNIT_PIN_OP_IOCTL_UNKNOWN:
 		ret = pkm_kacs_check_file_ioctl_snapshot(&state.file,
-							 0x5a5a5a5aU, 0,
-							 false);
+							 0x5a5a5a5aU, 0, false);
 		break;
 	case PKM_KACS_KUNIT_PIN_OP_PATH_TRUNCATE:
 		attr.ia_valid = ATTR_SIZE;
@@ -5724,8 +5701,8 @@ int pkm_kacs_kunit_check_signed_exec_pin_mutation(u32 pinned, u32 managed,
 		break;
 	case PKM_KACS_KUNIT_PIN_OP_SIGNING_XATTR_SET:
 		ret = pkm_kacs_inode_setxattr(&nop_mnt_idmap, &state.dentry,
-					      PKM_KACS_SIGNING_XATTR_NAME,
-					      NULL, 0, 0);
+					      PKM_KACS_SIGNING_XATTR_NAME, NULL,
+					      0, 0);
 		break;
 	default:
 		ret = -EINVAL;
@@ -5735,7 +5712,6 @@ int pkm_kacs_kunit_check_signed_exec_pin_mutation(u32 pinned, u32 managed,
 	pkm_kacs_kunit_cleanup_file_mount_state(&state);
 	return ret;
 }
-
 
 long pkm_kacs_kunit_check_bprm_file_execute_for_subject(
 	const struct pkm_kacs_kunit_file_open_args *args)
@@ -5769,8 +5745,8 @@ long pkm_kacs_kunit_check_bprm_file_execute_for_subject(
 	magic = args->mount_magic ? args->mount_magic : TMPFS_MAGIC;
 	mode = args->inode_mode ? args->inode_mode : S_IFREG;
 	ret = pkm_kacs_kunit_init_file_mount_state_ex(
-		state, magic, cache, args->mount_policy_override, NULL, 0,
-		mode, true);
+		state, magic, cache, args->mount_policy_override, NULL, 0, mode,
+		true);
 	if (ret) {
 		pkm_kacs_inode_sd_cache_free(cache);
 		goto out_free;
@@ -5814,12 +5790,9 @@ u64 pkm_kacs_kunit_allow_cap_mask(void)
 	return pkm_kacs_allow_cap_mask_u64();
 }
 
-long pkm_kacs_kunit_capget_fixup_masks(u64 effective_mask,
-					u64 inheritable_mask,
-					u64 permitted_mask,
-					u64 *effective_out,
-					u64 *inheritable_out,
-					u64 *permitted_out)
+long pkm_kacs_kunit_capget_fixup_masks(u64 effective_mask, u64 inheritable_mask,
+				       u64 permitted_mask, u64 *effective_out,
+				       u64 *inheritable_out, u64 *permitted_out)
 {
 	kernel_cap_t effective;
 	kernel_cap_t inheritable;
@@ -5842,8 +5815,7 @@ long pkm_kacs_kunit_capget_fixup_masks(u64 effective_mask,
 long pkm_kacs_kunit_proc_status_cap_fixup_masks(
 	u64 inheritable_mask, u64 permitted_mask, u64 effective_mask,
 	u64 bset_mask, u64 ambient_mask, u64 *inheritable_out,
-	u64 *permitted_out, u64 *effective_out, u64 *bset_out,
-	u64 *ambient_out)
+	u64 *permitted_out, u64 *effective_out, u64 *bset_out, u64 *ambient_out)
 {
 	kernel_cap_t inheritable;
 	kernel_cap_t permitted;
@@ -5898,8 +5870,7 @@ long pkm_kacs_kunit_check_capget_for_subject(
 	spin_lock_init(&target_state.mitigation_lock);
 
 	return pkm_kacs_check_process_capget_core(args->subject_token,
-						  &caller_state,
-						  &target_state);
+						  &caller_state, &target_state);
 }
 
 long pkm_kacs_kunit_check_capability_for_subject(const void *subject_token,
@@ -5914,14 +5885,15 @@ bool pkm_kacs_kunit_may_manage_volumes_for_subject(const void *subject_token)
 }
 
 const u8 *pkm_kacs_kunit_create_mntns_sd_for_subject(const void *token,
-						    size_t *len_out)
+						     size_t *len_out)
 {
 	return kacs_rust_create_default_mnt_ns_sd(token, len_out);
 }
 
 bool pkm_kacs_kunit_may_mount_op_for_subject(const void *subject_token,
 					     const u8 *sd_bytes, size_t sd_len,
-					     unsigned int op, const char *fstype)
+					     unsigned int op,
+					     const char *fstype)
 {
 	struct pkm_kacs_process_sd sd = {
 		.refs = REFCOUNT_INIT(1),
@@ -5929,9 +5901,8 @@ bool pkm_kacs_kunit_may_mount_op_for_subject(const void *subject_token,
 		.len = sd_len,
 	};
 
-	return pkm_kacs_may_mount_op_for_token(subject_token,
-					       sd_bytes ? &sd : NULL, op,
-					       fstype);
+	return pkm_kacs_may_mount_op_for_token(
+		subject_token, sd_bytes ? &sd : NULL, op, fstype);
 }
 
 long pkm_kacs_kunit_mntns_stamp_superblock_for_subject(
@@ -5994,9 +5965,9 @@ long pkm_kacs_kunit_check_capset_for_subject(const void *subject_token,
 
 long pkm_kacs_kunit_capset_result_masks(
 	const void *subject_token, u64 effective_mask, u64 inheritable_mask,
-	u64 permitted_mask, u64 bset_mask, u64 ambient_mask,
-	u64 *effective_out, u64 *inheritable_out, u64 *permitted_out,
-	u64 *bset_out, u64 *ambient_out)
+	u64 permitted_mask, u64 bset_mask, u64 ambient_mask, u64 *effective_out,
+	u64 *inheritable_out, u64 *permitted_out, u64 *bset_out,
+	u64 *ambient_out)
 {
 	struct cred new = {};
 	kernel_cap_t effective;
@@ -6004,8 +5975,8 @@ long pkm_kacs_kunit_capset_result_masks(
 	kernel_cap_t permitted;
 	long ret;
 
-	if (!effective_out || !inheritable_out || !permitted_out ||
-	    !bset_out || !ambient_out)
+	if (!effective_out || !inheritable_out || !permitted_out || !bset_out ||
+	    !ambient_out)
 		return -EINVAL;
 
 	effective = pkm_kacs_u64_to_kernel_cap(effective_mask);
@@ -6133,12 +6104,14 @@ int pkm_kacs_kunit_check_blob_lifecycle_defaults(void)
 	file_blob = pkm_kacs_kunit_alloc_poisoned_blob(
 		pkm_blob_sizes.lbs_file, sizeof(struct pkm_kacs_file_security));
 	inode_blob = pkm_kacs_kunit_alloc_poisoned_blob(
-		pkm_blob_sizes.lbs_inode, sizeof(struct pkm_kacs_inode_security));
+		pkm_blob_sizes.lbs_inode,
+		sizeof(struct pkm_kacs_inode_security));
 	sb_blob = pkm_kacs_kunit_alloc_poisoned_blob(
 		pkm_blob_sizes.lbs_superblock,
 		sizeof(struct pkm_kacs_superblock_security));
 	socket_blob = pkm_kacs_kunit_alloc_poisoned_blob(
-		pkm_blob_sizes.lbs_sock, sizeof(struct pkm_kacs_socket_security));
+		pkm_blob_sizes.lbs_sock,
+		sizeof(struct pkm_kacs_socket_security));
 	task_blob = pkm_kacs_kunit_alloc_poisoned_blob(
 		pkm_blob_sizes.lbs_task, sizeof(struct pkm_kacs_task_security));
 	if (!cred_blob || !file_blob || !inode_blob || !sb_blob ||
@@ -6210,8 +6183,8 @@ int pkm_kacs_kunit_check_blob_lifecycle_defaults(void)
 		ret = -EBADE;
 		goto out;
 	}
-	cache = pkm_kacs_inode_sd_cache_alloc(PKM_KACS_INODE_SD_MISSING,
-					      NULL, 0);
+	cache = pkm_kacs_inode_sd_cache_alloc(PKM_KACS_INODE_SD_MISSING, NULL,
+					      0);
 	if (!cache) {
 		ret = -ENOMEM;
 		goto out;
@@ -6269,10 +6242,13 @@ int pkm_kacs_kunit_check_blob_lifecycle_defaults(void)
 	task_sec = pkm_kacs_task(state->task);
 	if (!task_sec->process_state || task_sec->impersonation_saved_cred ||
 	    task_sec->native_open.expected_dentry ||
-	    task_sec->native_open.expected_mnt || task_sec->native_open.active ||
+	    task_sec->native_open.expected_mnt ||
+	    task_sec->native_open.active ||
 	    task_sec->native_create.expected_parent_inode ||
-	    task_sec->native_create.sd_bytes || task_sec->native_create.sd_len ||
-	    task_sec->native_create.directory || task_sec->native_create.active ||
+	    task_sec->native_create.sd_bytes ||
+	    task_sec->native_create.sd_len ||
+	    task_sec->native_create.directory ||
+	    task_sec->native_create.active ||
 	    task_sec->metadata_decision.inode ||
 	    task_sec->metadata_decision.op_class != PKM_KACS_METADATA_OP_NONE ||
 	    task_sec->metadata_decision.active ||
@@ -6341,7 +6317,8 @@ int pkm_kacs_kunit_check_blob_lifecycle_defaults(void)
 	    task_sec->stratafs_cleanup_outer ||
 	    task_sec->stratafs_cleanup_outer_inode ||
 	    task_sec->stratafs_cleanup_subject ||
-	    task_sec->pending_exec_pip_type || task_sec->pending_exec_pip_trust ||
+	    task_sec->pending_exec_pip_type ||
+	    task_sec->pending_exec_pip_trust ||
 	    task_sec->pending_exec_pip_valid) {
 		ret = -EBADE;
 		goto out;
@@ -6395,14 +6372,13 @@ long pkm_kacs_kunit_check_prctl_capability_guard_for_subject(
 	unsigned long arg5)
 {
 	return pkm_kacs_prctl_capability_guard_core(
-		subject_token, ambient_mask, option, arg2, arg3, arg4,
-		arg5);
+		subject_token, ambient_mask, option, arg2, arg3, arg4, arg5);
 }
 
-int pkm_kacs_kunit_reproject_exec_caps(
-	u64 effective_mask, u64 inheritable_mask, u64 permitted_mask,
-	u64 ambient_mask, u64 *effective_out, u64 *inheritable_out,
-	u64 *permitted_out, u64 *ambient_out)
+int pkm_kacs_kunit_reproject_exec_caps(u64 effective_mask, u64 inheritable_mask,
+				       u64 permitted_mask, u64 ambient_mask,
+				       u64 *effective_out, u64 *inheritable_out,
+				       u64 *permitted_out, u64 *ambient_out)
 {
 	struct linux_binprm bprm = {};
 	struct cred *new;
@@ -6514,9 +6490,9 @@ long pkm_kacs_kunit_check_exec_setid_compat_for_subject(
 		new->fsgid = KGIDT_INIT(exec_gid);
 	}
 
-	ret = pkm_kacs_bprm_creds_from_file_core(
-		subject_token, subject_token, NULL, new, old, false, false,
-		false, 0, false);
+	ret = pkm_kacs_bprm_creds_from_file_core(subject_token, subject_token,
+						 NULL, new, old, false, false,
+						 false, 0, false);
 	if (!ret) {
 		out->uid = __kuid_val(new->uid);
 		out->euid = __kuid_val(new->euid);
@@ -6528,8 +6504,10 @@ long pkm_kacs_kunit_check_exec_setid_compat_for_subject(
 		out->fsgid = __kgid_val(new->fsgid);
 
 		saved_new = override_creds(new);
-		out->projected_fsuid = __kuid_val(pkm_kacs_current_fsuid_kuid());
-		out->projected_fsgid = __kgid_val(pkm_kacs_current_fsgid_kgid());
+		out->projected_fsuid =
+			__kuid_val(pkm_kacs_current_fsuid_kuid());
+		out->projected_fsgid =
+			__kgid_val(pkm_kacs_current_fsgid_kgid());
 		revert_creds(saved_new);
 	}
 
@@ -6612,9 +6590,10 @@ long pkm_kacs_kunit_check_exec_new_process_min(
 		goto out_mount;
 	}
 
-	ret = pkm_kacs_bprm_creds_from_file_core(
-		args->subject_token, args->primary_token, &state->file, new,
-		old, true, false, false, 0, false);
+	ret = pkm_kacs_bprm_creds_from_file_core(args->subject_token,
+						 args->primary_token,
+						 &state->file, new, old, true,
+						 false, false, 0, false);
 	if (!ret) {
 		new_sec = pkm_kacs_cred(new);
 		if (!new_sec->token) {
@@ -6670,10 +6649,10 @@ long pkm_kacs_kunit_check_setuid_fixup_for_subject(const void *subject_token,
 
 	ret = pkm_kacs_task_fix_setuid_core(subject_token, new, old, flags);
 	if (!ret) {
-		if (!uid_eq(new->uid, old->uid) || !uid_eq(new->euid, old->euid) ||
+		if (!uid_eq(new->uid, old->uid) ||
+		    !uid_eq(new->euid, old->euid) ||
 		    !uid_eq(new->suid, old->suid) ||
-		    !uid_eq(new->fsuid, old->fsuid) ||
-		    new->user != old->user ||
+		    !uid_eq(new->fsuid, old->fsuid) || new->user != old->user ||
 		    memcmp(&new->cap_effective, &old->cap_effective,
 			   sizeof(new->cap_effective)) != 0 ||
 		    memcmp(&new->cap_inheritable, &old->cap_inheritable,
@@ -6782,8 +6761,7 @@ long pkm_kacs_kunit_check_setgroups_fixup_for_subject(const void *subject_token)
 
 int pkm_kacs_kunit_projected_fsids_for_subject(const void *subject_token,
 					       u32 raw_fsuid, u32 raw_fsgid,
-					       u32 *fsuid_out,
-					       u32 *fsgid_out)
+					       u32 *fsuid_out, u32 *fsgid_out)
 {
 	struct cred *new;
 	struct pkm_kacs_cred_security *sec;

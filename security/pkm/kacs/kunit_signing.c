@@ -7,7 +7,6 @@
 #include "firmware.h"
 #include "signing.h"
 
-
 static void pkm_kunit_boot_system_defaults(struct kunit *test)
 {
 	static const u8 system_sid[] = {
@@ -31,28 +30,17 @@ static void pkm_kunit_boot_system_defaults(struct kunit *test)
 	static const char auth_pkg[] = "Negotiate";
 	static const char source_name[] = "PeiosKrn";
 	static const u32 expected_attrs[] = {
-		0x0000000f,
-		0x00000007,
-		0x00000007,
-		0x00000007,
-		0xc0000007,
+		0x0000000f, 0x00000007, 0x00000007, 0x00000007, 0xc0000007,
 	};
 	static const u8 *expected_group_sids[] = {
-		admin_sid,
-		everyone_sid,
-		auth_users_sid,
-		local_sid,
-		logon_sid,
+		admin_sid, everyone_sid, auth_users_sid, local_sid, logon_sid,
 	};
 	static const size_t expected_group_lens[] = {
-		sizeof(admin_sid),
-		sizeof(everyone_sid),
-		sizeof(auth_users_sid),
-		sizeof(local_sid),
-		sizeof(logon_sid),
+		sizeof(admin_sid), sizeof(everyone_sid), sizeof(auth_users_sid),
+		sizeof(local_sid), sizeof(logon_sid),
 	};
-	struct pkm_kacs_boot_snapshot snapshot = { };
-	struct pkm_kacs_boot_snapshot effective_snapshot = { };
+	struct pkm_kacs_boot_snapshot snapshot = {};
+	struct pkm_kacs_boot_snapshot effective_snapshot = {};
 	const void *effective_token;
 	const void *primary_token;
 	u32 i;
@@ -65,10 +53,10 @@ static void pkm_kunit_boot_system_defaults(struct kunit *test)
 	KUNIT_ASSERT_NOT_NULL(test, primary_token);
 
 	KUNIT_EXPECT_PTR_EQ(test, effective_token, primary_token);
-	KUNIT_ASSERT_TRUE(test,
-			  kacs_rust_kunit_token_snapshot(effective_token,
-							 &effective_snapshot));
-	KUNIT_EXPECT_PTR_EQ(test, effective_snapshot.token_ptr, effective_token);
+	KUNIT_ASSERT_TRUE(test, kacs_rust_kunit_token_snapshot(
+					effective_token, &effective_snapshot));
+	KUNIT_EXPECT_PTR_EQ(test, effective_snapshot.token_ptr,
+			    effective_token);
 	KUNIT_EXPECT_EQ(test, snapshot.logon_session_id, 999ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.auth_id, 999ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.token_id, 0ULL);
@@ -76,10 +64,12 @@ static void pkm_kunit_boot_system_defaults(struct kunit *test)
 	pkm_kunit_expect_guid_v4(test, effective_snapshot.token_guid);
 	KUNIT_EXPECT_EQ(test, snapshot.modified_id, 0ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.logon_type, 5U);
-	pkm_kunit_expect_bytes_eq(test, snapshot.auth_pkg_ptr, snapshot.auth_pkg_len,
-				  (const u8 *)auth_pkg, sizeof(auth_pkg) - 1);
-	pkm_kunit_expect_bytes_eq(test, snapshot.user_sid_ptr, snapshot.user_sid_len,
-				  system_sid, sizeof(system_sid));
+	pkm_kunit_expect_bytes_eq(test, snapshot.auth_pkg_ptr,
+				  snapshot.auth_pkg_len, (const u8 *)auth_pkg,
+				  sizeof(auth_pkg) - 1);
+	pkm_kunit_expect_bytes_eq(test, snapshot.user_sid_ptr,
+				  snapshot.user_sid_len, system_sid,
+				  sizeof(system_sid));
 	pkm_kunit_expect_bytes_eq(test, snapshot.logon_sid_ptr,
 				  snapshot.logon_sid_len, logon_sid,
 				  sizeof(logon_sid));
@@ -99,8 +89,10 @@ static void pkm_kunit_boot_system_defaults(struct kunit *test)
 				  snapshot.default_dacl_len,
 				  pkm_kunit_system_default_dacl,
 				  sizeof(pkm_kunit_system_default_dacl));
-	KUNIT_EXPECT_EQ(test, snapshot.privileges_present, 0xc000000ffffffffcULL);
-	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled, 0xc000000ffffffffcULL);
+	KUNIT_EXPECT_EQ(test, snapshot.privileges_present,
+			0xc000000ffffffffcULL);
+	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled,
+			0xc000000ffffffffcULL);
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled_by_default,
 			0xc000000ffffffffcULL);
 	/*
@@ -167,24 +159,22 @@ static void pkm_kunit_boot_system_defaults(struct kunit *test)
 	 */
 	effective_snapshot.privileges_used = snapshot.privileges_used;
 	pkm_kunit_expect_boot_snapshot_eq_except_identity(test, &snapshot,
-								  &effective_snapshot);
+							  &effective_snapshot);
 }
-
 
 static void pkm_kunit_boot_anonymous_defaults(struct kunit *test)
 {
 	static const char auth_pkg[] = "Negotiate";
-	struct pkm_kacs_boot_snapshot snapshot = { };
+	struct pkm_kacs_boot_snapshot snapshot = {};
 	const void *anonymous_token;
-	u8 logon_sid[20] = { };
+	u8 logon_sid[20] = {};
 	u32 everyone_attributes = 0;
 
 	pkm_kunit_build_logon_sid(998ULL, logon_sid);
 	anonymous_token = pkm_kacs_boot_anonymous_token_ptr();
 	KUNIT_ASSERT_NOT_NULL(test, anonymous_token);
-	KUNIT_ASSERT_TRUE(test,
-			  kacs_rust_kunit_token_snapshot(anonymous_token,
-							 &snapshot));
+	KUNIT_ASSERT_TRUE(test, kacs_rust_kunit_token_snapshot(anonymous_token,
+							       &snapshot));
 	KUNIT_EXPECT_PTR_EQ(test, snapshot.token_ptr, anonymous_token);
 	KUNIT_EXPECT_EQ(test, snapshot.logon_session_id, 998ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.auth_id, 998ULL);
@@ -203,19 +193,16 @@ static void pkm_kunit_boot_anonymous_defaults(struct kunit *test)
 				  snapshot.logon_sid_len, logon_sid,
 				  sizeof(logon_sid));
 	KUNIT_EXPECT_EQ(test, snapshot.group_count, 1U);
-	KUNIT_ASSERT_TRUE(test,
-			  pkm_kunit_snapshot_has_group(
-				  &snapshot, pkm_kunit_everyone_sid,
-				  sizeof(pkm_kunit_everyone_sid),
-				  &everyone_attributes));
-	KUNIT_EXPECT_NE(test,
-			everyone_attributes & PKM_KUNIT_SE_GROUP_ENABLED, 0U);
-	KUNIT_EXPECT_FALSE(test,
-			   pkm_kunit_snapshot_has_group(
-				   &snapshot,
-				   pkm_kunit_authenticated_users_sid,
-				   sizeof(pkm_kunit_authenticated_users_sid),
-				   NULL));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_snapshot_has_group(
+					&snapshot, pkm_kunit_everyone_sid,
+					sizeof(pkm_kunit_everyone_sid),
+					&everyone_attributes));
+	KUNIT_EXPECT_NE(test, everyone_attributes & PKM_KUNIT_SE_GROUP_ENABLED,
+			0U);
+	KUNIT_EXPECT_FALSE(
+		test, pkm_kunit_snapshot_has_group(
+			      &snapshot, pkm_kunit_authenticated_users_sid,
+			      sizeof(pkm_kunit_authenticated_users_sid), NULL));
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_present, 0ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled, 0ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled_by_default, 0ULL);
@@ -232,7 +219,6 @@ static void pkm_kunit_boot_anonymous_defaults(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, snapshot.audit_policy, 0U);
 }
 
-
 static void pkm_kunit_boot_logon_session_registered(struct kunit *test)
 {
 	static const u8 system_sid[] = {
@@ -242,21 +228,24 @@ static void pkm_kunit_boot_logon_session_registered(struct kunit *test)
 		1, 3, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 231, 3, 0, 0,
 	};
 	static const char auth_pkg[] = "Negotiate";
-	struct pkm_kacs_logon_session_snapshot snapshot = { };
+	struct pkm_kacs_logon_session_snapshot snapshot = {};
 
-	KUNIT_ASSERT_EQ(test, kacs_rust_kunit_logon_session_snapshot(999, &snapshot), 0);
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_kunit_logon_session_snapshot(999, &snapshot),
+			0);
 	KUNIT_ASSERT_NOT_NULL(test, snapshot.session_ptr);
 	KUNIT_EXPECT_EQ(test, snapshot.logon_session_id, 999ULL);
 	KUNIT_EXPECT_EQ(test, snapshot.logon_type, 5U);
-	pkm_kunit_expect_bytes_eq(test, snapshot.auth_pkg_ptr, snapshot.auth_pkg_len,
-				  (const u8 *)auth_pkg, sizeof(auth_pkg) - 1);
-	pkm_kunit_expect_bytes_eq(test, snapshot.user_sid_ptr, snapshot.user_sid_len,
-				  system_sid, sizeof(system_sid));
+	pkm_kunit_expect_bytes_eq(test, snapshot.auth_pkg_ptr,
+				  snapshot.auth_pkg_len, (const u8 *)auth_pkg,
+				  sizeof(auth_pkg) - 1);
+	pkm_kunit_expect_bytes_eq(test, snapshot.user_sid_ptr,
+				  snapshot.user_sid_len, system_sid,
+				  sizeof(system_sid));
 	pkm_kunit_expect_bytes_eq(test, snapshot.logon_sid_ptr,
 				  snapshot.logon_sid_len, logon_sid,
 				  sizeof(logon_sid));
 }
-
 
 static void pkm_kunit_boot_allow_caps(struct kunit *test)
 {
@@ -264,7 +253,8 @@ static void pkm_kunit_boot_allow_caps(struct kunit *test)
 	kernel_cap_t empty = CAP_EMPTY_SET;
 
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_effective, CAP_CHOWN));
-	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_effective, CAP_DAC_OVERRIDE));
+	KUNIT_EXPECT_TRUE(test,
+			  cap_raised(cred->cap_effective, CAP_DAC_OVERRIDE));
 	KUNIT_EXPECT_TRUE(test,
 			  cap_raised(cred->cap_effective, CAP_DAC_READ_SEARCH));
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_effective, CAP_FOWNER));
@@ -294,22 +284,19 @@ static void pkm_kunit_boot_allow_caps(struct kunit *test)
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_bset, CAP_KILL));
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_bset, CAP_SETGID));
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_bset, CAP_SETUID));
-	KUNIT_EXPECT_TRUE(test,
-			  cap_raised(cred->cap_bset, CAP_NET_BROADCAST));
+	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_bset, CAP_NET_BROADCAST));
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_bset, CAP_IPC_OWNER));
 	KUNIT_EXPECT_TRUE(test, cap_raised(cred->cap_bset, CAP_LEASE));
-	KUNIT_EXPECT_EQ(test,
-			memcmp(&cred->cap_ambient, &empty, sizeof(kernel_cap_t)),
-			0);
+	KUNIT_EXPECT_EQ(
+		test, memcmp(&cred->cap_ambient, &empty, sizeof(kernel_cap_t)),
+		0);
 }
-
 
 static void pkm_kunit_blob_lifecycle_defaults(struct kunit *test)
 {
-	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_kunit_check_blob_lifecycle_defaults(), 0);
+	KUNIT_EXPECT_EQ(test, pkm_kacs_kunit_check_blob_lifecycle_defaults(),
+			0);
 }
-
 
 static void pkm_kunit_mldsa65_crypto_fips204_vectors(struct kunit *test)
 {
@@ -348,7 +335,6 @@ static void pkm_kunit_mldsa65_crypto_fips204_vectors(struct kunit *test)
 			-EKEYREJECTED);
 }
 
-
 static void pkm_kunit_mldsa65_crypto_rejects_bad_inputs(struct kunit *test)
 {
 	struct crypto_sig *tfm;
@@ -363,8 +349,8 @@ static void pkm_kunit_mldsa65_crypto_rejects_bad_inputs(struct kunit *test)
 	 */
 	public_key = kunit_kzalloc(test, PKM_KACS_SIGNING_PUBLIC_KEY_LEN,
 				   GFP_KERNEL);
-	signature = kunit_kzalloc(test, PKM_KACS_SIGNING_SIGNATURE_LEN,
-				  GFP_KERNEL);
+	signature =
+		kunit_kzalloc(test, PKM_KACS_SIGNING_SIGNATURE_LEN, GFP_KERNEL);
 	msg = kunit_kzalloc(test, SHA256_DIGEST_SIZE, GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, public_key);
 	KUNIT_ASSERT_NOT_NULL(test, signature);
@@ -439,9 +425,7 @@ static void pkm_kunit_mldsa65_crypto_rejects_bad_inputs(struct kunit *test)
 	crypto_free_sig(tfm);
 }
 
-
-static void pkm_kunit_signing_crypto_verify_sets_tcb_trust(
-	struct kunit *test)
+static void pkm_kunit_signing_crypto_verify_sets_tcb_trust(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_key_entry *keys;
 	struct pkm_kacs_kunit_signing_probe *material;
@@ -471,8 +455,7 @@ static void pkm_kunit_signing_crypto_verify_sets_tcb_trust(
 				material, keys, 2, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 1U);
-	KUNIT_EXPECT_EQ(test, out.pip_type,
-			PKM_KUNIT_SIGNING_PIP_PROTECTED);
+	KUNIT_EXPECT_EQ(test, out.pip_type, PKM_KUNIT_SIGNING_PIP_PROTECTED);
 	KUNIT_EXPECT_EQ(test, out.pip_trust, PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	/* A single flipped hash bit must drop the material to untrusted. */
@@ -487,9 +470,8 @@ static void pkm_kunit_signing_crypto_verify_sets_tcb_trust(
 	KUNIT_EXPECT_EQ(test, out.pip_trust, 0U);
 }
 
-
-static void pkm_kunit_signed_exec_pin_tracks_verified_material(
-	struct kunit *test)
+static void
+pkm_kunit_signed_exec_pin_tracks_verified_material(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_probe *material;
 	u32 pinned = 0;
@@ -524,9 +506,8 @@ static void pkm_kunit_signed_exec_pin_tracks_verified_material(
 			-EINVAL);
 }
 
-
-static void pkm_kunit_signed_exec_pin_blocks_content_mutation(
-	struct kunit *test)
+static void
+pkm_kunit_signed_exec_pin_blocks_content_mutation(struct kunit *test)
 {
 	static const u32 ops[] = {
 		PKM_KACS_KUNIT_PIN_OP_WRITE_PERMISSION,
@@ -548,9 +529,8 @@ static void pkm_kunit_signed_exec_pin_blocks_content_mutation(
 	}
 }
 
-
-static void pkm_kunit_signed_exec_pin_blocks_unmanaged_mutation(
-	struct kunit *test)
+static void
+pkm_kunit_signed_exec_pin_blocks_unmanaged_mutation(struct kunit *test)
 {
 	KUNIT_EXPECT_EQ(test,
 			pkm_kacs_kunit_check_signed_exec_pin_mutation(
@@ -564,19 +544,16 @@ static void pkm_kunit_signed_exec_pin_blocks_unmanaged_mutation(
 			-EACCES);
 	KUNIT_EXPECT_EQ(test,
 			pkm_kacs_kunit_check_signed_exec_pin_mutation(
-				1, 0, 0,
-				PKM_KACS_KUNIT_PIN_OP_IOCTL_MUTATE),
+				1, 0, 0, PKM_KACS_KUNIT_PIN_OP_IOCTL_MUTATE),
 			-EACCES);
 	KUNIT_EXPECT_EQ(test,
 			pkm_kacs_kunit_check_signed_exec_pin_mutation(
-				1, 0, 0,
-				PKM_KACS_KUNIT_PIN_OP_IOCTL_UNKNOWN),
+				1, 0, 0, PKM_KACS_KUNIT_PIN_OP_IOCTL_UNKNOWN),
 			-EACCES);
 }
 
-
-static void pkm_kunit_signed_exec_pin_preserves_unpinned_facs(
-	struct kunit *test)
+static void
+pkm_kunit_signed_exec_pin_preserves_unpinned_facs(struct kunit *test)
 {
 	KUNIT_EXPECT_EQ(test,
 			pkm_kacs_kunit_check_signed_exec_pin_mutation(
@@ -620,9 +597,8 @@ static void pkm_kunit_signed_exec_pin_preserves_unpinned_facs(
 			-EACCES);
 }
 
-
-static void pkm_kunit_signed_exec_pin_blocks_path_and_sig_xattr(
-	struct kunit *test)
+static void
+pkm_kunit_signed_exec_pin_blocks_path_and_sig_xattr(struct kunit *test)
 {
 	KUNIT_EXPECT_EQ(test,
 			pkm_kacs_kunit_check_signed_exec_pin_mutation(
@@ -639,7 +615,6 @@ static void pkm_kunit_signed_exec_pin_blocks_path_and_sig_xattr(
 				0, 1, PKM_KUNIT_FILE_WRITE_DATA, 0),
 			-EINVAL);
 }
-
 
 static void pkm_kunit_signing_xattr_hashes_non_elf(struct kunit *test)
 {
@@ -664,17 +639,15 @@ static void pkm_kunit_signing_xattr_hashes_non_elf(struct kunit *test)
 				file, sizeof(file) - 1, sig_blob,
 				PKM_KUNIT_SIGNING_BLOB_LEN, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
 	KUNIT_EXPECT_EQ(test,
 			memcmp(out->signature, sig_blob + 1,
 			       PKM_KUNIT_SIGNING_SIG_LEN),
 			0);
-	KUNIT_EXPECT_EQ(test, memcmp(out->hash, expected_hash,
-				     sizeof(expected_hash)),
+	KUNIT_EXPECT_EQ(test,
+			memcmp(out->hash, expected_hash, sizeof(expected_hash)),
 			0);
 }
-
 
 static void pkm_kunit_signing_short_file_uses_xattr(struct kunit *test)
 {
@@ -690,16 +663,14 @@ static void pkm_kunit_signing_short_file_uses_xattr(struct kunit *test)
 	pkm_kunit_signing_fill_blob(sig_blob, 0x30);
 	KUNIT_ASSERT_EQ(test,
 			pkm_kacs_kunit_probe_signing_material(
-				file, sizeof(file), sig_blob, PKM_KUNIT_SIGNING_BLOB_LEN,
-				out),
+				file, sizeof(file), sig_blob,
+				PKM_KUNIT_SIGNING_BLOB_LEN, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
 }
 
-
-static void pkm_kunit_signing_elf_section_zeroes_signature_bytes(
-	struct kunit *test)
+static void
+pkm_kunit_signing_elf_section_zeroes_signature_bytes(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_probe *out;
 	u8 *expected_file;
@@ -724,8 +695,7 @@ static void pkm_kunit_signing_elf_section_zeroes_signature_bytes(
 			pkm_kacs_kunit_probe_signing_material(
 				file, PKM_KUNIT_ELF_LEN, NULL, 0, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_ELF);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_ELF);
 	KUNIT_EXPECT_EQ(test,
 			memcmp(out->signature, sig_blob + 1,
 			       PKM_KUNIT_SIGNING_SIG_LEN),
@@ -736,15 +706,14 @@ static void pkm_kunit_signing_elf_section_zeroes_signature_bytes(
 	       PKM_KUNIT_SIGNING_BLOB_LEN);
 	sha256(expected_file, PKM_KUNIT_ELF_LEN, expected_hash);
 	sha256(file, PKM_KUNIT_ELF_LEN, raw_hash);
-	KUNIT_EXPECT_EQ(test, memcmp(out->hash, expected_hash,
-				     sizeof(expected_hash)),
+	KUNIT_EXPECT_EQ(test,
+			memcmp(out->hash, expected_hash, sizeof(expected_hash)),
 			0);
 	KUNIT_EXPECT_NE(test, memcmp(out->hash, raw_hash, sizeof(raw_hash)), 0);
 }
 
-
-static void pkm_kunit_signing_elf_priority_blocks_xattr_fallback(
-	struct kunit *test)
+static void
+pkm_kunit_signing_elf_priority_blocks_xattr_fallback(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_probe *out;
 	u8 *xattr_blob;
@@ -752,7 +721,8 @@ static void pkm_kunit_signing_elf_priority_blocks_xattr_fallback(
 	u8 *file;
 
 	out = kunit_kzalloc(test, sizeof(*out), GFP_KERNEL);
-	xattr_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
+	xattr_blob =
+		kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	sig_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	file = kunit_kzalloc(test, PKM_KUNIT_ELF_LEN, GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, out);
@@ -769,13 +739,11 @@ static void pkm_kunit_signing_elf_priority_blocks_xattr_fallback(
 				file, PKM_KUNIT_ELF_LEN, xattr_blob,
 				PKM_KUNIT_SIGNING_BLOB_LEN, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_malformed_elf_metadata_blocks_xattr(
-	struct kunit *test)
+static void
+pkm_kunit_signing_malformed_elf_metadata_blocks_xattr(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_probe *out;
 	u8 *xattr_blob;
@@ -783,7 +751,8 @@ static void pkm_kunit_signing_malformed_elf_metadata_blocks_xattr(
 	u8 *file;
 	Elf64_Shdr shstr = {};
 	out = kunit_kzalloc(test, sizeof(*out), GFP_KERNEL);
-	xattr_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
+	xattr_blob =
+		kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	sig_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	file = kunit_kzalloc(test, PKM_KUNIT_ELF_LEN, GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, out);
@@ -806,13 +775,10 @@ static void pkm_kunit_signing_malformed_elf_metadata_blocks_xattr(
 				file, PKM_KUNIT_ELF_LEN, xattr_blob,
 				PKM_KUNIT_SIGNING_BLOB_LEN, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_elf_without_section_uses_xattr(
-	struct kunit *test)
+static void pkm_kunit_signing_elf_without_section_uses_xattr(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_probe *out;
 	u8 *xattr_blob;
@@ -821,7 +787,8 @@ static void pkm_kunit_signing_elf_without_section_uses_xattr(
 	u8 *file;
 
 	out = kunit_kzalloc(test, sizeof(*out), GFP_KERNEL);
-	xattr_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
+	xattr_blob =
+		kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	sig_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	file = kunit_kzalloc(test, PKM_KUNIT_ELF_LEN, GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, out);
@@ -838,18 +805,16 @@ static void pkm_kunit_signing_elf_without_section_uses_xattr(
 				file, PKM_KUNIT_ELF_LEN, xattr_blob,
 				PKM_KUNIT_SIGNING_BLOB_LEN, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
 	KUNIT_EXPECT_EQ(test,
 			memcmp(out->signature, xattr_blob + 1,
 			       PKM_KUNIT_SIGNING_SIG_LEN),
 			0);
 	sha256(file, PKM_KUNIT_ELF_LEN, expected_hash);
-	KUNIT_EXPECT_EQ(test, memcmp(out->hash, expected_hash,
-				     sizeof(expected_hash)),
+	KUNIT_EXPECT_EQ(test,
+			memcmp(out->hash, expected_hash, sizeof(expected_hash)),
 			0);
 }
-
 
 static void pkm_kunit_signing_invalid_xattr_unsigned(struct kunit *test)
 {
@@ -869,8 +834,7 @@ static void pkm_kunit_signing_invalid_xattr_unsigned(struct kunit *test)
 				file, sizeof(file) - 1, sig_blob,
 				PKM_KUNIT_SIGNING_BLOB_LEN, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 
 	pkm_kunit_signing_fill_blob(sig_blob, 0x90);
 	KUNIT_ASSERT_EQ(test,
@@ -878,13 +842,10 @@ static void pkm_kunit_signing_invalid_xattr_unsigned(struct kunit *test)
 				file, sizeof(file) - 1, sig_blob,
 				PKM_KUNIT_SIGNING_BLOB_LEN - 1, out),
 			0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_reader_matches_buffer_for_elf(
-	struct kunit *test)
+static void pkm_kunit_signing_reader_matches_buffer_for_elf(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_reader_args args = {};
 	struct pkm_kacs_kunit_signing_probe *reader_out;
@@ -911,8 +872,7 @@ static void pkm_kunit_signing_reader_matches_buffer_for_elf(
 				file, PKM_KUNIT_ELF_LEN, NULL, 0, buffer_out),
 			0);
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args,
-							    reader_out),
+			pkm_kacs_kunit_probe_signing_reader(&args, reader_out),
 			0);
 	KUNIT_EXPECT_EQ(test, reader_out->source, buffer_out->source);
 	KUNIT_EXPECT_EQ(test,
@@ -924,7 +884,6 @@ static void pkm_kunit_signing_reader_matches_buffer_for_elf(
 			       sizeof(reader_out->hash)),
 			0);
 }
-
 
 static void pkm_kunit_signing_reader_xattr_hashes_non_elf(struct kunit *test)
 {
@@ -945,10 +904,9 @@ static void pkm_kunit_signing_reader_xattr_hashes_non_elf(struct kunit *test)
 	args.xattr_sig = sig_blob;
 	args.xattr_sig_len = PKM_KUNIT_SIGNING_BLOB_LEN;
 
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_XATTR);
 	KUNIT_EXPECT_EQ(test,
 			memcmp(out->signature, sig_blob + 1,
 			       PKM_KUNIT_SIGNING_SIG_LEN),
@@ -959,9 +917,7 @@ static void pkm_kunit_signing_reader_xattr_hashes_non_elf(struct kunit *test)
 			0);
 }
 
-
-static void pkm_kunit_signing_reader_missing_xattr_unsigned(
-	struct kunit *test)
+static void pkm_kunit_signing_reader_missing_xattr_unsigned(struct kunit *test)
 {
 	static const u8 file[] = "unsigned";
 	struct pkm_kacs_kunit_signing_reader_args args = {
@@ -973,15 +929,12 @@ static void pkm_kunit_signing_reader_missing_xattr_unsigned(
 	out = kunit_kzalloc(test, sizeof(*out), GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, out);
 
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_reader_invalid_xattr_unsigned(
-	struct kunit *test)
+static void pkm_kunit_signing_reader_invalid_xattr_unsigned(struct kunit *test)
 {
 	static const u8 file[] = "reader-invalid-xattr";
 	struct pkm_kacs_kunit_signing_reader_args args = {};
@@ -999,22 +952,18 @@ static void pkm_kunit_signing_reader_invalid_xattr_unsigned(
 	args.xattr_sig = sig_blob;
 	args.xattr_sig_len = PKM_KUNIT_SIGNING_BLOB_LEN - 1;
 
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 
 	args.xattr_sig_len = PKM_KUNIT_SIGNING_BLOB_LEN;
 	sig_blob[0] = 0x02;
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_reader_size_change_invalidates(
-	struct kunit *test)
+static void pkm_kunit_signing_reader_size_change_invalidates(struct kunit *test)
 {
 	static const u8 file[] = "size-change";
 	struct pkm_kacs_kunit_signing_reader_args args = {};
@@ -1034,15 +983,13 @@ static void pkm_kunit_signing_reader_size_change_invalidates(
 	args.use_final_file_len = 1;
 	args.final_file_len = args.file_len + 1;
 
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_reader_read_failure_invalidates(
-	struct kunit *test)
+static void
+pkm_kunit_signing_reader_read_failure_invalidates(struct kunit *test)
 {
 	static const u8 file[] = "read-failure";
 	struct pkm_kacs_kunit_signing_reader_args args = {};
@@ -1061,15 +1008,13 @@ static void pkm_kunit_signing_reader_read_failure_invalidates(
 	args.xattr_sig_len = PKM_KUNIT_SIGNING_BLOB_LEN;
 	args.fail_reads = 1;
 
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_reader_malformed_elf_blocks_xattr(
-	struct kunit *test)
+static void
+pkm_kunit_signing_reader_malformed_elf_blocks_xattr(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_reader_args args = {};
 	struct pkm_kacs_kunit_signing_probe *out;
@@ -1078,7 +1023,8 @@ static void pkm_kunit_signing_reader_malformed_elf_blocks_xattr(
 	u8 *file;
 	Elf64_Shdr shstr = {};
 	out = kunit_kzalloc(test, sizeof(*out), GFP_KERNEL);
-	xattr_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
+	xattr_blob =
+		kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	sig_blob = kunit_kzalloc(test, PKM_KUNIT_SIGNING_BLOB_LEN, GFP_KERNEL);
 	file = kunit_kzalloc(test, PKM_KUNIT_ELF_LEN, GFP_KERNEL);
 	KUNIT_ASSERT_NOT_NULL(test, out);
@@ -1101,15 +1047,12 @@ static void pkm_kunit_signing_reader_malformed_elf_blocks_xattr(
 	args.xattr_sig = xattr_blob;
 	args.xattr_sig_len = PKM_KUNIT_SIGNING_BLOB_LEN;
 
-	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_probe_signing_reader(&args, out), 0);
-	KUNIT_EXPECT_EQ(test, out->source,
-			PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_kunit_probe_signing_reader(&args, out),
+			0);
+	KUNIT_EXPECT_EQ(test, out->source, PKM_KACS_KUNIT_SIGNING_SOURCE_NONE);
 }
 
-
-static void pkm_kunit_signing_verify_unsigned_has_no_trust(
-	struct kunit *test)
+static void pkm_kunit_signing_verify_unsigned_has_no_trust(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_probe *material;
 	struct pkm_kacs_kunit_signing_verify_out out = {};
@@ -1117,17 +1060,16 @@ static void pkm_kunit_signing_verify_unsigned_has_no_trust(
 	KUNIT_ASSERT_NOT_NULL(test, material);
 
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, NULL, 0, 0, 0, &out),
+			pkm_kacs_kunit_verify_signing_material(material, NULL,
+							       0, 0, 0, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 0U);
 	KUNIT_EXPECT_EQ(test, out.pip_type, 0U);
 	KUNIT_EXPECT_EQ(test, out.pip_trust, 0U);
 }
 
-
-static void pkm_kunit_signing_verify_first_key_sets_tcb_trust(
-	struct kunit *test)
+static void
+pkm_kunit_signing_verify_first_key_sets_tcb_trust(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_key_entry *keys;
 	struct pkm_kacs_kunit_signing_probe *material;
@@ -1143,16 +1085,13 @@ static void pkm_kunit_signing_verify_first_key_sets_tcb_trust(
 				   PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 2, 0, 1,
-				&out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       2, 0, 1, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 1U);
-	KUNIT_EXPECT_EQ(test, out.pip_type,
-			PKM_KUNIT_SIGNING_PIP_PROTECTED);
+	KUNIT_EXPECT_EQ(test, out.pip_type, PKM_KUNIT_SIGNING_PIP_PROTECTED);
 	KUNIT_EXPECT_EQ(test, out.pip_trust, PKM_KUNIT_SIGNING_TRUST_TCB);
 }
-
 
 static void pkm_kunit_signing_unverifiable_is_not_unsigned(struct kunit *test)
 {
@@ -1188,8 +1127,8 @@ static void pkm_kunit_signing_unverifiable_is_not_unsigned(struct kunit *test)
 
 	/* The same table, verifiable, still reports the match. */
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 2, 0, 1, &out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       2, 0, 1, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 1U);
 
@@ -1199,7 +1138,6 @@ static void pkm_kunit_signing_unverifiable_is_not_unsigned(struct kunit *test)
 				material, keys, 2, -ENOMEM),
 			-ENOMEM);
 }
-
 
 static void pkm_kunit_signing_crypto_transform_is_available(struct kunit *test)
 {
@@ -1211,7 +1149,6 @@ static void pkm_kunit_signing_crypto_transform_is_available(struct kunit *test)
 	 */
 	KUNIT_EXPECT_EQ(test, pkm_kacs_signing_crypto_probe(), 0);
 }
-
 
 static void pkm_kunit_signing_verify_later_key_after_miss(struct kunit *test)
 {
@@ -1232,19 +1169,16 @@ static void pkm_kunit_signing_verify_later_key_after_miss(struct kunit *test)
 				   PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 3, 1, 1,
-				&out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       3, 1, 1, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 1U);
-	KUNIT_EXPECT_EQ(test, out.pip_type,
-			PKM_KUNIT_SIGNING_PIP_PROTECTED);
+	KUNIT_EXPECT_EQ(test, out.pip_type, PKM_KUNIT_SIGNING_PIP_PROTECTED);
 	KUNIT_EXPECT_EQ(test, out.pip_trust, PKM_KUNIT_SIGNING_TRUST_TCB);
 }
 
-
-static void pkm_kunit_signing_verify_no_matching_key_unsigned(
-	struct kunit *test)
+static void
+pkm_kunit_signing_verify_no_matching_key_unsigned(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_key_entry *keys;
 	struct pkm_kacs_kunit_signing_probe *material;
@@ -1260,18 +1194,16 @@ static void pkm_kunit_signing_verify_no_matching_key_unsigned(
 				   PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 2, 0, 0,
-				&out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       2, 0, 0, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 0U);
 	KUNIT_EXPECT_EQ(test, out.pip_type, 0U);
 	KUNIT_EXPECT_EQ(test, out.pip_trust, 0U);
 }
 
-
-static void pkm_kunit_signing_verify_unsupported_tier_fails_closed(
-	struct kunit *test)
+static void
+pkm_kunit_signing_verify_unsupported_tier_fails_closed(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_key_entry *keys;
 	struct pkm_kacs_kunit_signing_probe *material;
@@ -1286,16 +1218,14 @@ static void pkm_kunit_signing_verify_unsupported_tier_fails_closed(
 				   PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 2, 0, 1,
-				&out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       2, 0, 1, &out),
 			-EINVAL);
 	KUNIT_EXPECT_EQ(test, out.verified, 0U);
 }
 
-
-static void pkm_kunit_signing_verify_missing_terminator_fails_closed(
-	struct kunit *test)
+static void
+pkm_kunit_signing_verify_missing_terminator_fails_closed(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_key_entry *keys;
 	struct pkm_kacs_kunit_signing_probe *material;
@@ -1311,16 +1241,14 @@ static void pkm_kunit_signing_verify_missing_terminator_fails_closed(
 				   PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 1, 0, 1,
-				&out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       1, 0, 1, &out),
 			-EINVAL);
 	KUNIT_EXPECT_EQ(test, out.verified, 0U);
 }
 
-
-static void pkm_kunit_signing_verify_terminator_stops_iteration(
-	struct kunit *test)
+static void
+pkm_kunit_signing_verify_terminator_stops_iteration(struct kunit *test)
 {
 	struct pkm_kacs_kunit_signing_key_entry *keys;
 	struct pkm_kacs_kunit_signing_probe *material;
@@ -1336,18 +1264,16 @@ static void pkm_kunit_signing_verify_terminator_stops_iteration(
 				   PKM_KUNIT_SIGNING_TRUST_TCB);
 
 	KUNIT_ASSERT_EQ(test,
-			pkm_kacs_kunit_verify_signing_material(
-				material, keys, 3, 1, 1,
-				&out),
+			pkm_kacs_kunit_verify_signing_material(material, keys,
+							       3, 1, 1, &out),
 			0);
 	KUNIT_EXPECT_EQ(test, out.verified, 0U);
 	KUNIT_EXPECT_EQ(test, out.pip_type, 0U);
 	KUNIT_EXPECT_EQ(test, out.pip_trust, 0U);
 }
 
-
-static void pkm_kunit_builtin_signing_key_table_has_one_tcb_key(
-	struct kunit *test)
+static void
+pkm_kunit_builtin_signing_key_table_has_one_tcb_key(struct kunit *test)
 {
 	u32 usable_count = 0;
 	u32 terminated = 0;
@@ -1413,11 +1339,13 @@ static void pkm_kunit_signing_key_listing_names_each_key(struct kunit *test)
 static void pkm_kunit_firmware_verdict_requires_tcb(struct kunit *test)
 {
 	const struct pkm_kacs_signing_trust_result tcb = {
-		.verified = 1, .pip_type = PKM_KUNIT_SIGNING_PIP_PROTECTED,
+		.verified = 1,
+		.pip_type = PKM_KUNIT_SIGNING_PIP_PROTECTED,
 		.pip_trust = PKM_KUNIT_SIGNING_TRUST_TCB,
 	};
 	const struct pkm_kacs_signing_trust_result low = {
-		.verified = 1, .pip_type = PKM_KUNIT_SIGNING_PIP_PROTECTED,
+		.verified = 1,
+		.pip_type = PKM_KUNIT_SIGNING_PIP_PROTECTED,
 		.pip_trust = PKM_KUNIT_PIP_TRUST_TEST,
 	};
 	const struct pkm_kacs_signing_trust_result unverified = {};
@@ -1428,10 +1356,8 @@ static void pkm_kunit_firmware_verdict_requires_tcb(struct kunit *test)
 		const struct pkm_kacs_signing_trust_result *result;
 		u8 reason;
 	} cases[] = {
-		{ 0, PKM_KACS_SIGNING_SOURCE_XATTR, 0, &tcb,
-		  KACS_FW_ALLOWED },
-		{ 0, PKM_KACS_SIGNING_SOURCE_ELF, 0, &tcb,
-		  KACS_FW_ALLOWED },
+		{ 0, PKM_KACS_SIGNING_SOURCE_XATTR, 0, &tcb, KACS_FW_ALLOWED },
+		{ 0, PKM_KACS_SIGNING_SOURCE_ELF, 0, &tcb, KACS_FW_ALLOWED },
 		{ 0, PKM_KACS_SIGNING_SOURCE_NONE, 0, &unverified,
 		  KACS_FW_UNSIGNED },
 		{ 0, PKM_KACS_SIGNING_SOURCE_XATTR, 0, &unverified,
@@ -1472,7 +1398,8 @@ static void pkm_kunit_firmware_verdict_requires_tcb(struct kunit *test)
 	}
 
 	KUNIT_EXPECT_EQ(test,
-			pkm_kacs_firmware_verdict(0, PKM_KACS_SIGNING_SOURCE_XATTR,
+			pkm_kacs_firmware_verdict(0,
+						  PKM_KACS_SIGNING_SOURCE_XATTR,
 						  0, &tcb, true, NULL),
 			-EINVAL);
 }

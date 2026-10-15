@@ -178,8 +178,8 @@ container:
 	entries = out->kind == PKM_LCS_KUNIT_MP_MAP ? count * 2 : count;
 	offset = header;
 	while (entries--) {
-		if (!pkm_lcs_kunit_mp_parse(bytes + offset, len - offset, &child,
-					    depth + 1))
+		if (!pkm_lcs_kunit_mp_parse(bytes + offset, len - offset,
+					    &child, depth + 1))
 			return false;
 		offset += child.total_len;
 	}
@@ -210,7 +210,8 @@ static bool pkm_lcs_kunit_mp_get(const struct pkm_lcs_kunit_mp *map,
 		return false;
 	for (i = 0; i < map->count; i++) {
 		if (!pkm_lcs_kunit_mp_parse(map->data + offset,
-					    map->data_len - offset, &key_view, 0))
+					    map->data_len - offset, &key_view,
+					    0))
 			return false;
 		offset += key_view.total_len;
 		if (!pkm_lcs_kunit_mp_parse(map->data + offset,
@@ -353,7 +354,8 @@ static bool pkm_lcs_kunit_audit_latest(struct kunit *test, u8 origin,
 	}
 	if (written < KMES_EVENT_HEADER_BASE_SIZE)
 		return false;
-	header_size = get_unaligned_le32(buffer + KMES_EVENT_HEADER_SIZE_OFFSET);
+	header_size =
+		get_unaligned_le32(buffer + KMES_EVENT_HEADER_SIZE_OFFSET);
 	if (header_size >= written)
 		return false;
 	if (!pkm_lcs_kunit_mp_parse(buffer + header_size, written - header_size,
@@ -378,9 +380,10 @@ static bool pkm_lcs_kunit_audit_none(u8 origin, const char *type, u8 *buffer)
 }
 
 /* subject: {token: {sid, integrity, id, auth-id, type, impersonation}} */
-static void pkm_lcs_kunit_audit_expect_caller(
-	struct kunit *test, const struct pkm_lcs_kunit_mp *root,
-	const void *token)
+static void
+pkm_lcs_kunit_audit_expect_caller(struct kunit *test,
+				  const struct pkm_lcs_kunit_mp *root,
+				  const void *token)
 {
 	struct pkm_lcs_kunit_mp subject;
 	struct pkm_lcs_kunit_mp caller;
@@ -396,8 +399,8 @@ static void pkm_lcs_kunit_audit_expect_caller(
 	pkm_lcs_kunit_mp_expect_bin(test, &caller, "sid", sid, sid_len);
 	pkm_lcs_kunit_mp_expect_kind(test, &caller, "integrity",
 				     PKM_LCS_KUNIT_MP_UINT, NULL);
-	pkm_lcs_kunit_mp_expect_kind(test, &caller, "id",
-				     PKM_LCS_KUNIT_MP_UINT, NULL);
+	pkm_lcs_kunit_mp_expect_kind(test, &caller, "id", PKM_LCS_KUNIT_MP_UINT,
+				     NULL);
 	pkm_lcs_kunit_mp_expect_kind(test, &caller, "auth-id",
 				     PKM_LCS_KUNIT_MP_UINT, NULL);
 	pkm_lcs_kunit_mp_expect_kind(test, &caller, "type",
@@ -423,9 +426,10 @@ static void pkm_lcs_kunit_audit_expect_handle_access(
 }
 
 /* outcome: {success} on success, {success, errno} on failure. */
-static void pkm_lcs_kunit_audit_expect_outcome(
-	struct kunit *test, const struct pkm_lcs_kunit_mp *root,
-	int errno_value)
+static void
+pkm_lcs_kunit_audit_expect_outcome(struct kunit *test,
+				   const struct pkm_lcs_kunit_mp *root,
+				   int errno_value)
 {
 	struct pkm_lcs_kunit_mp outcome;
 
@@ -457,25 +461,112 @@ static void pkm_lcs_kunit_audit_expect_timed_out(
  */
 static const u8 pkm_lcs_kunit_alarm_key_sd[] = {
 	/* revision 1; SE_SELF_RELATIVE | SE_SACL_PRESENT | SE_DACL_PRESENT */
-	0x01, 0x00, 0x14, 0x80,
-	0x14, 0x00, 0x00, 0x00, /* owner at 20 */
-	0x20, 0x00, 0x00, 0x00, /* group at 32 */
-	0x2c, 0x00, 0x00, 0x00, /* SACL at 44 */
-	0x48, 0x00, 0x00, 0x00, /* DACL at 72 */
+	0x01,
+	0x00,
+	0x14,
+	0x80,
+	0x14,
+	0x00,
+	0x00,
+	0x00, /* owner at 20 */
+	0x20,
+	0x00,
+	0x00,
+	0x00, /* group at 32 */
+	0x2c,
+	0x00,
+	0x00,
+	0x00, /* SACL at 44 */
+	0x48,
+	0x00,
+	0x00,
+	0x00, /* DACL at 72 */
 	/* owner: S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 	/* group: S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 	/* SACL: revision 2, size 28, one ACE */
-	0x02, 0x00, 0x1c, 0x00, 0x01, 0x00, 0x00, 0x00,
+	0x02,
+	0x00,
+	0x1c,
+	0x00,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
 	/* SYSTEM_ALARM_ACE_TYPE, no flags, size 20, KEY_SET_VALUE, S-1-1-0 */
-	0x03, 0x00, 0x14, 0x00, 0x02, 0x00, 0x00, 0x00,
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+	0x03,
+	0x00,
+	0x14,
+	0x00,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
 	/* DACL: revision 2, size 28, one ACE */
-	0x02, 0x00, 0x1c, 0x00, 0x01, 0x00, 0x00, 0x00,
+	0x02,
+	0x00,
+	0x1c,
+	0x00,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
 	/* ACCESS_ALLOWED_ACE_TYPE, no flags, size 20, KEY_ALL_ACCESS, S-1-1-0 */
-	0x00, 0x00, 0x14, 0x00, 0x3f, 0x00, 0x0f, 0x00,
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+	0x00,
+	0x00,
+	0x14,
+	0x00,
+	0x3f,
+	0x00,
+	0x0f,
+	0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
 };
 
 /* The owner SID inside pkm_lcs_kunit_alarm_key_sd. */
@@ -487,10 +578,9 @@ static const u8 pkm_lcs_kunit_alarm_key_sd[] = {
  * and so the handle, a continuous-audit mask. Without a SACL the mask is
  * zero, and an alarm ACE never makes the open itself audited.
  */
-static void pkm_lcs_kunit_audit_open_plan_carries_alarm_mask(
-	struct kunit *test)
+static void pkm_lcs_kunit_audit_open_plan_carries_alarm_mask(struct kunit *test)
 {
-	struct pkm_lcs_key_open_access_plan plan = { };
+	struct pkm_lcs_key_open_access_plan plan = {};
 	u8 plain[sizeof(pkm_lcs_kunit_alarm_key_sd)];
 	const void *token;
 
@@ -526,7 +616,7 @@ static void pkm_lcs_kunit_audit_open_plan_carries_alarm_mask(
 /* The mask rides the publish input onto the handle and stays there. */
 static void pkm_lcs_kunit_audit_publish_caches_audit_mask(struct kunit *test)
 {
-	static const char * const path[] = { "Machine", "Software" };
+	static const char *const path[] = { "Machine", "Software" };
 	static const u8 ancestors[2][PKM_LCS_GUID_BYTES] = {
 		{ 0x11 },
 		{ 0x5a },
@@ -539,7 +629,7 @@ static void pkm_lcs_kunit_audit_publish_caches_audit_mask(struct kunit *test)
 		.ancestor_guids = ancestors,
 		.path_component_count = 2,
 	};
-	struct pkm_lcs_key_fd_snapshot snapshot = { };
+	struct pkm_lcs_key_fd_snapshot snapshot = {};
 	long fd;
 
 	memcpy(input.key_guid, ancestors[1], sizeof(input.key_guid));
@@ -553,10 +643,9 @@ static void pkm_lcs_kunit_audit_publish_caches_audit_mask(struct kunit *test)
 	pkm_lcs_kunit_flush_deferred_key_fd_release();
 }
 
-static long pkm_lcs_kunit_audit_publish(u32 granted, u32 audit_mask,
-					const char * const *path,
-					const u8 (*ancestors)[PKM_LCS_GUID_BYTES],
-					u32 depth)
+static long pkm_lcs_kunit_audit_publish(
+	u32 granted, u32 audit_mask, const char *const *path,
+	const u8 (*ancestors)[PKM_LCS_GUID_BYTES], u32 depth)
 {
 	struct pkm_lcs_key_fd_publish_input input = {
 		.source_id = 1,
@@ -578,17 +667,17 @@ static long pkm_lcs_kunit_audit_publish(u32 granted, u32 audit_mask,
  * SHA-256 digest. The same write through a handle whose mask covers only
  * DELETE writes nothing.
  */
-static void pkm_lcs_kunit_audit_value_set_follows_the_handle_mask(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_audit_value_set_follows_the_handle_mask(struct kunit *test)
 {
-	static const char * const path[] = { "Machine", "Software" };
+	static const char *const path[] = { "Machine", "Software" };
 	static const u8 ancestors[2][PKM_LCS_GUID_BYTES] = {
 		{ 1 },
 		{ 0x7a },
 	};
 	static const char value_name[] = "Answer";
 	static const u8 data[] = { 0x2a, 0x00, 0x00, 0x00 };
-	struct pkm_lcs_kunit_usercopy_ctx ctx = { };
+	struct pkm_lcs_kunit_usercopy_ctx ctx = {};
 	struct pkm_lcs_usercopy_ops ops = pkm_lcs_kunit_usercopy_ops(&ctx);
 	struct reg_set_value_args args = {
 		.name_len = sizeof(value_name) - 1,
@@ -614,7 +703,7 @@ static void pkm_lcs_kunit_audit_value_set_follows_the_handle_mask(
 	struct pkm_lcs_kunit_mp value;
 	struct pkm_lcs_kunit_mp mutation;
 	u8 digest[SHA256_DIGEST_SIZE];
-	struct file file = { };
+	struct file file = {};
 	const void *source_token;
 	const void *admin_token;
 	struct task_struct *task;
@@ -648,23 +737,23 @@ static void pkm_lcs_kunit_audit_value_set_follows_the_handle_mask(
 		pkm_lcs_kunit_set_value_ioctl_source_thread, &script,
 		"pkm-lcs-kunit-audit-set-value");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(task));
-	ret = pkm_lcs_kunit_key_fd_set_value_for_token((int)audited_fd,
-						       admin_token, &ops, &args);
+	ret = pkm_lcs_kunit_key_fd_set_value_for_token(
+		(int)audited_fd, admin_token, &ops, &args);
 	KUNIT_EXPECT_EQ(test, pkm_lcs_kunit_kthread_stop(task), 0);
 	KUNIT_ASSERT_EQ(test, ret, 0L);
 	KUNIT_ASSERT_EQ(test, script.result, 0);
 
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_VALUE_SET, buffer, &root,
-					5U));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						     PKM_LCS_KUNIT_VALUE_SET,
+						     buffer, &root, 5U));
 	pkm_lcs_kunit_audit_expect_caller(test, &root, admin_token);
 
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "object", 2U,
 						     &object));
 	pkm_lcs_kunit_mp_expect_str(test, &object, "kind", "key");
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "key", 4U,
-						     &key));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "key", 4U, &key));
 	pkm_lcs_kunit_mp_expect_bin(test, &key, "guid", ancestors[1],
 				    PKM_LCS_GUID_BYTES);
 	pkm_lcs_kunit_mp_expect_str(test, &key, "path", "Machine\\Software");
@@ -704,13 +793,13 @@ static void pkm_lcs_kunit_audit_value_set_follows_the_handle_mask(
 		pkm_lcs_kunit_set_value_ioctl_source_thread, &script,
 		"pkm-lcs-kunit-audit-set-value-quiet");
 	KUNIT_ASSERT_FALSE(test, IS_ERR(task));
-	ret = pkm_lcs_kunit_key_fd_set_value_for_token((int)quiet_fd,
-						       admin_token, &ops, &args);
+	ret = pkm_lcs_kunit_key_fd_set_value_for_token(
+		(int)quiet_fd, admin_token, &ops, &args);
 	KUNIT_EXPECT_EQ(test, pkm_lcs_kunit_kthread_stop(task), 0);
 	KUNIT_EXPECT_EQ(test, ret, 0L);
 	KUNIT_EXPECT_TRUE(test, pkm_lcs_kunit_audit_none(
-					KMES_ORIGIN_LCS, PKM_LCS_KUNIT_VALUE_SET,
-					buffer));
+					KMES_ORIGIN_LCS,
+					PKM_LCS_KUNIT_VALUE_SET, buffer));
 
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)audited_fd), 0);
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)quiet_fd), 0);
@@ -721,9 +810,9 @@ static void pkm_lcs_kunit_audit_value_set_follows_the_handle_mask(
 	kacs_rust_token_drop(source_token);
 }
 
-static long pkm_lcs_kunit_audit_refused_write(u32 which, int fd,
-					      const void *token,
-					      const struct pkm_lcs_usercopy_ops *ops)
+static long
+pkm_lcs_kunit_audit_refused_write(u32 which, int fd, const void *token,
+				  const struct pkm_lcs_usercopy_ops *ops)
 {
 	struct reg_set_value_args set_value = { .txn_fd = -1 };
 	struct reg_delete_value_args delete_value = { .txn_fd = -1 };
@@ -757,26 +846,24 @@ static long pkm_lcs_kunit_audit_refused_write(u32 which, int fd,
  * request, outcome, with request.timed-out false, outcome.errno -EACCES,
  * and nothing the request had not yet read. With no mask, nothing is.
  */
-static void pkm_lcs_kunit_audit_refused_writes_follow_the_handle_mask(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_audit_refused_writes_follow_the_handle_mask(struct kunit *test)
 {
-	static const char * const path[] = { "Machine", "Software", "Gated" };
+	static const char *const path[] = { "Machine", "Software", "Gated" };
 	static const u8 ancestors[3][PKM_LCS_GUID_BYTES] = {
 		{ 1 },
 		{ 0x21 },
 		{ 0x7b },
 	};
-	static const char * const event_types[] = {
-		PKM_LCS_KUNIT_VALUE_SET,
-		PKM_LCS_KUNIT_VALUE_DELETED,
-		PKM_LCS_KUNIT_KEY_TOMBSTONED,
-		PKM_LCS_KUNIT_KEY_DELETED,
+	static const char *const event_types[] = {
+		PKM_LCS_KUNIT_VALUE_SET,      PKM_LCS_KUNIT_VALUE_DELETED,
+		PKM_LCS_KUNIT_KEY_TOMBSTONED, PKM_LCS_KUNIT_KEY_DELETED,
 		PKM_LCS_KUNIT_KEY_HIDDEN,
 	};
 	static const u32 rights[] = {
 		KEY_SET_VALUE, KEY_SET_VALUE, KEY_SET_VALUE, DELETE, DELETE,
 	};
-	struct pkm_lcs_kunit_usercopy_ctx ctx = { };
+	struct pkm_lcs_kunit_usercopy_ctx ctx = {};
 	struct pkm_lcs_usercopy_ops ops = pkm_lcs_kunit_usercopy_ops(&ctx);
 	struct pkm_lcs_kunit_mp root;
 	struct pkm_lcs_kunit_mp object;
@@ -819,14 +906,14 @@ static void pkm_lcs_kunit_audit_refused_writes_follow_the_handle_mask(
 				    pkm_lcs_kunit_audit_refused_write(
 					    i, (int)fd, token, &ops),
 				    (long)-EACCES, "%s", event_types[i]);
-		KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-						test, KMES_ORIGIN_LCS,
-						event_types[i], buffer, &root,
-						5U));
+		KUNIT_ASSERT_TRUE(
+			test, pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+							 event_types[i], buffer,
+							 &root, 5U));
 		pkm_lcs_kunit_audit_expect_caller(test, &root, token);
-		KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root,
-							     "object", 2U,
-							     &object));
+		KUNIT_ASSERT_TRUE(test,
+				  pkm_lcs_kunit_mp_map(test, &root, "object",
+						       2U, &object));
 		pkm_lcs_kunit_mp_expect_str(test, &object, "kind", "key");
 		/* Refused before the layer or a name was read. */
 		KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object,
@@ -855,12 +942,12 @@ static void pkm_lcs_kunit_audit_refused_writes_follow_the_handle_mask(
  */
 static void pkm_lcs_kunit_audit_descriptor_change_gating(struct kunit *test)
 {
-	static const char * const path[] = { "Machine", "Secured" };
+	static const char *const path[] = { "Machine", "Secured" };
 	static const u8 ancestors[2][PKM_LCS_GUID_BYTES] = {
 		{ 1 },
 		{ 0x7c },
 	};
-	struct pkm_lcs_kunit_usercopy_ctx ctx = { };
+	struct pkm_lcs_kunit_usercopy_ctx ctx = {};
 	struct pkm_lcs_usercopy_ops ops = pkm_lcs_kunit_usercopy_ops(&ctx);
 	struct reg_set_security_args dacl = {
 		.security_info = DACL_SECURITY_INFORMATION,
@@ -896,17 +983,17 @@ static void pkm_lcs_kunit_audit_descriptor_change_gating(struct kunit *test)
 			(long)-EACCES);
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
 					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_DESCRIPTOR_CHANGED, buffer,
-					&root, 5U));
+					PKM_LCS_KUNIT_DESCRIPTOR_CHANGED,
+					buffer, &root, 5U));
 	pkm_lcs_kunit_audit_expect_caller(test, &root, token);
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "object", 3U,
 						     &object));
 	pkm_lcs_kunit_mp_expect_str(test, &object, "kind", "key");
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "key", 2U,
-						     &key));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "key", 2U, &key));
 	pkm_lcs_kunit_mp_expect_str(test, &key, "path", "Machine\\Secured");
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "sd", 1U,
-						     &sd));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "sd", 1U, &sd));
 	pkm_lcs_kunit_mp_expect_uint(test, &sd, "components",
 				     DACL_SECURITY_INFORMATION);
 	pkm_lcs_kunit_audit_expect_handle_access(test, &root, WRITE_DAC,
@@ -920,9 +1007,10 @@ static void pkm_lcs_kunit_audit_descriptor_change_gating(struct kunit *test)
 			pkm_lcs_kunit_key_fd_set_security_for_token(
 				(int)fd, token, &ops, &sacl),
 			(long)-EACCES);
-	KUNIT_EXPECT_TRUE(test, pkm_lcs_kunit_audit_none(
-					KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_DESCRIPTOR_CHANGED, buffer));
+	KUNIT_EXPECT_TRUE(
+		test, pkm_lcs_kunit_audit_none(KMES_ORIGIN_LCS,
+					       PKM_LCS_KUNIT_DESCRIPTOR_CHANGED,
+					       buffer));
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)fd), 0);
 
 	/* A DACL change the mask does not cover. */
@@ -934,17 +1022,19 @@ static void pkm_lcs_kunit_audit_descriptor_change_gating(struct kunit *test)
 			pkm_lcs_kunit_key_fd_set_security_for_token(
 				(int)fd, token, &ops, &dacl),
 			(long)-EACCES);
-	KUNIT_EXPECT_TRUE(test, pkm_lcs_kunit_audit_none(
-					KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_DESCRIPTOR_CHANGED, buffer));
+	KUNIT_EXPECT_TRUE(
+		test, pkm_lcs_kunit_audit_none(KMES_ORIGIN_LCS,
+					       PKM_LCS_KUNIT_DESCRIPTOR_CHANGED,
+					       buffer));
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)fd), 0);
 
 	pkm_lcs_kunit_flush_deferred_key_fd_release();
 	kacs_rust_token_drop(token);
 }
 
-static void pkm_lcs_kunit_audit_record_init(
-	struct pkm_lcs_key_audit_record *record, u32 event, const char *path)
+static void
+pkm_lcs_kunit_audit_record_init(struct pkm_lcs_key_audit_record *record,
+				u32 event, const char *path)
 {
 	memset(record, 0, sizeof(*record));
 	record->event = event;
@@ -960,8 +1050,8 @@ static void pkm_lcs_kunit_audit_record_init(
  * replaced, and a staged SACL change with both descriptors, recorded with
  * nothing matched.
  */
-static void pkm_lcs_kunit_audit_emitter_timeout_and_previous_shapes(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_audit_emitter_timeout_and_previous_shapes(struct kunit *test)
 {
 	static const u8 old_data[] = { 'o', 'l', 'd' };
 	static const u8 new_data[] = { 'n', 'e', 'w', '!' };
@@ -1009,14 +1099,14 @@ static void pkm_lcs_kunit_audit_emitter_timeout_and_previous_shapes(
 	KUNIT_ASSERT_EQ(test, pkm_lcs_emit_key_audit_for_token(token, &record),
 			0L);
 	/* subject, object, access, request, outcome */
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_VALUE_SET, buffer, &root,
-					5U));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						     PKM_LCS_KUNIT_VALUE_SET,
+						     buffer, &root, 5U));
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "object", 2U,
 						     &object));
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "key", 4U,
-						     &key));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "key", 4U, &key));
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &key, "value", 7U,
 						     &value));
 	pkm_lcs_kunit_mp_expect_uint(test, &value, "type-previous", REG_SZ);
@@ -1058,12 +1148,12 @@ static void pkm_lcs_kunit_audit_emitter_timeout_and_previous_shapes(
 	/* subject, object, access, transaction, outcome */
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
 					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_DESCRIPTOR_CHANGED, buffer,
-					&root, 5U));
+					PKM_LCS_KUNIT_DESCRIPTOR_CHANGED,
+					buffer, &root, 5U));
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "object", 3U,
 						     &object));
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "sd", 7U,
-						     &sd));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "sd", 7U, &sd));
 	pkm_lcs_kunit_mp_expect_uint(test, &sd, "components",
 				     SACL_SECURITY_INFORMATION);
 	pkm_lcs_kunit_mp_expect_uint(test, &sd, "length",
@@ -1132,23 +1222,23 @@ static void pkm_lcs_kunit_audit_key_created_shape(struct kunit *test)
 	pkm_kmes_kunit_reset_all();
 	KUNIT_ASSERT_EQ(test, pkm_lcs_emit_key_audit_for_token(token, &record),
 			0L);
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_KEY_CREATED, buffer, &root,
-					4U));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						     PKM_LCS_KUNIT_KEY_CREATED,
+						     buffer, &root, 4U));
 	pkm_lcs_kunit_audit_expect_caller(test, &root, token);
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "object", 3U,
 						     &object));
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "key", 7U,
-						     &key));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "key", 7U, &key));
 	pkm_lcs_kunit_mp_expect_str(test, &key, "path",
 				    "Machine\\Software\\New");
 	pkm_lcs_kunit_mp_expect_bool(test, &key, "created", true);
 	pkm_lcs_kunit_mp_expect_bool(test, &key, "volatile", true);
 	pkm_lcs_kunit_mp_expect_bool(test, &key, "volatile-requested", true);
 	pkm_lcs_kunit_mp_expect_bool(test, &key, "symlink", false);
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &object, "sd", 2U,
-						     &sd));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_lcs_kunit_mp_map(test, &object, "sd", 2U, &sd));
 	pkm_lcs_kunit_mp_expect_uint(test, &sd, "length",
 				     sizeof(pkm_lcs_kunit_alarm_key_sd));
 	pkm_lcs_kunit_mp_expect_bin(test, &sd, "owner",
@@ -1178,10 +1268,9 @@ static void pkm_lcs_kunit_audit_key_created_shape(struct kunit *test)
  * success transaction is {id, state} and outcome {success}; a failure adds
  * commit-outstanding, an errno when a commit call failed, and the reason.
  */
-static void pkm_lcs_kunit_audit_transaction_committed_shapes(
-	struct kunit *test)
+static void pkm_lcs_kunit_audit_transaction_committed_shapes(struct kunit *test)
 {
-	struct pkm_lcs_audit_caller_snapshot caller = { };
+	struct pkm_lcs_audit_caller_snapshot caller = {};
 	struct pkm_lcs_kunit_mp root;
 	struct pkm_lcs_kunit_mp transaction;
 	struct pkm_lcs_kunit_mp outcome;
@@ -1193,8 +1282,8 @@ static void pkm_lcs_kunit_audit_transaction_committed_shapes(
 	KUNIT_ASSERT_NOT_NULL(test, buffer);
 	token = kacs_rust_kunit_create_local_administrator_token();
 	KUNIT_ASSERT_NOT_NULL(test, token);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_audit_caller_snapshot_take(token, &caller),
-			0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_lcs_audit_caller_snapshot_take(token, &caller), 0L);
 
 	pkm_kmes_kunit_reset_all();
 	KUNIT_ASSERT_EQ(test,
@@ -1202,10 +1291,10 @@ static void pkm_lcs_kunit_audit_transaction_committed_shapes(
 				&caller, 4096, REG_TXN_COMMITTED, 0,
 				PKM_LCS_TXN_AUDIT_REASON_NONE, -1),
 			0L);
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_TXN_COMMITTED, buffer,
-					&root, 3U));
+	KUNIT_ASSERT_TRUE(
+		test, pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						 PKM_LCS_KUNIT_TXN_COMMITTED,
+						 buffer, &root, 3U));
 	pkm_lcs_kunit_audit_expect_caller(test, &root, token);
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "transaction",
 						     2U, &transaction));
@@ -1220,10 +1309,10 @@ static void pkm_lcs_kunit_audit_transaction_committed_shapes(
 				&caller, 4097, REG_TXN_TIMED_OUT, ETIMEDOUT,
 				PKM_LCS_TXN_AUDIT_REASON_TIMED_OUT, 1),
 			0L);
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_TXN_COMMITTED, buffer,
-					&root, 3U));
+	KUNIT_ASSERT_TRUE(
+		test, pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						 PKM_LCS_KUNIT_TXN_COMMITTED,
+						 buffer, &root, 3U));
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "transaction",
 						     3U, &transaction));
 	pkm_lcs_kunit_mp_expect_str(test, &transaction, "state", "timed-out");
@@ -1251,10 +1340,10 @@ static void pkm_lcs_kunit_audit_transaction_committed_shapes(
  * commit writes one record, aborted, naming the stager; one that staged
  * nothing recorded writes none.
  */
-static void pkm_lcs_kunit_audit_transaction_close_records_abort(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_audit_transaction_close_records_abort(struct kunit *test)
 {
-	struct pkm_lcs_transaction_fd_snapshot snapshot = { };
+	struct pkm_lcs_transaction_fd_snapshot snapshot = {};
 	struct pkm_lcs_kunit_mp root;
 	struct pkm_lcs_kunit_mp transaction;
 	struct pkm_lcs_kunit_mp outcome;
@@ -1280,21 +1369,19 @@ static void pkm_lcs_kunit_audit_transaction_close_records_abort(
 
 	fd = pkm_lcs_transaction_fd_publish(60000);
 	KUNIT_ASSERT_TRUE(test, fd >= 0);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_fd_snapshot((int)fd,
-							      &snapshot),
-			0L);
-	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_kunit_transaction_fd_mark_audited((int)fd,
-								  token),
-			0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_lcs_transaction_fd_snapshot((int)fd, &snapshot), 0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_lcs_kunit_transaction_fd_mark_audited((int)fd, token),
+		0L);
 	pkm_kmes_kunit_reset_all();
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)fd), 0);
 	flush_delayed_fput();
 
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_TXN_COMMITTED, buffer,
-					&root, 3U));
+	KUNIT_ASSERT_TRUE(
+		test, pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						 PKM_LCS_KUNIT_TXN_COMMITTED,
+						 buffer, &root, 3U));
 	pkm_lcs_kunit_audit_expect_caller(test, &root, token);
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "transaction",
 						     3U, &transaction));
@@ -1318,17 +1405,17 @@ static void pkm_lcs_kunit_audit_transaction_close_records_abort(
  * state and reason timed-out, naming the stager. Closing the fd afterwards
  * writes nothing more: there is exactly one record.
  */
-static void pkm_lcs_kunit_audit_transaction_timeout_records_from_work(
-	struct kunit *test)
+static void
+pkm_lcs_kunit_audit_transaction_timeout_records_from_work(struct kunit *test)
 {
 	static const u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES] = {
 		0x7d
 	};
-	struct pkm_lcs_transaction_fd_snapshot snapshot = { };
+	struct pkm_lcs_transaction_fd_snapshot snapshot = {};
 	struct pkm_lcs_kunit_mp root;
 	struct pkm_lcs_kunit_mp transaction;
 	struct pkm_lcs_kunit_mp outcome;
-	struct file file = { };
+	struct file file = {};
 	const void *source_token;
 	const void *token;
 	bool pending = true;
@@ -1347,34 +1434,32 @@ static void pkm_lcs_kunit_audit_transaction_timeout_records_from_work(
 	fd = pkm_lcs_transaction_fd_publish(1);
 	KUNIT_ASSERT_TRUE(test, fd >= 0);
 	/* Marked first: the deadline is a millisecond away. */
-	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_kunit_transaction_fd_mark_audited((int)fd,
-								  token),
-			0L);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_fd_snapshot((int)fd,
-							      &snapshot),
-			0L);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_source_bound_transaction_acquire(1,
-								       &count),
-			0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_lcs_kunit_transaction_fd_mark_audited((int)fd, token),
+		0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_lcs_transaction_fd_snapshot((int)fd, &snapshot), 0L);
+	KUNIT_ASSERT_EQ(
+		test, pkm_lcs_source_bound_transaction_acquire(1, &count), 0L);
 	KUNIT_ASSERT_EQ(test,
 			pkm_lcs_transaction_fd_complete_first_bind(
 				(int)fd, snapshot.transaction_id, 1, root_guid),
 			0L);
 
 	msleep(20);
+	KUNIT_ASSERT_EQ(
+		test, pkm_lcs_kunit_transaction_fd_flush_timeout_work((int)fd),
+		0L);
 	KUNIT_ASSERT_EQ(test,
-			pkm_lcs_kunit_transaction_fd_flush_timeout_work((int)fd),
-			0L);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_kunit_transaction_fd_audit_pending(
-					(int)fd, &pending),
+			pkm_lcs_kunit_transaction_fd_audit_pending((int)fd,
+								   &pending),
 			0L);
 	KUNIT_EXPECT_FALSE(test, pending);
 
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_LCS,
-					PKM_LCS_KUNIT_TXN_COMMITTED, buffer,
-					&root, 3U));
+	KUNIT_ASSERT_TRUE(
+		test, pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_LCS,
+						 PKM_LCS_KUNIT_TXN_COMMITTED,
+						 buffer, &root, 3U));
 	pkm_lcs_kunit_audit_expect_caller(test, &root, token);
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "transaction",
 						     3U, &transaction));
@@ -1411,7 +1496,7 @@ static void pkm_lcs_kunit_audit_transaction_timeout_records_from_work(
  */
 static void pkm_lcs_kunit_audit_open_records_privilege_use(struct kunit *test)
 {
-	struct pkm_lcs_key_open_access_plan plan = { };
+	struct pkm_lcs_key_open_access_plan plan = {};
 	struct pkm_lcs_kunit_mp root;
 	struct pkm_lcs_kunit_mp object;
 	struct pkm_lcs_kunit_mp operation;
@@ -1445,10 +1530,10 @@ static void pkm_lcs_kunit_audit_open_records_privilege_use(struct kunit *test)
 				sizeof(pkm_lcs_kunit_alarm_key_sd), desired,
 				&plan),
 			0L);
-	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_audit_latest(
-					test, KMES_ORIGIN_KACS,
-					PKM_LCS_KUNIT_PRIVILEGE_USED, buffer,
-					&root, 7U));
+	KUNIT_ASSERT_TRUE(
+		test, pkm_lcs_kunit_audit_latest(test, KMES_ORIGIN_KACS,
+						 PKM_LCS_KUNIT_PRIVILEGE_USED,
+						 buffer, &root, 7U));
 	KUNIT_ASSERT_TRUE(test, pkm_lcs_kunit_mp_map(test, &root, "object", 1U,
 						     &object));
 	pkm_lcs_kunit_mp_expect_str(test, &object, "kind", "key");

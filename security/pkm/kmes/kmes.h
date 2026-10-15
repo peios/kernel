@@ -83,8 +83,7 @@ struct pkm_kmes_self_config_apply_plan {
 
 u32 pkm_kmes_runtime_max_emit_rate_per_process(void);
 int pkm_kmes_runtime_config_snapshot(struct pkm_kmes_runtime_config *out);
-long pkm_kmes_runtime_config_apply(
-	const struct pkm_kmes_runtime_config *config);
+long pkm_kmes_runtime_config_apply(const struct pkm_kmes_runtime_config *config);
 long pkm_kmes_runtime_config_apply_self_config(
 	const struct pkm_kmes_self_config_entry *entries, u32 entry_count,
 	struct pkm_kmes_self_config_apply_plan *result_out);
@@ -115,7 +114,8 @@ int pkm_kmes_current_process_info(u64 *pid_out, u8 *name_out,
 				  size_t name_out_len, size_t *name_len_out,
 				  u8 *path_out, size_t path_out_len,
 				  size_t *path_len_out);
-long pkm_kmes_emit_user_for_token(const void *token, const void __user *event_type,
+long pkm_kmes_emit_user_for_token(const void *token,
+				  const void __user *event_type,
 				  u16 event_type_len,
 				  const void __user *payload, u32 payload_len);
 long pkm_kmes_attach_user_for_token(const void *token, u32 cpu_id,
@@ -153,22 +153,21 @@ struct pkm_kmes_kunit_fd_snapshot {
 
 void pkm_kmes_kunit_reset_all(void);
 int pkm_kmes_kunit_snapshot_single_active(struct pkm_kmes_kunit_snapshot *out);
-int pkm_kmes_kunit_copy_single_buffer(u8 *out, size_t out_len,
-				      size_t *written_out,
-				      struct pkm_kmes_kunit_snapshot *out_snapshot);
-int pkm_kmes_kunit_copy_latest_matching_event(
-	u8 origin_class, const void *event_type, size_t event_type_len,
+int pkm_kmes_kunit_copy_single_buffer(
 	u8 *out, size_t out_len, size_t *written_out,
+	struct pkm_kmes_kunit_snapshot *out_snapshot);
+int pkm_kmes_kunit_copy_latest_matching_event(
+	u8 origin_class, const void *event_type, size_t event_type_len, u8 *out,
+	size_t out_len, size_t *written_out,
 	struct pkm_kmes_kunit_snapshot *out_snapshot);
 u16 pkm_kmes_kunit_current_cpu_id(void);
 int pkm_kmes_kunit_swap_capacity(u64 new_capacity);
 void pkm_kmes_kunit_fail_next_swap_alloc(void);
-long pkm_kmes_kunit_attach_for_token(const void *token, u32 cpu_id,
-				     int *fd_out, u64 *capacity);
+long pkm_kmes_kunit_attach_for_token(const void *token, u32 cpu_id, int *fd_out,
+				     u64 *capacity);
 long pkm_kmes_kunit_attach_user_for_token(const void *token, u32 cpu_id,
 					  u64 __user *capacity);
-int pkm_kmes_kunit_fd_snapshot(int fd,
-			       struct pkm_kmes_kunit_fd_snapshot *out);
+int pkm_kmes_kunit_fd_snapshot(int fd, struct pkm_kmes_kunit_fd_snapshot *out);
 int pkm_kmes_kunit_copy_fd_view(int fd, u64 offset, u8 *out, size_t out_len);
 int pkm_kmes_kunit_set_fd_need_wake(int fd, u8 value);
 int pkm_kmes_kunit_set_process_override(u64 pid, const char *name,
@@ -180,17 +179,17 @@ long pkm_kmes_kunit_emit_for_token(const void *token, const void *event_type,
 long pkm_kmes_kunit_emit_batch_for_token(const void *token,
 					 const struct kmes_emit_entry *entries,
 					 u32 count, u32 *emitted_out);
-bool pkm_kmes_kunit_consumer_range(unsigned long pgoff,
-				  unsigned long start, unsigned long end);
-int pkm_kmes_kunit_runtime_config_snapshot(
-	struct pkm_kmes_runtime_config *out);
+bool pkm_kmes_kunit_consumer_range(unsigned long pgoff, unsigned long start,
+				   unsigned long end);
+int pkm_kmes_kunit_runtime_config_snapshot(struct pkm_kmes_runtime_config *out);
 long pkm_kmes_kunit_runtime_config_apply(
 	const struct pkm_kmes_runtime_config *config);
 long pkm_kmes_kunit_publish_self_config_plan(
 	const struct pkm_kmes_self_config_apply_plan *plan,
 	struct pkm_kmes_self_config_apply_plan *result_out);
 int pkm_kmes_kunit_poke_single_ring(u64 pos, const void *bytes, size_t len);
-int pkm_kmes_kunit_poke_ring(u32 cpu_id, u64 pos, const void *bytes, size_t len);
+int pkm_kmes_kunit_poke_ring(u32 cpu_id, u64 pos, const void *bytes,
+			     size_t len);
 bool pkm_kmes_kunit_set_ready(bool ready);
 u64 pkm_kmes_kunit_pre_init_drops(void);
 void pkm_kmes_kunit_set_ring_cpu_id_skew(bool skew);

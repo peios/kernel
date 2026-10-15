@@ -382,10 +382,11 @@ pub fn compute_registry_key_initial_security_descriptor(
             field: "reg_create_key.parent_sd",
         }
     })?;
-    let token_owner =
-        crate::kacs_core::Sid::parse(input.token_owner_sid).map_err(|_| LcsError::MalformedTokenSid {
+    let token_owner = crate::kacs_core::Sid::parse(input.token_owner_sid).map_err(|_| {
+        LcsError::MalformedTokenSid {
             field: "token.owner_sid",
-        })?;
+        }
+    })?;
     let token_primary_group =
         crate::kacs_core::Sid::parse(input.token_primary_group_sid).map_err(|_| {
             LcsError::MalformedTokenSid {
@@ -398,19 +399,21 @@ pub fn compute_registry_key_initial_security_descriptor(
         .transpose()
         .map_err(|_| LcsError::MalformedTokenDefaultDacl)?;
 
-    crate::kacs_core::inherit_registry_container_child_sd(crate::kacs_core::RegistryContainerChildInheritance {
-        parent_sd,
-        token_owner,
-        token_primary_group,
-        token_default_dacl,
-        generic_mapping: crate::kacs_core::GenericMapping {
-            read: REGISTRY_GENERIC_MAPPING.read,
-            write: REGISTRY_GENERIC_MAPPING.write,
-            execute: REGISTRY_GENERIC_MAPPING.execute,
-            all: REGISTRY_GENERIC_MAPPING.all,
+    crate::kacs_core::inherit_registry_container_child_sd(
+        crate::kacs_core::RegistryContainerChildInheritance {
+            parent_sd,
+            token_owner,
+            token_primary_group,
+            token_default_dacl,
+            generic_mapping: crate::kacs_core::GenericMapping {
+                read: REGISTRY_GENERIC_MAPPING.read,
+                write: REGISTRY_GENERIC_MAPPING.write,
+                execute: REGISTRY_GENERIC_MAPPING.execute,
+                all: REGISTRY_GENERIC_MAPPING.all,
+            },
+            valid_mapped_access_mask: REG_VALID_MAPPED_ACCESS_MASK,
         },
-        valid_mapped_access_mask: REG_VALID_MAPPED_ACCESS_MASK,
-    })
+    )
     .map_err(|_| LcsError::SecurityDescriptorInheritanceFailed)
 }
 

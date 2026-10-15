@@ -35,8 +35,8 @@
 /* ipc/util.c, exported for the LSM: run @fn on the object under its lock. */
 /* ipc_lsm_with_object(): ipc/util.c, declared in <linux/ipc.h> by our patch. */
 
-static struct pkm_kacs_process_sd *pkm_kacs_ipc_sd_get(
-	struct pkm_kacs_ipc_security *sec)
+static struct pkm_kacs_process_sd *
+pkm_kacs_ipc_sd_get(struct pkm_kacs_ipc_security *sec)
 {
 	struct pkm_kacs_process_sd *sd;
 
@@ -47,8 +47,9 @@ static struct pkm_kacs_process_sd *pkm_kacs_ipc_sd_get(
 }
 
 /* Installs @sd (a counted reference, consumed) and returns the old one. */
-static struct pkm_kacs_process_sd *pkm_kacs_ipc_sd_swap(
-	struct pkm_kacs_ipc_security *sec, struct pkm_kacs_process_sd *sd)
+static struct pkm_kacs_process_sd *
+pkm_kacs_ipc_sd_swap(struct pkm_kacs_ipc_security *sec,
+		     struct pkm_kacs_process_sd *sd)
 {
 	struct pkm_kacs_process_sd *old;
 
@@ -106,9 +107,10 @@ void pkm_kacs_ipc_free_security(struct kern_ipc_perm *perm)
 }
 
 /* AccessCheck of @subject against the object's SD for @desired. */
-static long pkm_kacs_ipc_authorize_for_subject(
-	struct pkm_kacs_ipc_security *sec, const void *subject_token,
-	u32 desired, u32 pip_type, u32 pip_trust)
+static long
+pkm_kacs_ipc_authorize_for_subject(struct pkm_kacs_ipc_security *sec,
+				   const void *subject_token, u32 desired,
+				   u32 pip_type, u32 pip_trust)
 {
 	struct pkm_kacs_process_sd *sd;
 	u32 granted = 0;
@@ -303,8 +305,8 @@ static long pkm_kacs_ipc_sd_authorize(struct pkm_kacs_process_sd *sd,
 	ret = pkm_kacs_current_pip_context(&pip_type, &pip_trust);
 	if (ret)
 		return ret;
-	return kacs_rust_check_ipc_sd(subject_token, sd->bytes, sd->len, desired,
-				      pip_type, pip_trust, &granted);
+	return kacs_rust_check_ipc_sd(subject_token, sd->bytes, sd->len,
+				      desired, pip_type, pip_trust, &granted);
 }
 
 long pkm_kacs_ipc_sd_query(int kind, int id, const void *subject_token,
@@ -342,7 +344,7 @@ long pkm_kacs_ipc_sd_set(int kind, int id, const void *subject_token,
 			 u32 security_info, const u8 *input_sd_ptr,
 			 size_t input_sd_len)
 {
-	struct pkm_kacs_ipc_swap_arg swap = { };
+	struct pkm_kacs_ipc_swap_arg swap = {};
 	struct pkm_kacs_process_sd *sd = NULL;
 	struct pkm_kacs_process_sd *installed = NULL;
 	const u8 *new_bytes = NULL;
@@ -429,13 +431,14 @@ out:
 long pkm_kacs_kunit_ipc_check(const void *subject_token, u32 desired,
 			      u32 pip_type, u32 pip_trust)
 {
-	struct kern_ipc_perm perm = { };
+	struct kern_ipc_perm perm = {};
 	struct pkm_kacs_ipc_security *sec;
 	void *blob;
 	long ret;
 
 	blob = kzalloc(pkm_blob_sizes.lbs_ipc +
-		       sizeof(struct pkm_kacs_ipc_security), GFP_KERNEL);
+			       sizeof(struct pkm_kacs_ipc_security),
+		       GFP_KERNEL);
 	if (!blob)
 		return -ENOMEM;
 	perm.security = blob;
@@ -443,9 +446,8 @@ long pkm_kacs_kunit_ipc_check(const void *subject_token, u32 desired,
 	ret = pkm_kacs_ipc_alloc_security(&perm);
 	if (!ret) {
 		sec = pkm_kacs_ipc(&perm);
-		ret = pkm_kacs_ipc_authorize_for_subject(sec, subject_token,
-							 desired, pip_type,
-							 pip_trust);
+		ret = pkm_kacs_ipc_authorize_for_subject(
+			sec, subject_token, desired, pip_type, pip_trust);
 		pkm_kacs_ipc_free_security(&perm);
 	}
 	kfree(blob);

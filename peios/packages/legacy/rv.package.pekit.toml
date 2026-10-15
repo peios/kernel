@@ -1,0 +1,21 @@
+# rv — Runtime Verification: userspace front-end for the in-kernel RV monitors.
+# Built from the in-tree tools/verification/rv (build.tools).
+#
+# Runtime ELF dependencies are derived from the staged binary.
+# (libbpf.so.1) libc. libbpf is the BPF backend, enabled by the build image's
+# libbpf-dev. (No libcpupower — CPU idle-state control is rtla-specific.)
+
+# PSPU §5.24: a payload carrying man pages SHOULD declare man-db, so that
+# `man -k` and `apropos` find them instead of falling back to a filesystem
+# scan. Top-level, not inside a table -- TOML would otherwise scope it to
+# whichever table precedes it.
+side_effects = ["man-db"]
+
+[package]
+name = "dev.peios.rv"
+description = "Runtime verification monitor front-end (from Linux 7.0.9 tools/verification)"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.rv/COPYING"
+"tools:usr/bin/rv" = "usr/bin/rv"
+"tools:usr/share/man/man1/rv*.1.gz" = "usr/share/man/man1"

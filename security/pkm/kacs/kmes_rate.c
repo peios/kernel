@@ -106,8 +106,7 @@ static void pkm_kmes_rate_bucket_refill(struct pkm_kmes_rate_bucket *bucket,
 	bucket->last_refill_ns += consumed_ns;
 }
 
-int pkm_kmes_rate_bucket_reserve(struct pkm_kmes_rate_bucket *bucket,
-				 u32 count)
+int pkm_kmes_rate_bucket_reserve(struct pkm_kmes_rate_bucket *bucket, u32 count)
 {
 	unsigned long flags;
 	u64 now_ns;
@@ -133,8 +132,7 @@ int pkm_kmes_rate_bucket_reserve(struct pkm_kmes_rate_bucket *bucket,
 	return 0;
 }
 
-void pkm_kmes_rate_bucket_refund(struct pkm_kmes_rate_bucket *bucket,
-				 u32 count)
+void pkm_kmes_rate_bucket_refund(struct pkm_kmes_rate_bucket *bucket, u32 count)
 {
 	unsigned long flags;
 	u64 tokens;
@@ -198,8 +196,8 @@ void pkm_kmes_rate_buckets_reconfigure(u32 rate)
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-int pkm_kmes_rate_bucket_kunit_set_tokens(
-	struct pkm_kmes_rate_bucket *bucket, u32 tokens)
+int pkm_kmes_rate_bucket_kunit_set_tokens(struct pkm_kmes_rate_bucket *bucket,
+					  u32 tokens)
 {
 	unsigned long flags;
 
@@ -227,8 +225,8 @@ int pkm_kmes_rate_bucket_kunit_set_refill_frozen(
 	return 0;
 }
 
-int pkm_kmes_rate_bucket_kunit_get_tokens(
-	struct pkm_kmes_rate_bucket *bucket, u32 *tokens_out)
+int pkm_kmes_rate_bucket_kunit_get_tokens(struct pkm_kmes_rate_bucket *bucket,
+					  u32 *tokens_out)
 {
 	unsigned long flags;
 

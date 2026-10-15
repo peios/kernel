@@ -1,0 +1,90 @@
+# kernel-devel — the kit for compiling out-of-tree modules against this kernel:
+# the configured build infrastructure (top Makefile, Kconfig, Module.symvers,
+# the built scripts/, headers, and the x86 build bits), carved from build.kernel.
+#
+# Destination: usr/lib/modules/<release>/build — beside the kernel image and
+# its modules, which is where the Peios filesystem layout puts kernel content.
+# usr/src/ is reserved for debug sources, so the RPM-style usr/src/kernels/ is
+# not a Peios destination.
+#
+# This lands on the canonical path exactly: /lib/modules/<release>/build, which
+# is what an out-of-tree `make -C` expects, resolves through the /lib merged
+# view straight to this directory. An earlier layout relocated the tree beneath
+# the triplet because usr/lib/<triplet>/ was then the only home for
+# arch-specific content, and planned a kmod compatibility symlink to bridge the
+# difference; usr/lib/modules/<ver>/ being a destination in its own right
+# removes both the detour and the symlink. When the kernel goes modular (the
+# production shape — the current monolithic build is a temporary dev
+# simplification) the modules tree lands directly alongside this build kit.
+#
+# No modules ship yet (the kernel is monolithic for now), so the kit has no
+# consumer on a booted system today. The file set is validated by a real
+# out-of-tree module build: kmod's testsuite compiles a playground of dummy
+# modules against this kit, which is what the note above asked for -- and what
+# added objtool below.
+
+# Object files and Kbuild's command stamps are build residue. C sources are
+# NOT: scripts/module-common.c is compiled into every external module, so
+# excluding it broke the thing this package exists for. The exclusion bought
+# little in any case -- scripts/ is the only mapped subtree with C sources at
+# all (78 files, 1.4M), and they pair with the prebuilt host tools beside them.
+#
+# Also excluded, because an out-of-tree module build never uses them:
+# - .gitignore files, which are source-tree residue;
+# - dtc's include-prefixes, links into other architectures' device-tree
+#   sources that an x86 kit does not carry, and scripts/kernel-doc, a
+#   compatibility link to tools/docs/kernel-doc, which the kit does not carry
+#   either (Kbuild calls the real path, and only for W= builds);
+# - the scripts that serve only the vmlinux link (mksysmap,
+#   generate_builtin_ranges.awk), kernel packaging (package/), livepatch
+#   builds (livepatch/), or kernel development checks (check-sysctl-docs,
+#   dev-needs.sh, ver_linux, verify_builtin_ranges.awk). They alone need awk,
+#   gawk, sed or make as interpreters.
+excludes = [
+  "kernel:**/*.o",
+  "kernel:**/*.cmd",
+  "kernel:**/.gitignore",
+  "kernel:scripts/dtc/include-prefixes/**",
+  "kernel:scripts/kernel-doc",
+  "kernel:scripts/mksysmap",
+  "kernel:scripts/generate_builtin_ranges.awk",
+  "kernel:scripts/verify_builtin_ranges.awk",
+  "kernel:scripts/package/**",
+  "kernel:scripts/livepatch/**",
+  "kernel:scripts/check-sysctl-docs",
+  "kernel:scripts/dev-needs.sh",
+  "kernel:scripts/ver_linux",
+]
+
+[package]
+name = "dev.peios.kernel-devel"
+description = "Peios Kernel - development headers and build kit"
+
+[dependencies]
+"dev.peios.kernel" = "= {{release}}"
+"dev.peios.build-essentials-c" = "*"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.kernel-devel/COPYING"
+"kernel:Makefile"            = "usr/lib/modules/7.0.9-peios-{{version}}/build/Makefile"
+"kernel:Module.symvers"      = "usr/lib/modules/7.0.9-peios-{{version}}/build/Module.symvers"
+"kernel:.config"             = "usr/lib/modules/7.0.9-peios-{{version}}/build/.config"
+"kernel:scripts/**"          = "usr/lib/modules/7.0.9-peios-{{version}}/build/scripts/"
+"kernel:include/**"          = "usr/lib/modules/7.0.9-peios-{{version}}/build/include/"
+"kernel:arch/x86/Makefile"   = "usr/lib/modules/7.0.9-peios-{{version}}/build/arch/x86/Makefile"
+"kernel:arch/x86/include/**" = "usr/lib/modules/7.0.9-peios-{{version}}/build/arch/x86/include/"
+# objtool, the one host tool that lives outside scripts/. CONFIG_OBJTOOL is on,
+# so Kbuild runs it over every object an external module builds; without it the
+# build dies with "objtool: not found" on the first .o.
+#
+# It can only ship from a kernel staged on the peipkg rung. A container-built
+# objtool links Debian binutils (libopcodes-2.44-system.so), pekit derives that
+# soname as a dependency, and nothing in the pool provides it -- publishing one
+# made the package unresolvable, which is how that was established rather than
+# assumed. Built on the rung it needs libelf and libc only: objtool links
+# libopcodes just when -lopcodes links, and build.kernel declares no
+# binutils-devel.
+"kernel:tools/objtool/objtool" = "usr/lib/modules/7.0.9-peios-{{version}}/build/tools/objtool/objtool"
+# The scripts/ mapping deliberately retains its C sources: Kbuild compiles
+# scripts/module-common.c into external modules. Only transient objects and
+# command stamps are excluded above; prebuilt host tools such as modpost stay.

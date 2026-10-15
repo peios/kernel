@@ -70,7 +70,8 @@ long pkm_lcs_reg_create_key_source_response_plan(
 	switch (request_op_code) {
 	case RSI_CREATE_ENTRY:
 		if (status == RSI_OK) {
-			plan->action = PKM_LCS_REG_CREATE_SOURCE_ACTION_CREATE_KEY;
+			plan->action =
+				PKM_LCS_REG_CREATE_SOURCE_ACTION_CREATE_KEY;
 			return 0;
 		}
 		if (status == RSI_ALREADY_EXISTS) {

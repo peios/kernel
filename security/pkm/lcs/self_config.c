@@ -48,8 +48,8 @@ static long pkm_lcs_runtime_limits_publish_self_config_plan(
 		    audit->configuration_name_len >
 			    PKM_LCS_SELF_CONFIG_MAX_PARAMETER_NAME_LEN) {
 			trace_lcs_self_config_publish(
-				0, 0, 0, 0,
-				LCS_BOOT_SELF_CONFIG_PARAM_INVALID, -EIO);
+				0, 0, 0, 0, LCS_BOOT_SELF_CONFIG_PARAM_INVALID,
+				-EIO);
 			return -EIO;
 		}
 
@@ -59,9 +59,10 @@ static long pkm_lcs_runtime_limits_publish_self_config_plan(
 		 * roll back valid hot-swaps or alter retained invalid values.
 		 */
 		pkm_lcs_emit_self_config_invalid_audit(
-			audit->configuration_name, audit->configuration_name_len,
-			audit->received_kind, audit->received_type,
-			audit->received_u32, audit->retained_value);
+			audit->configuration_name,
+			audit->configuration_name_len, audit->received_kind,
+			audit->received_type, audit->received_u32,
+			audit->retained_value);
 	}
 
 	ret = pkm_lcs_runtime_limits_publish(&plan->limits);
@@ -77,8 +78,8 @@ long pkm_lcs_runtime_limits_apply_self_config(
 	const struct pkm_lcs_self_config_entry *entries, u32 entry_count,
 	struct pkm_lcs_self_config_apply_plan *result_out)
 {
-	struct pkm_lcs_self_config_apply_plan plan = { };
-	struct pkm_lcs_runtime_limits active_limits = { };
+	struct pkm_lcs_self_config_apply_plan plan = {};
+	struct pkm_lcs_runtime_limits active_limits = {};
 	long ret;
 
 	if (entry_count && !entries)
@@ -88,13 +89,13 @@ long pkm_lcs_runtime_limits_apply_self_config(
 	if (ret)
 		return ret;
 
-	ret = lcs_rust_plan_self_config_apply(&active_limits, entries, entry_count,
-					      &plan);
+	ret = lcs_rust_plan_self_config_apply(&active_limits, entries,
+					      entry_count, &plan);
 	if (ret)
 		return ret;
 
 	return pkm_lcs_runtime_limits_publish_self_config_plan(&plan,
-							      result_out);
+							       result_out);
 }
 
 long pkm_lcs_runtime_limits_refresh_self_config_from_key(
@@ -102,10 +103,10 @@ long pkm_lcs_runtime_limits_refresh_self_config_from_key(
 	struct pkm_lcs_self_config_apply_plan *result_out)
 {
 	struct pkm_lcs_self_config_apply_plan *plan = NULL;
-	struct pkm_lcs_runtime_limits active_limits = { };
+	struct pkm_lcs_runtime_limits active_limits = {};
 	struct pkm_lcs_source_response_frame frame;
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -144,8 +145,7 @@ long pkm_lcs_runtime_limits_refresh_self_config_from_key(
 	if (ret)
 		goto out_frame;
 
-	ret = pkm_lcs_runtime_limits_publish_self_config_plan(plan,
-							      result_out);
+	ret = pkm_lcs_runtime_limits_publish_self_config_plan(plan, result_out);
 
 out_frame:
 	trace_lcs_self_config_refresh(source_id, 1, 0, 0,
@@ -165,8 +165,8 @@ long pkm_lcs_self_config_registry_root_discover_from_machine_hive(
 		{ .name = "System", .name_len = sizeof("System") - 1 },
 		{ .name = "Registry", .name_len = sizeof("Registry") - 1 },
 	};
-	struct pkm_lcs_resolved_key_path registry = { };
-	struct pkm_lcs_layer_snapshot layers = { };
+	struct pkm_lcs_resolved_key_path registry = {};
+	struct pkm_lcs_layer_snapshot layers = {};
 	long ret;
 
 	if (present_out)
@@ -205,8 +205,8 @@ long pkm_lcs_runtime_limits_refresh_self_config_from_machine_hive(
 	u32 source_id, const u8 machine_root_guid[RSI_GUID_SIZE],
 	struct pkm_lcs_self_config_apply_plan *result_out)
 {
-	struct pkm_lcs_self_config_apply_plan empty_plan = { };
-	u8 registry_guid[RSI_GUID_SIZE] = { };
+	struct pkm_lcs_self_config_apply_plan empty_plan = {};
+	u8 registry_guid[RSI_GUID_SIZE] = {};
 	bool present = false;
 	long ret;
 

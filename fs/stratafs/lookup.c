@@ -142,7 +142,8 @@ int stratafs_resolve_all(const struct super_block *sb, const char *relative,
 	int ret;
 
 	if (!relative || !strchr(relative, '/'))
-		return stratafs_resolve_all_raw(sb, relative, follow_final, paths);
+		return stratafs_resolve_all_raw(sb, relative, follow_final,
+						paths);
 
 	/*
 	 * A full lower lookup reports ENOTDIR when that stratum has a
@@ -242,8 +243,8 @@ struct dentry *stratafs_lookup(struct inode *dir, struct dentry *dentry,
 		struct stratafs_paths parent_paths;
 		int parent_provider;
 
-		ret = stratafs_resolve_all(dir->i_sb, parent_relative,
-					   false, &parent_paths);
+		ret = stratafs_resolve_all(dir->i_sb, parent_relative, false,
+					   &parent_paths);
 		if (ret)
 			goto fail_parent_relative;
 		parent_provider = stratafs_provider_index(
@@ -260,8 +261,7 @@ struct dentry *stratafs_lookup(struct inode *dir, struct dentry *dentry,
 			goto fail_parent_relative;
 	}
 
-	relative = stratafs_child_relative(parent_relative,
-					   &dentry->d_name);
+	relative = stratafs_child_relative(parent_relative, &dentry->d_name);
 	if (IS_ERR(relative)) {
 		ret = PTR_ERR(relative);
 		goto fail_parent_relative;
@@ -272,18 +272,21 @@ struct dentry *stratafs_lookup(struct inode *dir, struct dentry *dentry,
 		    strlen(".stratafs-stage-"))) {
 		struct path create_parent;
 
-		ret = stratafs_resolve_one(
-			dir->i_sb, STRATAFS_SB(dir->i_sb)->create_index,
-			parent_relative, true, &create_parent);
+		ret = stratafs_resolve_one(dir->i_sb,
+					   STRATAFS_SB(dir->i_sb)->create_index,
+					   parent_relative, true,
+					   &create_parent);
 		if (!ret) {
-			stratafs_recover_staging_parent(dir->i_sb, &create_parent);
+			stratafs_recover_staging_parent(dir->i_sb,
+							&create_parent);
 			path_put(&create_parent);
 		}
 	}
 	ret = stratafs_resolve_all(dir->i_sb, relative, false, &paths);
 	if (ret)
 		goto fail_relative;
-	provider = stratafs_provider_index(&paths, STRATAFS_SB(dir->i_sb)->count);
+	provider =
+		stratafs_provider_index(&paths, STRATAFS_SB(dir->i_sb)->count);
 	if (provider >= 0) {
 		if (provider == STRATAFS_SB(dir->i_sb)->create_index)
 			stratafs_recover_published_marker(
@@ -416,10 +419,12 @@ int stratafs_get_provider(struct dentry *dentry, struct path *path,
 		if (d_inode(dentry)) {
 			unsigned long number;
 
-			ret = stratafs_provider_ino(dentry->d_sb, path, &number);
+			ret = stratafs_provider_ino(dentry->d_sb, path,
+						    &number);
 			if (ret) {
 				path_put(path);
-				stratafs_put_paths(&roots,
+				stratafs_put_paths(
+					&roots,
 					STRATAFS_SB(dentry->d_sb)->count);
 				return ret;
 			}
@@ -501,8 +506,8 @@ int stratafs_check_directory_access(struct mnt_idmap *idmap,
 		if (ret)
 			goto out;
 	}
-	ret = stratafs_check_paths_access(&paths, STRATAFS_SB(inode->i_sb)->count,
-					  access);
+	ret = stratafs_check_paths_access(
+		&paths, STRATAFS_SB(inode->i_sb)->count, access);
 out:
 	stratafs_put_paths(&paths, STRATAFS_SB(inode->i_sb)->count);
 out_relative:

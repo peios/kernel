@@ -31,8 +31,8 @@ bool stratafs_dir_cache_contains(struct stratafs_dir_cache *cache,
 				 const char *name, unsigned int len);
 /* The caller has already excluded duplicates and internal staging names. */
 int stratafs_dir_cache_add(struct stratafs_dir_cache *cache, const char *name,
-			  unsigned int len, unsigned int type,
-			  unsigned int participant_index);
+			   unsigned int len, unsigned int type,
+			   unsigned int participant_index);
 void stratafs_dir_cache_remove(struct stratafs_dir_cache *cache,
 			       struct stratafs_dir_entry *entry);
 int stratafs_dir_cache_seal(struct stratafs_dir_cache *cache);

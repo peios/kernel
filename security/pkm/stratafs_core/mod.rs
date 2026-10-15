@@ -1,6 +1,5 @@
 //! Pure, allocation-free decisions shared by StrataFS's VFS glue and tests.
 
-
 /// The implementation limit. PSD-011 requires support for at least eight.
 pub const MAX_STRATA: usize = 16;
 

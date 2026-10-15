@@ -1,0 +1,21 @@
+# freefall — laptop disk head-park daemon driven by the accelerometer free-fall
+# sensor. Built from tools/laptop/freefall (build.tools). Its Makefile installs to
+# sbin regardless of sbindir, so it is remapped to bin (PSD-009 is bin-only).
+#
+# Note: only useful on physical laptops with the relevant accelerometer; dead
+# weight for a server/VM deployment — shipped for completeness.
+#
+# Runtime ELF dependencies are derived from the staged daemon. Upstream has no
+# manual for it; the page is Peios' own (build/man/).
+
+# PSPU §5.24: a payload carrying man pages SHOULD declare man-db.
+side_effects = ["man-db"]
+
+[package]
+name = "dev.peios.freefall"
+description = "Laptop free-fall disk protection daemon (from Linux 7.0.9 tools/laptop)"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.freefall/COPYING"
+"tools:usr/sbin/freefall" = "usr/bin/freefall"
+"tools:usr/share/man/man8/freefall.8.gz" = "usr/share/man/man8/freefall.8.gz"

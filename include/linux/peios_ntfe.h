@@ -27,19 +27,20 @@ struct sock;
  * so they outlive the process. A kernel socket is stamped as the kernel's.
  */
 enum peios_ntfe_owner_kind {
-	PEIOS_NTFE_OWNER_UNSTAMPED = 0,	/* never stamped (not inet, or pre-KACS) */
-	PEIOS_NTFE_OWNER_PROGRAM,	/* a process: token and facts below */
-	PEIOS_NTFE_OWNER_KERNEL,		/* a kernel socket: no token */
+	PEIOS_NTFE_OWNER_UNSTAMPED =
+		0, /* never stamped (not inet, or pre-KACS) */
+	PEIOS_NTFE_OWNER_PROGRAM, /* a process: token and facts below */
+	PEIOS_NTFE_OWNER_KERNEL, /* a kernel socket: no token */
 };
 
-#define PEIOS_NTFE_OWNER_COMM_LEN	16
+#define PEIOS_NTFE_OWNER_COMM_LEN 16
 
 struct peios_ntfe_owner {
-	const void *token;	/* counted KACS token reference, or NULL */
-	u8 kind;		/* enum peios_ntfe_owner_kind */
-	u8 guid[16];		/* the process GUID at the stamp */
-	s32 pid;		/* the thread-group id at the stamp */
-	char comm[PEIOS_NTFE_OWNER_COMM_LEN];	/* the task comm at the stamp */
+	const void *token; /* counted KACS token reference, or NULL */
+	u8 kind; /* enum peios_ntfe_owner_kind */
+	u8 guid[16]; /* the process GUID at the stamp */
+	s32 pid; /* the thread-group id at the stamp */
+	char comm[PEIOS_NTFE_OWNER_COMM_LEN]; /* the task comm at the stamp */
 };
 
 /*
@@ -58,12 +59,12 @@ void pkm_kacs_socket_owner_put(struct peios_ntfe_owner *owner);
  * same-policy refresh must also invalidate a concurrent reader.
  */
 struct peios_ntfe_sentence {
-	u64 generation;		/* 0 = empty; policy/context invalidation epoch */
-	u64 policy_generation;	/* the actual policy object that judged */
-	s64 expires_at;		/* CLOCK_REALTIME seconds; 0 = never */
-	u64 rule_hash;		/* FNV-1a-64 of the attributing rule's path */
-	u8 verdict;		/* enum peios_ntfe_verdict */
-	u8 reject_kind;		/* enum peios_ntfe_reject_kind */
+	u64 generation; /* 0 = empty; policy/context invalidation epoch */
+	u64 policy_generation; /* the actual policy object that judged */
+	s64 expires_at; /* CLOCK_REALTIME seconds; 0 = never */
+	u64 rule_hash; /* FNV-1a-64 of the attributing rule's path */
+	u8 verdict; /* enum peios_ntfe_verdict */
+	u8 reject_kind; /* enum peios_ntfe_reject_kind */
 	u8 _pad[6];
 };
 
@@ -89,10 +90,10 @@ struct peios_ntfe_sentence {
 struct peios_ntfe_ct {
 	struct peios_ntfe_tag_table __rcu *tags;
 	u64 start_secs;
-	int ifindex;		/* interface at first judgment */
-	u8 direction;		/* originator's side, at first judgment */
-	u8 judged;		/* the facts below are recorded */
-	u8 loopback;		/* both endpoints local: two sentences */
+	int ifindex; /* interface at first judgment */
+	u8 direction; /* originator's side, at first judgment */
+	u8 judged; /* the facts below are recorded */
+	u8 loopback; /* both endpoints local: two sentences */
 	u8 has_src_mac;
 	u16 vlan;
 	u8 has_vlan;
@@ -102,9 +103,9 @@ struct peios_ntfe_ct {
 	struct peios_ntfe_sentence sentence[2];
 	seqcount_spinlock_t sentence_seq[2];
 	struct peios_ntfe_owner owner[2];
-	u8 owner_kind[2];		/* enum peios_ntfe_local_kind (net/ntfe/ntfe.h) */
-	u8 owner_unresolved[2];		/* confessed at resolution */
-	u8 owner_recorded[2];		/* published (release) after the fields */
+	u8 owner_kind[2]; /* enum peios_ntfe_local_kind (net/ntfe/ntfe.h) */
+	u8 owner_unresolved[2]; /* confessed at resolution */
+	u8 owner_recorded[2]; /* published (release) after the fields */
 };
 
 #if IS_ENABLED(CONFIG_PEIOS_NTFE)
@@ -115,10 +116,9 @@ struct peios_ntfe_ct {
  * network context. Absence is not an error: *present_out = false,
  * return 0.
  */
-long peios_ntfe_network_root_discover_from_machine_hive(u32 source_id,
-						       const u8 machine_root_guid[16],
-						       bool *present_out,
-						       u8 network_guid_out[16]);
+long peios_ntfe_network_root_discover_from_machine_hive(
+	u32 source_id, const u8 machine_root_guid[16], bool *present_out,
+	u8 network_guid_out[16]);
 
 /*
  * Walks the Network key: publishes a new policy generation when the
@@ -127,7 +127,7 @@ long peios_ntfe_network_root_discover_from_machine_hive(u32 source_id,
  * and the error says why; NTFE keeps its last known-good state.
  */
 long peios_ntfe_network_refresh_from_key(u32 source_id,
-					const u8 network_guid[16]);
+					 const u8 network_guid[16]);
 
 /*
  * Change notification from the LCS internal watch dispatcher. Events are
@@ -136,7 +136,7 @@ long peios_ntfe_network_refresh_from_key(u32 source_id,
  * call from the dispatch path.
  */
 void peios_ntfe_network_registry_changed(u32 source_id,
-					const u8 network_guid[16]);
+					 const u8 network_guid[16]);
 
 /*
  * Conntrack lifecycle hooks (net/ntfe/tags.c): add the extension to a
@@ -148,25 +148,23 @@ void peios_ntfe_ct_destroy(struct nf_conn *ct);
 
 #else /* CONFIG_PEIOS_NTFE */
 
-static inline long
-peios_ntfe_network_root_discover_from_machine_hive(u32 source_id,
-						  const u8 machine_root_guid[16],
-						  bool *present_out,
-						  u8 network_guid_out[16])
+static inline long peios_ntfe_network_root_discover_from_machine_hive(
+	u32 source_id, const u8 machine_root_guid[16], bool *present_out,
+	u8 network_guid_out[16])
 {
 	if (present_out)
 		*present_out = false;
 	return 0;
 }
 
-static inline long peios_ntfe_network_refresh_from_key(u32 source_id,
-						      const u8 network_guid[16])
+static inline long
+peios_ntfe_network_refresh_from_key(u32 source_id, const u8 network_guid[16])
 {
 	return 0;
 }
 
-static inline void peios_ntfe_network_registry_changed(u32 source_id,
-						      const u8 network_guid[16])
+static inline void
+peios_ntfe_network_registry_changed(u32 source_id, const u8 network_guid[16])
 {
 }
 

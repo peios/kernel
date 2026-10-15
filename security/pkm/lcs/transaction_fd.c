@@ -41,10 +41,9 @@
 #include "source_device.h"
 #include "source_transaction.h"
 
-extern int lcs_rust_layer_name_casefold_eq(const u8 *left, u32 left_len,
-					   const u8 *right, u32 right_len,
-					   const struct pkm_lcs_runtime_limits *limits,
-					   u8 *equal_out);
+extern int lcs_rust_layer_name_casefold_eq(
+	const u8 *left, u32 left_len, const u8 *right, u32 right_len,
+	const struct pkm_lcs_runtime_limits *limits, u8 *equal_out);
 
 struct pkm_lcs_transaction_fd {
 	u64 transaction_id;
@@ -178,7 +177,8 @@ struct pkm_lcs_transaction_log_entry {
 		struct pkm_lcs_transaction_set_security_log set_security;
 		struct pkm_lcs_transaction_set_value_log set_value;
 		struct pkm_lcs_transaction_delete_value_log delete_value;
-		struct pkm_lcs_transaction_blanket_tombstone_log blanket_tombstone;
+		struct pkm_lcs_transaction_blanket_tombstone_log
+			blanket_tombstone;
 		struct pkm_lcs_transaction_delete_key_log delete_key;
 		struct pkm_lcs_transaction_hide_key_log hide_key;
 	};
@@ -203,7 +203,7 @@ static u64 pkm_lcs_next_transaction_id = 1;
 static DEFINE_MUTEX(pkm_lcs_transaction_registry_lock);
 static LIST_HEAD(pkm_lcs_transaction_registry);
 static const char pkm_lcs_transaction_base_layer_name[] = "base";
-static const char * const pkm_lcs_transaction_layer_metadata_prefix[] = {
+static const char *const pkm_lcs_transaction_layer_metadata_prefix[] = {
 	"Machine", "System", "Registry", "Layers"
 };
 
@@ -212,8 +212,8 @@ static long pkm_lcs_transaction_fd_complete_first_bind_from_state(
 	struct pkm_lcs_transaction_fd *txn, u64 transaction_id, u32 source_id,
 	const u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES]);
 
-static unsigned long pkm_lcs_transaction_deadline_from_timeout_ms(
-	u32 timeout_ms)
+static unsigned long
+pkm_lcs_transaction_deadline_from_timeout_ms(u32 timeout_ms)
 {
 	unsigned long delta = msecs_to_jiffies(timeout_ms);
 
@@ -224,8 +224,7 @@ static unsigned long pkm_lcs_transaction_deadline_from_timeout_ms(
 
 static bool pkm_lcs_transaction_state_active(u32 state)
 {
-	return state == REG_TXN_ACTIVE_UNBOUND ||
-	       state == REG_TXN_ACTIVE_BOUND;
+	return state == REG_TXN_ACTIVE_UNBOUND || state == REG_TXN_ACTIVE_BOUND;
 }
 
 static long pkm_lcs_transaction_terminal_errno(u32 state, s32 *errno_out)
@@ -299,7 +298,8 @@ pkm_lcs_transaction_fd_registry_add(struct pkm_lcs_transaction_fd *txn)
 
 	mutex_lock(&pkm_lcs_transaction_registry_lock);
 	if (!txn->registry_linked) {
-		list_add_tail(&txn->registry_link, &pkm_lcs_transaction_registry);
+		list_add_tail(&txn->registry_link,
+			      &pkm_lcs_transaction_registry);
 		txn->registry_linked = true;
 	}
 	mutex_unlock(&pkm_lcs_transaction_registry_lock);
@@ -362,9 +362,11 @@ static long pkm_lcs_transaction_layer_name_casefold_eq_with_limits(
 	return 0;
 }
 
-static long pkm_lcs_transaction_layer_name_casefold_eq(
-	const char *left, u32 left_len, const char *right, u32 right_len,
-	bool *equal)
+static long pkm_lcs_transaction_layer_name_casefold_eq(const char *left,
+						       u32 left_len,
+						       const char *right,
+						       u32 right_len,
+						       bool *equal)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -373,8 +375,8 @@ static long pkm_lcs_transaction_layer_name_casefold_eq(
 		left, left_len, right, right_len, &limits, equal);
 }
 
-static long pkm_lcs_transaction_layer_name_validate(
-	const char *layer_name, u32 layer_name_len)
+static long pkm_lcs_transaction_layer_name_validate(const char *layer_name,
+						    u32 layer_name_len)
 {
 	bool equal;
 
@@ -399,8 +401,9 @@ static long pkm_lcs_transaction_path_component_casefold_eq(
 		equal);
 }
 
-static long pkm_lcs_transaction_layer_metadata_prefix_matches(
-	char **path, u32 depth, bool *matches_out)
+static long pkm_lcs_transaction_layer_metadata_prefix_matches(char **path,
+							      u32 depth,
+							      bool *matches_out)
 {
 	u32 i;
 
@@ -430,9 +433,10 @@ static long pkm_lcs_transaction_layer_metadata_prefix_matches(
 	return 0;
 }
 
-static long pkm_lcs_transaction_layer_metadata_path(
-	char **path, u32 depth, const char **layer_name_out,
-	u32 *layer_name_len_out, bool *matches_out)
+static long pkm_lcs_transaction_layer_metadata_path(char **path, u32 depth,
+						    const char **layer_name_out,
+						    u32 *layer_name_len_out,
+						    bool *matches_out)
 {
 	const char *layer_name;
 	bool prefix_matches = false;
@@ -451,7 +455,8 @@ static long pkm_lcs_transaction_layer_metadata_path(
 	if (ret || !prefix_matches)
 		return ret;
 
-	layer_name = path[ARRAY_SIZE(pkm_lcs_transaction_layer_metadata_prefix)];
+	layer_name =
+		path[ARRAY_SIZE(pkm_lcs_transaction_layer_metadata_prefix)];
 	if (!layer_name)
 		return -EINVAL;
 	if (strlen(layer_name) > U32_MAX)
@@ -463,16 +468,17 @@ static long pkm_lcs_transaction_layer_metadata_path(
 	return 0;
 }
 
-static long pkm_lcs_transaction_layer_name_is_base(
-	const char *layer_name, u32 layer_name_len, bool *is_base)
+static long pkm_lcs_transaction_layer_name_is_base(const char *layer_name,
+						   u32 layer_name_len,
+						   bool *is_base)
 {
 	return pkm_lcs_transaction_layer_name_casefold_eq(
 		layer_name, layer_name_len, pkm_lcs_transaction_base_layer_name,
 		sizeof(pkm_lcs_transaction_base_layer_name) - 1, is_base);
 }
 
-static void pkm_lcs_transaction_layer_delete_effects_destroy(
-	struct list_head *effects)
+static void
+pkm_lcs_transaction_layer_delete_effects_destroy(struct list_head *effects)
 {
 	struct pkm_lcs_transaction_layer_delete_effect *effect;
 	struct pkm_lcs_transaction_layer_delete_effect *tmp;
@@ -489,7 +495,8 @@ static void pkm_lcs_transaction_layer_delete_effects_destroy(
 static long pkm_lcs_transaction_layer_delete_effect_append(
 	struct list_head *effects, const char *layer_name, u32 layer_name_len,
 	u32 skip_generation_source_id,
-	const u8 skip_generation_root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+	const u8 skip_generation_root_guid
+		[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
 {
 	struct pkm_lcs_transaction_layer_delete_effect *effect;
 
@@ -502,8 +509,8 @@ static long pkm_lcs_transaction_layer_delete_effect_append(
 		long ret;
 
 		ret = pkm_lcs_transaction_layer_name_casefold_eq(
-			effect->layer_name, effect->layer_name_len,
-			layer_name, layer_name_len, &equal);
+			effect->layer_name, effect->layer_name_len, layer_name,
+			layer_name_len, &equal);
 		if (ret)
 			return ret;
 		if (equal)
@@ -514,8 +521,8 @@ static long pkm_lcs_transaction_layer_delete_effect_append(
 	if (!effect)
 		return -ENOMEM;
 	INIT_LIST_HEAD(&effect->link);
-	effect->layer_name = kmemdup_nul(layer_name, layer_name_len,
-					 GFP_KERNEL);
+	effect->layer_name =
+		kmemdup_nul(layer_name, layer_name_len, GFP_KERNEL);
 	if (!effect->layer_name) {
 		kfree(effect);
 		return -ENOMEM;
@@ -691,8 +698,7 @@ static void pkm_lcs_transaction_log_entry_destroy(
 
 	switch (entry->kind) {
 	case PKM_LCS_TRANSACTION_LOG_KIND_CREATE_KEY:
-		pkm_lcs_transaction_key_create_log_destroy(
-			&entry->create_key);
+		pkm_lcs_transaction_key_create_log_destroy(&entry->create_key);
 		break;
 	case PKM_LCS_TRANSACTION_LOG_KIND_SET_SECURITY:
 		pkm_lcs_transaction_set_security_log_destroy(
@@ -710,8 +716,7 @@ static void pkm_lcs_transaction_log_entry_destroy(
 			&entry->blanket_tombstone);
 		break;
 	case PKM_LCS_TRANSACTION_LOG_KIND_DELETE_KEY:
-		pkm_lcs_transaction_delete_key_log_destroy(
-			&entry->delete_key);
+		pkm_lcs_transaction_delete_key_log_destroy(&entry->delete_key);
 		break;
 	case PKM_LCS_TRANSACTION_LOG_KIND_HIDE_KEY:
 		pkm_lcs_transaction_hide_key_log_destroy(&entry->hide_key);
@@ -722,8 +727,7 @@ static void pkm_lcs_transaction_log_entry_destroy(
 	kfree(entry);
 }
 
-static void pkm_lcs_transaction_log_clear(
-	struct pkm_lcs_transaction_fd *txn)
+static void pkm_lcs_transaction_log_clear(struct pkm_lcs_transaction_fd *txn)
 {
 	struct pkm_lcs_transaction_log_entry *entry;
 	struct pkm_lcs_transaction_log_entry *tmp;
@@ -738,8 +742,7 @@ static void pkm_lcs_transaction_log_clear(
 	txn->mutation_log_entries = 0;
 }
 
-static void pkm_lcs_transaction_fd_destroy(
-	struct pkm_lcs_transaction_fd *txn)
+static void pkm_lcs_transaction_fd_destroy(struct pkm_lcs_transaction_fd *txn)
 {
 	if (!txn)
 		return;
@@ -789,13 +792,13 @@ static void pkm_lcs_transaction_emit_audit(
 		result_errno = ret < 0 ? (u32)-ret : 0U;
 		outstanding = commit_outstanding ? 1 : 0;
 	}
-	(void)pkm_lcs_emit_transaction_committed_audit(
-		caller, transaction_id, state, result_errno, reason,
-		outstanding);
+	(void)pkm_lcs_emit_transaction_committed_audit(caller, transaction_id,
+						       state, result_errno,
+						       reason, outstanding);
 }
 
-static long pkm_lcs_transaction_dup_path_components(
-	const char * const *src, u32 count, char ***out)
+static long pkm_lcs_transaction_dup_path_components(const char *const *src,
+						    u32 count, char ***out)
 {
 	char **copy;
 	u32 i;
@@ -856,10 +859,11 @@ static long pkm_lcs_transaction_key_create_log_alloc(
 		return -EINVAL;
 	if (input->creator_sid_len && !input->creator_sid)
 		return -EINVAL;
-	if (input->parent_depth > PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT)
+	if (input->parent_depth >
+	    PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT)
 		return -EINVAL;
-	ret = pkm_lcs_transaction_layer_name_validate(
-		input->layer, (u32)input->layer_len);
+	ret = pkm_lcs_transaction_layer_name_validate(input->layer,
+						      (u32)input->layer_len);
 	if (ret)
 		return ret;
 
@@ -878,9 +882,8 @@ static long pkm_lcs_transaction_key_create_log_alloc(
 	entry->create_key.layer_len = (u32)input->layer_len;
 	entry->create_key.creator_sid_len = input->creator_sid_len;
 
-	entry->create_key.child_name =
-		kmemdup_nul(input->child_name, input->child_name_len,
-			    GFP_KERNEL);
+	entry->create_key.child_name = kmemdup_nul(
+		input->child_name, input->child_name_len, GFP_KERNEL);
 	if (!entry->create_key.child_name) {
 		ret = -ENOMEM;
 		goto out_free;
@@ -892,9 +895,8 @@ static long pkm_lcs_transaction_key_create_log_alloc(
 		goto out_free;
 	}
 	if (input->creator_sid_len) {
-		entry->create_key.creator_sid =
-			kmemdup(input->creator_sid, input->creator_sid_len,
-				GFP_KERNEL);
+		entry->create_key.creator_sid = kmemdup(
+			input->creator_sid, input->creator_sid_len, GFP_KERNEL);
 		if (!entry->create_key.creator_sid) {
 			ret = -ENOMEM;
 			goto out_free;
@@ -920,7 +922,8 @@ static long pkm_lcs_transaction_key_create_log_alloc(
 		goto out_free;
 	}
 
-	if (memcmp(entry->create_key.parent_ancestor_guids[input->parent_depth - 1],
+	if (memcmp(entry->create_key
+			   .parent_ancestor_guids[input->parent_depth - 1],
 		   entry->create_key.parent_guid,
 		   sizeof(entry->create_key.parent_guid))) {
 		ret = -EINVAL;
@@ -1008,14 +1011,13 @@ static long pkm_lcs_transaction_set_value_log_alloc(
 	if (!input || !input->key_guid || !input->layer || !input->path ||
 	    !input->ancestor_guids || !input->depth || !input->sequence ||
 	    (input->value_name_len && !input->value_name) ||
-	    !pkm_lcs_transaction_value_name_len_valid(
-		    input->value_name_len) ||
+	    !pkm_lcs_transaction_value_name_len_valid(input->value_name_len) ||
 	    !pkm_lcs_transaction_name_len_valid(input->layer_len))
 		return -EINVAL;
 	if (input->depth > PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT)
 		return -EINVAL;
-	ret = pkm_lcs_transaction_layer_name_validate(
-		input->layer, (u32)input->layer_len);
+	ret = pkm_lcs_transaction_layer_name_validate(input->layer,
+						      (u32)input->layer_len);
 	if (ret)
 		return ret;
 
@@ -1032,9 +1034,8 @@ static long pkm_lcs_transaction_set_value_log_alloc(
 	entry->set_value.depth = input->depth;
 
 	if (input->value_name_len)
-		entry->set_value.value_name =
-			kmemdup_nul(input->value_name, input->value_name_len,
-				    GFP_KERNEL);
+		entry->set_value.value_name = kmemdup_nul(
+			input->value_name, input->value_name_len, GFP_KERNEL);
 	else
 		entry->set_value.value_name = kstrdup("", GFP_KERNEL);
 	if (!entry->set_value.value_name) {
@@ -1049,8 +1050,8 @@ static long pkm_lcs_transaction_set_value_log_alloc(
 		goto out_free;
 	}
 
-	ret = pkm_lcs_transaction_dup_path_components(
-		input->path, input->depth, &entry->set_value.path);
+	ret = pkm_lcs_transaction_dup_path_components(input->path, input->depth,
+						      &entry->set_value.path);
 	if (ret)
 		goto out_free;
 
@@ -1094,8 +1095,9 @@ static bool pkm_lcs_transaction_value_event_valid(u32 event_type)
 	       event_type == REG_WATCH_VALUE_DELETED;
 }
 
-static long pkm_lcs_transaction_value_event_bytes_validate(
-	const u8 *events, size_t events_len, u32 event_count)
+static long pkm_lcs_transaction_value_event_bytes_validate(const u8 *events,
+							   size_t events_len,
+							   u32 event_count)
 {
 	size_t offset = 0;
 	u32 i;
@@ -1137,14 +1139,13 @@ static long pkm_lcs_transaction_delete_value_log_alloc(
 	if (!input || !input->key_guid || !input->layer || !input->path ||
 	    !input->ancestor_guids || !input->depth ||
 	    (input->value_name_len && !input->value_name) ||
-	    !pkm_lcs_transaction_value_name_len_valid(
-		    input->value_name_len) ||
+	    !pkm_lcs_transaction_value_name_len_valid(input->value_name_len) ||
 	    !pkm_lcs_transaction_name_len_valid(input->layer_len))
 		return -EINVAL;
 	if (input->depth > PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT)
 		return -EINVAL;
-	ret = pkm_lcs_transaction_layer_name_validate(
-		input->layer, (u32)input->layer_len);
+	ret = pkm_lcs_transaction_layer_name_validate(input->layer,
+						      (u32)input->layer_len);
 	if (ret)
 		return ret;
 
@@ -1160,9 +1161,8 @@ static long pkm_lcs_transaction_delete_value_log_alloc(
 	entry->delete_value.depth = input->depth;
 
 	if (input->value_name_len)
-		entry->delete_value.value_name =
-			kmemdup_nul(input->value_name,
-				    input->value_name_len, GFP_KERNEL);
+		entry->delete_value.value_name = kmemdup_nul(
+			input->value_name, input->value_name_len, GFP_KERNEL);
 	else
 		entry->delete_value.value_name = kstrdup("", GFP_KERNEL);
 	if (!entry->delete_value.value_name) {
@@ -1296,8 +1296,7 @@ static long pkm_lcs_transaction_delete_key_log_alloc(
 		return -EINVAL;
 	*out = NULL;
 	if (!input || !input->key_guid || !input->parent_guid ||
-	    !input->child_name ||
-	    !input->layer || !input->parent_path ||
+	    !input->child_name || !input->layer || !input->parent_path ||
 	    !input->parent_ancestor_guids || !input->parent_depth ||
 	    !pkm_lcs_transaction_name_len_valid(input->child_name_len) ||
 	    !pkm_lcs_transaction_name_len_valid(input->layer_len))
@@ -1308,8 +1307,8 @@ static long pkm_lcs_transaction_delete_key_log_alloc(
 	if (input->parent_depth >
 	    PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT)
 		return -EINVAL;
-	ret = pkm_lcs_transaction_layer_name_validate(
-		input->layer, (u32)input->layer_len);
+	ret = pkm_lcs_transaction_layer_name_validate(input->layer,
+						      (u32)input->layer_len);
 	if (ret)
 		return ret;
 
@@ -1326,9 +1325,8 @@ static long pkm_lcs_transaction_delete_key_log_alloc(
 	entry->delete_key.layer_len = (u32)input->layer_len;
 	entry->delete_key.parent_depth = input->parent_depth;
 
-	entry->delete_key.child_name =
-		kmemdup_nul(input->child_name, input->child_name_len,
-			    GFP_KERNEL);
+	entry->delete_key.child_name = kmemdup_nul(
+		input->child_name, input->child_name_len, GFP_KERNEL);
 	if (!entry->delete_key.child_name) {
 		ret = -ENOMEM;
 		goto out_free;
@@ -1346,10 +1344,9 @@ static long pkm_lcs_transaction_delete_key_log_alloc(
 	if (ret)
 		goto out_free;
 
-	if (check_mul_overflow(
-		    (size_t)input->parent_depth,
-		    sizeof(*entry->delete_key.parent_ancestor_guids),
-		    &guid_bytes)) {
+	if (check_mul_overflow((size_t)input->parent_depth,
+			       sizeof(*entry->delete_key.parent_ancestor_guids),
+			       &guid_bytes)) {
 		ret = -EINVAL;
 		goto out_free;
 	}
@@ -1360,8 +1357,8 @@ static long pkm_lcs_transaction_delete_key_log_alloc(
 		goto out_free;
 	}
 
-	if (memcmp(entry->delete_key.parent_ancestor_guids[
-			   input->parent_depth - 1],
+	if (memcmp(entry->delete_key
+			   .parent_ancestor_guids[input->parent_depth - 1],
 		   entry->delete_key.parent_guid,
 		   sizeof(entry->delete_key.parent_guid))) {
 		ret = -EINVAL;
@@ -1388,8 +1385,7 @@ static long pkm_lcs_transaction_hide_key_log_alloc(
 		return -EINVAL;
 	*out = NULL;
 	if (!input || !input->key_guid || !input->parent_guid ||
-	    !input->child_name ||
-	    !input->layer || !input->parent_path ||
+	    !input->child_name || !input->layer || !input->parent_path ||
 	    !input->parent_ancestor_guids || !input->parent_depth ||
 	    !input->sequence ||
 	    !pkm_lcs_transaction_name_len_valid(input->child_name_len) ||
@@ -1401,8 +1397,8 @@ static long pkm_lcs_transaction_hide_key_log_alloc(
 	if (input->parent_depth >
 	    PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT)
 		return -EINVAL;
-	ret = pkm_lcs_transaction_layer_name_validate(
-		input->layer, (u32)input->layer_len);
+	ret = pkm_lcs_transaction_layer_name_validate(input->layer,
+						      (u32)input->layer_len);
 	if (ret)
 		return ret;
 
@@ -1420,9 +1416,8 @@ static long pkm_lcs_transaction_hide_key_log_alloc(
 	entry->hide_key.layer_len = (u32)input->layer_len;
 	entry->hide_key.parent_depth = input->parent_depth;
 
-	entry->hide_key.child_name =
-		kmemdup_nul(input->child_name, input->child_name_len,
-			    GFP_KERNEL);
+	entry->hide_key.child_name = kmemdup_nul(
+		input->child_name, input->child_name_len, GFP_KERNEL);
 	if (!entry->hide_key.child_name) {
 		ret = -ENOMEM;
 		goto out_free;
@@ -1440,10 +1435,9 @@ static long pkm_lcs_transaction_hide_key_log_alloc(
 	if (ret)
 		goto out_free;
 
-	if (check_mul_overflow(
-		    (size_t)input->parent_depth,
-		    sizeof(*entry->hide_key.parent_ancestor_guids),
-		    &guid_bytes)) {
+	if (check_mul_overflow((size_t)input->parent_depth,
+			       sizeof(*entry->hide_key.parent_ancestor_guids),
+			       &guid_bytes)) {
 		ret = -EINVAL;
 		goto out_free;
 	}
@@ -1454,8 +1448,8 @@ static long pkm_lcs_transaction_hide_key_log_alloc(
 		goto out_free;
 	}
 
-	if (memcmp(entry->hide_key.parent_ancestor_guids[
-			   input->parent_depth - 1],
+	if (memcmp(entry->hide_key
+			   .parent_ancestor_guids[input->parent_depth - 1],
 		   entry->hide_key.parent_guid,
 		   sizeof(entry->hide_key.parent_guid))) {
 		ret = -EINVAL;
@@ -1472,9 +1466,8 @@ out_free:
 
 static void pkm_lcs_transaction_fd_timeout(struct timer_list *timer)
 {
-	struct pkm_lcs_transaction_fd *txn =
-		container_of(timer, struct pkm_lcs_transaction_fd,
-			     timeout_timer);
+	struct pkm_lcs_transaction_fd *txn = container_of(
+		timer, struct pkm_lcs_transaction_fd, timeout_timer);
 	bool schedule_cleanup = false;
 	bool terminal = false;
 	u32 old_state;
@@ -1510,8 +1503,7 @@ static void pkm_lcs_transaction_fd_timeout(struct timer_list *timer)
 static void pkm_lcs_transaction_fd_timeout_work(struct work_struct *work)
 {
 	struct pkm_lcs_transaction_fd *txn =
-		container_of(work, struct pkm_lcs_transaction_fd,
-			     timeout_work);
+		container_of(work, struct pkm_lcs_transaction_fd, timeout_work);
 	u64 transaction_id = 0;
 	u32 source_id = 0;
 	u32 count = 0;
@@ -1597,8 +1589,7 @@ static int pkm_lcs_transaction_fd_release(struct inode *inode,
 		txn->timeout_abort_pending = false;
 		dispatch_abort = transaction_id && source_id;
 		release_counter = source_id != 0;
-	} else if (txn->state == REG_TXN_TIMED_OUT &&
-		   txn->commit_in_flight) {
+	} else if (txn->state == REG_TXN_TIMED_OUT && txn->commit_in_flight) {
 		retain_detached_commit = true;
 	}
 	final_state = txn->state;
@@ -1637,8 +1628,9 @@ static int pkm_lcs_transaction_fd_release(struct inode *inode,
 	return 0;
 }
 
-static long pkm_lcs_transaction_fd_status_from_state(
-	struct pkm_lcs_transaction_fd *txn, struct reg_txn_status_args *out)
+static long
+pkm_lcs_transaction_fd_status_from_state(struct pkm_lcs_transaction_fd *txn,
+					 struct reg_txn_status_args *out)
 {
 	u32 state;
 	long ret;
@@ -1721,22 +1713,22 @@ out_unlock:
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_transaction_log_requires_generation(
-		txn, &requires_generation);
+	ret = pkm_lcs_transaction_log_requires_generation(txn,
+							  &requires_generation);
 	if (ret)
 		return ret;
 	if (!requires_generation)
 		return 0;
 
-	ret = pkm_lcs_source_record_transaction_generation(
-		source_id, root_guid, &generation);
+	ret = pkm_lcs_source_record_transaction_generation(source_id, root_guid,
+							   &generation);
 	if (ret)
 		return -EIO;
 	return 0;
 }
 
-static void pkm_lcs_transaction_watch_context_owners_free(
-	struct list_head *owners)
+static void
+pkm_lcs_transaction_watch_context_owners_free(struct list_head *owners)
 {
 	struct pkm_lcs_transaction_watch_context_owner *owner;
 	struct pkm_lcs_transaction_watch_context_owner *tmp;
@@ -1762,7 +1754,7 @@ static long pkm_lcs_transaction_append_key_path_invisible_exact(
 	bool replacement_visible)
 {
 	struct pkm_lcs_transaction_watch_context_owner *owner;
-	u8 (*child_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
+	u8(*child_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	const char **child_path;
 	u32 child_depth;
 	u32 required_contexts = replacement_visible ? 3U : 2U;
@@ -1770,9 +1762,8 @@ static long pkm_lcs_transaction_append_key_path_invisible_exact(
 	size_t child_path_bytes;
 
 	if (!contexts || !index || !owners || !key_guid || !parent_guid ||
-	    !parent_path ||
-	    !parent_ancestor_guids || !parent_depth || !child_name ||
-	    !child_name_len)
+	    !parent_path || !parent_ancestor_guids || !parent_depth ||
+	    !child_name || !child_name_len)
 		return -EINVAL;
 	if (*index > context_capacity ||
 	    context_capacity - *index < required_contexts)
@@ -1801,7 +1792,8 @@ static long pkm_lcs_transaction_append_key_path_invisible_exact(
 		return -ENOMEM;
 	}
 
-	memcpy(child_path, parent_path, (size_t)parent_depth * sizeof(*child_path));
+	memcpy(child_path, parent_path,
+	       (size_t)parent_depth * sizeof(*child_path));
 	child_path[parent_depth] = child_name;
 	memcpy(child_ancestor_guids, parent_ancestor_guids,
 	       (size_t)parent_depth * sizeof(*child_ancestor_guids));
@@ -1814,8 +1806,8 @@ static long pkm_lcs_transaction_append_key_path_invisible_exact(
 
 	contexts[*index].changed_key_guid = parent_guid;
 	contexts[*index].ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])parent_ancestor_guids;
-	contexts[*index].resolved_path = (const char * const *)parent_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])parent_ancestor_guids;
+	contexts[*index].resolved_path = (const char *const *)parent_path;
 	contexts[*index].path_component_count = parent_depth;
 	contexts[*index].event_type = REG_WATCH_SUBKEY_DELETED;
 	contexts[*index].name = (const u8 *)child_name;
@@ -1830,8 +1822,8 @@ static long pkm_lcs_transaction_append_key_path_invisible_exact(
 
 	contexts[*index].changed_key_guid = key_guid;
 	contexts[*index].ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])child_ancestor_guids;
-	contexts[*index].resolved_path = (const char * const *)child_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])child_ancestor_guids;
+	contexts[*index].resolved_path = (const char *const *)child_path;
 	contexts[*index].path_component_count = child_depth;
 	contexts[*index].event_type = REG_WATCH_KEY_DELETED;
 	(*index)++;
@@ -1842,11 +1834,11 @@ static long pkm_lcs_transaction_delete_key_post_lookup(
 	u32 source_id, struct pkm_lcs_transaction_delete_key_log *entry,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_layer_snapshot layer_snapshot = { };
-	struct pkm_lcs_rsi_lookup_guid_entry_result result = { };
-	struct pkm_lcs_rsi_lookup_child_result effective = { };
-	struct pkm_lcs_source_response_frame frame = { };
-	struct pkm_lcs_source_response_result response = { };
+	struct pkm_lcs_layer_snapshot layer_snapshot = {};
+	struct pkm_lcs_rsi_lookup_guid_entry_result result = {};
+	struct pkm_lcs_rsi_lookup_child_result effective = {};
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
 	u64 next_sequence = 0;
 	long ret;
 
@@ -1886,10 +1878,9 @@ static long pkm_lcs_transaction_delete_key_post_lookup(
 		goto out_frame;
 
 	entry->target_still_named = result.present != 0;
-	entry->replacement_visible =
-		effective.found &&
-		memcmp(effective.key_guid, entry->key_guid,
-		       sizeof(entry->key_guid)) != 0;
+	entry->replacement_visible = effective.found &&
+				     memcmp(effective.key_guid, entry->key_guid,
+					    sizeof(entry->key_guid)) != 0;
 	entry->post_lookup_valid = true;
 
 out_frame:
@@ -1910,14 +1901,14 @@ static long pkm_lcs_transaction_apply_delete_key_orphan_effects(
 		return -EINVAL;
 
 	ret = pkm_lcs_transaction_delete_key_post_lookup(source_id, entry,
-							limits);
+							 limits);
 	if (ret)
 		return ret;
 	if (entry->target_still_named)
 		return 0;
 
-	ret = pkm_lcs_key_fd_mark_orphaned_no_watch(
-		source_id, entry->key_guid, &marked, &live_refs);
+	ret = pkm_lcs_key_fd_mark_orphaned_no_watch(source_id, entry->key_guid,
+						    &marked, &live_refs);
 	if (ret)
 		return ret;
 
@@ -2047,9 +2038,10 @@ static long pkm_lcs_transaction_entry_layer_metadata_path(
 		return 0;
 	}
 
-	ret = pkm_lcs_transaction_layer_metadata_path(
-		path, depth, layer_name_out, layer_name_len_out,
-		matches_path_out);
+	ret = pkm_lcs_transaction_layer_metadata_path(path, depth,
+						      layer_name_out,
+						      layer_name_len_out,
+						      matches_path_out);
 	if (ret || !*matches_path_out)
 		return ret;
 
@@ -2119,8 +2111,8 @@ static long pkm_lcs_transaction_log_apply_layer_metadata_effects(
 	struct pkm_lcs_transaction_log_entry *entry;
 	u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 
-	if (!txn || !source_id || !layer_delete_effects ||
-	    !limits || !layer_recovery_required_out)
+	if (!txn || !source_id || !layer_delete_effects || !limits ||
+	    !layer_recovery_required_out)
 		return -EINVAL;
 	*layer_recovery_required_out = false;
 
@@ -2159,14 +2151,16 @@ static long pkm_lcs_transaction_log_apply_layer_metadata_effects(
 
 		switch (entry->kind) {
 		case PKM_LCS_TRANSACTION_LOG_KIND_CREATE_KEY: {
-			const char *created_path[
-				ARRAY_SIZE(pkm_lcs_transaction_layer_metadata_prefix) +
-				1U];
+			const char *created_path
+				[ARRAY_SIZE(
+					 pkm_lcs_transaction_layer_metadata_prefix) +
+				 1U];
 			bool effective_changed = false;
 			u32 i;
 
 			if (depth !=
-			    ARRAY_SIZE(pkm_lcs_transaction_layer_metadata_prefix))
+			    ARRAY_SIZE(
+				    pkm_lcs_transaction_layer_metadata_prefix))
 				return -EIO;
 			for (i = 0; i < depth; i++)
 				created_path[i] = path[i];
@@ -2182,17 +2176,15 @@ static long pkm_lcs_transaction_log_apply_layer_metadata_effects(
 		}
 		case PKM_LCS_TRANSACTION_LOG_KIND_SET_SECURITY:
 			ret = pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result_with_limits(
-				source_id, key_guid,
-				(const char * const *)path, depth, NULL, 0,
-				false, limits, NULL);
+				source_id, key_guid, (const char *const *)path,
+				depth, NULL, 0, false, limits, NULL);
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_SET_VALUE: {
 			bool effective_changed = false;
 
 			ret = pkm_lcs_key_path_refresh_layer_metadata_with_owner_context_result_with_limits(
-				source_id, key_guid,
-				(const char * const *)path, depth, NULL, 0,
-				false, limits,
+				source_id, key_guid, (const char *const *)path,
+				depth, NULL, 0, false, limits,
 				&effective_changed);
 			if (!ret && effective_changed)
 				*layer_recovery_required_out = true;
@@ -2208,8 +2200,8 @@ static long pkm_lcs_transaction_log_apply_layer_metadata_effects(
 			if (is_base)
 				break;
 			ret = pkm_lcs_transaction_layer_delete_effect_append(
-				layer_delete_effects, layer_name, layer_name_len,
-				source_id, root_guid);
+				layer_delete_effects, layer_name,
+				layer_name_len, source_id, root_guid);
 			break;
 		}
 		default:
@@ -2235,15 +2227,15 @@ static long pkm_lcs_transaction_append_delete_key_exact(
 		return -EINVAL;
 
 	ret = pkm_lcs_transaction_delete_key_post_lookup(source_id, entry,
-							limits);
+							 limits);
 	if (ret)
 		return ret;
 	if (entry->target_still_named)
 		return 0;
 
 	return pkm_lcs_transaction_append_key_path_invisible_exact(
-		contexts, context_capacity, index, owners,
-		entry->key_guid, entry->parent_guid, entry->parent_path,
+		contexts, context_capacity, index, owners, entry->key_guid,
+		entry->parent_guid, entry->parent_path,
 		entry->parent_ancestor_guids, entry->parent_depth,
 		entry->child_name, entry->child_name_len,
 		entry->replacement_visible);
@@ -2261,10 +2253,10 @@ static long pkm_lcs_transaction_append_hide_key_exact(
 		return -EINVAL;
 
 	if (!entry->post_lookup_valid) {
-		struct pkm_lcs_layer_snapshot layer_snapshot = { };
-		struct pkm_lcs_source_response_frame frame = { };
-		struct pkm_lcs_source_response_result response = { };
-		struct pkm_lcs_rsi_lookup_child_result effective = { };
+		struct pkm_lcs_layer_snapshot layer_snapshot = {};
+		struct pkm_lcs_source_response_frame frame = {};
+		struct pkm_lcs_source_response_result response = {};
+		struct pkm_lcs_rsi_lookup_child_result effective = {};
 		u64 next_sequence = 0;
 
 		ret = pkm_lcs_source_next_sequence_snapshot(&next_sequence);
@@ -2277,14 +2269,14 @@ static long pkm_lcs_transaction_append_hide_key_exact(
 		pkm_lcs_source_response_frame_init(&frame);
 		ret = pkm_lcs_source_lookup_round_trip_retaining_frame_timeout_with_limits(
 			source_id, 0, entry->parent_guid, entry->child_name,
-			entry->child_name_len, limits, limits->request_timeout_ms,
-			&frame, &response, NULL);
+			entry->child_name_len, limits,
+			limits->request_timeout_ms, &frame, &response, NULL);
 		if (ret)
 			goto out_frame;
 
 		ret = pkm_lcs_rsi_materialize_lookup_child(
-			frame.data, frame.len, response.request_id, next_sequence,
-			entry->child_name, entry->child_name_len,
+			frame.data, frame.len, response.request_id,
+			next_sequence, entry->child_name, entry->child_name_len,
 			layer_snapshot.layers, layer_snapshot.layer_count, NULL,
 			0, &response.limits, &effective);
 		if (ret)
@@ -2309,8 +2301,8 @@ out_frame:
 		return 0;
 
 	return pkm_lcs_transaction_append_key_path_invisible_exact(
-		contexts, context_capacity, index, owners,
-		entry->key_guid, entry->parent_guid, entry->parent_path,
+		contexts, context_capacity, index, owners, entry->key_guid,
+		entry->parent_guid, entry->parent_path,
 		entry->parent_ancestor_guids, entry->parent_depth,
 		entry->child_name, entry->child_name_len,
 		entry->replacement_visible);
@@ -2380,7 +2372,8 @@ static long pkm_lcs_transaction_log_dispatch_watch_batch(
 			contexts[index].ancestor_guids =
 				entry->create_key.parent_ancestor_guids;
 			contexts[index].resolved_path =
-				(const char * const *)entry->create_key.parent_path;
+				(const char *const *)
+					entry->create_key.parent_path;
 			contexts[index].path_component_count =
 				entry->create_key.parent_depth;
 			contexts[index].event_type = REG_WATCH_SUBKEY_CREATED;
@@ -2396,7 +2389,7 @@ static long pkm_lcs_transaction_log_dispatch_watch_batch(
 			contexts[index].ancestor_guids =
 				entry->set_security.ancestor_guids;
 			contexts[index].resolved_path =
-				(const char * const *)entry->set_security.path;
+				(const char *const *)entry->set_security.path;
 			contexts[index].path_component_count =
 				entry->set_security.depth;
 			contexts[index].event_type = REG_WATCH_SD_CHANGED;
@@ -2410,7 +2403,7 @@ static long pkm_lcs_transaction_log_dispatch_watch_batch(
 			contexts[index].ancestor_guids =
 				entry->set_value.ancestor_guids;
 			contexts[index].resolved_path =
-				(const char * const *)entry->set_value.path;
+				(const char *const *)entry->set_value.path;
 			contexts[index].path_component_count =
 				entry->set_value.depth;
 			contexts[index].event_type = REG_WATCH_VALUE_SET;
@@ -2428,7 +2421,7 @@ static long pkm_lcs_transaction_log_dispatch_watch_batch(
 			contexts[index].ancestor_guids =
 				entry->delete_value.ancestor_guids;
 			contexts[index].resolved_path =
-				(const char * const *)entry->delete_value.path;
+				(const char *const *)entry->delete_value.path;
 			contexts[index].path_component_count =
 				entry->delete_value.depth;
 			contexts[index].event_type =
@@ -2449,22 +2442,25 @@ static long pkm_lcs_transaction_log_dispatch_watch_batch(
 				u32 name_len;
 
 				if (index >= context_capacity ||
-				    offset > entry->blanket_tombstone.events_len ||
-				    entry->blanket_tombstone.events_len - offset <
+				    offset > entry->blanket_tombstone
+						     .events_len ||
+				    entry->blanket_tombstone.events_len -
+						    offset <
 					    8U) {
 					ret = -EIO;
 					goto out_free;
 				}
 				event_type = get_unaligned_le32(
-					entry->blanket_tombstone.events + offset);
+					entry->blanket_tombstone.events +
+					offset);
 				name_len = get_unaligned_le32(
-					entry->blanket_tombstone.events + offset +
-					4U);
+					entry->blanket_tombstone.events +
+					offset + 4U);
 				offset += 8U;
 				if (!pkm_lcs_transaction_value_event_valid(
 					    event_type) ||
-				    offset >
-					    entry->blanket_tombstone.events_len ||
+				    offset > entry->blanket_tombstone
+						     .events_len ||
 				    name_len >
 					    entry->blanket_tombstone.events_len -
 						    offset) {
@@ -2477,13 +2473,14 @@ static long pkm_lcs_transaction_log_dispatch_watch_batch(
 				contexts[index].ancestor_guids =
 					entry->blanket_tombstone.ancestor_guids;
 				contexts[index].resolved_path =
-					(const char * const *)
+					(const char *const *)
 						entry->blanket_tombstone.path;
 				contexts[index].path_component_count =
 					entry->blanket_tombstone.depth;
 				contexts[index].event_type = event_type;
 				contexts[index].name =
-					entry->blanket_tombstone.events + offset;
+					entry->blanket_tombstone.events +
+					offset;
 				contexts[index].name_len = name_len;
 				offset += name_len;
 				index++;
@@ -2547,42 +2544,48 @@ static long pkm_lcs_transaction_dispatch_replay_failure_overflow(
 		return -EINVAL;
 
 	list_for_each_entry(entry, &txn->mutation_log, link) {
-		struct pkm_lcs_watch_dispatch_context context = { };
+		struct pkm_lcs_watch_dispatch_context context = {};
 
 		context.limits = limits;
 		context.event_type = REG_WATCH_OVERFLOW;
 
 		switch (entry->kind) {
 		case PKM_LCS_TRANSACTION_LOG_KIND_CREATE_KEY:
-			context.changed_key_guid = entry->create_key.parent_guid;
+			context.changed_key_guid =
+				entry->create_key.parent_guid;
 			context.ancestor_guids =
 				entry->create_key.parent_ancestor_guids;
 			context.resolved_path =
-				(const char * const *)
+				(const char *const *)
 					entry->create_key.parent_path;
 			context.path_component_count =
 				entry->create_key.parent_depth;
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_SET_SECURITY:
 			context.changed_key_guid = entry->set_security.key_guid;
-			context.ancestor_guids = entry->set_security.ancestor_guids;
+			context.ancestor_guids =
+				entry->set_security.ancestor_guids;
 			context.resolved_path =
-				(const char * const *)entry->set_security.path;
-			context.path_component_count = entry->set_security.depth;
+				(const char *const *)entry->set_security.path;
+			context.path_component_count =
+				entry->set_security.depth;
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_SET_VALUE:
 			context.changed_key_guid = entry->set_value.key_guid;
-			context.ancestor_guids = entry->set_value.ancestor_guids;
+			context.ancestor_guids =
+				entry->set_value.ancestor_guids;
 			context.resolved_path =
-				(const char * const *)entry->set_value.path;
+				(const char *const *)entry->set_value.path;
 			context.path_component_count = entry->set_value.depth;
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_DELETE_VALUE:
 			context.changed_key_guid = entry->delete_value.key_guid;
-			context.ancestor_guids = entry->delete_value.ancestor_guids;
+			context.ancestor_guids =
+				entry->delete_value.ancestor_guids;
 			context.resolved_path =
-				(const char * const *)entry->delete_value.path;
-			context.path_component_count = entry->delete_value.depth;
+				(const char *const *)entry->delete_value.path;
+			context.path_component_count =
+				entry->delete_value.depth;
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_BLANKET_TOMBSTONE:
 			context.changed_key_guid =
@@ -2590,7 +2593,7 @@ static long pkm_lcs_transaction_dispatch_replay_failure_overflow(
 			context.ancestor_guids =
 				entry->blanket_tombstone.ancestor_guids;
 			context.resolved_path =
-				(const char * const *)
+				(const char *const *)
 					entry->blanket_tombstone.path;
 			context.path_component_count =
 				entry->blanket_tombstone.depth;
@@ -2641,8 +2644,8 @@ static long pkm_lcs_transaction_dispatch_invisible_key_overflow(
 	u32 parent_depth, const char *child_name, u32 child_name_len,
 	const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_watch_dispatch_context context = { };
-	u8 (*child_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
+	struct pkm_lcs_watch_dispatch_context context = {};
+	u8(*child_ancestor_guids)[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES];
 	const char **child_path;
 	u32 child_depth;
 	size_t child_ancestor_bytes;
@@ -2671,7 +2674,8 @@ static long pkm_lcs_transaction_dispatch_invisible_key_overflow(
 		return -ENOMEM;
 	}
 
-	memcpy(child_path, parent_path, (size_t)parent_depth * sizeof(*child_path));
+	memcpy(child_path, parent_path,
+	       (size_t)parent_depth * sizeof(*child_path));
 	child_path[parent_depth] = child_name;
 	memcpy(child_ancestor_guids, parent_ancestor_guids,
 	       (size_t)parent_depth * sizeof(*child_ancestor_guids));
@@ -2680,8 +2684,8 @@ static long pkm_lcs_transaction_dispatch_invisible_key_overflow(
 
 	context.changed_key_guid = parent_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])parent_ancestor_guids;
-	context.resolved_path = (const char * const *)parent_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])parent_ancestor_guids;
+	context.resolved_path = (const char *const *)parent_path;
 	context.path_component_count = parent_depth;
 	context.event_type = REG_WATCH_OVERFLOW;
 	context.limits = limits;
@@ -2691,8 +2695,8 @@ static long pkm_lcs_transaction_dispatch_invisible_key_overflow(
 
 	context.changed_key_guid = key_guid;
 	context.ancestor_guids =
-		(const u8 (*)[PKM_LCS_GUID_BYTES])child_ancestor_guids;
-	context.resolved_path = (const char * const *)child_path;
+		(const u8(*)[PKM_LCS_GUID_BYTES])child_ancestor_guids;
+	context.resolved_path = (const char *const *)child_path;
 	context.path_component_count = child_depth;
 	ret = pkm_lcs_key_fd_dispatch_overflow_context(&context);
 
@@ -2717,7 +2721,7 @@ static long pkm_lcs_transaction_fd_apply_commit_response_under_bind(
 	bool layer_recovery_required = false;
 	bool replay_failure_overflow_dispatched = false;
 	u32 final_state = 0;
-	u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES] = { };
+	u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES] = {};
 	long ret = 0;
 
 	if (!txn || !transaction_id || !source_id || !final_state_out ||
@@ -2754,7 +2758,8 @@ static long pkm_lcs_transaction_fd_apply_commit_response_under_bind(
 			return -EIO;
 		}
 		if (layer_recovery_required) {
-			struct pkm_lcs_layer_operation_recovery_result recovery = { };
+			struct pkm_lcs_layer_operation_recovery_result
+				recovery = {};
 
 			ret = pkm_lcs_source_layer_operation_recover_skip_generation_with_limits(
 				source_id, root_guid, limits, &recovery);
@@ -2776,10 +2781,12 @@ static long pkm_lcs_transaction_fd_apply_commit_response_under_bind(
 		}
 		if (!replay_failure_overflow_dispatched) {
 			ret = pkm_lcs_transaction_log_dispatch_watch_batch(
-				txn, source_id, limits, internal_watch_effects_out);
+				txn, source_id, limits,
+				internal_watch_effects_out);
 			if (ret) {
 				ret = pkm_lcs_transaction_dispatch_replay_failure_overflow(
-					txn, limits, internal_watch_effects_out);
+					txn, limits,
+					internal_watch_effects_out);
 				if (ret) {
 					*source_down_required_out = true;
 					return -EIO;
@@ -2895,10 +2902,10 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
  * naming the committer. A commit that failed and left the transaction
  * active owes nothing yet; a later commit or the close settles it.
  */
-static void pkm_lcs_transaction_commit_audit(
-	struct pkm_lcs_transaction_fd *txn, u64 transaction_id, long ret)
+static void pkm_lcs_transaction_commit_audit(struct pkm_lcs_transaction_fd *txn,
+					     u64 transaction_id, long ret)
 {
-	struct pkm_lcs_audit_caller_snapshot committer = { };
+	struct pkm_lcs_audit_caller_snapshot committer = {};
 	bool outstanding;
 	bool audit = false;
 	u32 state;
@@ -2943,8 +2950,8 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 	struct pkm_lcs_transaction_fd *txn,
 	const struct pkm_lcs_runtime_limits *limits, u32 timeout_ms)
 {
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_source_enqueue_result enqueue = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_source_enqueue_result enqueue = {};
 	LIST_HEAD(layer_delete_effects);
 	u64 transaction_id;
 	u32 source_id;
@@ -3028,10 +3035,8 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 				pkm_lcs_transaction_fd_apply_commit_response_under_bind(
 					txn, transaction_id, source_id,
 					response.status, false, &final_state,
-					&release_counter,
-					&source_down_required,
-					&layer_delete_effects,
-					limits,
+					&release_counter, &source_down_required,
+					&layer_delete_effects, limits,
 					&internal_watch_effects);
 			if (!apply_ret) {
 				apply_layer_delete_effects = true;
@@ -3060,8 +3065,7 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 	ret = pkm_lcs_transaction_fd_apply_commit_response_under_bind(
 		txn, transaction_id, source_id, RSI_OK, false, &final_state,
 		&release_counter, &source_down_required, &layer_delete_effects,
-		limits,
-		&internal_watch_effects);
+		limits, &internal_watch_effects);
 	if (ret) {
 		if (source_down_required) {
 			mark_source_down = true;
@@ -3097,8 +3101,7 @@ out_unlock:
 	}
 	if (mark_source_down)
 		pkm_lcs_source_mark_down_by_id(mark_source_down_id);
-	pkm_lcs_transaction_layer_delete_effects_destroy(
-		&layer_delete_effects);
+	pkm_lcs_transaction_layer_delete_effects_destroy(&layer_delete_effects);
 	trace_lcs_txn_commit(transaction_id, source_id, state,
 			     final_state ? final_state : state, (s32)ret,
 			     ret == -ETIMEDOUT);
@@ -3106,8 +3109,8 @@ out_unlock:
 	return ret;
 }
 
-static long pkm_lcs_transaction_fd_commit_from_state(
-	struct pkm_lcs_transaction_fd *txn)
+static long
+pkm_lcs_transaction_fd_commit_from_state(struct pkm_lcs_transaction_fd *txn)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -3235,8 +3238,8 @@ out_free:
 	return ret;
 }
 
-static long pkm_lcs_transaction_fd_get(
-	int fd, struct fd *held, struct pkm_lcs_transaction_fd **txn_out)
+static long pkm_lcs_transaction_fd_get(int fd, struct fd *held,
+				       struct pkm_lcs_transaction_fd **txn_out)
 {
 	struct file *file;
 
@@ -3274,15 +3277,14 @@ static void pkm_lcs_transaction_mutation_handle_release(
 	memset(handle, 0, sizeof(*handle));
 }
 
-static long pkm_lcs_transaction_log_capacity_check(
-	const struct pkm_lcs_transaction_fd *txn)
+static long
+pkm_lcs_transaction_log_capacity_check(const struct pkm_lcs_transaction_fd *txn)
 {
 	if (!txn || !txn->mutation_log_capacity)
 		return -EINVAL;
 	if (txn->mutation_log_entries >= txn->mutation_log_capacity)
 		return -ENOMEM;
-	if (!txn->next_operation_index ||
-	    txn->next_operation_index == U64_MAX)
+	if (!txn->next_operation_index || txn->next_operation_index == U64_MAX)
 		return -EOVERFLOW;
 	return 0;
 }
@@ -3373,15 +3375,12 @@ long pkm_lcs_transaction_fd_log_snapshot(
 				sizeof(out->last_layer));
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_BLANKET_TOMBSTONE:
-			out->last_sequence =
-				last->blanket_tombstone.sequence;
-			out->last_parent_depth =
-				last->blanket_tombstone.depth;
+			out->last_sequence = last->blanket_tombstone.sequence;
+			out->last_parent_depth = last->blanket_tombstone.depth;
 			memcpy(out->last_key_guid,
 			       last->blanket_tombstone.key_guid,
 			       sizeof(out->last_key_guid));
-			strscpy(out->last_layer,
-				last->blanket_tombstone.layer,
+			strscpy(out->last_layer, last->blanket_tombstone.layer,
 				sizeof(out->last_layer));
 			break;
 		case PKM_LCS_TRANSACTION_LOG_KIND_DELETE_KEY:
@@ -3535,7 +3534,7 @@ long pkm_lcs_transaction_fd_abort_layer_writers_with_limits(
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_transaction_layer_abort_result *result)
 {
-	struct pkm_lcs_transaction_layer_abort_result local = { };
+	struct pkm_lcs_transaction_layer_abort_result local = {};
 	struct pkm_lcs_transaction_fd *txn;
 	bool is_base = false;
 	long ret;
@@ -3756,8 +3755,7 @@ long pkm_lcs_transaction_fd_handle_late_commit_response(
 		return -EINVAL;
 
 	mutex_lock(&pkm_lcs_transaction_registry_lock);
-	list_for_each_entry(txn, &pkm_lcs_transaction_registry,
-			    registry_link) {
+	list_for_each_entry(txn, &pkm_lcs_transaction_registry, registry_link) {
 		bool match;
 
 		mutex_lock(&txn->bind_lock);
@@ -3808,8 +3806,7 @@ long pkm_lcs_transaction_fd_handle_late_commit_response(
 		if (effects_ret && !ret)
 			ret = effects_ret;
 	}
-	pkm_lcs_transaction_layer_delete_effects_destroy(
-		&layer_delete_effects);
+	pkm_lcs_transaction_layer_delete_effects_destroy(&layer_delete_effects);
 	return ret;
 }
 
@@ -3987,7 +3984,7 @@ long pkm_lcs_transaction_fd_begin_key_create_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4070,7 +4067,7 @@ long pkm_lcs_transaction_fd_begin_set_security_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4153,7 +4150,7 @@ long pkm_lcs_transaction_fd_begin_set_value_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4236,7 +4233,7 @@ long pkm_lcs_transaction_fd_begin_delete_value_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4319,7 +4316,7 @@ long pkm_lcs_transaction_fd_begin_blanket_tombstone_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4402,7 +4399,7 @@ long pkm_lcs_transaction_fd_begin_delete_key_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4485,7 +4482,7 @@ long pkm_lcs_transaction_fd_begin_hide_key_mutation(
 	struct pkm_lcs_transaction_mutation_handle *handle,
 	struct pkm_lcs_transaction_binding_plan *binding)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_log_entry *entry = NULL;
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4576,8 +4573,8 @@ long pkm_lcs_transaction_fd_set_delete_value_event(
 }
 
 long pkm_lcs_transaction_fd_set_blanket_tombstone_events(
-	struct pkm_lcs_transaction_mutation_handle *handle,
-	const u8 *events, size_t events_len, u32 event_count)
+	struct pkm_lcs_transaction_mutation_handle *handle, const u8 *events,
+	size_t events_len, u32 event_count)
 {
 	u8 *copy = NULL;
 	long ret;
@@ -4590,8 +4587,8 @@ long pkm_lcs_transaction_fd_set_blanket_tombstone_events(
 	if (handle->entry->blanket_tombstone.events)
 		return -EINVAL;
 
-	ret = pkm_lcs_transaction_value_event_bytes_validate(
-		events, events_len, event_count);
+	ret = pkm_lcs_transaction_value_event_bytes_validate(events, events_len,
+							     event_count);
 	if (ret)
 		return ret;
 
@@ -4630,9 +4627,10 @@ long pkm_lcs_transaction_fd_commit_mutation(
 	list_add_tail(&entry->link, &txn->mutation_log);
 	txn->mutation_log_entries++;
 	if (handle->audited) {
-		const void *token = handle->audit_token ?
-			handle->audit_token :
-			pkm_kacs_current_effective_token_ptr();
+		const void *token =
+			handle->audit_token ?
+				handle->audit_token :
+				pkm_kacs_current_effective_token_ptr();
 
 		/*
 		 * Kept from the first recorded write. Without it the end
@@ -4739,7 +4737,7 @@ long pkm_lcs_transaction_fd_bind_for_mutation(
 	const u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES],
 	struct pkm_lcs_transaction_binding_plan *out)
 {
-	struct pkm_lcs_transaction_binding_plan plan = { };
+	struct pkm_lcs_transaction_binding_plan plan = {};
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
 	u32 count = 0;
@@ -4804,10 +4802,8 @@ out_unlock:
 static bool pkm_lcs_transaction_state_known(u32 state)
 {
 	return state == REG_TXN_ACTIVE_UNBOUND ||
-	       state == REG_TXN_ACTIVE_BOUND ||
-	       state == REG_TXN_COMMITTED ||
-	       state == REG_TXN_ABORTED ||
-	       state == REG_TXN_TIMED_OUT ||
+	       state == REG_TXN_ACTIVE_BOUND || state == REG_TXN_COMMITTED ||
+	       state == REG_TXN_ABORTED || state == REG_TXN_TIMED_OUT ||
 	       state == REG_TXN_SOURCE_DOWN;
 }
 
@@ -4878,8 +4874,7 @@ out_unlock:
 	return ret;
 }
 
-long pkm_lcs_kunit_transaction_fd_set_commit_in_flight(int fd,
-						       bool in_flight)
+long pkm_lcs_kunit_transaction_fd_set_commit_in_flight(int fd, bool in_flight)
 {
 	struct pkm_lcs_transaction_fd *txn;
 	struct fd held;
@@ -4967,8 +4962,7 @@ long pkm_lcs_kunit_transaction_fd_commit_timeout(int fd, u32 timeout_ms)
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_transaction_fd_commit_from_state_timeout(txn,
-							      timeout_ms);
+	ret = pkm_lcs_transaction_fd_commit_from_state_timeout(txn, timeout_ms);
 	fdput(held);
 	return ret;
 }
@@ -5000,8 +4994,7 @@ u32 pkm_lcs_kunit_transaction_fd_retained_commit_count(void)
 	u32 count = 0;
 
 	mutex_lock(&pkm_lcs_transaction_registry_lock);
-	list_for_each_entry(txn, &pkm_lcs_transaction_registry,
-			    registry_link) {
+	list_for_each_entry(txn, &pkm_lcs_transaction_registry, registry_link) {
 		spin_lock_bh(&txn->lock);
 		if (txn->fd_released && txn->commit_in_flight)
 			count++;

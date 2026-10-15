@@ -60,13 +60,13 @@ void pkm_lcs_source_table_sequence_set_locked(bool initialized,
 					      u64 next_sequence);
 
 s64 pkm_lcs_source_slot_wait_epoch_snapshot(void);
-long pkm_lcs_source_slot_wait_epoch_change_interruptible_timeout(
-	s64 epoch, long timeout);
+long pkm_lcs_source_slot_wait_epoch_change_interruptible_timeout(s64 epoch,
+								 long timeout);
 unsigned long pkm_lcs_source_deadline_from_timeout_ms(u32 timeout_ms);
 long pkm_lcs_source_deadline_remaining(unsigned long deadline);
-long pkm_lcs_source_wait_for_slot(
-	u32 source_id, const struct pkm_lcs_runtime_limits *limits,
-	unsigned long deadline);
+long pkm_lcs_source_wait_for_slot(u32 source_id,
+				  const struct pkm_lcs_runtime_limits *limits,
+				  unsigned long deadline);
 
 void pkm_lcs_source_slot_pending_layer_deletes_destroy(
 	struct pkm_lcs_source_slot *slot);
@@ -95,7 +95,8 @@ long pkm_lcs_source_in_flight_insert_locked(
 	struct pkm_lcs_source_fd *source_fd, u64 request_id, u64 txn_id,
 	u16 op_code, const u8 key_guid[RSI_GUID_SIZE],
 	const struct pkm_lcs_runtime_limits *limits,
-	const struct pkm_lcs_source_restore_commit_late_effect_input *late_effect,
+	const struct pkm_lcs_source_restore_commit_late_effect_input
+		*late_effect,
 	struct pkm_lcs_source_response_waiter *waiter);
 struct pkm_lcs_source_in_flight_request *
 pkm_lcs_source_in_flight_find_locked(struct pkm_lcs_source_fd *source_fd,
@@ -119,16 +120,17 @@ void pkm_lcs_source_device_mark_down_file(struct file *file);
 void pkm_lcs_source_device_mark_malformed_protocol_file(struct file *file);
 ssize_t pkm_lcs_source_device_read_user(struct file *file, char __user *buf,
 					size_t count);
-ssize_t pkm_lcs_source_device_write_user(
-	struct file *file, const char __user *buf, size_t count,
-	struct pkm_lcs_source_response_result *result);
+ssize_t
+pkm_lcs_source_device_write_user(struct file *file, const char __user *buf,
+				 size_t count,
+				 struct pkm_lcs_source_response_result *result);
 long pkm_lcs_source_response_waiter_retain_frame(
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_response_frame *frame);
 void pkm_lcs_source_response_waiter_complete_with_frame(
 	struct pkm_lcs_source_response_waiter *waiter, long response_errno,
-	const struct pkm_lcs_source_response_result *result,
-	const u8 *frame, size_t frame_len);
+	const struct pkm_lcs_source_response_result *result, const u8 *frame,
+	size_t frame_len);
 void pkm_lcs_source_response_waiter_complete(
 	struct pkm_lcs_source_response_waiter *waiter, long response_errno,
 	const struct pkm_lcs_source_response_result *result);
@@ -161,18 +163,17 @@ long pkm_lcs_source_dispatch_query_values_request_with_waiter(
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_set_value_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const char *value_name, u32 value_name_len,
-	const char *layer_name, u32 layer_name_len, u32 value_type,
-	const u8 *data, size_t data_len, u64 sequence, u64 expected_sequence,
+	const char *value_name, u32 value_name_len, const char *layer_name,
+	u32 layer_name_len, u32 value_type, const u8 *data, size_t data_len,
+	u64 sequence, u64 expected_sequence,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_source_key_mutation_late_effect_input *late_effect,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_delete_value_entry_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const char *value_name, u32 value_name_len,
-	const char *layer_name, u32 layer_name_len,
-	const struct pkm_lcs_runtime_limits *limits,
+	const char *value_name, u32 value_name_len, const char *layer_name,
+	u32 layer_name_len, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_set_blanket_tombstone_request_with_waiter(
@@ -188,31 +189,28 @@ long pkm_lcs_source_dispatch_drop_key_request_with_waiter(
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_create_entry_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 parent_guid[RSI_GUID_SIZE],
-	const char *child_name, u32 child_name_len,
-	const char *layer_name, u32 layer_name_len,
-	const u8 child_guid[RSI_GUID_SIZE], u64 sequence,
+	const char *child_name, u32 child_name_len, const char *layer_name,
+	u32 layer_name_len, const u8 child_guid[RSI_GUID_SIZE], u64 sequence,
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_hide_delete_entry_request_with_waiter(
 	u32 source_id, u64 txn_id, bool hide,
-	const u8 parent_guid[RSI_GUID_SIZE],
-	const char *child_name, u32 child_name_len,
-	const char *layer_name, u32 layer_name_len, u64 sequence,
-	const struct pkm_lcs_runtime_limits *limits,
+	const u8 parent_guid[RSI_GUID_SIZE], const char *child_name,
+	u32 child_name_len, const char *layer_name, u32 layer_name_len,
+	u64 sequence, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_create_key_request_with_waiter(
 	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const char *name, u32 name_len,
-	const u8 parent_guid[RSI_GUID_SIZE], const u8 *sd, size_t sd_len,
-	bool volatile_key, bool symlink,
+	const char *name, u32 name_len, const u8 parent_guid[RSI_GUID_SIZE],
+	const u8 *sd, size_t sd_len, bool volatile_key, bool symlink,
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_write_key_request_with_waiter(
-	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE],
-	const u8 *sd, size_t sd_len, u64 last_write_time,
+	u32 source_id, u64 txn_id, const u8 guid[RSI_GUID_SIZE], const u8 *sd,
+	size_t sd_len, u64 last_write_time,
 	const struct pkm_lcs_runtime_limits *limits,
 	const struct pkm_lcs_source_key_mutation_late_effect_input *late_effect,
 	struct pkm_lcs_source_response_waiter *waiter,
@@ -220,7 +218,8 @@ long pkm_lcs_source_dispatch_write_key_request_with_waiter(
 long pkm_lcs_source_dispatch_transaction_request_with_waiter(
 	u32 source_id, u16 op_code, u64 transaction_id, u32 mode,
 	const struct pkm_lcs_runtime_limits *limits,
-	const struct pkm_lcs_source_restore_commit_late_effect_input *late_effect,
+	const struct pkm_lcs_source_restore_commit_late_effect_input
+		*late_effect,
 	struct pkm_lcs_source_response_waiter *waiter,
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_source_dispatch_flush_request_with_waiter(
@@ -235,8 +234,8 @@ long pkm_lcs_source_dispatch_delete_layer_request_with_waiter(
 	struct pkm_lcs_source_enqueue_result *result);
 long pkm_lcs_route_absolute_path_for_token_with_limits(
 	const void *token, const char *path, u32 path_len,
-	bool rewrite_current_user, const u8 (*scope_guids)[16],
-	u32 scope_count, const struct pkm_lcs_runtime_limits *limits,
+	bool rewrite_current_user, const u8 (*scope_guids)[16], u32 scope_count,
+	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_hive_route_result *result);
 long pkm_lcs_route_symlink_target_with_limits(
 	const char *target, u32 target_len, const u8 (*scope_guids)[16],
@@ -245,7 +244,7 @@ long pkm_lcs_route_symlink_target_with_limits(
 long pkm_lcs_publish_open_key_for_token(
 	const void *token, u32 source_id, const u8 key_guid[RSI_GUID_SIZE],
 	const u8 *sd, size_t sd_len, u32 desired_access,
-	const char * const *resolved_path,
+	const char *const *resolved_path,
 	const u8 (*ancestor_guids)[RSI_GUID_SIZE], u32 path_component_count,
 	const struct pkm_lcs_runtime_limits *limits);
 long pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
@@ -258,8 +257,7 @@ long pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
 long pkm_lcs_open_copied_relative_path_after_preflight(
 	const void *token, int parent_fd,
 	const struct pkm_lcs_syscall_path_copy *copy, u32 desired_access,
-	u32 flags, const struct pkm_lcs_rsi_layer_view *layers,
-	u32 layer_count,
+	u32 flags, const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
 	u32 private_layer_count, int txn_fd);
 long pkm_lcs_source_bootstrap_workqueue_init(void);

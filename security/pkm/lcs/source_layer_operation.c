@@ -26,7 +26,8 @@ static bool pkm_lcs_source_generation_skip_matches(
 	u32 source_id, const u8 root_guid[RSI_GUID_SIZE], u32 skip_source_id,
 	const u8 skip_root_guid[RSI_GUID_SIZE])
 {
-	return skip_source_id && skip_root_guid && source_id == skip_source_id &&
+	return skip_source_id && skip_root_guid &&
+	       source_id == skip_source_id &&
 	       !memcmp(root_guid, skip_root_guid, RSI_GUID_SIZE);
 }
 
@@ -46,7 +47,8 @@ static long pkm_lcs_source_preflight_layer_operation_generations(
 		u32 j;
 
 		slot = pkm_lcs_source_slot_find_locked(source_ids[i]);
-		if (!slot || slot->status != PKM_LCS_SOURCE_SLOT_STATUS_ACTIVE) {
+		if (!slot ||
+		    slot->status != PKM_LCS_SOURCE_SLOT_STATUS_ACTIVE) {
 			ret = -EIO;
 			goto out_unlock;
 		}
@@ -178,7 +180,8 @@ long pkm_lcs_source_delete_layer_round_trip_timeout(
 		response, enqueue);
 }
 
-static long pkm_lcs_source_delete_layer_round_trip_retaining_frame_timeout_with_limits(
+static long
+pkm_lcs_source_delete_layer_round_trip_retaining_frame_timeout_with_limits(
 	u32 source_id, const char *layer_name, u32 layer_name_len,
 	const struct pkm_lcs_runtime_limits *limits, u32 timeout_ms,
 	struct pkm_lcs_source_response_frame *frame,
@@ -231,11 +234,10 @@ static long pkm_lcs_source_delete_layer_round_trip_retaining_frame_timeout_with_
 
 static long pkm_lcs_source_apply_delete_layer_orphan_response_with_limits(
 	u32 source_id, const struct pkm_lcs_source_response_frame *frame,
-	u64 request_id,
-	const struct pkm_lcs_runtime_limits *limits,
+	u64 request_id, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_delete_layer_orphan_apply_result *result)
 {
-	struct pkm_lcs_rsi_delete_layer_response_summary summary = { };
+	struct pkm_lcs_rsi_delete_layer_response_summary summary = {};
 	u32 immediate_drop_count = 0;
 	u32 marked_fd_count = 0;
 	size_t guid_offset;
@@ -289,8 +291,7 @@ static long pkm_lcs_source_apply_delete_layer_orphan_response_with_limits(
 
 long pkm_lcs_source_apply_delete_layer_orphan_response(
 	u32 source_id, const struct pkm_lcs_source_response_frame *frame,
-	u64 request_id,
-	struct pkm_lcs_delete_layer_orphan_apply_result *result)
+	u64 request_id, struct pkm_lcs_delete_layer_orphan_apply_result *result)
 {
 	struct pkm_lcs_runtime_limits limits;
 
@@ -312,14 +313,15 @@ static long pkm_lcs_source_delete_layer_validate_request(
 		limits, &built);
 }
 
-static long pkm_lcs_source_delete_layer_round_trip_apply_orphans_timeout_with_limits(
+static long
+pkm_lcs_source_delete_layer_round_trip_apply_orphans_timeout_with_limits(
 	u32 source_id, const char *layer_name, u32 layer_name_len,
 	const struct pkm_lcs_runtime_limits *limits, u32 timeout_ms,
 	struct pkm_lcs_delete_layer_orphan_apply_result *orphan_result,
 	struct pkm_lcs_source_response_result *response,
 	struct pkm_lcs_source_enqueue_result *enqueue)
 {
-	struct pkm_lcs_source_response_result local_response = { };
+	struct pkm_lcs_source_response_result local_response = {};
 	struct pkm_lcs_source_response_frame frame;
 	long ret;
 
@@ -337,8 +339,7 @@ static long pkm_lcs_source_delete_layer_round_trip_apply_orphans_timeout_with_li
 	}
 
 	ret = pkm_lcs_source_apply_delete_layer_orphan_response_with_limits(
-		source_id, &frame, response->request_id, limits,
-		orphan_result);
+		source_id, &frame, response->request_id, limits, orphan_result);
 	pkm_lcs_source_response_frame_destroy(&frame);
 	return ret;
 }
@@ -358,8 +359,9 @@ long pkm_lcs_source_delete_layer_round_trip_apply_orphans_timeout(
 		orphan_result, response, enqueue);
 }
 
-static long pkm_lcs_source_pending_layer_delete_peek(
-	u32 source_id, char **layer_name_out, u32 *layer_name_len_out)
+static long pkm_lcs_source_pending_layer_delete_peek(u32 source_id,
+						     char **layer_name_out,
+						     u32 *layer_name_len_out)
 {
 	struct pkm_lcs_pending_layer_delete *entry;
 	struct pkm_lcs_source_slot *slot;
@@ -427,8 +429,8 @@ static long pkm_lcs_source_pending_layer_delete_remove(
 	list_for_each_entry_safe(entry, tmp, &slot->pending_layer_deletes,
 				 link) {
 		ret = pkm_lcs_layer_name_casefold_equal_with_limits(
-			entry->name, entry->name_len, layer_name, layer_name_len,
-			limits, &equal);
+			entry->name, entry->name_len, layer_name,
+			layer_name_len, limits, &equal);
 		if (ret)
 			goto out_unlock;
 		if (!equal) {
@@ -500,10 +502,10 @@ long pkm_lcs_source_replay_pending_layer_deletes_with_limits(
 	}
 
 out_free:
-	trace_lcs_layer_replay(source_id, layer_name_len,
-			       layer_name ? jhash(layer_name, layer_name_len, 0) :
-					    0,
-			       0, 0, 0, ret);
+	trace_lcs_layer_replay(
+		source_id, layer_name_len,
+		layer_name ? jhash(layer_name, layer_name_len, 0) : 0, 0, 0, 0,
+		ret);
 	kfree(layer_name);
 	return ret;
 }
@@ -535,9 +537,8 @@ pkm_lcs_source_delete_layer_broadcast_apply_orphans_skip_generation_timeout_with
 	if (!source_ids)
 		return -ENOMEM;
 
-	ret = pkm_lcs_source_delete_layer_validate_request(layer_name,
-							   layer_name_len,
-							   limits);
+	ret = pkm_lcs_source_delete_layer_validate_request(
+		layer_name, layer_name_len, limits);
 	if (ret)
 		goto out;
 
@@ -562,7 +563,7 @@ pkm_lcs_source_delete_layer_broadcast_apply_orphans_skip_generation_timeout_with
 		result->active_source_count = source_count;
 
 	for (i = 0; i < source_count; i++) {
-		struct pkm_lcs_delete_layer_orphan_apply_result apply = { };
+		struct pkm_lcs_delete_layer_orphan_apply_result apply = {};
 		u32 generation_hive_count = 0;
 		u32 watch_overflow_count = 0;
 
@@ -754,8 +755,8 @@ long pkm_lcs_source_delete_layer_orchestrate_skip_generation_timeout_with_limits
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_delete_layer_orchestration_result *result)
 {
-	struct pkm_lcs_transaction_layer_abort_result abort_result = { };
-	struct pkm_lcs_delete_layer_broadcast_result broadcast_result = { };
+	struct pkm_lcs_transaction_layer_abort_result abort_result = {};
+	struct pkm_lcs_delete_layer_broadcast_result broadcast_result = {};
 	bool removed = false;
 	long ret;
 
@@ -788,7 +789,8 @@ long pkm_lcs_source_delete_layer_orchestrate_skip_generation_timeout_with_limits
 		layer_name, layer_name_len, timeout_ms, skip_source_id,
 		skip_root_guid, limits, &broadcast_result);
 	if (result) {
-		result->active_source_count = broadcast_result.active_source_count;
+		result->active_source_count =
+			broadcast_result.active_source_count;
 		result->completed_source_count =
 			broadcast_result.completed_source_count;
 		result->orphaned_guid_count =
@@ -888,8 +890,8 @@ long pkm_lcs_source_flush_round_trip_timeout_with_limits(
 }
 
 long pkm_lcs_source_flush_round_trip_timeout(
-	u32 source_id, const char *hive_name, u32 hive_name_len,
-	u32 timeout_ms, struct pkm_lcs_source_response_result *response,
+	u32 source_id, const char *hive_name, u32 hive_name_len, u32 timeout_ms,
+	struct pkm_lcs_source_response_result *response,
 	struct pkm_lcs_source_enqueue_result *enqueue)
 {
 	struct pkm_lcs_runtime_limits limits;

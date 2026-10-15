@@ -188,8 +188,7 @@ const char *pkm_kacs_inode_sd_xattr_name(const struct inode *inode)
 	return "security.peios.sd";
 }
 
-bool pkm_kacs_is_canonical_sd_xattr(const struct inode *inode,
-				    const char *name)
+bool pkm_kacs_is_canonical_sd_xattr(const struct inode *inode, const char *name)
 {
 	if (!name)
 		return false;
@@ -269,7 +268,8 @@ long pkm_kacs_copy_mount_template_from_user(
 	if (args->template_sd_len == 0)
 		return 0;
 
-	template_user = (const void __user *)(unsigned long)args->template_sd_ptr;
+	template_user =
+		(const void __user *)(unsigned long)args->template_sd_ptr;
 	template_bytes = memdup_user(template_user, args->template_sd_len);
 	if (IS_ERR(template_bytes))
 		return PTR_ERR(template_bytes);
@@ -314,14 +314,17 @@ static void pkm_kacs_audit_mount_policy_changed(const void *subject_token,
 		pip_type = 0;
 		pip_trust = 0;
 	}
-	(void)kacs_rust_emit_mount_policy_changed(
-		subject_token, (const u8 *)fs_type, fs_type ? strlen(fs_type) : 0,
-		policy, previous, generation, pip_type, pip_trust);
+	(void)kacs_rust_emit_mount_policy_changed(subject_token,
+						  (const u8 *)fs_type,
+						  fs_type ? strlen(fs_type) : 0,
+						  policy, previous, generation,
+						  pip_type, pip_trust);
 }
 
-long pkm_kacs_set_mount_policy_core(
-	const void *subject_token, struct super_block *sb,
-	const struct kacs_mount_policy_args *args, const u8 *template_bytes)
+long pkm_kacs_set_mount_policy_core(const void *subject_token,
+				    struct super_block *sb,
+				    const struct kacs_mount_policy_args *args,
+				    const u8 *template_bytes)
 {
 	struct pkm_kacs_superblock_security *sec;
 	const u8 *old_template;
@@ -404,9 +407,9 @@ long pkm_kacs_set_mount_policy_core(
 	return 0;
 }
 
-long pkm_kacs_get_mount_policy_snapshot(
-	const struct super_block *sb, struct kacs_mount_policy_args *snapshot,
-	const u8 **template_out)
+long pkm_kacs_get_mount_policy_snapshot(const struct super_block *sb,
+					struct kacs_mount_policy_args *snapshot,
+					const u8 **template_out)
 {
 	struct pkm_kacs_superblock_security *sec;
 	const u8 *template_copy = NULL;

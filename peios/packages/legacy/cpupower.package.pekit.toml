@@ -1,0 +1,30 @@
+# cpupower — inspect and tune CPU frequency / idle behaviour. Built from the
+# in-tree tools/power/cpupower (build.tools). libcpupower is split into
+# cpupower-libs / cpupower-libs-devel.
+#
+# Omitted: the systemd integration (usr/libexec/cpupower service helper,
+# usr/lib/systemd/system/cpupower.service, etc/cpupower-service.conf) — Peios is
+# not systemd-based.
+#
+# Runtime ELF dependencies are derived from the staged binary; the exact
+# sibling libcpupower package is declared below.
+
+# PSPU §5.24: a payload carrying man pages SHOULD declare man-db, so that
+# `man -k` and `apropos` find them instead of falling back to a filesystem
+# scan. Top-level, not inside a table -- TOML would otherwise scope it to
+# whichever table precedes it.
+side_effects = ["man-db"]
+
+[package]
+name = "dev.peios.cpupower"
+description = "CPU frequency and idle-state control (from Linux 7.0.9 tools/power/cpupower)"
+
+[dependencies]
+"dev.peios.cpupower-libs" = "= {{release}}"
+
+[files]
+"@source:COPYING" = "usr/share/licenses/dev.peios.cpupower/COPYING"
+"tools:usr/bin/cpupower" = "usr/bin/cpupower"
+"tools:usr/share/bash-completion/completions/cpupower" = "usr/share/bash-completion/completions/cpupower"
+"tools:usr/share/locale/**" = "usr/share/locale/"
+"tools:usr/share/man/man1/cpupower*.1.gz" = "usr/share/man/man1/"

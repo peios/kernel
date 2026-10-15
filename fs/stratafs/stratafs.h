@@ -122,7 +122,8 @@ struct seq_file;
  * Split out of ->show_options so it can be driven from a KUnit case with a
  * seq_file and an sbi, rather than a fabricated dentry and superblock.
  */
-void stratafs_show_strata(struct seq_file *m, const struct stratafs_sb_info *sbi);
+void stratafs_show_strata(struct seq_file *m,
+			  const struct stratafs_sb_info *sbi);
 
 /*
  * Whether a remount's strata= names the stack the mount already has, §2.3.
@@ -150,7 +151,7 @@ extern const struct inode_operations stratafs_special_inode_operations;
 extern const struct file_operations stratafs_file_operations;
 extern const struct file_operations stratafs_dir_operations;
 extern const struct super_operations stratafs_super_operations;
-extern const struct xattr_handler * const stratafs_xattr_handlers[];
+extern const struct xattr_handler *const stratafs_xattr_handlers[];
 ssize_t stratafs_listxattr(struct dentry *dentry, char *list, size_t size);
 
 struct dentry *stratafs_lookup(struct inode *dir, struct dentry *dentry,
@@ -187,41 +188,37 @@ int stratafs_detach_open_file(struct file *file, const struct path *provider,
 			      unsigned int provider_index);
 int stratafs_settle_open_directory(struct file *file,
 				   const struct stratafs_paths *participants);
-int stratafs_rebind_dentry(struct dentry *dentry,
-			   const struct path *provider,
+int stratafs_rebind_dentry(struct dentry *dentry, const struct path *provider,
 			   unsigned int provider_index);
 int stratafs_rebind_open_file(struct file *file, const struct path *provider,
 			      unsigned int provider_index);
 int stratafs_copy_up_metadata_file(struct file *file, struct dentry *dentry,
-				    struct path *provider,
-				    unsigned int *provider_index);
+				   struct path *provider,
+				   unsigned int *provider_index);
 void stratafs_init_identities(struct stratafs_sb_info *sbi);
 void stratafs_free_identities(struct stratafs_sb_info *sbi);
 unsigned long stratafs_derive_ino(unsigned long fsid, u64 ino);
 int stratafs_alloc_ino(struct super_block *sb, unsigned long *number);
 int stratafs_identity_number(struct super_block *sb, struct inode *provider,
-			    const struct kstat *stat, unsigned long *number);
+			     const struct kstat *stat, unsigned long *number);
 int stratafs_provider_ino(struct super_block *sb, const struct path *provider,
-			 unsigned long *number);
+			  unsigned long *number);
 int stratafs_getattr(struct mnt_idmap *idmap, const struct path *path,
-			     struct kstat *stat, u32 request_mask,
-			     unsigned int flags);
+		     struct kstat *stat, u32 request_mask, unsigned int flags);
 int stratafs_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
-			     struct iattr *attr);
+		     struct iattr *attr);
 int stratafs_notify_change(const struct path *provider,
 			   const struct iattr *attr);
 
 int stratafs_get_provider(struct dentry *dentry, struct path *path,
 			  unsigned int *index);
-bool stratafs_stratum_accepts(const struct super_block *sb,
-			      unsigned int index,
+bool stratafs_stratum_accepts(const struct super_block *sb, unsigned int index,
 			      const struct path *provider);
 int stratafs_route_existing(const struct super_block *sb,
 			    unsigned int provider_index,
 			    const struct path *provider, bool copyable);
-void stratafs_audit_refusal(const struct dentry *dentry,
-			    const char *operation, int provider_index,
-			    int result, bool deferred);
+void stratafs_audit_refusal(const struct dentry *dentry, const char *operation,
+			    int provider_index, int result, bool deferred);
 
 int stratafs_copy_up_file(struct file *file);
 int stratafs_copy_up_path(struct dentry *dentry, struct path *result,
@@ -234,7 +231,7 @@ int stratafs_provider_directory(struct super_block *sb, const char *relative,
 bool stratafs_is_staging(const struct super_block *sb, unsigned int index,
 			 const char *relative);
 struct stratafs_staging *stratafs_add_staging(struct super_block *sb,
-					       const char *relative);
+					      const char *relative);
 void stratafs_remove_staging(struct super_block *sb,
 			     struct stratafs_staging *staging);
 

@@ -1,0 +1,25 @@
+load(":rules.bzl", "local_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["rules.bzl"])
+
+filegroup(
+    name = "sources",
+    srcs = glob(
+        ["*"],
+        exclude = ["BUILD.bazel"],
+    ),
+)
+
+local_test(
+    name = "tests",
+    size = "small",
+    srcs = ["//:style-sources"],
+    command = "exec python3 peios/style/test_style.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)

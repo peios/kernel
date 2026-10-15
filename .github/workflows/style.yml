@@ -1,0 +1,43 @@
+name: Kernel style and core tests
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kernel-style-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  style:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.4"
+      - name: Install the pinned Rust tools
+        run: |
+          rustup toolchain install 1.83.0 --profile minimal --component rustfmt
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy
+      - name: Install locked style tools
+        run: python peios/style.py setup
+      - name: Check style and the style command
+        run: ./peios/bazel test //:style //peios/style:tests
+      - name: Test shared Rust cores and userspace ABI bindings
+        run: ./peios/bazel test //:rust-core-tests //:uapi-tests
+      - name: Check generated KMES event tables
+        run: ./peios/bazel test //:kmes-event-table-test
+      - name: Check data generators and qualification harnesses
+        run: ./peios/bazel test //:data-generator-tests //:kunit-runner-tests //:qualification-build-test
+      - name: Review kernel checkpatch findings (advisory)
+        if: github.event_name == 'pull_request'
+        run: ./peios/bazel run //:style-review -- HEAD^

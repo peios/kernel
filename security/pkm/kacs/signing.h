@@ -39,8 +39,8 @@ struct pkm_kacs_signing_material {
  * The signature within the blob, or NULL if unsigned. A view, not a copy —
  * valid only until pkm_kacs_signing_material_release().
  */
-static inline const u8 *pkm_kacs_signing_material_sig(
-	const struct pkm_kacs_signing_material *material)
+static inline const u8 *
+pkm_kacs_signing_material_sig(const struct pkm_kacs_signing_material *material)
 {
 	return material->blob ? material->blob + 1 : NULL;
 }

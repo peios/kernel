@@ -401,11 +401,11 @@ pub fn select_layer_owner<'a>(
     let metadata_security_descriptor = input
         .metadata_security_descriptor
         .ok_or(LcsError::LayerOwnerUnavailable)?;
-    let sd = crate::kacs_core::SecurityDescriptor::parse(metadata_security_descriptor).map_err(|_| {
-        LcsError::MalformedSecurityDescriptor {
+    let sd = crate::kacs_core::SecurityDescriptor::parse(metadata_security_descriptor).map_err(
+        |_| LcsError::MalformedSecurityDescriptor {
             field: "layer_metadata.sd",
-        }
-    })?;
+        },
+    )?;
     let owner = sd
         .owner()
         .ok_or(LcsError::MalformedSecurityDescriptor {

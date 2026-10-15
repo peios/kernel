@@ -45,8 +45,9 @@
 
 static bool stratafs_test_hooks_on;
 module_param_named(test_hooks, stratafs_test_hooks_on, bool, 0444);
-MODULE_PARM_DESC(test_hooks,
-		 "Register the stratafs test rendezvous/fail points in securityfs");
+MODULE_PARM_DESC(
+	test_hooks,
+	"Register the stratafs test rendezvous/fail points in securityfs");
 
 enum stratafs_hook_mode {
 	STRATAFS_HOOK_NONE = 0,
@@ -57,7 +58,7 @@ enum stratafs_hook_mode {
 struct stratafs_hook {
 	const char *name;
 	enum stratafs_hook_mode mode;
-	int error;		/* negative errno armed by "fail" */
+	int error; /* negative errno armed by "fail" */
 	unsigned int waiting;
 	unsigned int hits;
 };
@@ -66,13 +67,13 @@ static DEFINE_SPINLOCK(stratafs_hook_lock);
 static DECLARE_WAIT_QUEUE_HEAD(stratafs_hook_wq);
 
 static struct stratafs_hook stratafs_hooks[STRATAFS_HOOK_POINTS] = {
-	[STRATAFS_HOOK_COPY_UP_BEGIN]	= { .name = "copy-up-begin" },
-	[STRATAFS_HOOK_COPY_UP_PUBLISH]	= { .name = "copy-up-publish" },
-	[STRATAFS_HOOK_RENAME_PROVIDER]	= { .name = "rename-provider" },
-	[STRATAFS_HOOK_LINK_INSTALL]	= { .name = "link-install" },
-	[STRATAFS_HOOK_SUPERSEDE_PUBLISH]	= { .name = "supersede-publish" },
-	[STRATAFS_HOOK_SUPERSEDE_REMOVE]	= { .name = "supersede-remove" },
-	[STRATAFS_HOOK_STAGING_RECOVER]	= { .name = "staging-recover" },
+	[STRATAFS_HOOK_COPY_UP_BEGIN] = { .name = "copy-up-begin" },
+	[STRATAFS_HOOK_COPY_UP_PUBLISH] = { .name = "copy-up-publish" },
+	[STRATAFS_HOOK_RENAME_PROVIDER] = { .name = "rename-provider" },
+	[STRATAFS_HOOK_LINK_INSTALL] = { .name = "link-install" },
+	[STRATAFS_HOOK_SUPERSEDE_PUBLISH] = { .name = "supersede-publish" },
+	[STRATAFS_HOOK_SUPERSEDE_REMOVE] = { .name = "supersede-remove" },
+	[STRATAFS_HOOK_STAGING_RECOVER] = { .name = "staging-recover" },
 };
 
 int stratafs_test_hook(enum stratafs_test_hook_point point)
@@ -96,9 +97,9 @@ int stratafs_test_hook(enum stratafs_test_hook_point point)
 		hook->hits++;
 		hook->waiting++;
 		spin_unlock(&stratafs_hook_lock);
-		ret = wait_event_killable(
-			stratafs_hook_wq,
-			READ_ONCE(hook->mode) != STRATAFS_HOOK_HOLD);
+		ret = wait_event_killable(stratafs_hook_wq,
+					  READ_ONCE(hook->mode) !=
+						  STRATAFS_HOOK_HOLD);
 		spin_lock(&stratafs_hook_lock);
 		hook->waiting--;
 		break;
@@ -110,7 +111,7 @@ int stratafs_test_hook(enum stratafs_test_hook_point point)
 static ssize_t stratafs_hook_read(struct file *file, char __user *ubuf,
 				  size_t count, loff_t *ppos)
 {
-	static const char * const modes[] = { "none", "hold", "fail" };
+	static const char *const modes[] = { "none", "hold", "fail" };
 	struct stratafs_hook *hook = file->private_data;
 	char buf[64];
 	int len;
@@ -174,12 +175,14 @@ static int __init stratafs_test_hooks_init(void)
 
 	dir = securityfs_create_dir("stratafs", NULL);
 	if (IS_ERR(dir)) {
-		pr_warn("stratafs: test hooks unavailable: %ld\n", PTR_ERR(dir));
+		pr_warn("stratafs: test hooks unavailable: %ld\n",
+			PTR_ERR(dir));
 		return 0;
 	}
 	dir = securityfs_create_dir("hooks", dir);
 	if (IS_ERR(dir)) {
-		pr_warn("stratafs: test hooks unavailable: %ld\n", PTR_ERR(dir));
+		pr_warn("stratafs: test hooks unavailable: %ld\n",
+			PTR_ERR(dir));
 		return 0;
 	}
 	for (i = 0; i < STRATAFS_HOOK_POINTS; i++) {

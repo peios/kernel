@@ -81,7 +81,8 @@ static struct security_hook_list pkm_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(sb_free_security, pkm_kacs_sb_free_security),
 	LSM_HOOK_INIT(sb_kern_mount, pkm_kacs_sb_kern_mount),
 	LSM_HOOK_INIT(inode_alloc_security, pkm_kacs_inode_alloc_security),
-	LSM_HOOK_INIT(inode_free_security_rcu, pkm_kacs_inode_free_security_rcu),
+	LSM_HOOK_INIT(inode_free_security_rcu,
+		      pkm_kacs_inode_free_security_rcu),
 	LSM_HOOK_INIT(inode_getattr, pkm_kacs_inode_getattr),
 	LSM_HOOK_INIT(path_notify, pkm_kacs_path_notify),
 	LSM_HOOK_INIT(inode_setattr, pkm_kacs_inode_setattr),
@@ -112,8 +113,7 @@ static struct security_hook_list pkm_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(inode_init_security, pkm_kacs_inode_init_security),
 	LSM_HOOK_INIT(inode_post_create_tmpfile,
 		      pkm_kacs_copy_up_post_create_tmpfile),
-	LSM_HOOK_INIT(dentry_create_files_as,
-		      pkm_kacs_dentry_create_files_as),
+	LSM_HOOK_INIT(dentry_create_files_as, pkm_kacs_dentry_create_files_as),
 	LSM_HOOK_INIT(file_alloc_security, pkm_kacs_file_alloc_security),
 	LSM_HOOK_INIT(backing_file_alloc, pkm_kacs_backing_file_alloc),
 	LSM_HOOK_INIT(file_release, pkm_kacs_file_release),
@@ -186,8 +186,6 @@ const void *pkm_kacs_boot_anonymous_token_ptr(void)
 	return pkm_kacs_boot_anonymous_token;
 }
 
-
-
 int pkm_kacs_resolve_ctx_from_token(const void *token,
 				    struct pkm_kacs_resolved_ctx *out)
 {
@@ -224,8 +222,6 @@ int pkm_kacs_resolve_current_primary_ctx(struct pkm_kacs_resolved_ctx *out)
 	return pkm_kacs_resolve_ctx_from_token(
 		pkm_kacs_current_primary_token_ptr(), out);
 }
-
-
 
 static int __init pkm_init(void)
 {

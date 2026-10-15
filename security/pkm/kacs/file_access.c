@@ -36,7 +36,7 @@
 #include "object_lifecycle.h"
 #include "token_runtime.h"
 
-#define PKM_KACS_FILE_DATA_RIGHTS                                             \
+#define PKM_KACS_FILE_DATA_RIGHTS \
 	(KACS_FILE_READ_DATA | KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA)
 
 /*
@@ -52,8 +52,7 @@ struct pkm_kacs_mp {
 	size_t len;
 };
 
-static void pkm_kacs_mp_raw(struct pkm_kacs_mp *mp, const void *src,
-			    size_t n)
+static void pkm_kacs_mp_raw(struct pkm_kacs_mp *mp, const void *src, size_t n)
 {
 	if (mp->out)
 		memcpy(mp->out + mp->len, src, n);
@@ -200,11 +199,12 @@ static void *pkm_kacs_stratafs_record_alloc(size_t len)
 	return kmalloc(len, GFP_KERNEL);
 }
 
-static void pkm_kacs_stratafs_copy_up_fields(
-	struct pkm_kacs_mp *mp, const char *relative, size_t relative_len,
-	u32 provider_index, const char *provider, size_t provider_len,
-	u32 create_index, const char *create, size_t create_len, int result,
-	bool reduced)
+static void
+pkm_kacs_stratafs_copy_up_fields(struct pkm_kacs_mp *mp, const char *relative,
+				 size_t relative_len, u32 provider_index,
+				 const char *provider, size_t provider_len,
+				 u32 create_index, const char *create,
+				 size_t create_len, int result, bool reduced)
 {
 	bool success = result >= 0;
 
@@ -235,15 +235,14 @@ void pkm_kacs_stratafs_audit_copy_up(const char *relative_path,
 				     u32 provider_index,
 				     const char *provider_stratum,
 				     u32 create_index,
-				     const char *create_stratum,
-				     int result)
+				     const char *create_stratum, int result)
 {
 	const char *relative = relative_path ? relative_path : "";
 	u8 reduced[PKM_KACS_STRATAFS_REDUCED_MAX];
 	size_t relative_len;
 	size_t provider_len;
 	size_t create_len;
-	struct pkm_kacs_mp mp = { };
+	struct pkm_kacs_mp mp = {};
 
 	if (!pkm_kmes_event_enabled(PKM_KMES_EV_STRATAFS_FILE_COPIED_UP))
 		return;
@@ -264,12 +263,14 @@ void pkm_kacs_stratafs_audit_copy_up(const char *relative_path,
 	mp.out = pkm_kacs_stratafs_record_alloc(mp.len);
 	if (mp.out) {
 		mp.len = 0;
-		pkm_kacs_stratafs_copy_up_fields(
-			&mp, relative, relative_len, provider_index,
-			provider_stratum, provider_len, create_index,
-			create_stratum, create_len, result, false);
+		pkm_kacs_stratafs_copy_up_fields(&mp, relative, relative_len,
+						 provider_index,
+						 provider_stratum, provider_len,
+						 create_index, create_stratum,
+						 create_len, result, false);
 		pkm_kmes_emit_kernel(
-			KMES_ORIGIN_KACS, PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE,
+			KMES_ORIGIN_KACS,
+			PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE,
 			sizeof(PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE) - 1,
 			mp.out, mp.len);
 		kfree(mp.out);
@@ -292,10 +293,10 @@ void pkm_kacs_stratafs_audit_copy_up(const char *relative_path,
 					 provider_len, create_index,
 					 create_stratum, create_len, result,
 					 true);
-	pkm_kmes_emit_kernel(KMES_ORIGIN_KACS,
-			     PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE,
-			     sizeof(PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE) - 1,
-			     mp.out, mp.len);
+	pkm_kmes_emit_kernel(
+		KMES_ORIGIN_KACS, PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE,
+		sizeof(PKM_KMES_EV_STRATAFS_FILE_COPIED_UP_TYPE) - 1, mp.out,
+		mp.len);
 }
 
 static void pkm_kacs_stratafs_refusal_fields(
@@ -333,8 +334,8 @@ static void pkm_kacs_stratafs_refusal_fields(
  */
 static size_t pkm_kacs_stratafs_refusal_payload(
 	u8 *out, size_t capacity, const char *relative_path,
-	const char *operation, s32 provider_index,
-	const char *provider_stratum, int result, bool deferred, bool reduced)
+	const char *operation, s32 provider_index, const char *provider_stratum,
+	int result, bool deferred, bool reduced)
 {
 	const char *relative = relative_path ? relative_path : "";
 	size_t relative_len = strnlen(relative, PATH_MAX);
@@ -346,7 +347,7 @@ static size_t pkm_kacs_stratafs_refusal_payload(
 	 * as -1 and nil.
 	 */
 	bool provider_known = provider_index >= 0 && provider_stratum;
-	struct pkm_kacs_mp mp = { };
+	struct pkm_kacs_mp mp = {};
 	size_t operation_len;
 	size_t provider_len;
 
@@ -379,9 +380,11 @@ static size_t pkm_kacs_stratafs_refusal_payload(
 	return mp.len;
 }
 
-void pkm_kacs_stratafs_audit_mutation_refused(
-	const char *relative_path, const char *operation, s32 provider_index,
-	const char *provider_stratum, int result, bool deferred)
+void pkm_kacs_stratafs_audit_mutation_refused(const char *relative_path,
+					      const char *operation,
+					      s32 provider_index,
+					      const char *provider_stratum,
+					      int result, bool deferred)
 {
 	u8 reduced[PKM_KACS_STRATAFS_REDUCED_MAX];
 	size_t size;
@@ -390,17 +393,17 @@ void pkm_kacs_stratafs_audit_mutation_refused(
 
 	if (!pkm_kmes_event_enabled(PKM_KMES_EV_STRATAFS_MUTATION_REFUSED))
 		return;
-	size = pkm_kacs_stratafs_refusal_payload(
-		NULL, 0, relative_path, operation, provider_index,
-		provider_stratum, result, deferred, false);
+	size = pkm_kacs_stratafs_refusal_payload(NULL, 0, relative_path,
+						 operation, provider_index,
+						 provider_stratum, result,
+						 deferred, false);
 	if (!size)
 		return;
 	payload = pkm_kacs_stratafs_record_alloc(size);
 	if (payload) {
 		len = pkm_kacs_stratafs_refusal_payload(
-			payload, size, relative_path, operation,
-			provider_index, provider_stratum, result, deferred,
-			false);
+			payload, size, relative_path, operation, provider_index,
+			provider_stratum, result, deferred, false);
 	} else {
 		/*
 		 * The reduced record, without paths. The operation is bounded
@@ -414,21 +417,25 @@ void pkm_kacs_stratafs_audit_mutation_refused(
 	}
 	if (len)
 		pkm_kmes_emit_kernel(
-			KMES_ORIGIN_KACS, PKM_KMES_EV_STRATAFS_MUTATION_REFUSED_TYPE,
+			KMES_ORIGIN_KACS,
+			PKM_KMES_EV_STRATAFS_MUTATION_REFUSED_TYPE,
 			sizeof(PKM_KMES_EV_STRATAFS_MUTATION_REFUSED_TYPE) - 1,
 			payload ? payload : reduced, len);
 	kfree(payload);
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-size_t pkm_kacs_kunit_stratafs_refusal_payload(
-	u8 *out, size_t capacity, const char *relative_path,
-	const char *operation, s32 provider_index,
-	const char *provider_stratum, int result, bool deferred)
+size_t pkm_kacs_kunit_stratafs_refusal_payload(u8 *out, size_t capacity,
+					       const char *relative_path,
+					       const char *operation,
+					       s32 provider_index,
+					       const char *provider_stratum,
+					       int result, bool deferred)
 {
-	return pkm_kacs_stratafs_refusal_payload(
-		out, capacity, relative_path, operation, provider_index,
-		provider_stratum, result, deferred, false);
+	return pkm_kacs_stratafs_refusal_payload(out, capacity, relative_path,
+						 operation, provider_index,
+						 provider_stratum, result,
+						 deferred, false);
 }
 #endif
 
@@ -510,9 +517,9 @@ int pkm_kacs_stratafs_delete_on_close_authorize_parent(
 		KACS_FILE_DELETE_CHILD);
 }
 
-int pkm_kacs_stratafs_delete_on_close_bind_provider(
-	const struct dentry *outer, const struct path *parent,
-	struct dentry *target)
+int pkm_kacs_stratafs_delete_on_close_bind_provider(const struct dentry *outer,
+						    const struct path *parent,
+						    struct dentry *target)
 {
 	struct pkm_kacs_task_security *task_sec;
 	struct inode *parent_inode;
@@ -608,8 +615,8 @@ int pkm_kacs_stratafs_authorize_path(const struct path *path,
 	if (ret)
 		goto out;
 	ret = kacs_rust_check_file_sd_with_intent_audit_caap(
-		subject_token, bytes, len, desired_access, 0, pip_type, pip_trust,
-		caap_cache, &granted, &continuous_audit);
+		subject_token, bytes, len, desired_access, 0, pip_type,
+		pip_trust, caap_cache, &granted, &continuous_audit);
 	pkm_kacs_caap_cache_unlock();
 out:
 	kvfree(bytes);
@@ -634,7 +641,7 @@ void pkm_kacs_stratafs_end_create_decision(void)
 }
 
 int pkm_kacs_stratafs_begin_create_decision(const struct path *authority,
-					     u32 desired_access)
+					    u32 desired_access)
 {
 	struct pkm_kacs_task_security *task_sec;
 	const void *subject_token;
@@ -666,8 +673,8 @@ int pkm_kacs_stratafs_begin_create_decision(const struct path *authority,
 	return 0;
 }
 
-int pkm_kacs_stratafs_set_native_create_decision(
-	const struct path *authority, u32 desired_access)
+int pkm_kacs_stratafs_set_native_create_decision(const struct path *authority,
+						 u32 desired_access)
 {
 	struct pkm_kacs_task_security *task_sec;
 	const void *subject_token;
@@ -691,19 +698,19 @@ int pkm_kacs_stratafs_set_native_create_decision(
 }
 
 int pkm_kacs_stratafs_bind_create_decision(const struct inode *provider_parent,
-					    const struct dentry *target)
+					   const struct dentry *target)
 {
 	struct pkm_kacs_task_security *task_sec;
 
 	if (!current || !current->security || !provider_parent ||
-	    (target && (d_inode((struct dentry *)target) ||
-			target->d_parent == NULL ||
-			d_inode(target->d_parent) != provider_parent)))
+	    (target &&
+	     (d_inode((struct dentry *)target) || target->d_parent == NULL ||
+	      d_inode(target->d_parent) != provider_parent)))
 		return -EACCES;
 	task_sec = pkm_kacs_task(current);
 	if (task_sec->stratafs_create_state != 1 ||
 	    task_sec->stratafs_create_subject !=
-		pkm_kacs_current_effective_token_ptr())
+		    pkm_kacs_current_effective_token_ptr())
 		return -EACCES;
 	task_sec->stratafs_create_parent = provider_parent;
 	task_sec->stratafs_create_dentry = target;
@@ -748,8 +755,8 @@ ssize_t pkm_kacs_stratafs_bare_root_descriptor(const struct cred *mounter,
 {
 	static const u8 system_sid[] = {
 		/* S-1-5-18 */
-		0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-		0x12, 0x00, 0x00, 0x00,
+		0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x05, 0x12, 0x00, 0x00, 0x00,
 	};
 	const u8 *owner_sid = system_sid;
 	size_t owner_sid_len = sizeof(system_sid);
@@ -769,9 +776,8 @@ ssize_t pkm_kacs_stratafs_bare_root_descriptor(const struct cred *mounter,
 		}
 	}
 
-	sd_bytes = kacs_rust_create_stratafs_bare_root_sd(owner_sid,
-							  owner_sid_len,
-							  &sd_len);
+	sd_bytes = kacs_rust_create_stratafs_bare_root_sd(
+		owner_sid, owner_sid_len, &sd_len);
 	if (!sd_bytes || !sd_len)
 		return -EIO;
 	if (!buffer) {
@@ -788,25 +794,107 @@ ssize_t pkm_kacs_stratafs_bare_root_descriptor(const struct cred *mounter,
 
 static const u8 pkm_kacs_sysfs_write_gate_sd[] = {
 	/* Self-relative SD: owner SYSTEM, group SYSTEM, DACL below. */
-	0x01, 0x00, 0x0f, 0x80, 0x14, 0x00, 0x00, 0x00,
-	0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x2c, 0x00, 0x00, 0x00,
+	0x01,
+	0x00,
+	0x0f,
+	0x80,
+	0x14,
+	0x00,
+	0x00,
+	0x00,
+	0x20,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x2c,
+	0x00,
+	0x00,
+	0x00,
 	/* S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 	/* S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 	/* DACL: Administrators and SYSTEM may write. */
-	0x02, 0x00, 0x34, 0x00, 0x02, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x18, 0x00, 0x02, 0x00, 0x00, 0x00,
+	0x02,
+	0x00,
+	0x34,
+	0x00,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x18,
+	0x00,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
 	/* S-1-5-32-544 */
-	0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00,
-	0x00, 0x00, 0x14, 0x00, 0x02, 0x00, 0x00, 0x00,
+	0x01,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x20,
+	0x00,
+	0x00,
+	0x00,
+	0x20,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x14,
+	0x00,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
 	/* S-1-5-18 */
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
-	0x12, 0x00, 0x00, 0x00,
+	0x01,
+	0x01,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x05,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
 };
 
 static const char pkm_kacs_audit_op_file_access[] = "file.access";
@@ -846,8 +934,7 @@ int pkm_kacs_file_permission(struct file *file, int mask)
 	return pkm_kacs_check_file_permission_snapshot(file, mask);
 }
 
-int pkm_kacs_file_ioctl(struct file *file, unsigned int cmd,
-			unsigned long arg)
+int pkm_kacs_file_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	if (pkm_kacs_copy_up_file_is_internal(file))
 		return -EACCES;
@@ -869,8 +956,7 @@ int pkm_kacs_file_lock(struct file *file, unsigned int cmd)
 	return pkm_kacs_check_file_lock_snapshot(file, cmd);
 }
 
-int pkm_kacs_file_fcntl(struct file *file, unsigned int cmd,
-			unsigned long arg)
+int pkm_kacs_file_fcntl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	if (pkm_kacs_copy_up_file_is_internal(file))
 		return -EACCES;
@@ -893,8 +979,8 @@ int pkm_kacs_file_fsync(struct file *file)
 {
 	if (pkm_kacs_copy_up_file_is_internal(file))
 		return -EACCES;
-	return pkm_kacs_check_file_snapshot_grant(
-		file, KACS_ACCESS_SYNCHRONIZE);
+	return pkm_kacs_check_file_snapshot_grant(file,
+						  KACS_ACCESS_SYNCHRONIZE);
 }
 
 int pkm_kacs_file_begin_write_intent(struct file *file, u32 rwf_flags,
@@ -969,8 +1055,8 @@ static void pkm_kacs_trace_file_snapshot(struct file *file, u8 op,
 				 granted_access, required_access, reason, ret);
 }
 
-static int pkm_kacs_check_sysfs_write_gate_for_subject(
-	const void *subject_token)
+static int
+pkm_kacs_check_sysfs_write_gate_for_subject(const void *subject_token)
 {
 	u32 granted = 0;
 	int ret;
@@ -980,8 +1066,8 @@ static int pkm_kacs_check_sysfs_write_gate_for_subject(
 
 	ret = kacs_rust_check_file_sd_with_intent(
 		subject_token, pkm_kacs_sysfs_write_gate_sd,
-		sizeof(pkm_kacs_sysfs_write_gate_sd), KACS_FILE_WRITE_DATA,
-		0, 0, 0, &granted);
+		sizeof(pkm_kacs_sysfs_write_gate_sd), KACS_FILE_WRITE_DATA, 0,
+		0, 0, &granted);
 	if (ret)
 		return ret;
 	if ((granted & KACS_FILE_WRITE_DATA) != KACS_FILE_WRITE_DATA)
@@ -1011,8 +1097,9 @@ int pkm_kacs_check_sysfs_file_write_for_subject(const void *subject_token,
 	return ret;
 }
 
-long pkm_kacs_authorize_live_file_access_core(
-	const void *subject_token, struct file *file, u32 desired_access)
+long pkm_kacs_authorize_live_file_access_core(const void *subject_token,
+					      struct file *file,
+					      u32 desired_access)
 {
 	struct pkm_kacs_inode_security *sec;
 	struct pkm_kacs_inode_sd_cache *cache = NULL;
@@ -1025,7 +1112,8 @@ long pkm_kacs_authorize_live_file_access_core(
 
 	if (!subject_token || !file || desired_access == 0) {
 		trace_kacs_file_access(file ? file_inode(file) : NULL,
-				       desired_access, -EINVAL, KACS_TR_BAD_ARGS);
+				       desired_access, -EINVAL,
+				       KACS_TR_BAD_ARGS);
 		return -EINVAL;
 	}
 
@@ -1084,11 +1172,9 @@ log:
 	if (ret && ret != -EOPNOTSUPP) {
 		pr_debug(
 			"kacs: deny live_file_access ino=%lu sb_magic=0x%lx policy=%u cache_state=0x%x desired=0x%x comm=%s pid=%d ret=%ld\n",
-			inode->i_ino,
-			(unsigned long)inode->i_sb->s_magic,
+			inode->i_ino, (unsigned long)inode->i_sb->s_magic,
 			pkm_kacs_superblock_mount_policy(inode->i_sb),
-			(unsigned)cache_state,
-			desired_access, current->comm,
+			(unsigned)cache_state, desired_access, current->comm,
 			current->pid, ret);
 	}
 	/*
@@ -1101,8 +1187,9 @@ log:
 	return ret;
 }
 
-long pkm_kacs_authorize_path_file_access_core(
-	const void *subject_token, const struct path *path, u32 desired_access)
+long pkm_kacs_authorize_path_file_access_core(const void *subject_token,
+					      const struct path *path,
+					      u32 desired_access)
 {
 	struct file file = {};
 
@@ -1114,19 +1201,15 @@ long pkm_kacs_authorize_path_file_access_core(
 							desired_access);
 }
 
-
 static long pkm_kacs_build_legacy_open_access_masks(const struct file *file,
 						    u32 *core_access_out,
 						    u32 *requested_access_out)
 {
 	struct inode *inode;
 	u32 core_access = 0;
-	u32 compat_access = KACS_FILE_READ_EA |
-			    KACS_ACCESS_READ_CONTROL |
-			    KACS_FILE_WRITE_ATTRIBUTES |
-			    KACS_FILE_WRITE_EA |
-			    KACS_ACCESS_WRITE_DAC |
-			    KACS_ACCESS_WRITE_OWNER |
+	u32 compat_access = KACS_FILE_READ_EA | KACS_ACCESS_READ_CONTROL |
+			    KACS_FILE_WRITE_ATTRIBUTES | KACS_FILE_WRITE_EA |
+			    KACS_ACCESS_WRITE_DAC | KACS_ACCESS_WRITE_OWNER |
 			    KACS_ACCESS_SYNCHRONIZE;
 	u32 mode;
 
@@ -1142,8 +1225,7 @@ static long pkm_kacs_build_legacy_open_access_masks(const struct file *file,
 		if ((mode & FMODE_WRITE) != 0 || (mode & FMODE_READ) == 0)
 			return -EACCES;
 
-		core_access = KACS_FILE_READ_ATTRIBUTES |
-			      KACS_FILE_TRAVERSE;
+		core_access = KACS_FILE_READ_ATTRIBUTES | KACS_FILE_TRAVERSE;
 		compat_access |= KACS_FILE_LIST_DIRECTORY;
 	} else {
 		if (!(S_ISREG(inode->i_mode) || S_ISCHR(inode->i_mode) ||
@@ -1241,8 +1323,8 @@ long pkm_kacs_stamp_native_file_granted_access_for_subject(
 	if (!ret) {
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 		if (inode_sec->kunit_open_cache_selected)
-			inode_sec->kunit_open_cache_selected(file,
-							     inode_sec->kunit_open_cache_context);
+			inode_sec->kunit_open_cache_selected(
+				file, inode_sec->kunit_open_cache_context);
 #endif
 		ret = pkm_kacs_caap_cache_lock(&caap_cache);
 		if (ret)
@@ -1253,16 +1335,16 @@ long pkm_kacs_stamp_native_file_granted_access_for_subject(
 		} else {
 			ret = kacs_rust_check_cached_file_sd_with_intent_audit_caap(
 				subject_token, cache->bytes, cache->len,
-				&cache->layout, desired_access, privilege_intent,
-				pip_type, pip_trust, caap_cache, &granted_access,
+				&cache->layout, desired_access,
+				privilege_intent, pip_type, pip_trust,
+				caap_cache, &granted_access,
 				&continuous_audit_mask);
 			if (!ret) {
 				file_sec->granted_access = granted_access;
 				file_sec->continuous_audit_mask =
 					continuous_audit_mask;
 				file_sec->managed = 1;
-				if ((desired_access &
-				     KACS_FILE_EXECUTE) != 0)
+				if ((desired_access & KACS_FILE_EXECUTE) != 0)
 					file->f_mode |= FMODE_EXEC;
 				if (!S_ISDIR(inode->i_mode)) {
 					if ((desired_access &
@@ -1282,8 +1364,8 @@ out_put_cache:
 	return ret;
 }
 
-long pkm_kacs_stamp_file_granted_access_for_subject(
-	const void *subject_token, struct file *file)
+long pkm_kacs_stamp_file_granted_access_for_subject(const void *subject_token,
+						    struct file *file)
 {
 	struct pkm_kacs_file_security *file_sec;
 	struct pkm_kacs_inode_security *inode_sec;
@@ -1333,8 +1415,8 @@ long pkm_kacs_stamp_file_granted_access_for_subject(
 	if (!ret) {
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 		if (inode_sec->kunit_open_cache_selected)
-			inode_sec->kunit_open_cache_selected(file,
-							     inode_sec->kunit_open_cache_context);
+			inode_sec->kunit_open_cache_selected(
+				file, inode_sec->kunit_open_cache_context);
 #endif
 		ret = pkm_kacs_caap_cache_lock(&caap_cache);
 		if (ret)
@@ -1535,8 +1617,7 @@ static int pkm_kacs_check_file_snapshot_grant_op(struct file *file, u8 op,
 		ret ? KACS_FSR_GRANT_DENY : KACS_FSR_DECISION, ret);
 }
 
-int pkm_kacs_check_file_snapshot_grant(struct file *file,
-				       u32 required_access)
+int pkm_kacs_check_file_snapshot_grant(struct file *file, u32 required_access)
 {
 	return pkm_kacs_check_file_snapshot_grant_op(
 		file, KACS_FSOP_ACCESS, required_access,
@@ -1586,14 +1667,13 @@ int pkm_kacs_check_mmap_snapshot(struct file *file, unsigned long prot,
 		sizeof(pkm_kacs_audit_op_file_mmap) - 1);
 }
 
-int pkm_kacs_check_mprotect_snapshot(struct file *file,
-				     unsigned long vm_flags,
+int pkm_kacs_check_mprotect_snapshot(struct file *file, unsigned long vm_flags,
 				     unsigned long prot)
 {
 	return pkm_kacs_check_file_snapshot_grant_op(
 		file, KACS_FSOP_MPROTECT,
-		pkm_kacs_mapping_required_access(
-			prot, (vm_flags & VM_SHARED) != 0),
+		pkm_kacs_mapping_required_access(prot,
+						 (vm_flags & VM_SHARED) != 0),
 		pkm_kacs_audit_op_file_mprotect,
 		sizeof(pkm_kacs_audit_op_file_mprotect) - 1);
 }
@@ -1603,7 +1683,7 @@ int pkm_kacs_check_file_permission_snapshot_for_subject(
 {
 	struct pkm_kacs_file_security *file_sec;
 	struct pkm_kacs_task_security *task_sec = NULL;
-	struct pkm_kacs_file_write_intent marker = { };
+	struct pkm_kacs_file_write_intent marker = {};
 	u32 required_access = 0;
 	u32 audit_required_access = 0;
 	int ret = 0;
@@ -1663,17 +1743,17 @@ int pkm_kacs_check_file_permission_snapshot_for_subject(
 	}
 
 	if (write_intent || append_intent) {
-		u32 write_grants = file_sec->granted_access &
-				   (KACS_FILE_WRITE_DATA |
-				    KACS_FILE_APPEND_DATA);
+		u32 write_grants =
+			file_sec->granted_access &
+			(KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA);
 
 		if (append_intent) {
 			audit_required_access |= KACS_FILE_WRITE_DATA |
 						 KACS_FILE_APPEND_DATA;
 			if (write_grants == 0)
 				ret = -EACCES;
-		} else if ((file_sec->granted_access &
-			    KACS_FILE_WRITE_DATA) == 0) {
+		} else if ((file_sec->granted_access & KACS_FILE_WRITE_DATA) ==
+			   0) {
 			audit_required_access |= KACS_FILE_WRITE_DATA;
 			ret = -EACCES;
 		} else {
@@ -1682,8 +1762,7 @@ int pkm_kacs_check_file_permission_snapshot_for_subject(
 	}
 
 	return pkm_kacs_emit_file_continuous_audit(
-		file, KACS_FSOP_PERMISSION,
-		pkm_kacs_audit_op_file_permission,
+		file, KACS_FSOP_PERMISSION, pkm_kacs_audit_op_file_permission,
 		sizeof(pkm_kacs_audit_op_file_permission) - 1,
 		audit_required_access,
 		ret ? (append_intent ? KACS_FSR_APPEND_DENY :
@@ -1729,14 +1808,12 @@ int pkm_kacs_check_file_write_intent_snapshot_for_subject(
 		return pkm_kacs_check_sysfs_file_write_for_subject(
 			subject_token, file, true);
 
-	if ((rwf_flags & RWF_APPEND) != 0 &&
-	    (rwf_flags & RWF_NOAPPEND) != 0)
+	if ((rwf_flags & RWF_APPEND) != 0 && (rwf_flags & RWF_NOAPPEND) != 0)
 		return -EACCES;
 
 	noappend = (rwf_flags & RWF_NOAPPEND) != 0;
-	append_intent = !noappend &&
-			(((rwf_flags & RWF_APPEND) != 0) ||
-			 ((file->f_flags & O_APPEND) != 0));
+	append_intent = !noappend && (((rwf_flags & RWF_APPEND) != 0) ||
+				      ((file->f_flags & O_APPEND) != 0));
 	granted_access = file_sec->granted_access;
 
 	if (noappend || (positioned && !append_intent)) {
@@ -1752,8 +1829,7 @@ int pkm_kacs_check_file_write_intent_snapshot_for_subject(
 	}
 
 	if (append_intent) {
-		required_access = KACS_FILE_WRITE_DATA |
-				  KACS_FILE_APPEND_DATA;
+		required_access = KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA;
 		if ((granted_access & required_access) == 0)
 			ret = -EACCES;
 		return pkm_kacs_emit_file_continuous_audit(
@@ -1773,8 +1849,8 @@ int pkm_kacs_check_file_write_intent_snapshot_for_subject(
 		ret ? KACS_FSR_GRANT_DENY : KACS_FSR_DECISION, ret);
 }
 
-int pkm_kacs_check_file_write_intent_snapshot(struct file *file,
-					      u32 rwf_flags, bool positioned)
+int pkm_kacs_check_file_write_intent_snapshot(struct file *file, u32 rwf_flags,
+					      bool positioned)
 {
 	return pkm_kacs_check_file_write_intent_snapshot_for_subject(
 		pkm_kacs_current_effective_token_ptr(), file, rwf_flags,
@@ -1882,8 +1958,8 @@ pkm_kacs_classify_file_ioctl(unsigned int cmd, umode_t mode, bool compat)
 	}
 }
 
-static int pkm_kacs_check_ioctl_requirement(
-	u32 granted_access, enum pkm_kacs_ioctl_requirement req)
+static int pkm_kacs_check_ioctl_requirement(u32 granted_access,
+					    enum pkm_kacs_ioctl_requirement req)
 {
 	switch (req) {
 	case PKM_KACS_IOCTL_REQUIRE_NONE:
@@ -1902,8 +1978,8 @@ static int pkm_kacs_check_ioctl_requirement(
 			return 0;
 		return -EACCES;
 	case PKM_KACS_IOCTL_REQUIRE_APPEND_OR_WRITE_DATA:
-		if ((granted_access & (KACS_FILE_APPEND_DATA |
-				       KACS_FILE_WRITE_DATA)) != 0)
+		if ((granted_access &
+		     (KACS_FILE_APPEND_DATA | KACS_FILE_WRITE_DATA)) != 0)
 			return 0;
 		return -EACCES;
 	case PKM_KACS_IOCTL_REQUIRE_READ_ATTRIBUTES:
@@ -1919,8 +1995,7 @@ static int pkm_kacs_check_ioctl_requirement(
 	}
 }
 
-static u32 pkm_kacs_ioctl_requirement_mask(
-	enum pkm_kacs_ioctl_requirement req)
+static u32 pkm_kacs_ioctl_requirement_mask(enum pkm_kacs_ioctl_requirement req)
 {
 	switch (req) {
 	case PKM_KACS_IOCTL_REQUIRE_UNKNOWN:
@@ -2015,8 +2090,7 @@ int pkm_kacs_check_file_lock_snapshot(struct file *file, unsigned int cmd)
 			ret = -EACCES;
 		break;
 	case F_WRLCK:
-		required_access = KACS_FILE_WRITE_DATA |
-				  KACS_FILE_APPEND_DATA;
+		required_access = KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA;
 		if ((granted_access & required_access) == 0)
 			ret = -EACCES;
 		break;
@@ -2096,10 +2170,10 @@ static int pkm_kacs_check_file_fcntl_notify(u32 granted_access,
 					    unsigned long arg)
 {
 	const unsigned long known_mask = DN_ACCESS | DN_MODIFY | DN_CREATE |
-					DN_DELETE | DN_RENAME | DN_ATTRIB |
-					DN_MULTISHOT;
+					 DN_DELETE | DN_RENAME | DN_ATTRIB |
+					 DN_MULTISHOT;
 	const unsigned long event_mask = DN_ACCESS | DN_MODIFY | DN_CREATE |
-					DN_DELETE | DN_RENAME | DN_ATTRIB;
+					 DN_DELETE | DN_RENAME | DN_ATTRIB;
 
 	if ((arg & ~known_mask) != 0)
 		return -EACCES;
@@ -2110,9 +2184,10 @@ static int pkm_kacs_check_file_fcntl_notify(u32 granted_access,
 	return -EACCES;
 }
 
-static int pkm_kacs_check_file_fcntl_requirement(
-	u32 granted_access, enum pkm_kacs_fcntl_requirement req,
-	unsigned long arg)
+static int
+pkm_kacs_check_file_fcntl_requirement(u32 granted_access,
+				      enum pkm_kacs_fcntl_requirement req,
+				      unsigned long arg)
 {
 	switch (req) {
 	case PKM_KACS_FCNTL_REQUIRE_NONE:
@@ -2138,11 +2213,11 @@ static int pkm_kacs_check_file_fcntl_requirement(
 	}
 }
 
-static u32 pkm_kacs_fcntl_requirement_mask(
-	enum pkm_kacs_fcntl_requirement req, unsigned long arg)
+static u32 pkm_kacs_fcntl_requirement_mask(enum pkm_kacs_fcntl_requirement req,
+					   unsigned long arg)
 {
 	const unsigned long event_mask = DN_ACCESS | DN_MODIFY | DN_CREATE |
-					DN_DELETE | DN_RENAME | DN_ATTRIB;
+					 DN_DELETE | DN_RENAME | DN_ATTRIB;
 
 	switch (req) {
 	case PKM_KACS_FCNTL_REQUIRE_ANY_DATA:
@@ -2152,9 +2227,7 @@ static u32 pkm_kacs_fcntl_requirement_mask(
 	case PKM_KACS_FCNTL_REQUIRE_WRITE_ATTRIBUTES:
 		return KACS_FILE_WRITE_ATTRIBUTES;
 	case PKM_KACS_FCNTL_REQUIRE_NOTIFY:
-		return (arg & event_mask) != 0 ?
-			       KACS_FILE_LIST_DIRECTORY :
-			       0;
+		return (arg & event_mask) != 0 ? KACS_FILE_LIST_DIRECTORY : 0;
 	case PKM_KACS_FCNTL_REQUIRE_NONE:
 	case PKM_KACS_FCNTL_REQUIRE_SETFL:
 	case PKM_KACS_FCNTL_REQUIRE_DENY:
@@ -2187,8 +2260,8 @@ int pkm_kacs_check_file_fcntl_snapshot(struct file *file, unsigned int cmd,
 	granted_access = file_sec->granted_access;
 	if (req != PKM_KACS_FCNTL_REQUIRE_SETFL) {
 		required_access = pkm_kacs_fcntl_requirement_mask(req, arg);
-		ret = pkm_kacs_check_file_fcntl_requirement(granted_access,
-							    req, arg);
+		ret = pkm_kacs_check_file_fcntl_requirement(granted_access, req,
+							    arg);
 		return pkm_kacs_emit_file_continuous_audit(
 			file, KACS_FSOP_FCNTL, pkm_kacs_audit_op_file_fcntl,
 			sizeof(pkm_kacs_audit_op_file_fcntl) - 1,
@@ -2297,8 +2370,8 @@ int pkm_kacs_check_file_fallocate_snapshot(struct file *file, int mode)
 	if (!file->f_security)
 		return -EACCES;
 
-	mode_supported = pkm_kacs_fallocate_mode_supported(
-		mode, &requires_write_data);
+	mode_supported =
+		pkm_kacs_fallocate_mode_supported(mode, &requires_write_data);
 	if (pkm_kacs_inode_signed_exec_pinned(file_inode(file))) {
 		ret = pkm_kacs_check_signed_exec_content_mutation_file(file);
 		if (ret) {

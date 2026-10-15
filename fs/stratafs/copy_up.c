@@ -37,17 +37,17 @@ struct stratafs_recovery_capture {
 	int error;
 };
 
-static void stratafs_copy_phase_leave(
-	struct pkm_kacs_stratafs_copy_up *context);
-static void stratafs_copy_context_finish(
-	struct pkm_kacs_stratafs_copy_up *context);
+static void
+stratafs_copy_phase_leave(struct pkm_kacs_stratafs_copy_up *context);
+static void
+stratafs_copy_context_finish(struct pkm_kacs_stratafs_copy_up *context);
 
 static bool stratafs_recovery_actor(struct dir_context *ctx, const char *name,
 				    int len, loff_t offset, u64 ino,
 				    unsigned int type)
 {
-	struct stratafs_recovery_capture *capture = container_of(
-		ctx, struct stratafs_recovery_capture, ctx);
+	struct stratafs_recovery_capture *capture =
+		container_of(ctx, struct stratafs_recovery_capture, ctx);
 	struct stratafs_recovery_name *candidate;
 
 	if (len <= strlen(STRATAFS_STAGE_PREFIX) ||
@@ -91,8 +91,8 @@ static void stratafs_recover_one(struct super_block *sb,
 		return;
 	}
 	victim_path.dentry = victim;
-	ret = pkm_kacs_stratafs_probe_staging_marker(
-		&victim_path, &marker, sizeof(marker));
+	ret = pkm_kacs_stratafs_probe_staging_marker(&victim_path, &marker,
+						     sizeof(marker));
 	if (ret != sizeof(marker) ||
 	    le32_to_cpu(marker.magic) != STRATAFS_STAGE_MARKER_MAGIC ||
 	    le16_to_cpu(marker.version) != STRATAFS_STAGE_MARKER_VERSION ||
@@ -111,8 +111,8 @@ static void stratafs_recover_one(struct super_block *sb,
 		goto out_write;
 
 	directory = d_is_dir(victim);
-	ret = pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(
-		context, parent, victim, directory);
+	ret = pkm_kacs_stratafs_copy_up_begin_orphan_cleanup(context, parent,
+							     victim, directory);
 	if (ret)
 		goto out_context;
 	locked = start_removing_dentry(parent->dentry, victim);
@@ -146,8 +146,8 @@ void stratafs_recover_published_marker(struct super_block *sb,
 	struct pkm_kacs_stratafs_copy_up *context;
 	int ret;
 
-	ret = pkm_kacs_stratafs_probe_staging_marker(
-		path, &marker, sizeof(marker));
+	ret = pkm_kacs_stratafs_probe_staging_marker(path, &marker,
+						     sizeof(marker));
 	if (ret != sizeof(marker) ||
 	    le32_to_cpu(marker.magic) != STRATAFS_STAGE_MARKER_MAGIC ||
 	    le16_to_cpu(marker.version) != STRATAFS_STAGE_MARKER_VERSION ||
@@ -210,7 +210,7 @@ void stratafs_recover_staging_parent(struct super_block *sb,
 		goto out;
 	phase_active = true;
 	directory = dentry_open(parent, O_RDONLY | O_DIRECTORY | O_LARGEFILE,
-				  STRATAFS_SB(sb)->resolution_cred);
+				STRATAFS_SB(sb)->resolution_cred);
 	if (IS_ERR(directory)) {
 		ret = PTR_ERR(directory);
 		directory = NULL;
@@ -225,7 +225,8 @@ void stratafs_recover_staging_parent(struct super_block *sb,
 		phase_active = false;
 		pkm_kacs_stratafs_copy_up_leave(context);
 		attached = false;
-		list_for_each_entry_safe(candidate, next, &capture.names, list) {
+		list_for_each_entry_safe(candidate, next, &capture.names,
+					 list) {
 			stratafs_recover_one(sb, parent, candidate->name);
 			list_del(&candidate->list);
 			kfree(candidate->name);
@@ -284,7 +285,7 @@ bool stratafs_is_staging(const struct super_block *sb, unsigned int index,
 }
 
 struct stratafs_staging *stratafs_add_staging(struct super_block *sb,
-					       const char *relative)
+					      const char *relative)
 {
 	struct stratafs_sb_info *sbi = STRATAFS_SB(sb);
 	struct stratafs_staging *staging;
@@ -317,29 +318,28 @@ void stratafs_remove_staging(struct super_block *sb,
 	kfree(staging);
 }
 
-static int stratafs_copy_phase_enter(
-	struct pkm_kacs_stratafs_copy_up *context)
+static int stratafs_copy_phase_enter(struct pkm_kacs_stratafs_copy_up *context)
 {
 	/* copy_up_begin() returns a context already attached to current. */
 	return context ? 0 : -EINVAL;
 }
 
-static void stratafs_copy_phase_leave(
-	struct pkm_kacs_stratafs_copy_up *context)
+static void stratafs_copy_phase_leave(struct pkm_kacs_stratafs_copy_up *context)
 {
 	pkm_kacs_stratafs_copy_up_end_phase(context);
 }
 
-static void stratafs_copy_context_finish(
-	struct pkm_kacs_stratafs_copy_up *context)
+static void
+stratafs_copy_context_finish(struct pkm_kacs_stratafs_copy_up *context)
 {
 	pkm_kacs_stratafs_copy_up_leave(context);
 	pkm_kacs_stratafs_copy_up_put(context);
 }
 
-static int stratafs_stage_marker(
-	struct pkm_kacs_stratafs_copy_up *context, const struct path *stage,
-	const struct stratafs_sb_info *sbi, bool remove)
+static int stratafs_stage_marker(struct pkm_kacs_stratafs_copy_up *context,
+				 const struct path *stage,
+				 const struct stratafs_sb_info *sbi,
+				 bool remove)
 {
 	struct stratafs_stage_marker marker = {
 		.magic = cpu_to_le32(STRATAFS_STAGE_MARKER_MAGIC),
@@ -369,8 +369,7 @@ static int stratafs_stage_marker(
 	return ret;
 }
 
-static int stratafs_verify_provider(struct dentry *dentry,
-				    const char *relative,
+static int stratafs_verify_provider(struct dentry *dentry, const char *relative,
 				    const struct path *expected)
 {
 	struct stratafs_paths paths;
@@ -447,7 +446,7 @@ void stratafs_kacs_audit_deferred_refusal(const struct dentry *outer,
 }
 
 int stratafs_kacs_creation_parent(const struct path *outer_parent,
-				   struct path *security_parent)
+				  struct path *security_parent)
 {
 	struct stratafs_sb_info *sbi;
 	struct path create_root;
@@ -467,8 +466,8 @@ int stratafs_kacs_creation_parent(const struct path *outer_parent,
 		return PTR_ERR(relative);
 
 	/* An absent create stratum is never materialised by StrataFS itself. */
-	ret = stratafs_resolve_one(outer_parent->dentry->d_sb, sbi->create_index,
-				   "", true, &create_root);
+	ret = stratafs_resolve_one(outer_parent->dentry->d_sb,
+				   sbi->create_index, "", true, &create_root);
 	if (ret) {
 		if (ret == -ENOENT)
 			ret = -EROFS;
@@ -486,7 +485,7 @@ int stratafs_kacs_creation_parent(const struct path *outer_parent,
 				   security_parent);
 	if (ret == -ENOENT)
 		ret = stratafs_provider_directory(outer_parent->dentry->d_sb,
-						 relative, security_parent);
+						  relative, security_parent);
 	if (ret)
 		goto out_relative;
 	if (!d_is_dir(security_parent->dentry)) {
@@ -526,7 +525,8 @@ bool stratafs_kacs_deferred_target_gone(const struct file *file)
 	/* Do not resolve the merged name: another stratum may mask a target
 	 * which still exists in the stratum this descriptor promised to remove.
 	 */
-	ret = stratafs_resolve_one(outer->d_sb, index, relative, false, &resolved);
+	ret = stratafs_resolve_one(outer->d_sb, index, relative, false,
+				   &resolved);
 	if (ret == -ENOENT || ret == -ENOTDIR) {
 		gone = true;
 	} else if (!ret) {
@@ -541,7 +541,7 @@ out_relative:
 }
 
 int stratafs_kacs_removal_parent(const struct path *outer_target,
-				  struct path *security_parent)
+				 struct path *security_parent)
 {
 	struct path provider;
 	char *relative;
@@ -565,13 +565,13 @@ int stratafs_kacs_removal_parent(const struct path *outer_target,
 				    &provider_index);
 	if (ret)
 		goto out_relative;
-	ret = stratafs_verify_provider(outer_target->dentry, relative, &provider);
+	ret = stratafs_verify_provider(outer_target->dentry, relative,
+				       &provider);
 	path_put(&provider);
 	if (ret)
 		goto out_relative;
 	ret = stratafs_resolve_one(outer_target->dentry->d_sb, provider_index,
-				   parent_relative, true,
-				   security_parent);
+				   parent_relative, true, security_parent);
 	if (ret)
 		goto out_relative;
 	if (!d_is_dir(security_parent->dentry)) {
@@ -586,7 +586,7 @@ out_relative:
 }
 
 int stratafs_kacs_removal_target(const struct path *outer_target,
-				  struct path *security_target)
+				 struct path *security_target)
 {
 	char *relative;
 	int ret;
@@ -598,11 +598,12 @@ int stratafs_kacs_removal_target(const struct path *outer_target,
 	relative = stratafs_inode_relative(d_inode(outer_target->dentry));
 	if (IS_ERR(relative))
 		return PTR_ERR(relative);
-	ret = stratafs_get_provider(outer_target->dentry, security_target, NULL);
+	ret = stratafs_get_provider(outer_target->dentry, security_target,
+				    NULL);
 	if (ret)
 		goto out;
 	ret = stratafs_verify_provider(outer_target->dentry, relative,
-					security_target);
+				       security_target);
 	if (ret)
 		path_put(security_target);
 out:
@@ -630,8 +631,8 @@ int stratafs_validate_supersede_dentry(const struct dentry *outer_target)
 	relative = stratafs_inode_relative(d_inode(outer_target));
 	if (IS_ERR(relative))
 		return PTR_ERR(relative);
-	ret = stratafs_resolve_one(outer_target->d_sb,
-				   sbi->create_index, "", true, &create_root);
+	ret = stratafs_resolve_one(outer_target->d_sb, sbi->create_index, "",
+				   true, &create_root);
 	if (ret) {
 		if (ret == -ENOENT)
 			ret = -EROFS;
@@ -645,20 +646,19 @@ int stratafs_validate_supersede_dentry(const struct dentry *outer_target)
 				    &provider_index);
 	if (ret)
 		goto out_relative;
-	if (!stratafs_stratum_accepts(outer_target->d_sb,
-				      provider_index, &provider)) {
+	if (!stratafs_stratum_accepts(outer_target->d_sb, provider_index,
+				      &provider)) {
 		path_put(&provider);
 		ret = -EROFS;
 		goto out_relative;
 	}
 	ret = stratafs_verify_provider((struct dentry *)outer_target, relative,
-					&provider);
+				       &provider);
 	path_put(&provider);
 	if (ret)
 		goto out_relative;
 
-	ret = stratafs_resolve_all(outer_target->d_sb, relative,
-				   false, &paths);
+	ret = stratafs_resolve_all(outer_target->d_sb, relative, false, &paths);
 	if (ret)
 		goto out_relative;
 	ret = -ESTALE;
@@ -699,8 +699,8 @@ int stratafs_kacs_validate_supersede(const struct path *outer_target)
 
 static int stratafs_materialize_directory(
 	struct super_block *sb, struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *provider, const struct path *parent, const char *name,
-	struct path *created)
+	const struct path *provider, const struct path *parent,
+	const char *name, struct path *created)
 {
 	struct qstr q = QSTR_INIT(name, strlen(name));
 	struct dentry *child;
@@ -729,8 +729,8 @@ static int stratafs_materialize_directory(
 		goto out_write;
 	}
 
-	ret = pkm_kacs_stratafs_copy_up_begin_create(
-		context, provider, parent, child, mode);
+	ret = pkm_kacs_stratafs_copy_up_begin_create(context, provider, parent,
+						     child, mode);
 	if (ret)
 		goto out;
 	ret = stratafs_copy_phase_enter(context);
@@ -738,8 +738,8 @@ static int stratafs_materialize_directory(
 		pkm_kacs_stratafs_copy_up_end_phase(context);
 		goto out;
 	}
-	mkdir_result = vfs_mkdir(idmap, d_inode(parent->dentry), child, mode,
-				 NULL);
+	mkdir_result =
+		vfs_mkdir(idmap, d_inode(parent->dentry), child, mode, NULL);
 	stratafs_copy_phase_leave(context);
 	if (IS_ERR(mkdir_result)) {
 		ret = PTR_ERR(mkdir_result);
@@ -762,8 +762,7 @@ out_write:
 }
 
 static int stratafs_ensure_create_parent_context(
-	struct dentry *parent_dentry,
-	const char *parent_relative,
+	struct dentry *parent_dentry, const char *parent_relative,
 	struct pkm_kacs_stratafs_copy_up *context, struct path *result)
 {
 	struct super_block *sb = parent_dentry->d_sb;
@@ -834,7 +833,8 @@ static int stratafs_ensure_create_parent_context(
 		if (ret)
 			goto fail;
 		ret = stratafs_materialize_directory(sb, context, &provider,
-						     &create_cursor, component, &created);
+						     &create_cursor, component,
+						     &created);
 		path_put(&provider);
 		if (ret)
 			goto fail;
@@ -873,7 +873,7 @@ int stratafs_ensure_create_parent(struct dentry *parent,
 		goto out_relative;
 	}
 	ret = stratafs_ensure_create_parent_context(parent, relative, context,
-						     create_parent);
+						    create_parent);
 	stratafs_copy_context_finish(context);
 out_relative:
 	kfree(relative);
@@ -934,7 +934,8 @@ static int stratafs_copy_regular_contents(
 		if (IS_ERR(file))
 			read = PTR_ERR(file);
 		else {
-			read = kernel_read(file, buffer, STRATAFS_COPY_BUFFER_SIZE,
+			read = kernel_read(file, buffer,
+					   STRATAFS_COPY_BUFFER_SIZE,
 					   &read_pos);
 			if (file != source_file)
 				fput(file);
@@ -961,8 +962,10 @@ static int stratafs_copy_regular_contents(
 			ret = PTR_ERR(file);
 		else {
 			while (written < read) {
-				ssize_t amount = kernel_write(file, buffer + written,
-							read - written, &write_pos);
+				ssize_t amount = kernel_write(file,
+							      buffer + written,
+							      read - written,
+							      &write_pos);
 
 				if (amount <= 0) {
 					ret = amount < 0 ? amount : -EIO;
@@ -982,17 +985,17 @@ static int stratafs_copy_regular_contents(
 }
 
 /* Content I/O performs its own checks and acquires its own freeze protection. */
-static int
-stratafs_populate_regular_stage(struct pkm_kacs_stratafs_copy_up *context,
-				const struct path *source, const struct path *stage,
-				struct file *source_file, bool *write_held)
+static int stratafs_populate_regular_stage(
+	struct pkm_kacs_stratafs_copy_up *context, const struct path *source,
+	const struct path *stage, struct file *source_file, bool *write_held)
 {
 	int ret;
 
 	/* rw_verify_area's pre-content notification must also run unfrozen. */
 	mnt_drop_write(stage->mnt);
 	*write_held = false;
-	ret = stratafs_copy_regular_contents(context, source, stage, source_file);
+	ret = stratafs_copy_regular_contents(context, source, stage,
+					     source_file);
 	if (ret)
 		return ret;
 	ret = mnt_want_write(stage->mnt);
@@ -1001,18 +1004,20 @@ stratafs_populate_regular_stage(struct pkm_kacs_stratafs_copy_up *context,
 	return ret;
 }
 
-static int stratafs_copy_one_xattr(
-	struct super_block *sb, struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *source, const struct path *stage, const char *name)
+static int stratafs_copy_one_xattr(struct super_block *sb,
+				   struct pkm_kacs_stratafs_copy_up *context,
+				   const struct path *source,
+				   const struct path *stage, const char *name)
 {
 	void *value = NULL;
 	ssize_t size;
 	int ret;
 
 	if (!strncmp(name, STRATAFS_XATTR_PREFIX,
-			strlen(STRATAFS_XATTR_PREFIX)) ||
+		     strlen(STRATAFS_XATTR_PREFIX)) ||
 	    !strcmp(name, STRATAFS_XATTR_STAGING) ||
-	    pkm_kacs_stratafs_is_descriptor_xattr(d_inode(source->dentry), name))
+	    pkm_kacs_stratafs_is_descriptor_xattr(d_inode(source->dentry),
+						  name))
 		return 0;
 
 	ret = pkm_kacs_stratafs_copy_up_begin_source_read(context);
@@ -1023,14 +1028,15 @@ static int stratafs_copy_one_xattr(
 		pkm_kacs_stratafs_copy_up_end_phase(context);
 		return ret;
 	}
-	size = vfs_getxattr(mnt_idmap(source->mnt), source->dentry, name, NULL, 0);
+	size = vfs_getxattr(mnt_idmap(source->mnt), source->dentry, name, NULL,
+			    0);
 	if (size > 0) {
 		value = kvmalloc(size, GFP_KERNEL);
 		if (!value)
 			ret = -ENOMEM;
 		else {
-			ret = vfs_getxattr(mnt_idmap(source->mnt), source->dentry,
-					   name, value, size);
+			ret = vfs_getxattr(mnt_idmap(source->mnt),
+					   source->dentry, name, value, size);
 			if (ret == size)
 				ret = 0;
 			else if (ret >= 0)
@@ -1054,7 +1060,8 @@ static int stratafs_copy_one_xattr(
 		goto out;
 	}
 	if (!strcmp(name, XATTR_NAME_CAPS)) {
-		ret = pkm_kacs_stratafs_copy_up_set_capability(context, value, size);
+		ret = pkm_kacs_stratafs_copy_up_set_capability(context, value,
+							       size);
 		/*
 		 * Unconditional, not just on error.  The clone helper has
 		 * *already* installed the attribute via vfs_setxattr() with
@@ -1078,9 +1085,10 @@ out:
 	return ret;
 }
 
-static int stratafs_copy_xattrs(
-	struct super_block *sb, struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *source, const struct path *stage)
+static int stratafs_copy_xattrs(struct super_block *sb,
+				struct pkm_kacs_stratafs_copy_up *context,
+				const struct path *source,
+				const struct path *stage)
 {
 	char *list = NULL;
 	ssize_t length;
@@ -1142,9 +1150,10 @@ out:
 	return ret;
 }
 
-static int stratafs_copy_metadata(
-	struct super_block *sb, struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *source, const struct path *stage)
+static int stratafs_copy_metadata(struct super_block *sb,
+				  struct pkm_kacs_stratafs_copy_up *context,
+				  const struct path *source,
+				  const struct path *stage)
 {
 	struct inode *inode = d_inode(source->dentry);
 	struct iattr attr = {
@@ -1215,9 +1224,8 @@ static int stratafs_copy_metadata(
 	return ret;
 }
 
-static int stratafs_read_symlink(
-	struct pkm_kacs_stratafs_copy_up *context, const struct path *source,
-	char **target)
+static int stratafs_read_symlink(struct pkm_kacs_stratafs_copy_up *context,
+				 const struct path *source, char **target)
 {
 	struct delayed_call done = {};
 	const char *link;
@@ -1243,17 +1251,17 @@ static int stratafs_read_symlink(
 	return ret;
 }
 
-static int stratafs_cleanup_named(
-	struct pkm_kacs_stratafs_copy_up *context, const struct path *parent,
-	const struct path *stage, bool directory)
+static int stratafs_cleanup_named(struct pkm_kacs_stratafs_copy_up *context,
+				  const struct path *parent,
+				  const struct path *stage, bool directory)
 {
 	struct dentry *victim;
 	int ret;
 
 	if (!d_really_is_positive(stage->dentry))
 		return 0;
-	ret = pkm_kacs_stratafs_copy_up_begin_cleanup(
-		context, parent, stage->dentry, directory);
+	ret = pkm_kacs_stratafs_copy_up_begin_cleanup(context, parent,
+						      stage->dentry, directory);
 	if (ret)
 		return ret;
 	ret = stratafs_copy_phase_enter(context);
@@ -1280,8 +1288,8 @@ static int stratafs_cleanup_named(
 static int stratafs_create_named_stage(
 	struct dentry *dentry, struct pkm_kacs_stratafs_copy_up *context,
 	const char *parent_relative, const struct path *source,
-	const struct path *parent, const char *link,
-	struct path *stage, struct stratafs_staging **tracking)
+	const struct path *parent, const char *link, struct path *stage,
+	struct stratafs_staging **tracking)
 {
 	struct stratafs_sb_info *sbi = STRATAFS_SB(dentry->d_sb);
 	char name[64];
@@ -1297,7 +1305,8 @@ static int stratafs_create_named_stage(
 	if (ret)
 		return ret;
 	for (attempt = 0; attempt < 8; attempt++) {
-		u64 id = get_random_u64() ^ atomic64_inc_return(&sbi->next_stage);
+		u64 id = get_random_u64() ^
+			 atomic64_inc_return(&sbi->next_stage);
 
 		snprintf(name, sizeof(name), ".stratafs-stage-%016llx-%016llx",
 			 sbi->mount_cookie, id);
@@ -1339,7 +1348,8 @@ static int stratafs_create_named_stage(
 		}
 		if (S_ISDIR(mode)) {
 			mkdir_result = vfs_mkdir(mnt_idmap(parent->mnt),
-					d_inode(parent->dentry), child, mode, NULL);
+						 d_inode(parent->dentry), child,
+						 mode, NULL);
 			if (IS_ERR(mkdir_result)) {
 				/* vfs_mkdir() consumed child on failure. */
 				ret = PTR_ERR(mkdir_result);
@@ -1350,7 +1360,8 @@ static int stratafs_create_named_stage(
 			}
 		} else {
 			ret = vfs_symlink(mnt_idmap(parent->mnt),
-					d_inode(parent->dentry), child, link, NULL);
+					  d_inode(parent->dentry), child, link,
+					  NULL);
 		}
 		if (!ret) {
 			struct path created = {
@@ -1383,11 +1394,13 @@ out_write:
 	return ret;
 }
 
-static int stratafs_publish_named(
-	struct dentry *dentry, struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *source, const struct path *stage,
-	const struct path *parent, const char *relative, const char *name,
-	struct path *published)
+static int stratafs_publish_named(struct dentry *dentry,
+				  struct pkm_kacs_stratafs_copy_up *context,
+				  const struct path *source,
+				  const struct path *stage,
+				  const struct path *parent,
+				  const char *relative, const char *name,
+				  struct path *published)
 {
 	struct qstr q = QSTR_INIT(name, strlen(name));
 	struct dentry *target;
@@ -1415,8 +1428,8 @@ static int stratafs_publish_named(
 	ret = stratafs_verify_provider(dentry, relative, source);
 	if (ret)
 		goto out_rename;
-	ret = pkm_kacs_stratafs_copy_up_begin_publish_rename(
-		context, parent, target);
+	ret = pkm_kacs_stratafs_copy_up_begin_publish_rename(context, parent,
+							     target);
 	if (ret)
 		goto out_rename;
 	ret = stratafs_copy_phase_enter(context);
@@ -1430,7 +1443,8 @@ static int stratafs_publish_named(
 		/* vfs_rename() moves the source dentry to the target name. */
 		published->dentry = stage->dentry;
 		path_get(published);
-		ret = pkm_kacs_stratafs_copy_up_finish_publish(context, published);
+		ret = pkm_kacs_stratafs_copy_up_finish_publish(context,
+							       published);
 		if (ret) {
 			path_put(published);
 			memset(published, 0, sizeof(*published));
@@ -1482,7 +1496,7 @@ static int stratafs_copy_up_named(struct dentry *dentry, const char *relative,
 	if (ret)
 		goto out_source;
 	ret = stratafs_resolve_one(dentry->d_sb, sbi->create_index,
-		parent_relative, true, &parent);
+				   parent_relative, true, &parent);
 	if (!ret) {
 		if (d_is_dir(parent.dentry))
 			stratafs_recover_staging_parent(dentry->d_sb, &parent);
@@ -1498,8 +1512,8 @@ static int stratafs_copy_up_named(struct dentry *dentry, const char *relative,
 		ret = PTR_ERR(context);
 		goto out_source;
 	}
-	ret = stratafs_ensure_create_parent_context(dentry->d_parent,
-						     parent_relative, context, &parent);
+	ret = stratafs_ensure_create_parent_context(
+		dentry->d_parent, parent_relative, context, &parent);
 	if (ret)
 		goto out_context;
 	ret = mnt_want_write(parent.mnt);
@@ -1512,7 +1526,8 @@ static int stratafs_copy_up_named(struct dentry *dentry, const char *relative,
 			goto out_parent;
 	}
 	ret = stratafs_create_named_stage(dentry, context, parent_relative,
-					  &source, &parent, link, &stage, &tracking);
+					  &source, &parent, link, &stage,
+					  &tracking);
 	if (ret)
 		goto out_parent;
 	ret = pkm_kacs_stratafs_copy_up_bind_staging(context, &stage);
@@ -1553,8 +1568,8 @@ static int stratafs_copy_up_named(struct dentry *dentry, const char *relative,
 	}
 out_stage:
 	if (!published_ok) {
-		int cleanup_ret = stratafs_cleanup_named(context, &parent, &stage,
-							 directory);
+		int cleanup_ret = stratafs_cleanup_named(context, &parent,
+							 &stage, directory);
 
 		if (!ret)
 			ret = cleanup_ret;
@@ -1575,11 +1590,13 @@ out_relative:
 	return ret;
 }
 
-static int stratafs_publish_anonymous(
-	struct dentry *dentry, struct pkm_kacs_stratafs_copy_up *context,
-	const struct path *source, const struct path *stage,
-	const struct path *parent, const char *relative, const char *name,
-	struct path *published)
+static int stratafs_publish_anonymous(struct dentry *dentry,
+				      struct pkm_kacs_stratafs_copy_up *context,
+				      const struct path *source,
+				      const struct path *stage,
+				      const struct path *parent,
+				      const char *relative, const char *name,
+				      struct path *published)
 {
 	struct qstr q = QSTR_INIT(name, strlen(name));
 	struct dentry *target;
@@ -1596,8 +1613,8 @@ static int stratafs_publish_anonymous(
 	ret = stratafs_verify_provider(dentry, relative, source);
 	if (ret)
 		goto out;
-	ret = pkm_kacs_stratafs_copy_up_begin_publish_link(
-		context, parent, target);
+	ret = pkm_kacs_stratafs_copy_up_begin_publish_link(context, parent,
+							   target);
 	if (ret)
 		goto out;
 	ret = stratafs_copy_phase_enter(context);
@@ -1623,7 +1640,8 @@ static int stratafs_publish_anonymous(
 			if (d_inode(target) == d_inode(stage->dentry)) {
 				cleanup_ret =
 					pkm_kacs_stratafs_begin_created_cleanup(
-						d_inode(parent->dentry), target);
+						d_inode(parent->dentry),
+						target);
 				if (!cleanup_ret) {
 					cleanup_ret = vfs_unlink(
 						mnt_idmap(parent->mnt),
@@ -1653,11 +1671,11 @@ out:
 	return ret;
 }
 
-static int stratafs_copy_up_regular(
-	struct dentry *dentry, const char *relative, struct file *outer,
-	struct path *published,
-	struct file **backing_out,
-	struct pkm_kacs_stratafs_copy_up **context_out)
+static int
+stratafs_copy_up_regular(struct dentry *dentry, const char *relative,
+			 struct file *outer, struct path *published,
+			 struct file **backing_out,
+			 struct pkm_kacs_stratafs_copy_up **context_out)
 {
 	struct path source;
 	struct path parent;
@@ -1708,8 +1726,8 @@ static int stratafs_copy_up_regular(
 		ret = PTR_ERR(context);
 		goto out_source;
 	}
-	ret = stratafs_ensure_create_parent_context(dentry->d_parent,
-						     parent_relative, context, &parent);
+	ret = stratafs_ensure_create_parent_context(
+		dentry->d_parent, parent_relative, context, &parent);
 	if (ret)
 		goto out_context;
 	ret = mnt_want_write(parent.mnt);
@@ -1717,8 +1735,8 @@ static int stratafs_copy_up_regular(
 		goto out_parent;
 	write_held = true;
 	mode = d_inode(source.dentry)->i_mode;
-	ret = pkm_kacs_stratafs_copy_up_begin_anonymous_create(
-		context, &source, &parent, mode);
+	ret = pkm_kacs_stratafs_copy_up_begin_anonymous_create(context, &source,
+							       &parent, mode);
 	if (ret)
 		goto out_parent;
 	ret = stratafs_copy_phase_enter(context);
@@ -1727,7 +1745,7 @@ static int stratafs_copy_up_regular(
 		goto out_parent;
 	}
 	tmpfile = kernel_tmpfile_open(mnt_idmap(parent.mnt), &parent, mode,
-				   O_RDWR | O_LARGEFILE, current_cred());
+				      O_RDWR | O_LARGEFILE, current_cred());
 	stratafs_copy_phase_leave(context);
 	if (IS_ERR(tmpfile)) {
 		ret = PTR_ERR(tmpfile);
@@ -1770,7 +1788,7 @@ static int stratafs_copy_up_regular(
 	if (ret)
 		goto out_stage;
 	ret = stratafs_publish_anonymous(dentry, context, &source, &stage,
-					  &parent, relative, name, published);
+					 &parent, relative, name, published);
 	if (!ret && context_out) {
 		*context_out = context;
 		context = NULL;
@@ -1871,8 +1889,8 @@ int stratafs_copy_up_file(struct file *file)
 	if (ret) {
 		published_parent.mnt = mntget(published.mnt);
 		published_parent.dentry = dget_parent(published.dentry);
-		if (stratafs_cleanup_named(context, &published_parent, &published,
-					   false))
+		if (stratafs_cleanup_named(context, &published_parent,
+					   &published, false))
 			pr_err_ratelimited(
 				"stratafs: failed to roll back published copy after descriptor handoff failure\n");
 		path_put(&published_parent);
@@ -1896,9 +1914,8 @@ out_context:
 	path_put(&published);
 out_audit:
 	pkm_kacs_stratafs_audit_copy_up(
-		relative, provider_index,
-		sbi->strata[provider_index].path, sbi->create_index,
-		sbi->strata[sbi->create_index].path, ret);
+		relative, provider_index, sbi->strata[provider_index].path,
+		sbi->create_index, sbi->strata[sbi->create_index].path, ret);
 	kfree(relative);
 	return ret;
 }
@@ -1943,8 +1960,8 @@ static struct stratafs_copy_fixture *stratafs_copy_fixture(struct kunit *test)
 {
 	/* SYSTEM owner, NULL DACL, confined to this private test filesystem. */
 	static const u8 sd[] = {
-		1, 0, 0, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+		1, 0, 0, 128, 20, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0,
+		0, 0, 0, 0,   1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
 	};
 	struct stratafs_copy_fixture *f;
 	struct file_system_type *type;
@@ -1973,8 +1990,8 @@ static struct stratafs_copy_fixture *stratafs_copy_fixture(struct kunit *test)
 	/* Provision the descriptor before any descriptor cache can be filled. */
 	inode = file_inode(f->source);
 	inode_lock(inode);
-	ret = __vfs_setxattr(mnt_idmap(f->mnt), f->source->f_path.dentry,
-			     inode, "security.peios.sd", sd, sizeof(sd), 0);
+	ret = __vfs_setxattr(mnt_idmap(f->mnt), f->source->f_path.dentry, inode,
+			     "security.peios.sd", sd, sizeof(sd), 0);
 	inode_unlock(inode);
 	if (ret)
 		return ERR_PTR(ret);
@@ -1991,19 +2008,20 @@ static struct stratafs_copy_fixture *stratafs_copy_fixture(struct kunit *test)
 	f->write_held = true;
 	parent.mnt = f->mnt;
 	parent.dentry = f->mnt->mnt_root;
-	ret = pkm_kacs_stratafs_copy_up_begin_anonymous_create(f->context,
-							       &f->source->f_path, &parent,
-							       S_IFREG | 0600);
+	ret = pkm_kacs_stratafs_copy_up_begin_anonymous_create(
+		f->context, &f->source->f_path, &parent, S_IFREG | 0600);
 	if (ret)
 		goto out_release;
 	f->stage = kernel_tmpfile_open(mnt_idmap(f->mnt), &parent,
-				       S_IFREG | 0600, O_RDWR | O_LARGEFILE, current_cred());
+				       S_IFREG | 0600, O_RDWR | O_LARGEFILE,
+				       current_cred());
 	pkm_kacs_stratafs_copy_up_end_phase(f->context);
 	if (IS_ERR(f->stage)) {
 		ret = PTR_ERR(f->stage);
 		goto out_release;
 	}
-	ret = pkm_kacs_stratafs_copy_up_bind_staging(f->context, &f->stage->f_path);
+	ret = pkm_kacs_stratafs_copy_up_bind_staging(f->context,
+						     &f->stage->f_path);
 	if (ret)
 		goto out_release;
 	mnt_drop_write(f->mnt);
@@ -2025,7 +2043,8 @@ static void stratafs_copy_expect_contents(struct kunit *test,
 	/* Inspect the internal staging file, whose copy-up phase is now over. */
 	ret = __kernel_read(f->stage, result, sizeof(result), &position);
 	KUNIT_EXPECT_EQ(test, ret, (ssize_t)sizeof(result));
-	KUNIT_EXPECT_MEMEQ(test, result, stratafs_copy_test_data, sizeof(result));
+	KUNIT_EXPECT_MEMEQ(test, result, stratafs_copy_test_data,
+			   sizeof(result));
 }
 
 static void stratafs_kunit_copy_contents_releases_writer(struct kunit *test)
@@ -2040,7 +2059,8 @@ static void stratafs_kunit_copy_contents_releases_writer(struct kunit *test)
 	KUNIT_ASSERT_EQ(test, mnt_want_write(f->mnt), 0);
 	f->write_held = true;
 	ret = stratafs_populate_regular_stage(f->context, &f->source->f_path,
-					      &f->stage->f_path, f->source, &f->write_held);
+					      &f->stage->f_path, f->source,
+					      &f->write_held);
 	KUNIT_EXPECT_EQ(test, ret, 0);
 	KUNIT_EXPECT_TRUE(test, f->write_held);
 	/* KUnit's managed cleanup runs after the test thread exits. */
@@ -2071,7 +2091,8 @@ static int stratafs_copy_freeze_thread(void *data)
 	return 0;
 }
 
-static void stratafs_kunit_copy_contents_with_pending_freezer(struct kunit *test)
+static void
+stratafs_kunit_copy_contents_with_pending_freezer(struct kunit *test)
 {
 	struct stratafs_copy_fixture *f;
 	struct stratafs_copy_freezer freezer = {};
@@ -2105,18 +2126,17 @@ static void stratafs_kunit_copy_contents_with_pending_freezer(struct kunit *test
 	KUNIT_EXPECT_TRUE(test, pending);
 	if (pending) {
 		KUNIT_EXPECT_FALSE(test, completion_done(&freezer.done));
-		ret = stratafs_populate_regular_stage(f->context,
-						      &f->source->f_path,
-						      &f->stage->f_path, f->source,
-						      &f->write_held);
+		ret = stratafs_populate_regular_stage(
+			f->context, &f->source->f_path, &f->stage->f_path,
+			f->source, &f->write_held);
 	}
 	if (f->write_held) {
 		mnt_drop_write(f->mnt);
 		f->write_held = false;
 	}
 	KUNIT_EXPECT_EQ(test, ret, 0);
-	KUNIT_EXPECT_NE(test, wait_for_completion_timeout(&freezer.done, 5 * HZ),
-			0UL);
+	KUNIT_EXPECT_NE(
+		test, wait_for_completion_timeout(&freezer.done, 5 * HZ), 0UL);
 	kthread_stop(thread);
 	stratafs_copy_fixture_release(f);
 	KUNIT_EXPECT_EQ(test, freezer.frozen, 0);

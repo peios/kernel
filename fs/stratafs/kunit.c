@@ -37,11 +37,11 @@ stratafs_kunit_identity_fixture(struct kunit *test)
 	stratafs_init_identities(&fixture->sbi);
 	fixture->sb.s_fs_info = &fixture->sbi;
 	if (kunit_add_action_or_reset(test, stratafs_kunit_identity_cleanup,
-				     fixture))
+				      fixture))
 		return NULL;
 	for (i = 0; i < ARRAY_SIZE(fixture->files); i++) {
 		fixture->files[i] = shmem_kernel_file_setup("stratafs-identity",
-							 0, EMPTY_VMA_FLAGS);
+							    0, EMPTY_VMA_FLAGS);
 		if (IS_ERR(fixture->files[i]))
 			return NULL;
 	}
@@ -60,23 +60,33 @@ static void stratafs_kunit_derived_identity_does_not_pin(struct kunit *test)
 	KUNIT_ASSERT_NOT_NULL(test, fixture);
 	provider = file_inode(fixture->files[0]);
 	refs = atomic_read(&provider->i_count);
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb, provider,
-						     &stat, &first), 0);
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb, provider,
-						     &stat, &again), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb, provider, &stat,
+						 &first),
+			0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb, provider, &stat,
+						 &again),
+			0);
 	KUNIT_EXPECT_EQ(test, first, again);
 	KUNIT_EXPECT_EQ(test, atomic_read(&provider->i_count), refs);
 	KUNIT_EXPECT_TRUE(test, xa_empty(&fixture->sbi.identities));
 
 	/* A reloaded provider inode with the same on-disk identity agrees. */
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb,
-		file_inode(fixture->files[1]), &stat, &again), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb,
+						 file_inode(fixture->files[1]),
+						 &stat, &again),
+			0);
 	KUNIT_EXPECT_EQ(test, first, again);
 
 	/* Btrfs subvolumes can share i_sb and i_ino but report different devs. */
 	stat.dev++;
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb,
-		file_inode(fixture->files[1]), &stat, &other), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb,
+						 file_inode(fixture->files[1]),
+						 &stat, &other),
+			0);
 	KUNIT_EXPECT_NE(test, first, other);
 	KUNIT_EXPECT_TRUE(test, xa_empty(&fixture->sbi.identities));
 	KUNIT_EXPECT_EQ(test, atomic_read(&provider->i_count), refs);
@@ -85,7 +95,9 @@ static void stratafs_kunit_derived_identity_does_not_pin(struct kunit *test)
 static void stratafs_kunit_overflow_identity_pins_once(struct kunit *test)
 {
 	struct stratafs_kunit_identity_fixture *fixture;
-	struct kstat stat = { .result_mask = STATX_INO, .dev = 7, .ino = U64_MAX };
+	struct kstat stat = { .result_mask = STATX_INO,
+			      .dev = 7,
+			      .ino = U64_MAX };
 	struct inode *provider;
 	unsigned long first, again, other, synthetic;
 	int refs;
@@ -94,15 +106,22 @@ static void stratafs_kunit_overflow_identity_pins_once(struct kunit *test)
 	KUNIT_ASSERT_NOT_NULL(test, fixture);
 	provider = file_inode(fixture->files[0]);
 	refs = atomic_read(&provider->i_count);
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb, provider,
-						     &stat, &first), 0);
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb, provider,
-						     &stat, &again), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb, provider, &stat,
+						 &first),
+			0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb, provider, &stat,
+						 &again),
+			0);
 	KUNIT_EXPECT_EQ(test, first, again);
 	KUNIT_EXPECT_EQ(test, atomic_read(&provider->i_count), refs + 1);
 	KUNIT_EXPECT_TRUE(test, !!(first & (1UL << (BITS_PER_LONG - 1))));
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb,
-		file_inode(fixture->files[1]), &stat, &other), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb,
+						 file_inode(fixture->files[1]),
+						 &stat, &other),
+			0);
 	KUNIT_EXPECT_NE(test, first, other);
 	KUNIT_ASSERT_EQ(test, stratafs_alloc_ino(&fixture->sb, &synthetic), 0);
 	KUNIT_EXPECT_NE(test, first, synthetic);
@@ -123,13 +142,19 @@ static void stratafs_kunit_missing_identity_and_exhaustion(struct kunit *test)
 
 	fixture = stratafs_kunit_identity_fixture(test);
 	KUNIT_ASSERT_NOT_NULL(test, fixture);
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb,
-		file_inode(fixture->files[0]), &stat, &first), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb,
+						 file_inode(fixture->files[0]),
+						 &stat, &first),
+			0);
 	KUNIT_EXPECT_TRUE(test, !!(first & high));
 	/* A previously assigned fallback must never change identity. */
 	stat.result_mask = STATX_INO;
-	KUNIT_ASSERT_EQ(test, stratafs_identity_number(&fixture->sb,
-		file_inode(fixture->files[0]), &stat, &again), 0);
+	KUNIT_ASSERT_EQ(test,
+			stratafs_identity_number(&fixture->sb,
+						 file_inode(fixture->files[0]),
+						 &stat, &again),
+			0);
 	KUNIT_EXPECT_EQ(test, first, again);
 
 	atomic64_set(&fixture->sbi.next_ino, high - 2);
@@ -174,8 +199,10 @@ static void stratafs_kunit_parse_valid(struct kunit *test)
 	struct stratafs_sb_info sbi = {};
 
 	KUNIT_ASSERT_EQ(test,
-		stratafs_parse_strata(&sbi,
-			"/system/retc:/lcl/etc+create:/usr/etc+ro"), 0);
+			stratafs_parse_strata(
+				&sbi,
+				"/system/retc:/lcl/etc+create:/usr/etc+ro"),
+			0);
 	KUNIT_EXPECT_EQ(test, sbi.count, 3U);
 	KUNIT_EXPECT_STREQ(test, sbi.strata[0].path, "/system/retc");
 	KUNIT_EXPECT_EQ(test, sbi.strata[1].flags, STRATAFS_F_CREATE);
@@ -189,8 +216,9 @@ static void stratafs_kunit_parse_escapes(struct kunit *test)
 {
 	struct stratafs_sb_info sbi = {};
 
-	KUNIT_ASSERT_EQ(test,
-		stratafs_parse_strata(&sbi, "/a\\:b:/c\\+d+am:/e\\,f+ro"), 0);
+	KUNIT_ASSERT_EQ(
+		test, stratafs_parse_strata(&sbi, "/a\\:b:/c\\+d+am:/e\\,f+ro"),
+		0);
 	KUNIT_EXPECT_STREQ(test, sbi.strata[0].path, "/a:b");
 	KUNIT_EXPECT_STREQ(test, sbi.strata[1].path, "/c+d");
 	KUNIT_EXPECT_STREQ(test, sbi.strata[2].path, "/e,f");
@@ -234,8 +262,8 @@ static void stratafs_kunit_mount_table_round_trip(struct kunit *test)
 		unsigned int j;
 
 		KUNIT_ASSERT_EQ_MSG(test,
-			stratafs_parse_strata(&first, stacks[i]), 0,
-			"parse of %s", stacks[i]);
+				    stratafs_parse_strata(&first, stacks[i]), 0,
+				    "parse of %s", stacks[i]);
 
 		m.size = PAGE_SIZE;
 		m.buf = kunit_kzalloc(test, m.size, GFP_KERNEL);
@@ -247,14 +275,13 @@ static void stratafs_kunit_mount_table_round_trip(struct kunit *test)
 		m.buf[m.count] = '\0';
 
 		/* Skip the ",strata=" the mount table prefixes. */
-		KUNIT_ASSERT_EQ_MSG(test,
-			strncmp(m.buf, ",strata=", 8), 0,
-			"reported %s", m.buf);
+		KUNIT_ASSERT_EQ_MSG(test, strncmp(m.buf, ",strata=", 8), 0,
+				    "reported %s", m.buf);
 		reported = m.buf + 8;
 
 		KUNIT_ASSERT_EQ_MSG(test,
-			stratafs_parse_strata(&second, reported), 0,
-			"reparse of reported %s", reported);
+				    stratafs_parse_strata(&second, reported), 0,
+				    "reparse of reported %s", reported);
 
 		KUNIT_EXPECT_EQ_MSG(test, second.count, first.count,
 				    "stratum count for %s", stacks[i]);
@@ -286,10 +313,10 @@ static void stratafs_kunit_remount_compares_the_stack(struct kunit *test)
 {
 	static const char *const stack = "/a\\:b:/c\\+d+am:/e\\,f+ro";
 	static const char *const differing[] = {
-		"/a\\:b:/c\\+d+am",                 /* a stratum removed */
-		"/c\\+d+am:/a\\:b:/e\\,f+ro",       /* reordered */
-		"/a\\:b:/c\\+d+ro:/e\\,f+ro",       /* re-flagged */
-		"/a\\:b:/c\\+d+am:/e\\,f+ro:/g",    /* a stratum added */
+		"/a\\:b:/c\\+d+am", /* a stratum removed */
+		"/c\\+d+am:/a\\:b:/e\\,f+ro", /* reordered */
+		"/a\\:b:/c\\+d+ro:/e\\,f+ro", /* re-flagged */
+		"/a\\:b:/c\\+d+am:/e\\,f+ro:/g", /* a stratum added */
 	};
 	struct stratafs_sb_info mounted = {};
 	struct stratafs_sb_info same = {};
@@ -305,10 +332,10 @@ static void stratafs_kunit_remount_compares_the_stack(struct kunit *test)
 		struct stratafs_sb_info other = {};
 
 		KUNIT_ASSERT_EQ_MSG(test,
-			stratafs_parse_strata(&other, differing[i]), 0,
-			"parse of %s", differing[i]);
-		KUNIT_EXPECT_FALSE_MSG(test,
-			stratafs_strata_unchanged(&other, &mounted),
+				    stratafs_parse_strata(&other, differing[i]),
+				    0, "parse of %s", differing[i]);
+		KUNIT_EXPECT_FALSE_MSG(
+			test, stratafs_strata_unchanged(&other, &mounted),
 			"%s differs and must be refused", differing[i]);
 		stratafs_kunit_free_parsed(&other);
 	}
@@ -318,7 +345,7 @@ static void stratafs_kunit_remount_compares_the_stack(struct kunit *test)
 static void stratafs_kunit_parse_rejects_malformed(struct kunit *test)
 {
 	const char *const invalid[] = {
-		"", "relative", ":/a", "/a:", "/a::/b", "/a+",
+		"",	      "relative", ":/a",   "/a:",  "/a::/b", "/a+",
 		"/a+unknown", "/a+ro+ro", "/a\\q", "/a\\", "/a,b",
 	};
 	unsigned int i;
@@ -326,7 +353,8 @@ static void stratafs_kunit_parse_rejects_malformed(struct kunit *test)
 	for (i = 0; i < ARRAY_SIZE(invalid); i++) {
 		struct stratafs_sb_info sbi = {};
 
-		KUNIT_EXPECT_EQ_MSG(test, stratafs_parse_strata(&sbi, invalid[i]),
+		KUNIT_EXPECT_EQ_MSG(test,
+				    stratafs_parse_strata(&sbi, invalid[i]),
 				    -EINVAL, "accepted %s", invalid[i]);
 	}
 }
@@ -334,23 +362,29 @@ static void stratafs_kunit_parse_rejects_malformed(struct kunit *test)
 static void stratafs_kunit_routing(struct kunit *test)
 {
 	KUNIT_EXPECT_EQ(test,
-		stratafs_rust_route_existing(2, false, 1, true, true, false),
-		(int)STRATAFS_ROUTE_COPY_UP);
+			stratafs_rust_route_existing(2, false, 1, true, true,
+						     false),
+			(int)STRATAFS_ROUTE_COPY_UP);
 	KUNIT_EXPECT_EQ(test,
-		stratafs_rust_route_existing(1, false, 2, true, true, false),
-		(int)STRATAFS_ROUTE_READ_ONLY);
+			stratafs_rust_route_existing(1, false, 2, true, true,
+						     false),
+			(int)STRATAFS_ROUTE_READ_ONLY);
 	KUNIT_EXPECT_EQ(test,
-		stratafs_rust_route_existing(1, true, 0, true, true, false),
-		(int)STRATAFS_ROUTE_IN_PLACE);
+			stratafs_rust_route_existing(1, true, 0, true, true,
+						     false),
+			(int)STRATAFS_ROUTE_IN_PLACE);
 	KUNIT_EXPECT_EQ(test,
-		stratafs_rust_route_existing(1, true, 0, true, true, true),
-		(int)STRATAFS_ROUTE_READ_ONLY);
+			stratafs_rust_route_existing(1, true, 0, true, true,
+						     true),
+			(int)STRATAFS_ROUTE_READ_ONLY);
 	KUNIT_EXPECT_EQ(test,
-		stratafs_rust_route_existing(2, false, 1, true, false, false),
-		(int)STRATAFS_ROUTE_READ_ONLY);
+			stratafs_rust_route_existing(2, false, 1, true, false,
+						     false),
+			(int)STRATAFS_ROUTE_READ_ONLY);
 	KUNIT_EXPECT_EQ(test,
-		stratafs_rust_route_existing(2, false, -1, false, true, false),
-		(int)STRATAFS_ROUTE_READ_ONLY);
+			stratafs_rust_route_existing(2, false, -1, false, true,
+						     false),
+			(int)STRATAFS_ROUTE_READ_ONLY);
 }
 
 static void stratafs_kunit_live_mount_cookie(struct kunit *test)
@@ -393,23 +427,22 @@ static void stratafs_kunit_reserved_xattr_names(struct kunit *test)
 		STRATAFS_XATTR_STAGING,
 	};
 	static const char *const forwarded[] = {
-		"system.stratafsfoo",
-		"system.stratafs_other",
-		"system.strataf",
-		"user.system.stratafs",
-		"security.capability",
-		"",
+		"system.stratafsfoo",  "system.stratafs_other",
+		"system.strataf",      "user.system.stratafs",
+		"security.capability", "",
 	};
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(reserved); i++)
-		KUNIT_EXPECT_TRUE_MSG(test, stratafs_reserved_xattr(reserved[i]),
+		KUNIT_EXPECT_TRUE_MSG(test,
+				      stratafs_reserved_xattr(reserved[i]),
 				      "%s must be reserved", reserved[i]);
 
 	for (i = 0; i < ARRAY_SIZE(forwarded); i++)
 		KUNIT_EXPECT_FALSE_MSG(test,
 				       stratafs_reserved_xattr(forwarded[i]),
-				       "%s must reach the provider", forwarded[i]);
+				       "%s must reach the provider",
+				       forwarded[i]);
 }
 
 static void stratafs_kunit_cache_cleanup(void *data)
@@ -425,7 +458,8 @@ static struct stratafs_dir_cache *stratafs_kunit_cache(struct kunit *test)
 	if (!cache)
 		return NULL;
 	stratafs_dir_cache_init(cache);
-	if (kunit_add_action_or_reset(test, stratafs_kunit_cache_cleanup, cache))
+	if (kunit_add_action_or_reset(test, stratafs_kunit_cache_cleanup,
+				      cache))
 		return NULL;
 	return cache;
 }
@@ -435,7 +469,8 @@ static void stratafs_kunit_directory_empty(struct kunit *test)
 	struct stratafs_dir_cache *cache = stratafs_kunit_cache(test);
 
 	KUNIT_ASSERT_NOT_NULL(test, cache);
-	KUNIT_EXPECT_FALSE(test, stratafs_dir_cache_contains(cache, "absent", 6));
+	KUNIT_EXPECT_FALSE(test,
+			   stratafs_dir_cache_contains(cache, "absent", 6));
 	KUNIT_ASSERT_EQ(test, stratafs_dir_cache_seal(cache), 0);
 	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, 2), NULL);
 }
@@ -452,23 +487,31 @@ static void stratafs_kunit_directory_index(struct kunit *test)
 	for (i = 0; i < 4096; i++) {
 		int len = snprintf(name, sizeof(name), "entry-%u", i);
 
-		KUNIT_EXPECT_FALSE(test, stratafs_dir_cache_contains(cache, name, len));
-		KUNIT_ASSERT_EQ(test, stratafs_dir_cache_add(cache, name, len,
-							    DT_REG, 0), 0);
+		KUNIT_EXPECT_FALSE(
+			test, stratafs_dir_cache_contains(cache, name, len));
+		KUNIT_ASSERT_EQ(
+			test,
+			stratafs_dir_cache_add(cache, name, len, DT_REG, 0), 0);
 	}
 	for (i = 0; i < 4096; i++) {
 		int len = snprintf(name, sizeof(name), "entry-%u", i);
 
-		KUNIT_EXPECT_TRUE(test, stratafs_dir_cache_contains(cache, name, len));
+		KUNIT_EXPECT_TRUE(test, stratafs_dir_cache_contains(cache, name,
+								    len));
 	}
 	/* Prefixes and extra bytes are distinct even with an identical prefix. */
-	KUNIT_EXPECT_FALSE(test, stratafs_dir_cache_contains(cache, "entry-", 6));
-	KUNIT_EXPECT_FALSE(test, stratafs_dir_cache_contains(cache, "entry-0x", 8));
-	entry = list_first_entry(&cache->entries, struct stratafs_dir_entry, list);
+	KUNIT_EXPECT_FALSE(test,
+			   stratafs_dir_cache_contains(cache, "entry-", 6));
+	KUNIT_EXPECT_FALSE(test,
+			   stratafs_dir_cache_contains(cache, "entry-0x", 8));
+	entry = list_first_entry(&cache->entries, struct stratafs_dir_entry,
+				 list);
 	stratafs_dir_cache_remove(cache, entry);
-	KUNIT_EXPECT_FALSE(test, stratafs_dir_cache_contains(cache, "entry-0", 7));
-	KUNIT_ASSERT_EQ(test, stratafs_dir_cache_add(cache, "entry-0", 7,
-						    DT_DIR, 1), 0);
+	KUNIT_EXPECT_FALSE(test,
+			   stratafs_dir_cache_contains(cache, "entry-0", 7));
+	KUNIT_ASSERT_EQ(test,
+			stratafs_dir_cache_add(cache, "entry-0", 7, DT_DIR, 1),
+			0);
 	KUNIT_ASSERT_EQ(test, stratafs_dir_cache_seal(cache), 0);
 	KUNIT_EXPECT_PTR_EQ(test, cache->buckets, NULL);
 	KUNIT_EXPECT_EQ(test, cache->count, 4096U);
@@ -487,13 +530,16 @@ static void stratafs_kunit_directory_index(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, entry->participant_index, 1U);
 	KUNIT_EXPECT_EQ(test, entry->type, (unsigned int)DT_DIR);
 	/* Resume, rewind and very large seek positions never wrap to an entry. */
-	KUNIT_EXPECT_STREQ(test, stratafs_dir_cache_at(cache, 2)->name, "entry-1");
+	KUNIT_EXPECT_STREQ(test, stratafs_dir_cache_at(cache, 2)->name,
+			   "entry-1");
 	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, -1), NULL);
 	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, 0), NULL);
 	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, 1), NULL);
 	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, 4098), NULL);
-	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, (1LL << 32) + 2), NULL);
-	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, LLONG_MAX), NULL);
+	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, (1LL << 32) + 2),
+			    NULL);
+	KUNIT_EXPECT_PTR_EQ(test, stratafs_dir_cache_at(cache, LLONG_MAX),
+			    NULL);
 }
 
 static struct kunit_case stratafs_kunit_cases[] = {

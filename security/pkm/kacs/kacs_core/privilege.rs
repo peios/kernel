@@ -12,7 +12,8 @@ pub const RESTORE_INTENT: u32 = crate::peios_uapi::KACS_RESTORE_INTENT;
 /// Bit position for `SeSecurityPrivilege`.
 pub const SE_SECURITY_PRIVILEGE: u64 = crate::peios_uapi::KACS_SE_SECURITY_PRIVILEGE as u64;
 /// Bit position for `SeTakeOwnershipPrivilege`.
-pub const SE_TAKE_OWNERSHIP_PRIVILEGE: u64 = crate::peios_uapi::KACS_SE_TAKE_OWNERSHIP_PRIVILEGE as u64;
+pub const SE_TAKE_OWNERSHIP_PRIVILEGE: u64 =
+    crate::peios_uapi::KACS_SE_TAKE_OWNERSHIP_PRIVILEGE as u64;
 /// Bit position for `SeBackupPrivilege`.
 pub const SE_BACKUP_PRIVILEGE: u64 = crate::peios_uapi::KACS_SE_BACKUP_PRIVILEGE as u64;
 /// Bit position for `SeRestorePrivilege`.

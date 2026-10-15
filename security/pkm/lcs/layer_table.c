@@ -81,8 +81,7 @@ extern int lcs_rust_select_layer_owner(
 	struct pkm_lcs_layer_owner_selection_copy *selection_out);
 extern int lcs_rust_layer_name_casefold_eq(
 	const u8 *left, u32 left_len, const u8 *right, u32 right_len,
-	const struct pkm_lcs_runtime_limits *limits,
-	u8 *equal_out);
+	const struct pkm_lcs_runtime_limits *limits, u8 *equal_out);
 
 long pkm_lcs_layer_name_casefold_equal_with_limits(
 	const char *left, u32 left_len, const char *right, u32 right_len,
@@ -153,8 +152,8 @@ void pkm_lcs_create_layer_target_set_base(
 	target->implicit_base = 1;
 }
 
-static void pkm_lcs_layer_table_entry_destroy(
-	struct pkm_lcs_layer_table_entry *entry)
+static void
+pkm_lcs_layer_table_entry_destroy(struct pkm_lcs_layer_table_entry *entry)
 {
 	kfree(entry->name);
 	kfree(entry->metadata_sd);
@@ -251,15 +250,14 @@ static long pkm_lcs_layer_table_shape_locked(u32 *count_out,
 		    !pkm_lcs_layer_table[i].owner_sid_len)
 			return -EIO;
 		count++;
-		if (check_add_overflow(
-			    name_bytes,
-			    (size_t)pkm_lcs_layer_table[i].name_len + 1U,
-			    &name_bytes))
+		if (check_add_overflow(name_bytes,
+				       (size_t)pkm_lcs_layer_table[i].name_len +
+					       1U,
+				       &name_bytes))
 			return -EOVERFLOW;
-		if (check_add_overflow(
-			    metadata_sd_bytes,
-			    pkm_lcs_layer_table[i].metadata_sd_len,
-			    &metadata_sd_bytes))
+		if (check_add_overflow(metadata_sd_bytes,
+				       pkm_lcs_layer_table[i].metadata_sd_len,
+				       &metadata_sd_bytes))
 			return -EOVERFLOW;
 	}
 
@@ -321,12 +319,14 @@ static long pkm_lcs_validate_private_layer_authority(
 		if (ret)
 			return ret;
 		for (j = 0; j < snapshot->layer_count; j++) {
-			const struct pkm_lcs_rsi_layer_view *layer = &snapshot->layers[j];
+			const struct pkm_lcs_rsi_layer_view *layer =
+				&snapshot->layers[j];
 
 			if (!layer->precedence)
 				continue;
 			ret = pkm_lcs_layer_name_casefold_equal_with_limits(
-				name, len, layer->name, layer->name_len, limits, &equal);
+				name, len, layer->name, layer->name_len, limits,
+				&equal);
 			if (ret)
 				return ret;
 			if (equal)
@@ -338,7 +338,7 @@ static long pkm_lcs_validate_private_layer_authority(
 
 static long pkm_lcs_validate_new_token_credentials(const void *token)
 {
-	struct pkm_lcs_layer_snapshot snapshot = { };
+	struct pkm_lcs_layer_snapshot snapshot = {};
 	struct pkm_lcs_runtime_limits limits;
 	long ret;
 
@@ -348,7 +348,8 @@ static long pkm_lcs_validate_new_token_credentials(const void *token)
 	if (ret)
 		return ret;
 	pkm_lcs_runtime_limits_snapshot_or_default(&limits);
-	ret = pkm_lcs_validate_private_layer_authority(token, &snapshot, &limits);
+	ret = pkm_lcs_validate_private_layer_authority(token, &snapshot,
+						       &limits);
 	pkm_lcs_source_layer_snapshot_release(&snapshot);
 	return ret;
 }
@@ -401,9 +402,8 @@ long pkm_lcs_private_credentials_acquire_for_token(
 		return ret;
 
 	if (scope_count) {
-		view->scope_guids = kcalloc(scope_count,
-					    sizeof(*view->scope_guids),
-					    GFP_KERNEL);
+		view->scope_guids = kcalloc(
+			scope_count, sizeof(*view->scope_guids), GFP_KERNEL);
 		if (!view->scope_guids)
 			return -ENOMEM;
 
@@ -456,9 +456,9 @@ void pkm_lcs_private_credentials_release(
 	memset(view, 0, sizeof(*view));
 }
 
-long pkm_lcs_source_layer_snapshot_copy(
-	struct pkm_lcs_rsi_layer_view *layers, u32 max_layers,
-	char *name_buf, size_t name_buf_len, u32 *count_out)
+long pkm_lcs_source_layer_snapshot_copy(struct pkm_lcs_rsi_layer_view *layers,
+					u32 max_layers, char *name_buf,
+					size_t name_buf_len, u32 *count_out)
 {
 	size_t name_offset = 0;
 	u32 written = 0;
@@ -508,12 +508,12 @@ long pkm_lcs_source_layer_snapshot_copy(
 }
 
 static long pkm_lcs_source_layer_snapshot_copy_full(
-	struct pkm_lcs_rsi_layer_view *layers, u32 max_layers,
-	char *name_buf, size_t name_buf_len,
-	struct pkm_lcs_layer_metadata_sd_view *metadata, u32 max_metadata,
-	u8 *metadata_sd_buf, size_t metadata_sd_buf_len, u32 *count_out,
-	bool *base_metadata_present_out, const u8 **base_metadata_sd_out,
-	size_t *base_metadata_sd_len_out, u32 *metadata_count_out)
+	struct pkm_lcs_rsi_layer_view *layers, u32 max_layers, char *name_buf,
+	size_t name_buf_len, struct pkm_lcs_layer_metadata_sd_view *metadata,
+	u32 max_metadata, u8 *metadata_sd_buf, size_t metadata_sd_buf_len,
+	u32 *count_out, bool *base_metadata_present_out,
+	const u8 **base_metadata_sd_out, size_t *base_metadata_sd_len_out,
+	u32 *metadata_count_out)
 {
 	size_t name_offset = 0;
 	size_t metadata_sd_offset = 0;
@@ -540,15 +540,13 @@ static long pkm_lcs_source_layer_snapshot_copy_full(
 		mutex_unlock(&pkm_lcs_layer_table_lock);
 		return -ENOSPC;
 	}
-	if (required_metadata &&
-	    (!metadata || !name_buf || !metadata_sd_buf)) {
+	if (required_metadata && (!metadata || !name_buf || !metadata_sd_buf)) {
 		mutex_unlock(&pkm_lcs_layer_table_lock);
 		return -ENOSPC;
 	}
 	if (pkm_lcs_base_layer_metadata.present &&
-	    (!metadata_sd_buf ||
-	     pkm_lcs_base_layer_metadata.metadata_sd_len >
-		     metadata_sd_buf_len)) {
+	    (!metadata_sd_buf || pkm_lcs_base_layer_metadata.metadata_sd_len >
+					 metadata_sd_buf_len)) {
 		mutex_unlock(&pkm_lcs_layer_table_lock);
 		return -ENOSPC;
 	}
@@ -644,8 +642,8 @@ long pkm_lcs_source_layer_snapshot_acquire(
 
 	for (attempt = 0; attempt < 3; attempt++) {
 		mutex_lock(&pkm_lcs_layer_table_lock);
-		ret = pkm_lcs_layer_table_shape_locked(
-			&count, &name_bytes, &metadata_sd_bytes);
+		ret = pkm_lcs_layer_table_shape_locked(&count, &name_bytes,
+						       &metadata_sd_bytes);
 		mutex_unlock(&pkm_lcs_layer_table_lock);
 		if (ret)
 			return ret;
@@ -691,11 +689,9 @@ long pkm_lcs_source_layer_snapshot_acquire(
 		if (!ret) {
 			snapshot->layers = layers;
 			snapshot->layer_count = written;
-			snapshot->base_metadata_present =
-				base_metadata_present;
+			snapshot->base_metadata_present = base_metadata_present;
 			snapshot->base_metadata_sd = base_metadata_sd;
-			snapshot->base_metadata_sd_len =
-				base_metadata_sd_len;
+			snapshot->base_metadata_sd_len = base_metadata_sd_len;
 			snapshot->metadata = metadata;
 			snapshot->metadata_count = metadata_written;
 			snapshot->owned_layers = layers;
@@ -739,16 +735,16 @@ void pkm_lcs_source_layer_snapshot_release(
 	memset(snapshot, 0, sizeof(*snapshot));
 }
 
-long pkm_lcs_layer_table_owner_snapshot(
-	const char *layer_name, u32 layer_name_len, u8 **owner_sid_out,
-	size_t *owner_sid_len_out, bool *present_out)
+long pkm_lcs_layer_table_owner_snapshot(const char *layer_name,
+					u32 layer_name_len, u8 **owner_sid_out,
+					size_t *owner_sid_len_out,
+					bool *present_out)
 {
 	u8 *owner_copy = NULL;
 	u32 i;
 	long ret = 0;
 
-	if (!layer_name || !owner_sid_out || !owner_sid_len_out ||
-	    !present_out)
+	if (!layer_name || !owner_sid_out || !owner_sid_len_out || !present_out)
 		return -EINVAL;
 	*owner_sid_out = NULL;
 	*owner_sid_len_out = 0;
@@ -797,7 +793,7 @@ long pkm_lcs_layer_owner_select_copy(
 	size_t metadata_sd_len, bool metadata_sd_present, bool is_new_layer,
 	u8 **owner_sid_out, size_t *owner_sid_len_out, u32 *source_out)
 {
-	struct pkm_lcs_layer_owner_selection_copy selection = { };
+	struct pkm_lcs_layer_owner_selection_copy selection = {};
 	u8 *copy;
 	int ret;
 
@@ -821,7 +817,7 @@ long pkm_lcs_layer_owner_select_copy(
 		return -EIO;
 
 	copy = kmemdup(selection.owner_sid, selection.owner_sid_len,
-		      GFP_KERNEL);
+		       GFP_KERNEL);
 	if (!copy)
 		return -ENOMEM;
 	*owner_sid_out = copy;
@@ -845,10 +841,9 @@ static bool pkm_lcs_layer_table_effective_changed(bool existed_before,
 }
 
 long pkm_lcs_layer_table_publish_with_result_with_limits(
-	const char *layer_name, u32 layer_name_len, u32 precedence,
-	u8 enabled, const u8 metadata_key_guid[RSI_GUID_SIZE],
-	const u8 *metadata_sd, size_t metadata_sd_len,
-	const u8 *owner_sid, size_t owner_sid_len,
+	const char *layer_name, u32 layer_name_len, u32 precedence, u8 enabled,
+	const u8 metadata_key_guid[RSI_GUID_SIZE], const u8 *metadata_sd,
+	size_t metadata_sd_len, const u8 *owner_sid, size_t owner_sid_len,
 	const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_layer_table_publish_result *result)
 {
@@ -980,8 +975,9 @@ long pkm_lcs_layer_table_publish_with_result_with_limits(
 	mutex_unlock(&pkm_lcs_layer_table_lock);
 
 	trace_lcs_layer_publish(0, layer_name_len,
-				jhash(layer_name, layer_name_len, 0), precedence,
-				enabled, effective_changed ? 1 : 0, 0);
+				jhash(layer_name, layer_name_len, 0),
+				precedence, enabled, effective_changed ? 1 : 0,
+				0);
 	return 0;
 
 out_unlock_free:
@@ -993,10 +989,9 @@ out_unlock_free:
 }
 
 long pkm_lcs_layer_table_publish_with_result(
-	const char *layer_name, u32 layer_name_len, u32 precedence,
-	u8 enabled, const u8 metadata_key_guid[RSI_GUID_SIZE],
-	const u8 *metadata_sd, size_t metadata_sd_len,
-	const u8 *owner_sid, size_t owner_sid_len,
+	const char *layer_name, u32 layer_name_len, u32 precedence, u8 enabled,
+	const u8 metadata_key_guid[RSI_GUID_SIZE], const u8 *metadata_sd,
+	size_t metadata_sd_len, const u8 *owner_sid, size_t owner_sid_len,
 	struct pkm_lcs_layer_table_publish_result *result)
 {
 	struct pkm_lcs_runtime_limits limits;
@@ -1008,11 +1003,11 @@ long pkm_lcs_layer_table_publish_with_result(
 		owner_sid_len, &limits, result);
 }
 
-long pkm_lcs_layer_table_publish(
-	const char *layer_name, u32 layer_name_len, u32 precedence,
-	u8 enabled, const u8 metadata_key_guid[RSI_GUID_SIZE],
-	const u8 *metadata_sd, size_t metadata_sd_len,
-	const u8 *owner_sid, size_t owner_sid_len)
+long pkm_lcs_layer_table_publish(const char *layer_name, u32 layer_name_len,
+				 u32 precedence, u8 enabled,
+				 const u8 metadata_key_guid[RSI_GUID_SIZE],
+				 const u8 *metadata_sd, size_t metadata_sd_len,
+				 const u8 *owner_sid, size_t owner_sid_len)
 {
 	return pkm_lcs_layer_table_publish_with_result(
 		layer_name, layer_name_len, precedence, enabled,
@@ -1021,8 +1016,8 @@ long pkm_lcs_layer_table_publish(
 }
 
 long pkm_lcs_base_layer_metadata_publish(
-	const u8 metadata_key_guid[RSI_GUID_SIZE],
-	const u8 *metadata_sd, size_t metadata_sd_len)
+	const u8 metadata_key_guid[RSI_GUID_SIZE], const u8 *metadata_sd,
+	size_t metadata_sd_len)
 {
 	u8 *metadata_sd_copy;
 	int ret;

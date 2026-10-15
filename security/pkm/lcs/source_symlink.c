@@ -16,17 +16,16 @@ long pkm_lcs_resolve_symlink_target_for_key(
 	const u8 (*scope_guids)[16], u32 scope_count,
 	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
 	const struct pkm_lcs_rsi_private_layer_view *private_layers,
-	u32 private_layer_count,
-	const struct pkm_lcs_runtime_limits *limits,
+	u32 private_layer_count, const struct pkm_lcs_runtime_limits *limits,
 	struct pkm_lcs_symlink_target_resolution *result)
 {
 	const struct pkm_lcs_rsi_layer_view *active_layers = layers;
 	const struct pkm_lcs_rsi_private_layer_view *active_private_layers =
 		private_layers;
 	struct pkm_lcs_runtime_limits effective_limits;
-	struct pkm_lcs_source_response_result response = { };
-	struct pkm_lcs_source_enqueue_result enqueue = { };
-	struct pkm_lcs_rsi_query_value_result value = { };
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_source_enqueue_result enqueue = {};
+	struct pkm_lcs_rsi_query_value_result value = {};
 	struct pkm_lcs_source_response_frame frame;
 	const char *target;
 	u64 next_sequence;
@@ -43,9 +42,10 @@ long pkm_lcs_resolve_symlink_target_for_key(
 		limits = &effective_limits;
 	}
 
-	ret = pkm_lcs_normalize_layer_inputs(
-		&active_layers, &active_layer_count, &active_private_layers,
-		&active_private_layer_count);
+	ret = pkm_lcs_normalize_layer_inputs(&active_layers,
+					     &active_layer_count,
+					     &active_private_layers,
+					     &active_private_layer_count);
 	if (ret)
 		return ret;
 
@@ -60,10 +60,9 @@ long pkm_lcs_resolve_symlink_target_for_key(
 		goto out_destroy;
 
 	ret = pkm_lcs_rsi_materialize_query_value_response(
-		frame.data, frame.len, response.request_id, next_sequence,
-		"", 0, active_layers, active_layer_count,
-		active_private_layers, active_private_layer_count, limits,
-		&value);
+		frame.data, frame.len, response.request_id, next_sequence, "",
+		0, active_layers, active_layer_count, active_private_layers,
+		active_private_layer_count, limits, &value);
 	if (ret)
 		goto out_destroy;
 	if (!value.found || value.value_type != REG_LINK) {
@@ -77,9 +76,9 @@ long pkm_lcs_resolve_symlink_target_for_key(
 	}
 
 	target = (const char *)(frame.data + value.data_offset);
-	ret = pkm_lcs_route_symlink_target_with_limits(
-		target, value.data_len, scope_guids, scope_count,
-		limits, &result->route);
+	ret = pkm_lcs_route_symlink_target_with_limits(target, value.data_len,
+						       scope_guids, scope_count,
+						       limits, &result->route);
 	if (ret)
 		goto out_destroy;
 
@@ -100,10 +99,9 @@ long pkm_lcs_resolve_symlink_target_for_key(
 out_destroy:
 	pkm_lcs_source_response_frame_destroy(&frame);
 	pkm_lcs_symlink_target_resolution_destroy(result);
-	trace_lcs_resolve_symlink(source_id, txn_id,
-				  key_guid ? (u64)jhash(key_guid, RSI_GUID_SIZE,
-							0) :
-					     0,
-				  0, 0, 0, ret);
+	trace_lcs_resolve_symlink(
+		source_id, txn_id,
+		key_guid ? (u64)jhash(key_guid, RSI_GUID_SIZE, 0) : 0, 0, 0, 0,
+		ret);
 	return ret;
 }

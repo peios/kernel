@@ -32,7 +32,8 @@ int stratafs_register_live_mount(struct stratafs_sb_info *sbi)
 		if (!sbi->mount_cookie)
 			continue;
 		ret = xa_insert(&stratafs_live_mounts,
-				(unsigned long)sbi->mount_cookie, sbi, GFP_KERNEL);
+				(unsigned long)sbi->mount_cookie, sbi,
+				GFP_KERNEL);
 		if (ret == -EBUSY)
 			continue;
 		if (ret)
@@ -277,7 +278,7 @@ static int stratafs_check_initial_strata(struct super_block *sb,
 			}
 		}
 		*stack_depth = max_t(unsigned int, *stack_depth,
-					      resolved[i].dentry->d_sb->s_stack_depth);
+				     resolved[i].dentry->d_sb->s_stack_depth);
 	}
 
 	if (*stack_depth >= FILESYSTEM_MAX_STACK_DEPTH)
@@ -322,11 +323,12 @@ static int stratafs_fill_super(struct super_block *sb, struct fs_context *fc)
 	if (sbi->create_index >= 0 &&
 	    (roots.present & BIT_ULL(sbi->create_index)) &&
 	    d_is_dir(roots.path[sbi->create_index].dentry))
-		stratafs_recover_staging_parent(
-			sb, &roots.path[sbi->create_index]);
+		stratafs_recover_staging_parent(sb,
+						&roots.path[sbi->create_index]);
 	provider = stratafs_provider_index(&roots, sbi->count);
 	if (provider >= 0)
-		inode = stratafs_new_inode(sb, &roots.path[provider], provider, "");
+		inode = stratafs_new_inode(sb, &roots.path[provider], provider,
+					   "");
 	else
 		inode = stratafs_new_inode(sb, NULL, 0, "");
 	stratafs_put_paths(&roots, sbi->count);

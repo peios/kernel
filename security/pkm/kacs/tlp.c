@@ -38,8 +38,9 @@ static void pkm_kacs_tlp_clear_prefixes_locked(void)
 	pkm_kacs_tlp_prefix_count = 0;
 }
 
-static long pkm_kacs_tlp_replace_prefixes_kernel(
-	const char * const *prefixes, const size_t *prefix_lens, u32 count)
+static long pkm_kacs_tlp_replace_prefixes_kernel(const char *const *prefixes,
+						 const size_t *prefix_lens,
+						 u32 count)
 {
 	char *new_prefixes[PKM_KACS_TLP_MAX_PREFIXES] = {};
 	size_t new_lens[PKM_KACS_TLP_MAX_PREFIXES] = {};
@@ -120,8 +121,7 @@ static bool pkm_kacs_tlp_path_allowed(const char *path, size_t path_len)
 	return allowed;
 }
 
-static int pkm_kacs_check_tlp_path_core(u32 mitigation_bits,
-					bool file_backed,
+static int pkm_kacs_check_tlp_path_core(u32 mitigation_bits, bool file_backed,
 					bool executable_transition,
 					const char *path, size_t path_len)
 {
@@ -168,8 +168,7 @@ int pkm_kacs_check_tlp_file_core(u32 mitigation_bits, struct file *file,
 		goto out_putname;
 	}
 
-	path_len = strnlen(resolved,
-			   (size_t)(path_buf + PATH_MAX - resolved));
+	path_len = strnlen(resolved, (size_t)(path_buf + PATH_MAX - resolved));
 	ret = pkm_kacs_check_tlp_path_core(mitigation_bits, true, true,
 					   resolved, path_len);
 
@@ -179,9 +178,8 @@ out_putname:
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
-long pkm_kacs_kunit_replace_tlp_prefixes(const char * const *prefixes,
-					 const size_t *prefix_lens,
-					 u32 count)
+long pkm_kacs_kunit_replace_tlp_prefixes(const char *const *prefixes,
+					 const size_t *prefix_lens, u32 count)
 {
 	return pkm_kacs_tlp_replace_prefixes_kernel(prefixes, prefix_lens,
 						    count);
@@ -194,25 +192,22 @@ void pkm_kacs_kunit_clear_tlp_prefixes(void)
 	mutex_unlock(&pkm_kacs_tlp_cache_lock);
 }
 
-int pkm_kacs_kunit_check_tlp_mmap_path(u32 mitigation_bits,
-				       unsigned long prot,
-				       const char *path,
-				       u32 file_backed)
+int pkm_kacs_kunit_check_tlp_mmap_path(u32 mitigation_bits, unsigned long prot,
+				       const char *path, u32 file_backed)
 {
-	return pkm_kacs_check_tlp_path_core(
-		mitigation_bits, file_backed != 0, (prot & PROT_EXEC) != 0,
-		path, path ? strlen(path) : 0);
+	return pkm_kacs_check_tlp_path_core(mitigation_bits, file_backed != 0,
+					    (prot & PROT_EXEC) != 0, path,
+					    path ? strlen(path) : 0);
 }
 
 int pkm_kacs_kunit_check_tlp_mprotect_path(u32 mitigation_bits,
 					   unsigned long vm_flags,
-					   unsigned long prot,
-					   const char *path,
+					   unsigned long prot, const char *path,
 					   u32 file_backed)
 {
-	return pkm_kacs_check_tlp_path_core(
-		mitigation_bits, file_backed != 0,
-		(prot & PROT_EXEC) != 0 && (vm_flags & VM_EXEC) == 0,
-		path, path ? strlen(path) : 0);
+	return pkm_kacs_check_tlp_path_core(mitigation_bits, file_backed != 0,
+					    (prot & PROT_EXEC) != 0 &&
+						    (vm_flags & VM_EXEC) == 0,
+					    path, path ? strlen(path) : 0);
 }
 #endif

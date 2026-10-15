@@ -70,8 +70,8 @@ void pkm_lcs_source_queued_request_free(
 	kfree(request);
 }
 
-static void pkm_lcs_source_queue_destroy_locked(
-	struct pkm_lcs_source_fd *source_fd)
+static void
+pkm_lcs_source_queue_destroy_locked(struct pkm_lcs_source_fd *source_fd)
 {
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_queued_request *next;
@@ -86,8 +86,8 @@ static void pkm_lcs_source_queue_destroy_locked(
 	source_fd->queued_request_count = 0;
 }
 
-static void pkm_lcs_source_in_flight_destroy_locked(
-	struct pkm_lcs_source_fd *source_fd)
+static void
+pkm_lcs_source_in_flight_destroy_locked(struct pkm_lcs_source_fd *source_fd)
 {
 	bool had_in_flight;
 	struct pkm_lcs_source_in_flight_request *record;
@@ -109,8 +109,7 @@ static void pkm_lcs_source_in_flight_destroy_locked(
 			};
 
 			pkm_lcs_source_response_waiter_complete(record->waiter,
-								-EIO,
-								&result);
+								-EIO, &result);
 		}
 		list_del(&record->link);
 		pkm_lcs_source_late_effect_destroy(&record->late_effect);
@@ -121,8 +120,8 @@ static void pkm_lcs_source_in_flight_destroy_locked(
 		pkm_lcs_source_slot_waiters_wake();
 }
 
-static u32 pkm_lcs_source_in_flight_limit(
-	const struct pkm_lcs_runtime_limits *limits)
+static u32
+pkm_lcs_source_in_flight_limit(const struct pkm_lcs_runtime_limits *limits)
 {
 	if (limits)
 		return limits->max_concurrent_rsi_requests;
@@ -150,8 +149,9 @@ long pkm_lcs_source_request_id_successor(u64 request_id, u64 *next)
 	return 0;
 }
 
-static long pkm_lcs_source_slot_admission_state(
-	u32 source_id, const struct pkm_lcs_runtime_limits *limits)
+static long
+pkm_lcs_source_slot_admission_state(u32 source_id,
+				    const struct pkm_lcs_runtime_limits *limits)
 {
 	struct pkm_lcs_source_slot *slot;
 	struct pkm_lcs_source_fd *source_fd;
@@ -182,9 +182,9 @@ out_unlock_table:
 	return ret;
 }
 
-long pkm_lcs_source_wait_for_slot(
-	u32 source_id, const struct pkm_lcs_runtime_limits *limits,
-	unsigned long deadline)
+long pkm_lcs_source_wait_for_slot(u32 source_id,
+				  const struct pkm_lcs_runtime_limits *limits,
+				  unsigned long deadline)
 {
 	long ret;
 
@@ -245,7 +245,8 @@ long pkm_lcs_source_in_flight_insert_locked(
 	struct pkm_lcs_source_fd *source_fd, u64 request_id, u64 txn_id,
 	u16 op_code, const u8 key_guid[RSI_GUID_SIZE],
 	const struct pkm_lcs_runtime_limits *limits,
-	const struct pkm_lcs_source_restore_commit_late_effect_input *late_effect,
+	const struct pkm_lcs_source_restore_commit_late_effect_input
+		*late_effect,
 	struct pkm_lcs_source_response_waiter *waiter)
 {
 	struct pkm_lcs_runtime_limits effective_limits;
@@ -259,7 +260,7 @@ long pkm_lcs_source_in_flight_insert_locked(
 	else
 		pkm_lcs_runtime_limits_snapshot_or_default(&effective_limits);
 	if (pkm_lcs_source_in_flight_at_limit_locked(source_fd,
-						    &effective_limits))
+						     &effective_limits))
 		return -EAGAIN;
 
 	list_for_each_entry(record, &source_fd->in_flight_requests, link) {
@@ -282,8 +283,12 @@ long pkm_lcs_source_in_flight_insert_locked(
 	if (key_guid)
 		memcpy(record->key_guid, key_guid, sizeof(record->key_guid));
 	record->limits = effective_limits;
-	record->deadline_ns = waiter && waiter->deadline_ns ? waiter->deadline_ns :
-		ktime_get_ns() + (u64)effective_limits.request_timeout_ms * NSEC_PER_MSEC;
+	record->deadline_ns =
+		waiter && waiter->deadline_ns ?
+			waiter->deadline_ns :
+			ktime_get_ns() +
+				(u64)effective_limits.request_timeout_ms *
+					NSEC_PER_MSEC;
 	if (late_effect) {
 		ret = pkm_lcs_source_late_effect_copy_restore(
 			&record->late_effect, late_effect);
@@ -343,8 +348,8 @@ long pkm_lcs_source_in_flight_set_key_late_effect_locked(
 	if (record->late_effect.kind != PKM_LCS_SOURCE_LATE_EFFECT_NONE)
 		return -EINVAL;
 
-	ret = pkm_lcs_source_late_effect_copy_key_mutation(
-		&record->late_effect, late_effect);
+	ret = pkm_lcs_source_late_effect_copy_key_mutation(&record->late_effect,
+							   late_effect);
 	if (ret)
 		pkm_lcs_source_late_effect_destroy(&record->late_effect);
 	return ret;
@@ -468,8 +473,8 @@ long pkm_lcs_source_device_open_file_for_token(const void *token,
 	return 0;
 }
 
-static u32 pkm_lcs_source_fd_mark_down_locked(
-	struct pkm_lcs_source_fd *source_fd)
+static u32
+pkm_lcs_source_fd_mark_down_locked(struct pkm_lcs_source_fd *source_fd)
 {
 	struct pkm_lcs_source_slot *slot;
 	u32 source_down_id = 0;
@@ -522,8 +527,7 @@ void pkm_lcs_source_device_mark_down_file(struct file *file)
 							      NULL);
 }
 
-void pkm_lcs_source_device_mark_malformed_protocol_file(
-	struct file *file)
+void pkm_lcs_source_device_mark_malformed_protocol_file(struct file *file)
 {
 	struct pkm_lcs_source_fd *source_fd;
 	struct pkm_lcs_source_slot *slot;
@@ -615,11 +619,11 @@ int pkm_lcs_source_device_release_file(struct file *file)
 	return 0;
 }
 
-long pkm_lcs_source_enqueue_request(
-	u32 source_id, const u8 *frame, size_t frame_len,
-	struct pkm_lcs_source_enqueue_result *result)
+long pkm_lcs_source_enqueue_request(u32 source_id, const u8 *frame,
+				    size_t frame_len,
+				    struct pkm_lcs_source_enqueue_result *result)
 {
-	struct pkm_lcs_rsi_built_request retained = { };
+	struct pkm_lcs_rsi_built_request retained = {};
 	struct pkm_lcs_source_queued_request *request;
 	struct pkm_lcs_source_slot *slot;
 	struct pkm_lcs_source_fd *source_fd;
@@ -712,8 +716,8 @@ static ssize_t pkm_lcs_source_device_read(struct file *file, char __user *buf,
 }
 
 static ssize_t pkm_lcs_source_device_write(struct file *file,
-					   const char __user *buf,
-					   size_t count, loff_t *ppos)
+					   const char __user *buf, size_t count,
+					   loff_t *ppos)
 {
 	(void)ppos;
 
@@ -803,7 +807,8 @@ static const struct file_operations pkm_lcs_source_device_fops = {
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 long pkm_lcs_kunit_source_register_file_for_token_with_bootstrap(
-	const void *token, struct file *file, const struct pkm_lcs_usercopy_ops *ops,
+	const void *token, struct file *file,
+	const struct pkm_lcs_usercopy_ops *ops,
 	const struct reg_src_register_args __user *uargs)
 {
 	return pkm_lcs_source_register_file_for_token_with_bootstrap(
@@ -843,8 +848,7 @@ void pkm_lcs_kunit_source_fd_snapshot(
 	snapshot->state = source_fd->state;
 	snapshot->source_id = source_fd->source_id;
 	snapshot->queued_request_count = source_fd->queued_request_count;
-	snapshot->in_flight_request_count =
-		source_fd->in_flight_request_count;
+	snapshot->in_flight_request_count = source_fd->in_flight_request_count;
 	snapshot->next_request_id = source_fd->next_request_id;
 	snapshot->closing = source_fd->closing;
 	slot = pkm_lcs_source_slot_find_locked(source_fd->source_id);
@@ -869,8 +873,9 @@ __poll_t pkm_lcs_kunit_source_device_poll_file(struct file *file)
 	return pkm_lcs_source_device_fops.poll(file, NULL);
 }
 
-__poll_t pkm_lcs_kunit_source_device_poll_file_with_table(
-	struct file *file, struct poll_table_struct *wait)
+__poll_t
+pkm_lcs_kunit_source_device_poll_file_with_table(struct file *file,
+						 struct poll_table_struct *wait)
 {
 	return pkm_lcs_source_device_fops.poll(file, wait);
 }

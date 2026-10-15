@@ -24,7 +24,7 @@
  * has none); -EINVAL for a short optlen or an out-of-range value; -EFAULT
  * for an unreadable/unwritable optval.
  */
-#define SOL_KACS			4096
+#define SOL_KACS 4096
 
 /*
  * getsockopt only. optval: int — a new token fd, carrying fixed
@@ -41,7 +41,7 @@
  * token ever changes. -ENOTCONN if the socket is not connected; -ENODATA if
  * nothing has been conveyed yet.
  */
-#define KACS_SO_PEER_TOKEN		1
+#define KACS_SO_PEER_TOKEN 1
 
 /*
  * getsockopt / setsockopt. optval: __u32 KACS_IMLEVEL_* — the maximum
@@ -50,7 +50,7 @@
  * KACS_IMLEVEL_IMPERSONATION. May be changed at any time; a change bounds
  * captures from then on and never rewrites one already made.
  */
-#define KACS_SO_IMPERSONATION_LEVEL	2
+#define KACS_SO_IMPERSONATION_LEVEL 2
 
 /*
  * getsockopt / setsockopt. optval: int (0/1) — sender-side automation: while
@@ -59,7 +59,7 @@
  * nothing at the trust level: the sender can always attest to what it is.
  * Default 0.
  */
-#define KACS_SO_PASS_TOKEN		3
+#define KACS_SO_PASS_TOKEN 3
 
 /*
  * setsockopt only. optval: int, ignored. Self-gated: a process can always
@@ -80,7 +80,7 @@
  * identity is read by the network policy engine at the first judgment of
  * each flow and fixed for that flow's life.
  */
-#define KACS_SO_RESTAMP			4
+#define KACS_SO_RESTAMP 4
 
 /*
  * Ancillary message type, at cmsg_level SOL_KACS. Data: one int.
@@ -101,6 +101,6 @@
  * message (-EINVAL). Attaching is exactly equivalent to impersonating the
  * token for the duration of the send.
  */
-#define KACS_SCM_TOKEN			1
+#define KACS_SCM_TOKEN 1
 
 #endif /* _UAPI_PKM_SOCKET_H */
