@@ -1,0 +1,10 @@
+---
+title: "Freescale low power universal asynchronous receiver/transmitter (lpuart)"
+type: reference
+description: "Device-tree binding reference for Freescale low power universal asynchronous receiver/transmitter (lpuart)."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/serial/fsl-lpuart.yaml
+```

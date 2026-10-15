@@ -1,0 +1,23 @@
+---
+title: "M-Systems and Sandisk DiskOnChip devices"
+type: reference
+description: "Device-tree binding reference for M-Systems and Sandisk DiskOnChip devices."
+---
+
+## M-System DiskOnChip G3
+
+The Sandisk (formerly M-Systems) docg3 is a nand device of 64M to 256MB.
+
+## Required properties:
+
+- compatible: should be "m-systems,diskonchip-g3"
+- reg: register base and size
+
+## Example:
+
+```dts
+	docg3: flash@0 {
+		compatible = "m-systems,diskonchip-g3";
+		reg = <0x0 0x2000>;
+	};
+```

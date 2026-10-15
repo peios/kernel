@@ -1,0 +1,205 @@
+{
+  "validation_complete": true,
+  "kernel_binding_wrappers": 5415,
+  "shared_definition_wrappers": 16,
+  "shared_library": "dtschema 2026.9",
+  "vendored_schemas": 66,
+  "vendored_provenance_files_checked": 67,
+  "authored_catalogue_guides": 1,
+  "category_topics": 99,
+  "mapped_articles": 9583,
+  "source_preservation": {
+    "counts": {
+      "schema_nodes": 376397,
+      "scalar_values": 208630,
+      "references": 10383,
+      "comments": 12129,
+      "articles": 5431,
+      "examples": 5627
+    },
+    "errors": [],
+    "complete_inventory": true,
+    "independent_parser": "ruamel.yaml 0.18.16, YAML 1.2, pure Python",
+    "rendered_site": "/home/jack/projects/peios/.tmp/pei-1505-bindings/site"
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 9767,
+    "trail": {
+      "commit": "d16453cf2514bf24f7504c020ceaa075c46dd1a8",
+      "local_fix": "src/plugins.rs preserves whitespace-only lines",
+      "binary_sha256": "2cc02b091919566358692bc9ebcd0561c24bf09039dedfe186f25385d752e69e",
+      "source": "isolated checkout of the recorded commit plus the existing whitespace fix; unrelated concurrent titlecase changes excluded"
+    }
+  },
+  "site_links": {
+    "html_pages": 9767,
+    "local_links_and_assets": 3615418,
+    "errors": []
+  },
+  "unit_tests": {
+    "migration": 78,
+    "plugin_package": 66
+  },
+  "protocol": {
+    "kernel-binding": {
+      "blocks": 5431,
+      "pages": 5431,
+      "dependencies": 5489,
+      "directory_dependencies": [
+        "Documentation/devicetree/bindings",
+        "tools/docs/trail-kernel-doc/schema-library/dtschema-2026.9/schemas"
+      ],
+      "warnings": "",
+      "errors": 0
+    }
+  },
+  "existing_articles": {
+    "existing_articles_compared": 4152,
+    "only_expected_link_updates": true,
+    "link_updated_articles": 72,
+    "excluded": "Previous/next navigation"
+  },
+  "originals": {
+    "Documentation_entries_unchanged": 11072,
+    "source_queue_unchanged": true,
+    "mapped_output_hashes_checked": 9583
+  },
+  "visual_samples": [
+    {
+      "path": "kernel/hardware/dt-leds/leds-gpio",
+      "status": 200,
+      "title": "LEDs connected to GPIO lines",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/hardware/dt-pci/nvidia-tegra194-pcie",
+      "status": 200,
+      "title": "NVIDIA Tegra194 (and later) PCIe controller (Synopsys DesignWare Core based)",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/hardware/dt-display/bridge/analogix-anx7625",
+      "status": 200,
+      "title": "Analogix ANX7625 SlimPort (4K Mobile HD Transmitter)",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/hardware/dt-clock/qcom-gcc-msm8998",
+      "status": 200,
+      "title": "Qualcomm Global Clock & Reset Controller on MSM8998",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    }
+  ],
+  "upstream_rehearsals": [
+    {
+      "source": "Documentation/devicetree/bindings/leds/leds-gpio.yaml",
+      "commit": "fe469e83eb5b383c8abbf1d1cab7a038e3d6778b",
+      "expected_dependents": 1,
+      "matched": true
+    },
+    {
+      "source": "Documentation/devicetree/bindings/leds/common.yaml",
+      "commit": "2a7ee990196ff7ccf3de3e152ecc67215b22c318",
+      "expected_dependents": 210,
+      "matched": true
+    }
+  ],
+  "decisions": [
+    "Keep authoritative YAML unchanged; render at build time.",
+    "Preserve authored rule scopes and exact values/examples; do not flatten combinations.",
+    "Local pinned shared definitions, with no runtime network dependency.",
+    "Per-page transitive source dependencies plus shared registry-membership group.",
+    "Unknown schema keywords, unresolved references and duplicate identifiers fail."
+  ],
+  "limits": [
+    "Authored schema reference, not a replacement for dt-schema normalization or device-tree validation.",
+    "Organization and technical/editorial review of the wider migration remain.",
+    "Other source/data formats have not received a new whole-tree audit."
+  ],
+  "preview_port": 8724,
+  "installed_source_verification": {
+    "accounted_non_articles": 3,
+    "paragraphs": 182842,
+    "headings_and_terms": 35857,
+    "literal_blocks": 15283,
+    "tables": 2722,
+    "articles": 9583,
+    "paragraphs_with_expanded_refs_reviewed_separately": 5,
+    "generated_blocks": 35,
+    "display_equations": 71,
+    "inline_equations": 1,
+    "images": 86,
+    "diagrams": 40,
+    "live_includes": 44,
+    "csv_cells": 1159,
+    "adapted_articles": 9,
+    "automodules_accounted": 15,
+    "adaptation_dependencies": 42,
+    "netlink_yaml_wrappers": 30,
+    "legacy_text_articles": 741,
+    "source_lines": 48568,
+    "prose_blocks": 2173,
+    "headings": 2487,
+    "sequence_diagrams": 1,
+    "sequence_events": 65,
+    "device_tree_binding_wrappers": 5431
+  },
+  "installation": {
+    "installed_files": 5827,
+    "new_binding_references": 5431,
+    "link_updated_articles": 72,
+    "mapped_articles": 9583,
+    "Documentation_entries_unchanged": 11072,
+    "source_queue_unchanged": true
+  },
+  "full_site_visual_samples": [
+    {
+      "path": "kernel/hardware/devicetree/binding-catalogue",
+      "status": 200,
+      "title": "Device-tree binding catalogue",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "path": "kernel/hardware/dt-pci/nvidia-tegra194-pcie",
+      "status": 200,
+      "title": "NVIDIA Tegra194 (and later) PCIe controller (Synopsys DesignWare Core based)",
+      "body_width": {
+        "width": 728,
+        "scroll": 728
+      }
+    }
+  ],
+  "live_preview_http": [
+    {
+      "path": "kernel/hardware/devicetree/binding-catalogue/",
+      "status": 200,
+      "bytes": 154486
+    },
+    {
+      "path": "kernel/hardware/dt-leds/leds-gpio/",
+      "status": 200,
+      "bytes": 36366
+    },
+    {
+      "path": "kernel/hardware/dt-shared/types/",
+      "status": 200,
+      "bytes": 54074
+    }
+  ]
+}

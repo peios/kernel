@@ -1,0 +1,889 @@
+{
+  "dp-mst/topology-figure-1.dot": {
+    "source": "docs/sources/gpu/dp-mst/topology-figure-1.dot",
+    "source_sha256": "dd5be9abf5daf28e146e82d951e6f5e28aa68243bab441f478337262fe051ab9",
+    "mermaid": "topology-figure-1.mmd",
+    "inventory": {
+      "source_sha256": "dd5be9abf5daf28e146e82d951e6f5e28aa68243bab441f478337262fe051ab9",
+      "mermaid_sha256": "659e3177e4bcf55583b8be8b482a5398263f46cd6377391e32aabd0820414af8",
+      "nodes": {
+        "driver": {
+          "label": "DRM driver",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "DRM driver"
+        },
+        "payload1": {
+          "label": "Payload #1",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "Payload #1"
+        },
+        "payload2": {
+          "label": "Payload #2",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "Payload #2"
+        },
+        "port1": {
+          "label": "Port #1",
+          "shape": "oval",
+          "text": "Port #1"
+        },
+        "port2": {
+          "label": "Port #2",
+          "shape": "oval",
+          "text": "Port #2"
+        },
+        "port3": {
+          "label": "Port #3",
+          "shape": "oval",
+          "text": "Port #3"
+        },
+        "port4": {
+          "label": "Port #4",
+          "shape": "oval",
+          "text": "Port #4"
+        },
+        "mstb1": {
+          "label": "MSTB #1",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "shape": "oval",
+          "text": "MSTB #1"
+        },
+        "mstb2": {
+          "label": "MSTB #2",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "shape": "oval",
+          "text": "MSTB #2"
+        },
+        "mstb3": {
+          "label": "MSTB #3",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "shape": "oval",
+          "text": "MSTB #3"
+        },
+        "mstb4": {
+          "label": "MSTB #4",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "shape": "oval",
+          "text": "MSTB #4"
+        }
+      },
+      "edges": [
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "payload1",
+          "destination_port": "",
+          "attributes": {
+            "dir": "none"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "payload2",
+          "destination_port": "",
+          "attributes": {
+            "dir": "none"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "payload1",
+          "source_port": "s",
+          "destination": "port1",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "payload2",
+          "source_port": "s",
+          "destination": "port3",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port1",
+          "source_port": "",
+          "destination": "mstb2",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port2",
+          "source_port": "",
+          "destination": "mstb3",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port3",
+          "source_port": "",
+          "destination": "mstb4",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port1",
+          "source_port": "",
+          "destination": "mstb2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port2",
+          "source_port": "",
+          "destination": "mstb3",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port3",
+          "source_port": "",
+          "destination": "mstb4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "dir": "back"
+          }
+        }
+      ],
+      "layout_only_omissions": []
+    },
+    "upstream_source": "Documentation/gpu/dp-mst/topology-figure-1.dot"
+  },
+  "dp-mst/topology-figure-2.dot": {
+    "source": "docs/sources/gpu/dp-mst/topology-figure-2.dot",
+    "source_sha256": "9d2e59a2fd554aa1a30b464da535b15d11e1ca4f8ce6f28c5ccbce24c8d24b2d",
+    "mermaid": "topology-figure-2.mmd",
+    "inventory": {
+      "source_sha256": "9d2e59a2fd554aa1a30b464da535b15d11e1ca4f8ce6f28c5ccbce24c8d24b2d",
+      "mermaid_sha256": "6a5f6cf2432493da2c15cd9b1de45789f0a8bdad701c3e8ea5a572a3a9071487",
+      "nodes": {
+        "driver": {
+          "label": "DRM driver",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "DRM driver"
+        },
+        "payload1": {
+          "label": "Payload #1",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "Payload #1"
+        },
+        "payload2": {
+          "label": "Payload #2",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "Payload #2"
+        },
+        "port1": {
+          "label": "Port #1",
+          "text": "Port #1"
+        },
+        "port2": {
+          "label": "Port #2",
+          "text": "Port #2"
+        },
+        "port3": {
+          "label": "Port #3",
+          "text": "Port #3"
+        },
+        "port4": {
+          "label": "Port #4",
+          "style": "filled",
+          "fillcolor": "grey",
+          "text": "Port #4"
+        },
+        "mstb1": {
+          "label": "MSTB #1",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "text": "MSTB #1"
+        },
+        "mstb2": {
+          "label": "MSTB #2",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "text": "MSTB #2"
+        },
+        "mstb3": {
+          "label": "MSTB #3",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "text": "MSTB #3"
+        },
+        "mstb4": {
+          "label": "MSTB #4",
+          "style": "filled",
+          "fillcolor": "grey",
+          "text": "MSTB #4"
+        }
+      },
+      "edges": [
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "payload1",
+          "destination_port": "",
+          "attributes": {
+            "dir": "none"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "payload2",
+          "destination_port": "",
+          "attributes": {
+            "dir": "none"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "red"
+          }
+        },
+        {
+          "source": "payload1",
+          "source_port": "s",
+          "destination": "port1",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "payload2",
+          "source_port": "s",
+          "destination": "port3",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port1",
+          "source_port": "",
+          "destination": "mstb2",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port2",
+          "source_port": "",
+          "destination": "mstb3",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "red"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "red"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "red"
+          }
+        },
+        {
+          "source": "port3",
+          "source_port": "",
+          "destination": "mstb4",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "red"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port1",
+          "source_port": "",
+          "destination": "mstb2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port2",
+          "source_port": "",
+          "destination": "mstb3",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "red",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port3",
+          "source_port": "",
+          "destination": "mstb4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "red",
+            "dir": "back"
+          }
+        }
+      ],
+      "layout_only_omissions": []
+    },
+    "upstream_source": "Documentation/gpu/dp-mst/topology-figure-2.dot"
+  },
+  "dp-mst/topology-figure-3.dot": {
+    "source": "docs/sources/gpu/dp-mst/topology-figure-3.dot",
+    "source_sha256": "51b6dde389484b5f7359baf450cf9b3e4770a8b929e6e2e840c7a87896234531",
+    "mermaid": "topology-figure-3.mmd",
+    "inventory": {
+      "source_sha256": "51b6dde389484b5f7359baf450cf9b3e4770a8b929e6e2e840c7a87896234531",
+      "mermaid_sha256": "e5651ea655a23914af8fc02921779c017686e96571643df83e6950b2c72f1f7d",
+      "nodes": {
+        "driver": {
+          "label": "DRM driver",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "DRM driver"
+        },
+        "payload1": {
+          "label": "Payload #1",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "text": "Payload #1"
+        },
+        "payload2": {
+          "label": "Payload #2",
+          "style": "filled",
+          "shape": "box",
+          "fillcolor": "lightblue",
+          "penwidth": "3",
+          "text": "Payload #2"
+        },
+        "port1": {
+          "label": "Port #1",
+          "text": "Port #1"
+        },
+        "port2": {
+          "label": "Port #2",
+          "penwidth": "5",
+          "text": "Port #2"
+        },
+        "port3": {
+          "label": "Port #3",
+          "penwidth": "3",
+          "text": "Port #3"
+        },
+        "port4": {
+          "label": "Port #4",
+          "style": "filled",
+          "fillcolor": "grey",
+          "text": "Port #4"
+        },
+        "mstb1": {
+          "label": "MSTB #1",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "text": "MSTB #1"
+        },
+        "mstb2": {
+          "label": "MSTB #2",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "text": "MSTB #2"
+        },
+        "mstb3": {
+          "label": "MSTB #3",
+          "style": "filled",
+          "fillcolor": "palegreen",
+          "penwidth": "3",
+          "text": "MSTB #3"
+        },
+        "mstb4": {
+          "label": "MSTB #4",
+          "style": "filled",
+          "fillcolor": "grey",
+          "text": "MSTB #4"
+        }
+      },
+      "edges": [
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "payload1",
+          "destination_port": "",
+          "attributes": {
+            "dir": "none"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "payload2",
+          "destination_port": "",
+          "attributes": {
+            "dir": "none",
+            "penwidth": "3"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "driver",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "grey"
+          }
+        },
+        {
+          "source": "payload1",
+          "source_port": "s",
+          "destination": "port1",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed"
+          }
+        },
+        {
+          "source": "payload2",
+          "source_port": "s",
+          "destination": "port3",
+          "destination_port": "e",
+          "attributes": {
+            "style": "dashed",
+            "penwidth": "3"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port1",
+          "source_port": "",
+          "destination": "mstb2",
+          "destination_port": "",
+          "attributes": {
+            "style": ""
+          }
+        },
+        {
+          "source": "port2",
+          "source_port": "",
+          "destination": "mstb3",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "grey"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "grey"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "grey"
+          }
+        },
+        {
+          "source": "port3",
+          "source_port": "",
+          "destination": "mstb4",
+          "destination_port": "",
+          "attributes": {
+            "style": "",
+            "color": "grey"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port1",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "mstb1",
+          "source_port": "",
+          "destination": "port2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port1",
+          "source_port": "",
+          "destination": "mstb2",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port2",
+          "source_port": "",
+          "destination": "mstb3",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back",
+            "penwidth": "3"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port3",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "",
+            "dir": "back",
+            "penwidth": "3"
+          }
+        },
+        {
+          "source": "mstb3",
+          "source_port": "",
+          "destination": "port4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "grey",
+            "dir": "back"
+          }
+        },
+        {
+          "source": "port3",
+          "source_port": "",
+          "destination": "mstb4",
+          "destination_port": "",
+          "attributes": {
+            "style": "dashed",
+            "color": "grey",
+            "dir": "back"
+          }
+        }
+      ],
+      "layout_only_omissions": []
+    },
+    "upstream_source": "Documentation/gpu/dp-mst/topology-figure-3.dot"
+  }
+}

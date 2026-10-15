@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""
+trail-kernel-feat: a Trail plugin that renders the kernel's feature tables.
+
+A page writes, in place of reStructuredText's ``.. kernel-feat::``,
+
+    ```{kernel-feat} Documentation/features
+    ```
+
+for the matrix of every feature on every architecture, or
+
+    ```{kernel-feat} Documentation/features
+    :arch: x86
+    ```
+
+for every feature's status on one architecture. The directory is relative
+to the kernel tree. The kernel's own parser
+(tools/lib/python/feat/parse_features.py) reads the feature files.
+
+Configure it in the site's root trail.toml:
+
+    [plugins.kernel-feat]
+    command = ["python3", "../path/to/trail-kernel-feat", "--srctree", ".."]
+"""
+
+import argparse
+import glob
+import os
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+
+from trail_plugin import BlockError, block_options, fail, read_request, respond  # noqa: E402
+
+PLUGIN = "trail-kernel-feat"
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--srctree",
+        required=True,
+        help="the kernel source tree, relative to the Trail site root",
+    )
+    args = parser.parse_args()
+    srctree = os.path.realpath(args.srctree)
+    library = os.path.join(srctree, "tools", "lib", "python")
+    if not os.path.isfile(os.path.join(library, "feat", "parse_features.py")):
+        fail(PLUGIN, f"{srctree} has no tools/lib/python/feat; is --srctree the kernel tree?")
+    sys.path.insert(1, library)
+
+    from feat.parse_features import ParseFeature
+    import feat_markdown
+    import kdoc_markdown
+
+    request = read_request(PLUGIN)
+
+    #: Parsed feature directories, by absolute path.
+    parsed = {}
+    #: (kind, name) -> (page, anchor): matrix rows, and per-arch pages.
+    symbols = {}
+    rendered = []
+
+    for block in request["blocks"]:
+        try:
+            argument = block["argument"].strip()
+            if not argument or len(argument.split()) != 1:
+                raise BlockError("expects exactly one directory, relative to the kernel tree")
+            if block["body"].strip():
+                raise BlockError("takes no body, only options")
+            options = block_options(block, ("arch",))
+            directory = os.path.realpath(os.path.join(srctree, argument))
+            if not directory.startswith(srctree + os.sep) or not os.path.isdir(directory):
+                raise BlockError(f"{argument} is not a directory in the kernel tree")
+            if directory not in parsed:
+                parsed[directory] = ParseFeature(directory, False, False).parse()
+            data = parsed[directory]
+            if not data:
+                raise BlockError(f"{argument} holds no feature files")
+
+            if "arch" in options:
+                arch = options["arch"].strip()
+                known = sorted({a for feature in data.values() for a in feature["table"]})
+                if arch not in known:
+                    raise BlockError(f":arch: {arch!r} is not in any feature's table (known: {', '.join(known)})")
+                symbols.setdefault(("feat-arch", arch), (block["reference"], ""))
+                markdown = feat_markdown.arch_table(data, arch)
+            else:
+                for name, feature in data.items():
+                    fragment = feat_markdown.anchor(name, feature)
+                    symbols.setdefault(("feat", fragment), (block["reference"], fragment))
+                markdown = feat_markdown.matrix(data)
+            rendered.append((block, markdown))
+        except BlockError as error:
+            rendered.append((block, error))
+
+    blocks = [
+        (block, result if isinstance(result, Exception)
+         else kdoc_markdown.resolve_refs(result, symbols, block["reference"]))
+        for block, result in rendered
+    ]
+    # The directory itself, so that a new feature file is noticed.
+    depends_on = set(parsed)
+    depends_on |= {feature["where"] for data in parsed.values() for feature in data.values()}
+    depends_on |= {os.path.realpath(__file__), os.path.join(library, "feat", "parse_features.py")}
+    depends_on |= {os.path.join(HERE, name) for name in ("feat_markdown.py", "kdoc_markdown.py", "trail_plugin.py")}
+    depends_on |= set(glob.glob(os.path.join(library, "kdoc", "*.py")))
+    respond(blocks, depends_on)
+
+
+if __name__ == "__main__":
+    main()

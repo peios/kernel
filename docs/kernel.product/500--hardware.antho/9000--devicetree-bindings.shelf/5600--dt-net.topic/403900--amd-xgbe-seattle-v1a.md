@@ -1,0 +1,10 @@
+---
+title: "AMD XGBE Seattle v1a"
+type: reference
+description: "Device-tree binding reference for AMD XGBE Seattle v1a."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/net/amd,xgbe-seattle-v1a.yaml
+```

@@ -1,0 +1,10 @@
+---
+title: "Faraday Technology FTIDE010 PATA controller"
+type: reference
+description: "Device-tree binding reference for Faraday Technology FTIDE010 PATA controller."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/ata/faraday,ftide010.yaml
+```

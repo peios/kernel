@@ -1,0 +1,10 @@
+---
+title: "MediaTek Peripheral Configuration Controller"
+type: reference
+description: "Device-tree binding reference for MediaTek Peripheral Configuration Controller."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/clock/mediatek,pericfg.yaml
+```

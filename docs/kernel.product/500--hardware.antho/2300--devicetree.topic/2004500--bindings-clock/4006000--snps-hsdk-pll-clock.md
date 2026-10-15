@@ -1,0 +1,38 @@
+---
+title: "Binding for the HSDK Generic PLL clock"
+type: reference
+description: "Device-tree binding reference for Binding for the HSDK Generic PLL clock."
+---
+
+This binding uses the common clock binding\[1\].
+
+\[1\] [Documentation/devicetree/bindings/clock/clock-bindings.txt](<~kernel/hardware/devicetree/bindings-clock/clock-bindings>)
+
+## Required properties:
+
+- compatible: should be "snps,hsdk-&lt;name&gt;-pll-clock"
+  "snps,hsdk-core-pll-clock"
+  "snps,hsdk-gp-pll-clock"
+  "snps,hsdk-hdmi-pll-clock"
+- reg : should contain base register location and length.
+- clocks: shall be the input parent clock phandle for the PLL.
+- #clock-cells: from common clock binding; Should always be set to 0.
+
+## Example:
+
+```dts
+	input_clk: input-clk {
+		clock-frequency = <33333333>;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+	};
+```
+
+```dts
+	cpu_clk: cpu-clk@0 {
+		compatible = "snps,hsdk-core-pll-clock";
+		reg = <0x00 0x10>;
+		#clock-cells = <0>;
+		clocks = <&input_clk>;
+	};
+```

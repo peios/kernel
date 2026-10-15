@@ -1,0 +1,6 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Keep live documentation inputs alongside a configured local plugin entry point.
+plugin=$1
+shift
+exec python3 "$(dirname "$0")/../../tools/docs/trail-kernel-doc/trail-$plugin" "$@"

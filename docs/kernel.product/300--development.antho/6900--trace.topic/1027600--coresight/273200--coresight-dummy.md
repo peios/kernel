@@ -1,0 +1,35 @@
+---
+title: "Coresight Dummy Trace Module"
+type: reference
+description: "The Coresight dummy trace module is for the specific devices that kernel don't have permission to access or configure, e.g., CoreSight TPDMs on Qualcomm platforms. For these devices, a dummy driver is needed to register them as Coresight…"
+---
+
+<a id="rst-coresight-dummy-trace-module"></a>
+
+<!-- SPDX-License-Identifier: GPL-2.0 -->
+
+> **Author:** Hao Zhang &lt;[quic_hazha@quicinc.com](<mailto:quic_hazha@quicinc.com>)&gt;
+>
+> **Date:** June 2023
+
+<a id="rst-introduction"></a>
+
+## Introduction
+
+The Coresight dummy trace module is for the specific devices that kernel don't have permission to access or configure, e.g., CoreSight TPDMs on Qualcomm platforms. For these devices, a dummy driver is needed to register them as Coresight devices. The module may also be used to define components that may not have any programming interfaces, so that paths can be created in the driver. It provides Coresight API for operations on dummy devices, such as enabling and disabling them. It also provides the Coresight dummy sink/source paths for debugging.
+
+<a id="rst-config-details"></a>
+
+## Config details
+
+There are two types of nodes, dummy sink and dummy source. These nodes are available at `/sys/bus/coresight/devices`.
+
+Example output:
+
+
+
+```text
+$ ls -l /sys/bus/coresight/devices | grep dummy
+dummy_sink0 -> ../../../devices/platform/soc@0/soc@0:sink/dummy_sink0
+dummy_source0 -> ../../../devices/platform/soc@0/soc@0:source/dummy_source0
+```

@@ -1,0 +1,10 @@
+---
+title: "Freescale LINFlexD UART"
+type: reference
+description: "Device-tree binding reference for Freescale LINFlexD UART."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/serial/fsl,s32-linflexuart.yaml
+```

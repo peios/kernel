@@ -1,0 +1,30 @@
+---
+title: "Xen hypervisor reserved-memory binding"
+type: reference
+description: "Device-tree binding reference for Xen hypervisor reserved-memory binding."
+---
+
+Expose one or more memory regions as reserved-memory to the guest
+virtual machine. Typically, a region is configured at VM creation time
+to be a shared memory area across multiple virtual machines for
+communication among them.
+
+For each of these pre-shared memory regions, a range is exposed under
+the /reserved-memory node as a child node. Each range sub-node is named
+xen-shmem@&lt;address&gt; and has the following properties:
+
+```text
+- compatible:
+	compatible = "xen,shared-memory-v1"
+```
+
+- reg:
+  the base guest physical address and size of the shared memory region
+
+- xen,offset: (borrower VMs only)
+  64 bit integer offset within the owner virtual machine's shared
+  memory region used for the mapping in the borrower VM.
+
+- xen,id:
+  a string that identifies the shared memory region as specified in
+  the VM config file

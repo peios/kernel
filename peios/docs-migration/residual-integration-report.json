@@ -1,0 +1,224 @@
+{
+  "validation_complete": true,
+  "new_articles": 49,
+  "mapped_articles": 9632,
+  "prose_articles": 7,
+  "live_source_references": 40,
+  "standalone_figures": 2,
+  "commented_readmes_extracted": 1,
+  "source_inventory": {
+    "files": 11072,
+    "dispositions": {
+      "retained tooling": 29,
+      "retained metadata": 1,
+      "supporting input": 871,
+      "redirect": 3,
+      "translated article": 9616,
+      "retained artwork": 2,
+      "sphinx-navigation-template": 1,
+      "excluded translation": 549
+    },
+    "errors": []
+  },
+  "source_verification": {
+    "accounted_non_articles": 38,
+    "paragraphs": 182842,
+    "headings_and_terms": 35857,
+    "literal_blocks": 15302,
+    "tables": 2722,
+    "articles": 9632,
+    "paragraphs_with_expanded_refs_reviewed_separately": 5,
+    "generated_blocks": 35,
+    "display_equations": 71,
+    "inline_equations": 1,
+    "images": 86,
+    "diagrams": 40,
+    "live_includes": 44,
+    "csv_cells": 1159,
+    "adapted_articles": 9,
+    "automodules_accounted": 15,
+    "adaptation_dependencies": 42,
+    "netlink_yaml_wrappers": 30,
+    "legacy_text_articles": 748,
+    "source_lines": 48842,
+    "prose_blocks": 2196,
+    "headings": 2495,
+    "sequence_diagrams": 1,
+    "sequence_events": 65,
+    "device_tree_binding_wrappers": 5431,
+    "supplementary_articles": 42,
+    "mermaid": 1,
+    "live-source": 40,
+    "image": 1
+  },
+  "rendered_preservation": {
+    "counts": {
+      "articles": 49,
+      "supplementary_articles": 42,
+      "mermaid": 1,
+      "live-source": 40,
+      "legacy_text_articles": 7,
+      "source_lines": 274,
+      "literal_blocks": 19,
+      "prose_blocks": 23,
+      "headings": 8,
+      "image": 1
+    },
+    "errors": []
+  },
+  "strict_build": {
+    "passed": true,
+    "html_pages": 9816,
+    "trail": {
+      "commit": "d16453cf2514bf24f7504c020ceaa075c46dd1a8",
+      "local_fix": "src/plugins.rs preserves whitespace-only lines",
+      "binary_sha256": "2cc02b091919566358692bc9ebcd0561c24bf09039dedfe186f25385d752e69e",
+      "source": "isolated checkout of the recorded commit plus the existing whitespace fix; unrelated concurrent titlecase changes excluded"
+    }
+  },
+  "site_links": {
+    "html_pages": 9816,
+    "local_links_and_assets": 3632886,
+    "errors": []
+  },
+  "migration_unit_tests": 85,
+  "existing_articles": {
+    "existing_articles_compared": 9583,
+    "article_bodies_unchanged": true,
+    "excluded": "Previous/next navigation and trailing template whitespace"
+  },
+  "originals": {
+    "Documentation_entries_unchanged": 11072,
+    "source_queue_unchanged": true,
+    "mapped_output_hashes_checked": 9632
+  },
+  "upstream_rehearsals": [
+    {
+      "source": "Documentation/devicetree/bindings/arm/cpu-enable-method/nuvoton,npcm750-smp",
+      "commit": "d6bdd009c21db3f677dd1d1bbb8c20bc819074bc",
+      "disposition": "review mapped pages",
+      "matched": true,
+      "mapped_pages": 5432,
+      "examples": [
+        "docs/kernel.product/500--hardware.antho/2300--devicetree.topic/9100000--bindings-arm-cpu-enable-method/9200600--nuvoton-npcm750-smp.md",
+        "docs/kernel.product/500--hardware.antho/9000--devicetree-bindings.shelf/100--dt-access-controllers.topic/101600--access-controllers.md",
+        "docs/kernel.product/500--hardware.antho/9000--devicetree-bindings.shelf/1000--dt-clock.topic/126900--actions-owl-cmu.md"
+      ]
+    },
+    {
+      "source": "Documentation/sound/cards/multisound.sh",
+      "commit": "513f930667beca7f67e3aa4558196c143864083f",
+      "disposition": "review mapped pages",
+      "matched": true,
+      "mapped_pages": 1,
+      "examples": [
+        "docs/kernel.product/500--hardware.antho/6100--sound.topic/1026000--cards/9204300--multisound-sh.md"
+      ]
+    },
+    {
+      "source": "Documentation/sphinx/requirements.txt",
+      "commit": "fa5a06e94a235253af1a78a0c3ce0c4a995b87b0",
+      "disposition": "review recorded non-article disposition",
+      "matched": true,
+      "mapped_pages": 0,
+      "examples": []
+    }
+  ],
+  "visual_samples": [
+    {
+      "source": "devicetree/bindings/arm/cpu-enable-method/al,alpine-smp",
+      "path": "kernel/hardware/devicetree/bindings-arm-cpu-enable-method/al-alpine-smp",
+      "status": 200,
+      "title": "Secondary CPU enable-method \"al,alpine-smp\" binding",
+      "width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "source": "sound/cards/multisound.sh",
+      "path": "kernel/hardware/sound/cards/multisound-sh",
+      "status": 200,
+      "title": "Turtle Beach MultiSound driver notes and utilities",
+      "width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "source": "scsi/ChangeLog.arcmsr",
+      "path": "kernel/hardware/scsi/changelog-arcmsr",
+      "status": 200,
+      "title": "arcmsr driver change history",
+      "width": {
+        "width": 728,
+        "scroll": 728
+      }
+    },
+    {
+      "source": "litmus-tests/locking/DCL-fixed.litmus",
+      "path": "kernel/development/litmus-tests/locking/dcl-fixed-litmus",
+      "status": 200,
+      "title": "DCL-fixed litmus test",
+      "width": {
+        "width": 728,
+        "scroll": 728
+      }
+    }
+  ],
+  "mermaid": [
+    {
+      "nodes": 13,
+      "edges": 16,
+      "file": "drbd-connection-state-overview.mmd"
+    }
+  ],
+  "remaining": [
+    "Final organization and technical/editorial review of the maintained corpus.",
+    "Selected-line highlighting remains an optional presentation enhancement; source metadata retained."
+  ],
+  "declined": [
+    "Non-English translation migration.",
+    "Download publishing."
+  ],
+  "preview_port": 8724,
+  "installation": {
+    "installed_files": 70,
+    "new_articles": 49,
+    "link_updated_articles": 0,
+    "mapped_articles": 9632,
+    "Documentation_entries_unchanged": 11072,
+    "source_queue_unchanged": true
+  },
+  "installed_inventory": {
+    "files": 11072,
+    "dispositions": {
+      "retained tooling": 29,
+      "retained metadata": 1,
+      "supporting input": 871,
+      "redirect": 3,
+      "translated article": 9616,
+      "retained artwork": 2,
+      "sphinx-navigation-template": 1,
+      "excluded translation": 549
+    },
+    "errors": []
+  },
+  "live_preview_http": [
+    {
+      "path": "kernel/hardware/devicetree/bindings-arm-cpu-enable-method/al-alpine-smp/",
+      "status": 200,
+      "bytes": 147868
+    },
+    {
+      "path": "kernel/hardware/sound/cards/multisound-sh/",
+      "status": 200,
+      "bytes": 302525
+    },
+    {
+      "path": "kernel/hardware/scsi/changelog-arcmsr/",
+      "status": 200,
+      "bytes": 29073
+    }
+  ]
+}

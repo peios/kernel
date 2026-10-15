@@ -1,0 +1,28 @@
+---
+title: "Altera SOCFPGA Arria10 FPGA Manager"
+type: reference
+description: "Device-tree binding reference for Altera SOCFPGA Arria10 FPGA Manager."
+---
+
+## Required properties:
+
+```text
+- compatible : should contain "altr,socfpga-a10-fpga-mgr"
+- reg        : base address and size for memory mapped io.
+               - The first index is for FPGA manager register access.
+               - The second index is for writing FPGA configuration data.
+- resets     : Phandle and reset specifier for the device's reset.
+- clocks     : Clocks used by the device.
+```
+
+## Example:
+
+```dts
+	fpga_mgr: fpga-mgr@ffd03000 {
+		compatible = "altr,socfpga-a10-fpga-mgr";
+		reg = <0xffd03000 0x100
+		       0xffcfe400 0x20>;
+		clocks = <&l4_mp_clk>;
+		resets = <&rst FPGAMGR_RESET>;
+	};
+```

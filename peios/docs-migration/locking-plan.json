@@ -1,0 +1,306 @@
+{
+  "upstream_ref": "v7.0.9",
+  "index": "locking/index.rst",
+  "index_destination": "docs/kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/100--overview.md",
+  "pages": {
+    "locking/locktypes.rst": {
+      "title": "Lock types and their rules",
+      "type": "concept",
+      "description": "Sleeping, spinning, and CPU-local locks, including PREEMPT_RT behaviour and nesting rules.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/200--locktypes.md",
+      "reference": "kernel/internals/locking/locktypes",
+      "unquote_lines": [
+        15,
+        39,
+        48,
+        56,
+        68,
+        73,
+        79,
+        167,
+        179,
+        195,
+        256,
+        273,
+        332,
+        533,
+        550
+      ],
+      "code_languages": {
+        "352": "c",
+        "357": "c",
+        "364": "c",
+        "424": "c",
+        "429": "c",
+        "443": "c",
+        "453": "c",
+        "467": "c",
+        "478": "c",
+        "500": "c",
+        "509": "c"
+      }
+    },
+    "locking/spinlocks.rst": {
+      "title": "Spinlocks",
+      "type": "how-to",
+      "description": "Using spinlocks and reader/writer spinlocks to protect shared kernel data.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/300--spinlocks.md",
+      "reference": "kernel/internals/locking/spinlocks",
+      "unquote_lines": [],
+      "code_languages": {
+        "10": "c",
+        "67": "c",
+        "112": "c",
+        "152": "c"
+      }
+    },
+    "locking/mutex-design.rst": {
+      "title": "Mutexes",
+      "type": "concept",
+      "description": "Mutex semantics, implementation paths, debugging, and differences from semaphores.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/400--mutex-design.md",
+      "reference": "kernel/internals/locking/mutex-design",
+      "unquote_lines": [
+        80,
+        95
+      ],
+      "code_languages": {
+        "127": "c",
+        "131": "c",
+        "135": "c",
+        "141": "c",
+        "147": "c",
+        "151": "c",
+        "155": "c"
+      }
+    },
+    "locking/rt-mutex.rst": {
+      "title": "RT-mutexes and priority inheritance",
+      "type": "concept",
+      "description": "Priority inheritance in RT-mutexes, including ownership and waiter states.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/500--rt-mutex.md",
+      "reference": "kernel/internals/locking/rt-mutex",
+      "unquote_lines": [
+        52
+      ],
+      "code_languages": {}
+    },
+    "locking/rt-mutex-design.rst": {
+      "title": "RT-mutex implementation",
+      "type": "reference",
+      "description": "Priority-inheritance chains, waiter trees, and the RT-mutex locking algorithm.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/600--rt-mutex-design.md",
+      "reference": "kernel/internals/locking/rt-mutex-design",
+      "unquote_lines": [
+        454
+      ],
+      "code_languages": {
+        "234": "c",
+        "322": "c"
+      }
+    },
+    "locking/ww-mutex-design.rst": {
+      "title": "Wound/wait mutexes",
+      "type": "concept",
+      "description": "Avoiding deadlocks when acquiring multiple buffer locks with wait/die and wound/wait algorithms.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/700--ww-mutex-design.md",
+      "reference": "kernel/internals/locking/ww-mutex-design",
+      "unquote_lines": [
+        338,
+        367
+      ],
+      "code_languages": {
+        "122": "c",
+        "141": "c",
+        "187": "c",
+        "225": "c",
+        "269": "c"
+      }
+    },
+    "locking/seqlock.rst": {
+      "title": "Sequence counters and sequential locks",
+      "type": "reference",
+      "description": "Sequence counters, latch counters, sequential locks, and their API reference.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/800--seqlock.md",
+      "reference": "kernel/internals/locking/seqlock",
+      "unquote_lines": [
+        114
+      ],
+      "code_languages": {
+        "60": "c",
+        "74": "c",
+        "84": "c",
+        "125": "c",
+        "175": "c",
+        "189": "c",
+        "201": "c",
+        "213": "c",
+        "227": "c"
+      }
+    },
+    "locking/percpu-rw-semaphore.rst": {
+      "title": "Per-CPU reader/writer semaphores",
+      "type": "concept",
+      "description": "The per-CPU reader/writer semaphore and its read-side and write-side trade-offs.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/900--percpu-rw-semaphore.md",
+      "reference": "kernel/internals/locking/percpu-rw-semaphore",
+      "unquote_lines": [],
+      "code_languages": {}
+    },
+    "locking/hwspinlock.rst": {
+      "title": "Hardware spinlocks",
+      "type": "reference",
+      "description": "Requesting and using hardware spinlocks, with driver implementation guidance.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1000--hwspinlock.md",
+      "reference": "kernel/internals/locking/hwspinlock",
+      "unquote_lines": [],
+      "code_languages": {
+        "43": "c",
+        "54": "c",
+        "69": "c",
+        "79": "c",
+        "90": "c",
+        "106": "c",
+        "121": "c",
+        "139": "c",
+        "156": "c",
+        "172": "c",
+        "189": "c",
+        "206": "c",
+        "222": "c",
+        "237": "c",
+        "250": "c",
+        "262": "c",
+        "273": "c",
+        "286": "c",
+        "296": "c",
+        "309": "c",
+        "353": "c",
+        "365": "c",
+        "385": "c",
+        "404": "c",
+        "425": "c"
+      }
+    },
+    "locking/preempt-locking.rst": {
+      "title": "Locking and preemption",
+      "type": "how-to",
+      "description": "Protecting per-CPU data, processor state, and critical sections in a preemptible kernel.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1100--preempt-locking.md",
+      "reference": "kernel/internals/locking/preempt-locking",
+      "unquote_lines": [],
+      "code_languages": {
+        "27": "c",
+        "102": "c",
+        "115": "c"
+      }
+    },
+    "locking/pi-futex.rst": {
+      "title": "Priority-inheritance futexes",
+      "type": "concept",
+      "description": "The motivation and kernel support for lightweight priority-inheritance futexes.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1200--pi-futex.md",
+      "reference": "kernel/internals/locking/pi-futex",
+      "unquote_lines": [
+        7,
+        87
+      ],
+      "code_languages": {}
+    },
+    "locking/futex-requeue-pi.rst": {
+      "title": "Requeueing priority-inheritance futexes",
+      "type": "reference",
+      "description": "Requeue operations and proxy locking for priority-inheritance futexes.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1300--futex-requeue-pi.md",
+      "reference": "kernel/internals/locking/futex-requeue-pi",
+      "unquote_lines": [],
+      "code_languages": {
+        "26": "c",
+        "60": "c"
+      }
+    },
+    "locking/robust-futexes.rst": {
+      "title": "Robust futexes",
+      "type": "concept",
+      "description": "Recovering userspace locks when their owner exits, using robust futex lists.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1400--robust-futexes.md",
+      "reference": "kernel/internals/locking/robust-futexes",
+      "unquote_lines": [
+        62,
+        127,
+        154
+      ],
+      "code_languages": {
+        "172": "c",
+        "194": "c",
+        "202": "c"
+      }
+    },
+    "locking/robust-futex-ABI.rst": {
+      "title": "Robust futex ABI",
+      "type": "reference",
+      "description": "The userspace list layout and kernel interface for robust futex recovery.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1500--robust-futex-abi.md",
+      "reference": "kernel/internals/locking/robust-futex-abi",
+      "unquote_lines": [
+        17,
+        141,
+        150,
+        162,
+        174
+      ],
+      "code_languages": {
+        "39": "c",
+        "98": "c"
+      }
+    },
+    "locking/lockdep-design.rst": {
+      "title": "Lock dependency validation",
+      "type": "reference",
+      "description": "Lock classes, dependency checks, nesting, and lockdep annotations.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1600--lockdep-design.md",
+      "reference": "kernel/internals/locking/lockdep-design",
+      "unquote_lines": [
+        77,
+        99,
+        455
+      ],
+      "code_languages": {
+        "215": "c",
+        "245": "c",
+        "264": "c",
+        "342": "c",
+        "382": "bash",
+        "392": "bash"
+      }
+    },
+    "locking/lockstat.rst": {
+      "title": "Lock statistics",
+      "type": "how-to",
+      "description": "Collecting and interpreting lock contention and hold-time statistics.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1700--lockstat.md",
+      "reference": "kernel/internals/locking/lockstat",
+      "unquote_lines": [
+        50
+      ],
+      "code_languages": {
+        "93": "console",
+        "97": "console",
+        "204": "console"
+      }
+    },
+    "locking/locktorture.rst": {
+      "title": "Lock torture tests",
+      "type": "how-to",
+      "description": "Running locking stress tests and selecting their module parameters.",
+      "destination": "kernel.product/200--internals.antho/100--concurrency-and-synchronisation.shelf/100--locking.topic/1800--locktorture.md",
+      "reference": "kernel/internals/locking/locktorture",
+      "unquote_lines": [
+        49
+      ],
+      "code_languages": {
+        "155": "sh"
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""Render a kernel Netlink YAML specification through YnlDocGenerator."""
+import argparse
+import importlib.util
+from pathlib import Path
+import sys
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / '.deps'))
+from trail_plugin import BlockError, block_options, fail, read_request, respond
+
+
+def specification(root, argument):
+    requested = Path(argument)
+    directory = (root / 'Documentation/netlink/specs').resolve()
+    path = (root / requested).resolve()
+    if requested.is_absolute() or not path.is_relative_to(directory) or path.suffix != '.yaml' or not path.is_file():
+        raise BlockError('expects an existing kernel-relative YAML file under Documentation/netlink/specs')
+    return path
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--srctree', required=True)
+    args = parser.parse_args()
+    root = Path(args.srctree).resolve()
+    generator_path = root / 'tools/net/ynl/pyynl/lib/doc_generator.py'
+    if not generator_path.is_file():
+        fail('kernel-netlink', 'kernel source root has no YnlDocGenerator')
+    try:
+        import netlink_markdown
+        spec = importlib.util.spec_from_file_location('kernel_ynl_doc_generator', generator_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except ImportError as error:
+        fail('kernel-netlink', f'{error}; install requirements-netlink.txt (see README.md)')
+    request = read_request('kernel-netlink')
+    dependencies = {generator_path, Path(__file__).resolve(), HERE/'netlink_markdown.py', HERE/'trail_plugin.py',
+                    root/'Documentation/netlink/specs', HERE/'requirements-netlink.txt'}
+    cache = {}
+    outputs = []
+    for block in request['blocks']:
+        try:
+            block_options(block, ())
+            if block['body'].strip():
+                raise BlockError('takes no body or options')
+            path = specification(root, block['argument'].strip())
+            dependencies.add(path)
+            if path not in cache:
+                rst = module.YnlDocGenerator().parse_yaml_file(str(path))
+                cache[path] = netlink_markdown.render(rst, str(path))
+            outputs.append((block, cache[path]))
+        except Exception as error:
+            outputs.append((block, BlockError(f'{block["argument"]}: {error}')))
+    respond(outputs, map(str, dependencies))
+
+
+if __name__ == '__main__':
+    main()

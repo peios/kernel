@@ -1,0 +1,10 @@
+---
+title: "MediaTek MT6316 DP/TP SPMI PMIC Regulators"
+type: reference
+description: "Device-tree binding reference for MediaTek MT6316 DP/TP SPMI PMIC Regulators."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/regulator/mediatek,mt6316d-regulator.yaml
+```

@@ -1,0 +1,52 @@
+---
+title: "mvebu (Kirkwood, Dove, Armada 370) audio controller"
+type: reference
+description: "Device-tree binding reference for mvebu (Kirkwood, Dove, Armada 370) audio controller."
+---
+
+## Required properties:
+
+- compatible:
+  "marvell,kirkwood-audio" for Kirkwood platforms
+  "marvell,dove-audio" for Dove platforms
+  "marvell,armada370-audio" for Armada 370 platforms
+  "marvell,armada-380-audio" for Armada 38x platforms
+
+- reg: physical base address of the controller and length of memory mapped
+  region (named "i2s\_regs").
+  With "marvell,armada-380-audio" two other regions are required:
+  first of those is dedicated for Audio PLL Configuration registers
+  (named "pll\_regs") and the second one ("soc\_ctrl") - for register
+  where one of exceptive I/O types (I2S or S/PDIF) is set.
+
+- interrupts:
+  with "marvell,kirkwood-audio", the audio interrupt
+  with "marvell,dove-audio", a list of two interrupts, the first for
+  the data flow, and the second for errors.
+
+- clocks: one or two phandles.
+  The first one is mandatory and defines the internal clock.
+  The second one is optional and defines an external clock.
+
+- clock-names: names associated to the clocks:
+  "internal" for the internal clock
+  "extclk" for the external clock
+
+## Optional properties:
+
+- spdif-mode:
+  Enable S/PDIF mode on Armada 38x SoC. Using this property
+  disables standard I2S I/O. Valid only with "marvell,armada-380-audio"
+  compatible string.
+
+## Example:
+
+```dts
+i2s1: audio-controller@b4000 {
+	compatible = "marvell,dove-audio";
+	reg = <0xb4000 0x2210>;
+	interrupts = <21>, <22>;
+	clocks = <&gate_clk 13>;
+	clock-names = "internal";
+};
+```

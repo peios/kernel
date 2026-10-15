@@ -1,0 +1,26 @@
+---
+title: "Xillybus driver for generic FPGA interface"
+type: reference
+description: "Device-tree binding reference for Xillybus driver for generic FPGA interface."
+---
+
+## Required properties:
+
+- compatible: Should be "xillybus,xillybus-1.00.a"
+- reg: Address and length of the register set for the device
+- interrupts: Contains one interrupt node, typically consisting of three cells.
+
+## Optional properties:
+
+- dma-coherent: Present if DMA operations are coherent
+
+## Example:
+
+```dts
+	xillybus@ff200400 {
+		compatible = "xillybus,xillybus-1.00.a";
+		reg = < 0xff200400 0x00000080 >;
+		interrupts = < 0 40 1 >;
+		interrupt-parent = <&intc>;
+	} ;
+```

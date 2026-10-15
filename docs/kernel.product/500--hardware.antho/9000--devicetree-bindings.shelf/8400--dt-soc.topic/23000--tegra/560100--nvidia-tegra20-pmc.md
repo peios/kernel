@@ -1,0 +1,10 @@
+---
+title: "Tegra Power Management Controller (PMC)"
+type: reference
+description: "Device-tree binding reference for Tegra Power Management Controller (PMC)."
+---
+
+<!-- SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) -->
+
+```{kernel-binding} Documentation/devicetree/bindings/soc/tegra/nvidia,tegra20-pmc.yaml
+```

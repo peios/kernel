@@ -1,0 +1,10 @@
+---
+title: "Allwinner A80 USB Module Clock"
+type: reference
+description: "Device-tree binding reference for Allwinner A80 USB Module Clock."
+---
+
+<!-- SPDX-License-Identifier: GPL-2.0 -->
+
+```{kernel-binding} Documentation/devicetree/bindings/clock/allwinner,sun9i-a80-usb-mod-clk.yaml
+```

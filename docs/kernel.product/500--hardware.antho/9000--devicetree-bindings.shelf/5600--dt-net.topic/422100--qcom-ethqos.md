@@ -1,0 +1,10 @@
+---
+title: "Qualcomm Ethernet ETHQOS device"
+type: reference
+description: "Device-tree binding reference for Qualcomm Ethernet ETHQOS device."
+---
+
+<!-- SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause -->
+
+```{kernel-binding} Documentation/devicetree/bindings/net/qcom,ethqos.yaml
+```

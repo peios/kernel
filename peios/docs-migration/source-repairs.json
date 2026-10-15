@@ -1,0 +1,121 @@
+{
+  "arch/riscv/zicfilp.rst": {
+    "source_sha256": "1cf3abc543999a59e8e65068273779df7a87a88d8fccd387ae78b7c58c75c7e0",
+    "repairs": [
+      {
+        "before": "``prctl()` arguments",
+        "after": "``prctl()`` arguments",
+        "reason": "Close the malformed inline literal.",
+        "count": 1
+      }
+    ]
+  },
+  "bpf/map_devmap.rst": {
+    "source_sha256": "218818caab44cf5df3e4bb66eb0f189650f1c837ce400bae560b6860dfafac5b",
+    "repairs": [
+      {
+        "before": ".. code-block:: c\n\n.. c:function::",
+        "after": ".. c:function::",
+        "reason": "Remove empty code wrapper preceding an intact C declaration.",
+        "count": 2
+      }
+    ]
+  },
+  "arch/powerpc/vpa-dtl.rst": {
+    "source_sha256": "26960142ab4147fd7082fb19ed1d40317d1220d99a0946592de7b9cd221950f9",
+    "repairs": [
+      {
+        "before": "0 0 0x39b10 [0x30]: PERF_RECORD_AUXTRACE size: 0x690  offset: 0  ref: 0  idx: 0  tid: -1  cpu: 0\n.\n. ... VPA DTL PMU data: size 1680 bytes, entries is 35\n.  00000000: boot_tb: 21349649546353231, tb_freq: 512000000\n.  00000030: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:7064, ready_to_enqueue_time:187, waiting_to_ready_time:6611773\n.  00000060: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:146, ready_to_enqueue_time:0, waiting_to_ready_time:15359437\n.  00000090: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:4868, ready_to_enqueue_time:232, waiting_to_ready_time:5100709\n.  000000c0: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:179, ready_to_enqueue_time:0, waiting_to_ready_time:30714243\n.  000000f0: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:197, ready_to_enqueue_time:0, waiting_to_ready_time:15350648\n.  00000120: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:213, ready_to_enqueue_time:0, waiting_to_ready_time:15353446\n.  00000150: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:212, ready_to_enqueue_time:0, waiting_to_ready_time:15355126\n.  00000180: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:6368, ready_to_enqueue_time:164, waiting_to_ready_time:5104665",
+        "after": "   0 0 0x39b10 [0x30]: PERF_RECORD_AUXTRACE size: 0x690  offset: 0  ref: 0  idx: 0  tid: -1  cpu: 0\n   .\n   . ... VPA DTL PMU data: size 1680 bytes, entries is 35\n   .  00000000: boot_tb: 21349649546353231, tb_freq: 512000000\n   .  00000030: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:7064, ready_to_enqueue_time:187, waiting_to_ready_time:6611773\n   .  00000060: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:146, ready_to_enqueue_time:0, waiting_to_ready_time:15359437\n   .  00000090: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:4868, ready_to_enqueue_time:232, waiting_to_ready_time:5100709\n   .  000000c0: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:179, ready_to_enqueue_time:0, waiting_to_ready_time:30714243\n   .  000000f0: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:197, ready_to_enqueue_time:0, waiting_to_ready_time:15350648\n   .  00000120: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:213, ready_to_enqueue_time:0, waiting_to_ready_time:15353446\n   .  00000150: dispatch_reason:priv doorbell, preempt_reason:H_CEDE, enqueue_to_dispatch_time:212, ready_to_enqueue_time:0, waiting_to_ready_time:15355126\n   .  00000180: dispatch_reason:decrementer interrupt, preempt_reason:H_CEDE, enqueue_to_dispatch_time:6368, ready_to_enqueue_time:164, waiting_to_ready_time:5104665",
+        "reason": "Indent the perf dump under its existing code directive; retain every byte of the dump.",
+        "count": 1
+      }
+    ]
+  },
+  "networking/l2tp.rst": {
+    "source_sha256": "c69882901770636070c64f4f4ab8e130b0deb632a574b3f6880e57acf5f495f4",
+    "repairs": [
+      {
+        "before": "../../../include/uapi/linux/l2tp.h",
+        "after": "../../include/uapi/linux/l2tp.h",
+        "reason": "Fix the extra parent traversal; intended header exists in kernel source.",
+        "count": 1
+      },
+      {
+        "before": "../../../include/linux/if_pppol2tp.h",
+        "after": "../../include/uapi/linux/if_pppol2tp.h",
+        "reason": "Repair obsolete location to the existing UAPI header.",
+        "count": 1
+      },
+      {
+        "before": "../../../net/l2tp/l2tp_ip.c",
+        "after": "../../net/l2tp/l2tp_ip.c",
+        "reason": "Fix the extra parent traversal to the existing kernel source file.",
+        "count": 1
+      },
+      {
+        "before": "../../../net/l2tp/l2tp_ip6.c",
+        "after": "../../net/l2tp/l2tp_ip6.c",
+        "reason": "Fix the extra parent traversal to the existing kernel source file.",
+        "count": 1
+      },
+      {
+        "before": "../../../net/l2tp/l2tp_ppp.c",
+        "after": "../../net/l2tp/l2tp_ppp.c",
+        "reason": "Fix the extra parent traversal to the existing kernel source file.",
+        "count": 1
+      },
+      {
+        "before": "../../../net/l2tp/l2tp_eth.c",
+        "after": "../../net/l2tp/l2tp_eth.c",
+        "reason": "Fix the extra parent traversal to the existing kernel source file.",
+        "count": 1
+      },
+      {
+        "before": "../../../tools/testing/selftests/net/l2tp.sh",
+        "after": "../../tools/testing/selftests/net/l2tp.sh",
+        "reason": "Fix the extra parent traversal to the existing kernel source file.",
+        "count": 1
+      }
+    ]
+  },
+  "filesystems/ext4/super.rst": {
+    "source_sha256": "85442d4267c1d66dd713eebff0b6c320271e43253fd0171c1526add75437664e",
+    "repairs": [
+      {
+        "before": "`quota <quota>`__",
+        "after": "`quota <../quota.rst>`__",
+        "reason": "Resolve the obsolete relative quota link to the existing quota guide.",
+        "count": 2
+      },
+      {
+        "before": "<Quota>",
+        "after": "<../quota.rst>",
+        "reason": "Resolve the obsolete quota link to the existing quota guide.",
+        "count": 1
+      }
+    ]
+  },
+  "bpf/linux-notes.rst": {
+    "source_sha256": "34c1f866e938f9786c7e58d99366bc725ea4da3645b3f700447a2fede7fc6f2a",
+    "repairs": [
+      {
+        "before": "<instruction-set.html#legacy-bpf-packet-access-instructions>",
+        "after": "<standardization/instruction-set.html#legacy-bpf-packet-access-instructions>",
+        "reason": "Resolve the moved instruction-set guide and retain its existing section target.",
+        "count": 1
+      }
+    ]
+  },
+  "index.rst": {
+    "source_sha256": "1e955f2d07a96e2e9a239b4a7fcf86abd43d751eaad3ab068c5c32482db55d88",
+    "repairs": [
+      {
+        "before": ":ref:`genindex`",
+        "after": "`Upstream general index <https://docs.kernel.org/genindex.html>`_",
+        "reason": "The Sphinx-generated global index is not a source article; retain an explicit upstream index link.",
+        "count": 1
+      }
+    ]
+  }
+}

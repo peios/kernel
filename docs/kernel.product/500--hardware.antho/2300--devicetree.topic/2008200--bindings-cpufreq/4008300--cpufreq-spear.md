@@ -1,0 +1,49 @@
+---
+title: "SPEAr cpufreq driver"
+type: reference
+description: "Device-tree binding reference for SPEAr cpufreq driver."
+---
+
+SPEAr SoC cpufreq driver for CPU frequency scaling.
+It supports both uniprocessor (UP) and symmetric multiprocessor (SMP) systems
+which share clock across all CPUs.
+
+## Required properties:
+
+- cpufreq\_tbl: Table of frequencies CPU could be transitioned into, in the
+  increasing order.
+
+## Optional properties:
+
+- clock-latency: Specify the possible maximum transition latency for clock, in
+  unit of nanoseconds.
+
+Both required and optional properties listed above must be defined under node
+/cpus/cpu@0.
+
+## Examples:
+
+```dts
+cpus {
+
+	<...>
+
+	cpu@0 {
+		compatible = "arm,cortex-a9";
+		reg = <0>;
+
+		<...>
+
+		cpufreq_tbl = < 166000
+				200000
+				250000
+				300000
+				400000
+				500000
+				600000 >;
+	};
+
+	<...>
+
+};
+```

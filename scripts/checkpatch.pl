@@ -2737,7 +2737,7 @@ sub process {
 
 		if ($rawline=~/^\+\+\+\s+(\S+)/) {
 			$setup_docs = 0;
-			if ($1 =~ m@Documentation/admin-guide/kernel-parameters.txt$@) {
+			if ($1 =~ m@(?:Documentation/admin-guide/kernel-parameters.txt|docs/sources/admin-guide/kernel-parameters.txt)$@) {
 				$setup_docs = 1;
 			}
 			#next;
@@ -3761,13 +3761,16 @@ sub process {
 
 			my $dt_path = $root . "/Documentation/devicetree/bindings/";
 			my $vp_file = $dt_path . "vendor-prefixes.yaml";
+			my $trail_dt_path = $root . "/docs/kernel.product/500--hardware.antho/2300--devicetree.topic/";
+			my $dt_search = "\"$dt_path\"";
+			$dt_search .= " \"$trail_dt_path\"" if -d $trail_dt_path;
 
 			foreach my $compat (@compats) {
 				my $compat2 = $compat;
 				$compat2 =~ s/\,[a-zA-Z0-9]*\-/\,<\.\*>\-/;
 				my $compat3 = $compat;
 				$compat3 =~ s/\,([a-z]*)[0-9]*\-/\,$1<\.\*>\-/;
-				`grep -Erq "$compat|$compat2|$compat3" $dt_path`;
+				`grep -Erq "$compat|$compat2|$compat3" $dt_search`;
 				if ( $? >> 8 ) {
 					WARN("UNDOCUMENTED_DT_STRING",
 					     "DT compatible string \"$compat\" appears un-documented -- check $dt_path\n" . $herecurr);
@@ -7271,7 +7274,7 @@ sub process {
 
 			if (!grep(/$name/, @setup_docs)) {
 				CHK("UNDOCUMENTED_SETUP",
-				    "__setup appears un-documented -- check Documentation/admin-guide/kernel-parameters.txt\n" . $herecurr);
+				    "__setup appears un-documented -- check docs/sources/admin-guide/kernel-parameters.txt\n" . $herecurr);
 			}
 		}
 

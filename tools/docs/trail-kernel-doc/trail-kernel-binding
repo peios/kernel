@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0
+"""Render authored device-tree YAML bindings and local shared schemas for Trail."""
+import argparse
+from pathlib import Path
+import sys
+HERE=Path(__file__).resolve().parent
+sys.path.insert(0,str(HERE/'.deps'))
+from trail_plugin import BlockError,block_options,read_request,respond,fail
+
+
+def main():
+    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--srctree',required=True);args=ap.parse_args()
+    request=read_request('kernel-binding')
+    try:
+        from binding_schema import Registry
+        from binding_markdown import Renderer
+        registry=Registry(Path(args.srctree))
+    except Exception as error:fail('kernel-binding',str(error))
+    pages={};documents={};errors={}
+    for block in request['blocks']:
+        try:
+            block_options(block,())
+            if block['body'].strip():raise ValueError('takes no body or options')
+            doc=registry.requested(block['argument'].strip())
+            if doc.path in pages:raise ValueError('duplicate wrapper for '+str(doc.path))
+            pages[doc.path]=block['reference'];documents[block['id']]=doc
+        except Exception as error:errors[block['id']]=str(error)
+    dependencies={registry.directory,registry.library,HERE/'schema-library/manifest.json',
+                  HERE/'binding_schema.py',HERE/'binding_markdown.py',HERE/'trail-kernel-binding',
+                  HERE/'trail_plugin.py',HERE/'requirements-binding.txt'}
+    # Every registered file participates in identifier uniqueness and resolution.
+    dependencies.update(registry.by_path)
+    outputs=[]
+    for block in request['blocks']:
+        try:
+            if block['id'] in errors:raise ValueError(errors[block['id']])
+            doc=documents[block['id']];outputs.append((block,Renderer(registry,doc,pages).render()))
+        except Exception as error:outputs.append((block,BlockError(str(error))))
+    respond(outputs,map(str,dependencies))
+
+
+if __name__=='__main__':main()

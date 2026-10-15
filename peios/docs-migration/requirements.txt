@@ -1,0 +1,6 @@
+docutils==0.22.2
+markdown-it-py==4.0.0
+mdurl==0.1.2
+pydot==4.0.1
+pyparsing==3.3.3
+ruamel.yaml==0.18.16

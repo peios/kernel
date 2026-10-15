@@ -1,0 +1,14 @@
+---
+title: "Cadence Xtensa XTFPGA platform SPI controller."
+type: reference
+description: "Device-tree binding reference for Cadence Xtensa XTFPGA platform SPI controller.."
+---
+
+This simple SPI master controller is built into xtfpga bitstreams and is used
+to control daughterboard audio codec.
+
+## Required properties:
+
+- compatible: should be "cdns,xtfpga-spi".
+- reg: physical base address of the controller and length of memory mapped
+  region.

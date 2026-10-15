@@ -1,0 +1,10 @@
+---
+title: "Broadcom iProc MDIO bus controller"
+type: reference
+description: "Device-tree binding reference for Broadcom iProc MDIO bus controller."
+---
+
+<!-- SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause -->
+
+```{kernel-binding} Documentation/devicetree/bindings/net/brcm,iproc-mdio.yaml
+```

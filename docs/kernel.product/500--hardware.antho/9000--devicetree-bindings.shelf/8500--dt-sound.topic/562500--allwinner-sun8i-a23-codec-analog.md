@@ -1,0 +1,10 @@
+---
+title: "Allwinner A23 Analog Codec"
+type: reference
+description: "Device-tree binding reference for Allwinner A23 Analog Codec."
+---
+
+<!-- SPDX-License-Identifier: GPL-2.0 -->
+
+```{kernel-binding} Documentation/devicetree/bindings/sound/allwinner,sun8i-a23-codec-analog.yaml
+```
