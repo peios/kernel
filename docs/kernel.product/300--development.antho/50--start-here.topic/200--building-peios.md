@@ -1,108 +1,116 @@
 ---
 title: "Building Peios"
 type: guide
-description: "Build and test the Peios kernel with the repository's Bazel entry points."
+description: "Set up the pinned toolchain, build the kernel and understand outputs and trust inputs."
 ---
 
-The repository builds the directly edited kernel source. Bazel declares inputs,
-invokes Kbuild and caches complete build outputs. Start from the kernel
-repository root. The inherited [Kbuild reference](<~kernel/development/kbuild/index>)
-explains the underlying machinery; it is not the Peios release procedure.
+The repository builds the directly maintained kernel source. Bazel declares
+inputs, invokes Kbuild and caches complete build outputs. Run commands from
+the kernel repository root. The inherited [Kbuild reference](<~kernel/development/kbuild/index>)
+explains the underlying machinery.
 
 ## Host requirements
 
-Use an x86_64 Linux host with Python 3.11 or newer at `/usr/bin/python3`, Docker
-at `/usr/bin/docker`, and access to the local Docker daemon. `./peios/bazel`
-downloads and verifies Bazel 8.4.2 using `curl` and `sha256sum`.
+The initial host is **x86_64 Linux** with Python 3.11 or newer at `/usr/bin/python3`, Docker
+at `/usr/bin/docker`, and access to the local `/var/run/docker.sock` daemon.
+Use `./peios/bazel` to download and run Bazel **8.4.2**, pinned in `.bazelversion`.
+The launcher requires `curl` and `sha256sum`, verifies the binary, and caches
+it under `${XDG_CACHE_HOME:-$HOME/.cache}/peios/bazel/`. Alternatively use an
+installed Bazel 8.4.2 or Bazelisk (which honours `.bazelversion`).
+The upstream Linux x86_64 binary has SHA-256:
 
-The image selected by content ID in `peios/build-settings.json` must already be
-installed in the local daemon. It contains LLVM 18, Rust 1.83.0 and bindgen
-0.65.1. The build does not pull a mutable image tag or substitute host compilers.
-Transfer the existing image with `docker save` and `docker load` if necessary,
-then verify its ID against the settings. Rebuilding the preserved container
-recipe does not promise the same content ID.
+```
+4dc8e99dfa802e252dac176d08201fd15c542ae78c448c8a89974b6f387c282c
+```
 
-Package assembly separately downloads pinned Rust 1.96.0 and locked crates for
-the host package writer. It also needs a host C compiler and linker for zstd.
-Initial dependency fetching needs network access; package actions do not.
+`peios/build-settings.json` pins the existing PKM build image by its content ID,
+with LLVM 18, Rust 1.83.0 and bindgen 0.65.1. The image must already exist in
+the local daemon. Builds fail if it is missing; they do not pull a mutable tag
+or choose host compilers. To transfer the existing image to another machine,
+use `docker save` and `docker load`, then verify its ID against the settings.
+Registry distribution is not set up yet. `peios/Containerfile` and
+`peios/original-toolchain.lock` preserve the inherited image recipe for reference;
+rebuilding it does not promise the same content ID. Changing the selected
+image is an explicit toolchain update in `peios/build-settings.json`.
 
 ## Build and test
 
 ```sh
-./peios/bazel build //:kernel
-./peios/bazel build //:kernel-kunit
-./peios/bazel test //:kunit
+./peios/bazel build //:kernel       # production configuration, development keys
+./peios/bazel build //:kernel-kunit # built-in QEMU/KUnit configuration
+./peios/bazel test //:kunit         # build and boot the KUnit configuration
 ./peios/bazel run //:kernel-dev
 ./peios/bazel run //:kernel-dev -- --profile kunit
-./peios/bazel build //:kernel-tools
-./peios/bazel build //:kernel-package-content
-./peios/bazel build //:packages
-./peios/bazel build //peios/packages:perf
-./peios/bazel build //peios/packages:kernel-source
 ```
 
-The controlled build uses a private source copy and a separate Kbuild `O=`
-directory. It does not write `.config` or generated headers into the checkout.
-Build identity, timestamp, local version and parallelism come from committed
-settings. `peios/config/pkm.fragment` defines the Peios configuration;
-`peios/verify-config.sh` checks its security invariants. Do not substitute a
-generic `defconfig` and assume it has equivalent Peios policy.
+The controlled build declares all kernel source, configuration, public-key
+and recipe files as inputs. It copies them into a fresh private tree and runs
+Kbuild with a separate `O=` directory. The container has no network, receives
+no private signing keys, and uses fixed build identity, timestamp and debug
+paths. No generated header or `.config` is written into your source tree.
+The configuration invariant checker is retained from PKM, including the
+ML-DSA, lockdown, LSM and firmware policy checks.
 
-`kernel-dev` keeps incremental state under `.peios-dev/<profile>/`. Those
-artifacts are marked as development outputs and are outside Bazel's action
-cache. Release automation should consume controlled outputs. Both modes use
-the pinned image and settings. Actions run locally; remote execution is not
-supported. Host Python, Docker and the host kernel remain prerequisites, so
-pinning the container is not a claim of complete build hermeticity.
+Kbuild, staging and payload-assembly actions run locally outside Bazel's
+filesystem sandbox. Assembly reads the declared staging trees directly so
+Bazel's input-transport symlinks cannot become package contents. Bazel caches
+complete outputs; remote execution is not supported. The image is pinned,
+but this is not yet a fully hermetic Bazel toolchain: host Python/Docker and
+the host kernel remain execution prerequisites. Remote caching is supported
+by the action but no shared cache is configured or qualified here.
 
-`//:kunit` boots the test build in QEMU, using KVM when available and TCG
-otherwise. It requires complete KTAP accounting, passing PKM suites, a clean
-power-down and no warning, oops or lockdep failure signatures. Logs are retained
-under `bazel-testlogs/kunit/test.outputs/`. This does not replace native
-integration or hardware qualification.
+Bazel's local action cache reuses unchanged outputs. To retain outputs across
+input revisions or clean output directories, opt into a disk cache with
+`./peios/bazel build --disk_cache=/absolute/path/to/cache //:kernel-kunit`
+(or `//:kernel`). Use the same cache path on subsequent builds. No disk-cache
+location is enabled by default.
 
-For style and native semantic-core checks:
+`kernel-dev` deliberately runs outside the Bazel action cache. It keeps private
+source copies, object files and artifacts under `.peios-dev/<profile>/`.
+Content changes and deleted inputs are synchronised before Kbuild runs; equal
+inputs retain their timestamps. Each profile is locked against concurrent
+writers. An image change discards that profile's objects. Remove that profile
+directory while no build is running to start fresh. These artifacts are marked
+`mode: dev`; release automation should consume controlled build outputs.
 
-```sh
-./peios/bazel test //:style //peios/style:tests
-./peios/bazel test //:rust-core-tests //:uapi-tests
-```
+Both modes read the same settings. `jobs` caps Kbuild parallelism (initially
+four), independently of Bazel's action parallelism. `source_date_epoch` and
+`localversion` are explicit inputs; no current clock or Git dirty state is
+stamped into the kernel. The initial suffix is `-peios-dev`, not a release.
 
-Install the pinned style tools described in `peios/style/README.md` first.
-`./peios/bazel run //:format` applies the scoped Peios formatter. Follow the
-workspace `_styleguide` for Git and contribution conventions. Linux upstream
-submission instructions remain useful when sending a change upstream.
-
-KMES event catalogues live in `peios/packages/data/evman/`. Regenerate and check
-their compiled tables with:
-
-```sh
-./peios/bazel run //:generate-kmes-events
-./peios/bazel test //:kmes-event-table-test
-```
+`peios/config/pkm.fragment` defines the Peios configuration. The build runs
+`peios/verify-config.sh` against the resolved configuration. A generic Linux
+`defconfig` does not establish the same Peios policy.
 
 ## Outputs and release limits
 
-Controlled kernel outputs are in `bazel-bin/kernel/` or
-`bazel-bin/kernel-kunit/`: `bzImage`, `vmlinux`, `System.map`, resolved `config`,
-`Module.symvers`, `kernel.release`, `modules.tar`, `kbuild-support.tar` and
-`build.json`. The provenance report records the image, settings, profile,
-mode and declared-input digest.
+Controlled outputs are in `bazel-bin/kernel/` or `bazel-bin/kernel-kunit/`:
+`bzImage`, `vmlinux`, `System.map`, resolved `config`, `Module.symvers`,
+`kernel.release`, `modules.tar`, `kbuild-support.tar` and `build.json`.
+The support archive retains generated headers, public trust inputs and Kbuild
+helper programs for package assembly. The module archive contains
+raw **unsigned** modules and module lists, preserving their Kbuild paths.
+It is not an installable package. `build.json` records the image, settings,
+profile, build mode and a digest of the declared input contents and modes.
 
-The production-configuration development build uses checked-in development
-public trust roots. Its initial kernel suffix is `-peios-dev`. Modules in the
-raw archive are **unsigned**, while the kernel still enforces module signatures.
-Signing and release publication are separate stages.
+The checked-in `peios/keys/dev-modsig.pem` certificate and `peios/keys/dev-tcb.hex` public
+key preserve the old PKM development keyring for production-configuration
+development builds. KUnit uses the public certificate in `peios/keys/kunit-modsig.pem` and an empty built-in TCB table, matching that existing test path.
+These are **development trust roots**, not release credentials. Substituting
+release public inputs and choosing release versions belong to release setup.
+Module signature enforcement remains enabled even though this build stage
+does not sign the modules it produces.
 
-The package family contains 41 binary packages and a source package. Individual
-targets are under `//peios/packages:`, and `//:packages` combines their content
-stores under `bazel-bin/packages/`. The source package contains declared source
-and build inputs, not Git history, private keys, the Docker image or downloaded
-compiler dependencies.
+## Next steps
 
-Userspace tools currently use the pinned Debian image's ABI. Package provenance
-reports `release_ready: false`; these are development outputs, not qualified
-Peios-native release binaries. Package assembly does not install packages or
-resolve and apply their legacy dependencies and installation actions. Full
-userspace build reproducibility is not yet qualified. See `peios/README.md`
-and `peios/packages/` for the build recipes and package-format details.
+- [Package assembly](<~kernel/development/build-tools/packages>) covers userspace
+  tools, package stores, provenance and release limits.
+- [KUnit execution](<~kernel/development/native-subsystems/kunit>) explains logs,
+  filters and completion checks.
+- [Guest qualification](<~kernel/development/native-subsystems/guest-qualification>)
+  exercises native syscalls, mounted filesystems and signed inputs.
+- [Style tooling](<~kernel/development/build-tools/style>) and
+  [shared Rust core tests](<~kernel/development/native-subsystems/rust-tests>)
+  cover host checks.
+- [Data generators](<~kernel/development/build-tools/generators>) covers event
+  tables, registry seed data, Unicode tables and test fixtures.

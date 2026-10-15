@@ -1,0 +1,120 @@
+{
+  "task": "PEI-1505",
+  "status": "installed and validated",
+  "sources": {
+    "peios/README.md": "b6c422ccc233c0addd588fcda99c2267b80be46fc2143b8deed6718bf3ff6dd9",
+    "peios/style/README.md": "49912ed09a2035fc099f167e126ce9c313b36995a5531804fc0d41b546c1d2f0",
+    "peios/rust/README.md": "25c8839a8108e9a51b9e3ee066dcf9f7c27efc5a32eb3684147fdb20a200f681"
+  },
+  "section_destinations": {
+    "Host and toolchain": "docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md",
+    "Commands": "docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md",
+    "Outputs and trust material": "docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md",
+    "Packages": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/100--packages.md",
+    "Tests": "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/50--kunit.md",
+    "Style and Rust core tests": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md",
+    "KMES event tables": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/200--generators.md",
+    "Data generators and guest qualification": "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/60--guest-qualification.md"
+  },
+  "new_articles": {
+    "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/100--packages.md": "build-tools/packages",
+    "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/200--generators.md": "build-tools/generators",
+    "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md": "build-tools/style",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/30--rust-tests.md": "native-subsystems/rust-tests",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/40--abi-generation.md": "native-subsystems/abi-generation",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/50--kunit.md": "native-subsystems/kunit",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/60--guest-qualification.md": "native-subsystems/guest-qualification"
+  },
+  "scope": "Move build and auxiliary tooling guidance into Trail; preserve repository entry points and review commands against local implementations.",
+  "runtime_changes": false,
+  "additional_source_destinations": {
+    "peios/style/README.md": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md",
+    "peios/rust/README.md": [
+      "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/30--rust-tests.md",
+      "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/40--abi-generation.md"
+    ]
+  },
+  "validation": {
+    "local_markdown_links": 32,
+    "shell_blocks_syntax_checked": 23,
+    "bazel_labels_checked": 33,
+    "tooling_paths_checked": 26,
+    "authority": {
+      "mapped_articles": 9632,
+      "authored_articles": 14,
+      "runtime_dependencies": 7651,
+      "assets": 87,
+      "errors": 0
+    },
+    "native_generated_pages_current": 15,
+    "trm_output_hashes_current": true,
+    "git_diff_check": "passed",
+    "runtime_tests": "not run; documentation-only changes",
+    "strict_trail_build": "passed",
+    "rendered_site": {
+      "html_pages": 10219,
+      "local_links_and_assets": 3280372,
+      "errors": []
+    },
+    "generator_diagnostics": {
+      "count": 29,
+      "unchanged_from_existing_baseline": true
+    },
+    "rendered_guide_routes": 8,
+    "upstream_provenance_preserved": true
+  },
+  "editorial_corrections": [
+    "Make paths kernel-root-relative.",
+    "Describe the actual KUnit public certificate path.",
+    "Distinguish Kbuild-shaped signing-test inputs from flat Bazel artifact exports.",
+    "Document signed fixtures, direct-runner environment overrides and non-writing versus replacing generators.",
+    "Describe the CI workflow without inferring remote branch-protection state."
+  ],
+  "implementation_baselines": {
+    "BUILD.bazel": "4f8675c3da5d496d4b68a051ddda6965a7a3c13487362940c120528d125bf02f",
+    "peios/BUILD.bazel": "5d02279110f0cd41699098a7ef82b1479c02206d1eafc94773af8bcd80033f10",
+    "peios/build-settings.json": "ea22e7ca4e986e8be91b90d24e3f1a76e386208935029b520f8c94a5c37c3806",
+    "peios/bazel": "c9ddf58d8fade32827185045968b1195467fd9a2dc607498784a4fd84b74245a",
+    "peios/runner.py": "04487d1e254b3c4e4113ef3507f6ecb5d29038a3b2776470dc1f51c37bf3a3af",
+    "peios/build.sh": "73387d1ddb3cfcfaef1beb1fb2b551486e47f620b53f53e3a2a55011a5e57141",
+    "peios/kernel.bzl": "85a3bd0f27932d8f507b4d8d3da0955db7822759c7d1e9b87a55b7bb0bbcbc8b",
+    "peios/verify-config.sh": "0d8f156e08a6030308197cf67d4afc458249e8e460cd43e01defde282faddcf6",
+    "peios/gen-kmes-event-table.py": "26d707ff282abe5c885178efb015037e93af9e332b2a7ed7b17e4e52d88005e0",
+    "peios/gen-port-reservations-seed.py": "71e6e8d9921b1da37d14839da510a84879b7370ffe693ba3930817044347e729",
+    "peios/generate-casefold-table.py": "8b35f5446c3e61af98e7f97598f9af5f1b6020c700f24d00211ec4004708df4b",
+    "peios/generate-kacs-kunit-mldsa-vectors.py": "53ce4cb0d5b3167285eaeb6fbdfdd478e06b304c9841b66d4c2e3d763d80cbf7",
+    "peios/generate-keys.py": "46af6e570a556917f76d93a5aed0583b5c423b398400038b350db1172dc514f5",
+    "peios/style/rules.bzl": "7594d350c3ba1f284ada751f0a009a2cf4cf4cdba495ac9bcadfb906b2bcb2c8",
+    "peios/style/ORIGIN.json": "3112aea5edb9bad4c30506c583c1c1a449efe3a830b55604f49170021d5e57f9",
+    "peios/rust/rust-toolchain.toml": "887f9be066a15585a2c583578e84b0fcb541126d81546276bad3d2ff00d61167",
+    "peios/rust/peios-uapi/gen.sh": "73ae20a49728430acbd6a75a452628b45a5dc789958e4f2ab06c32af969c29a1",
+    "peios/test-kunit.sh": "6ab7b1a85674c65d665331c8b7cac51ec450d84a9321cc064f5b0d95fc1a01bd",
+    "peios/packages/BUILD.bazel": "602f7a295a82a16f7ae41b6a1773feea805efdfcaed5e0b5499eb59bf4b4d1ad",
+    "peios/packages/versions.bzl": "6699c6aa6881e6ae2a14987a92484a5cf6000c5f8592ab4827c7aa832ccd39b2",
+    "peios/qualification/prepare-fwsig.sh": "54fce32ada342427c7f07d0d0e145785ab9cb9fc960d62928496d3f2cc3c1422",
+    "peios/qualification/test-stratafs-dir-bench.sh": "61204215ae426c7e47cd353ef862388a1f01d32378134a04d7e3eae41a649e42",
+    "peios/qualification/check-build.sh": "af0a56bff6fe51ed4b1a8d9c6e9d10b93fb4bf41c7f2f85025f24e4d9a2fc1d5",
+    "peios/qualification/test-modsig.sh": "a8b3a5cbf8d446b54d0029cdc84fd350ad8cc56cea1865956c60b7b0de3fbcae",
+    "peios/qualification/test-mntns.sh": "4d56d74e3b0379eca00d6626c0426ac39d92de69a6e7f8c29ddbe33ccd165d79",
+    "peios/qualification/test-stratafs.sh": "594d3b63ac62acce18f00a9f0a804b168b0dac7583efc5933705afb91b89af70",
+    "peios/qualification/test-fwsig.sh": "c34a2378cfb268ae6f1ef35202680944795bdd046d1fb808c9b9bf03ac9ad149"
+  },
+  "current_outputs": {
+    "docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md": "7e2b547213984dc9dd4af309c45067d5a1104f61270003c11c3ce7ac16831d2a",
+    "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/100--packages.md": "d1f23788e5ffbc4cc744d51eacbbde3b84baced6215c1bb25ce8bb6713e566e9",
+    "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md": "9ffcb1934a978592d736034a8fda711f92fe532c4142b44d00c291bead7294f2",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/30--rust-tests.md": "88c0fef9aeca827df1ee77a658b15bb0bf7f6448ff3969fafa4e6941ce83a950",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/40--abi-generation.md": "b61a3202511e01c62602402adeacb221b5ec40113339cda130b8470262a667e2",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/50--kunit.md": "5af3cbded1713a745fce155dda7fb6a48aa4c01e69a511321bf4c32a22b8c0d0",
+    "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/200--generators.md": "9bc1840415575e368e336db0d7846382dbc02e33daddab05c66e40a123a69b55",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/60--guest-qualification.md": "09bdcf8f42299d892666a4dd33f5daf31ad0ba984f01b178a2bbd2ff16e39e67",
+    "docs/kernel.product/300--development.antho/50--start-here.topic/100--overview.md": "a76e79f907049a268b2f9a46479400078c92a24ac38fdf6610bb57f92a60b987",
+    "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/10--overview.md": "8c4663aa44634c2c25aa3b4db938ed28b5b92fc6c966d959d278d9e30c7c3b37",
+    "peios/README.md": "9ebb1d1f4d2e7914ecd45921425900ec49fa6605bc3ee16c5749115d1d2aee5c",
+    "peios/style/README.md": "71ba84158832b6d97f78166fdc04804ff86fe06cccaf17650db3042023586cb5",
+    "peios/rust/README.md": "580641daa803dfe013023e6bf33f7585f54228cb8b67f670d0f1d7320e2aca58",
+    "README": "412a388110038b1b2cd7fd63d085d2af0836479ffa725daf5fd7cfd1f4352c3a"
+  },
+  "recovery_artifacts": "/home/jack/projects/peios/.tmp/pei-1505-tooling-docs",
+  "committed": false
+}

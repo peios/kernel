@@ -54,3 +54,11 @@ python3 tools/docs/peios-reference/generate.py --check
 Edit handwritten explanations directly in `docs/`; do not put them in generated
 pages. See [Maintaining native subsystem documentation](<~kernel/development/native-subsystems/documentation>)
 for provenance, claim anchors and the retained TRM.
+
+## Detailed test workflows
+
+- [Shared Rust core tests](<~kernel/development/native-subsystems/rust-tests>)
+- [ABI regeneration](<~kernel/development/native-subsystems/abi-generation>)
+- [KUnit execution and logs](<~kernel/development/native-subsystems/kunit>)
+- [Guest qualification](<~kernel/development/native-subsystems/guest-qualification>)
+- [Data generators and their checks](<~kernel/development/build-tools/generators>)

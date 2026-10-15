@@ -21,3 +21,19 @@ Use this section when changing the kernel or investigating its behaviour.
 The inherited process material describes Linux upstream contribution practices.
 For work in the Peios repositories, also follow the workspace's `_styleguide`
 and the instructions in the repository you are changing.
+
+## Peios build and tooling guides
+
+- [Building Peios](<~kernel/development/start-here/building-peios>): pinned tools,
+  controlled builds, incremental builds and output artifacts.
+- [Package assembly](<~kernel/development/build-tools/packages>): userspace tools,
+  package stores and development provenance.
+- [Style tooling](<~kernel/development/build-tools/style>): formatter and linter
+  setup, scope and CI checks.
+- [Data generators](<~kernel/development/build-tools/generators>): event tables,
+  registry seeds, Unicode tables and signing fixtures.
+- [Shared Rust core tests](<~kernel/development/native-subsystems/rust-tests>) and
+  [ABI regeneration](<~kernel/development/native-subsystems/abi-generation>).
+- [KUnit](<~kernel/development/native-subsystems/kunit>) and
+  [guest qualification](<~kernel/development/native-subsystems/guest-qualification>):
+  kernel execution, logs, signed inputs and result interpretation.

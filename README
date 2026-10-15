@@ -45,7 +45,7 @@ Use `TRAIL=/path/to/trail` to select a binary. The default output directory is
 
 The repository contains the directly maintained kernel source. Bazel declares
 build inputs and invokes Kbuild using a pinned container image. Read
-[Building the Peios kernel](peios/README.md) for setup, outputs and qualification
+[Building Peios](docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md) for setup, outputs and qualification
 details before running the commands below.
 
 Kernel builds require an x86_64 Linux host, Python 3.11 or newer, Docker, and the
@@ -74,7 +74,7 @@ networking integration in `net/ntfe/`; and native public interfaces in
 
 Follow the [kernel coding style](peios/CODING_STYLE.md) and the workspace
 `_styleguide` for shared engineering and Git conventions. The
-[style command guide](peios/style/README.md) describes the required tooling.
+[style command guide](docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md) describes the required tooling.
 Update the relevant articles in `docs/` when changing documented behaviour or
 interfaces, and run the checks appropriate to the affected subsystem.
 

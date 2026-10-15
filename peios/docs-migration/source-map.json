@@ -872858,7 +872858,7 @@
     {
       "destination": "docs/kernel.product/300--development.antho/50--start-here.topic/100--overview.md",
       "reference": "kernel/development/start-here/overview",
-      "current_output_sha256": "a810ad7ba2460910af40bc08079b57c78b870ea693ce494a8891fd6d7e568405"
+      "current_output_sha256": "a76e79f907049a268b2f9a46479400078c92a24ac38fdf6610bb57f92a60b987"
     },
     {
       "destination": "docs/kernel.product/500--hardware.antho/50--start-here.topic/100--overview.md",
@@ -872878,7 +872878,42 @@
     {
       "destination": "docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md",
       "reference": "kernel/development/start-here/building-peios",
-      "current_output_sha256": "b6bd8de3552df28b4313d2f6e978c53a76fad2f739ae7cd5cd7e8e39da85e9fa"
+      "current_output_sha256": "7e2b547213984dc9dd4af309c45067d5a1104f61270003c11c3ce7ac16831d2a"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/100--packages.md",
+      "reference": "kernel/development/build-tools/packages",
+      "current_output_sha256": "d1f23788e5ffbc4cc744d51eacbbde3b84baced6215c1bb25ce8bb6713e566e9"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/200--generators.md",
+      "reference": "kernel/development/build-tools/generators",
+      "current_output_sha256": "9bc1840415575e368e336db0d7846382dbc02e33daddab05c66e40a123a69b55"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md",
+      "reference": "kernel/development/build-tools/style",
+      "current_output_sha256": "9ffcb1934a978592d736034a8fda711f92fe532c4142b44d00c291bead7294f2"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/30--rust-tests.md",
+      "reference": "kernel/development/native-subsystems/rust-tests",
+      "current_output_sha256": "88c0fef9aeca827df1ee77a658b15bb0bf7f6448ff3969fafa4e6941ce83a950"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/40--abi-generation.md",
+      "reference": "kernel/development/native-subsystems/abi-generation",
+      "current_output_sha256": "b61a3202511e01c62602402adeacb221b5ec40113339cda130b8470262a667e2"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/50--kunit.md",
+      "reference": "kernel/development/native-subsystems/kunit",
+      "current_output_sha256": "5af3cbded1713a745fce155dda7fb6a48aa4c01e69a511321bf4c32a22b8c0d0"
+    },
+    {
+      "destination": "docs/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/60--guest-qualification.md",
+      "reference": "kernel/development/native-subsystems/guest-qualification",
+      "current_output_sha256": "09bdcf8f42299d892666a4dd33f5daf31ad0ba984f01b178a2bbd2ff16e39e67"
     }
   ]
 }
