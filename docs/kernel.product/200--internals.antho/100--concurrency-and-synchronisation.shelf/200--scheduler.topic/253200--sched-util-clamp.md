@@ -281,13 +281,13 @@ There are two uclamp related values in the CPU cgroup controller:
 
 When a task is attached to a CPU controller, its uclamp values will be impacted as follows:
 
-- cpu.uclamp.min is a protection as described in [section 3-3 of cgroup v2 documentation](<~kernel/administration/admin-guide/cgroup-v2#rst-cgroupv2-protections-distributor>).
+- cpu.uclamp.min is a protection as described in [section 3-3 of cgroup v2 documentation](<~kernel/administration/admin-guide/resources/cgroup-v2#rst-cgroupv2-protections-distributor>).
 
   If a task uclamp_min value is lower than cpu.uclamp.min, then the task will inherit the cgroup cpu.uclamp.min value.
 
   In a cgroup hierarchy, effective cpu.uclamp.min is the max of (child, parent).
 
-- cpu.uclamp.max is a limit as described in [section 3-2 of cgroup v2 documentation](<~kernel/administration/admin-guide/cgroup-v2#rst-cgroupv2-limits-distributor>).
+- cpu.uclamp.max is a limit as described in [section 3-2 of cgroup v2 documentation](<~kernel/administration/admin-guide/resources/cgroup-v2#rst-cgroupv2-limits-distributor>).
 
   If a task uclamp_max value is higher than cpu.uclamp.max, then the task will inherit the cgroup cpu.uclamp.max value.
 

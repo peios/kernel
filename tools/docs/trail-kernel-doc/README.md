@@ -318,7 +318,7 @@ A newly referenced shared definition needs a wrapper before the build can pass.
 The displayed rules preserve their original scope. “Not listed as required here”
 is not a global optionality claim. The authored view does not show every implicit
 constraint added by dt-schema normalization. See the reader guide in
-`docs/kernel.product/500--hardware.antho/2300--devicetree.topic/10--binding-catalogue.md`.
+`docs/kernel.product/500--hardware.antho/100--platforms.shelf/2300--devicetree.topic/10--binding-catalogue.md`.
 
 Schema files, registry directories and renderer implementation are all runtime
 cache dependencies. Source mapping stores each page's transitive source closure

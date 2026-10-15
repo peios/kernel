@@ -18,7 +18,7 @@ feature tables, man-page and checker inputs, NFS XDR, build integration, and
 required assets. The per-file `storage.reason` records the consuming tool.
 75 live inputs moved to `docs/sources/`; the figure registry and three reviewed
 Mermaid files also moved there. 4,787 replaced or excluded originals were removed.
-The translation queue was not changed. Original files were checked byte-for-byte
+The translation queue was subsequently verified and removed. Original files were checked byte-for-byte
 against the recorded `kernel_commit` before removal and backed up before install.
 
 The source inventory retains all 11,072 upstream records. Original `source` and
@@ -45,7 +45,7 @@ known paths to existing maintained articles and still reports unknown references
 Checkpatch searches maintained legacy device-tree bindings alongside YAML.
 
 The public workflow is documented in the Trail article
-[Maintaining Peios kernel documentation](../../docs/kernel.product/300--development.antho/2400--doc-guide.topic/10--maintaining-peios-documentation.md).
+[Maintaining Peios kernel documentation](../../docs/kernel.product/300--development.antho/400--contributing.shelf/2400--doc-guide.topic/10--maintaining-peios-documentation.md).
 `pruning-report.json` records validation and recovery information for this phase.
 
 ## Initial import
@@ -536,3 +536,18 @@ rejects sliced excerpts and compares rendered code exactly, including whitespace
 It also verifies the standalone image and reviewed Mermaid representation.
 The seven additional prose articles use the existing line-accounted verifier.
 `residual-integration-report.json` records validation of the final 49-page pass.
+
+## Organization checkpoint
+
+The first organization pass follows migration commit `680b7136fef5`.
+`reorganisation.json` records the old and new physical paths and article
+addresses. Shelves group related topics without adding URL segments. Large
+administration, architecture, driver and userspace collections are anthologies
+of smaller topics; device-tree schemas have their own reference anthology.
+
+When moving an article, update its destination and reference in `source-map.json`,
+all inbound links, asset destinations and inventory ownership references. Preserve
+upstream paths, source hashes and initial output hashes. Record changed addresses
+in the article's `previous_references`; `make htmldocs-redirects` emits redirects
+for these as well as upstream RST URLs. Rebuild and check links after a move.
+Historical import plans and validation reports describe their original snapshots.

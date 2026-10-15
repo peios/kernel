@@ -46,7 +46,7 @@ Quota, period and burst are managed within the cpu subsystem via cgroupfs.
 
 > [!NOTE]
 >
-> The cgroupfs files described in this section are only applicable to cgroup v1. For cgroup v2, see [Documentation/admin-guide/cgroup-v2.rst](<~kernel/administration/admin-guide/cgroup-v2#rst-cgroup-v2-cpu>).
+> The cgroupfs files described in this section are only applicable to cgroup v1. For cgroup v2, see [Documentation/admin-guide/cgroup-v2.rst](<~kernel/administration/admin-guide/resources/cgroup-v2#rst-cgroup-v2-cpu>).
 
 - cpu.cfs_quota_us: run-time replenished within a period (in microseconds)
 

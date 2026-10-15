@@ -347,7 +347,7 @@ task_util(p) < capacity(task_cpu(p))
 
 This is commonly called the capacity fitness criterion, i.e. CFS must ensure a task "fits" on its CPU. If it is violated, the task will need to achieve more work than what its CPU can provide: it will be CPU-bound.
 
-Furthermore, uclamp lets userspace specify a minimum and a maximum utilization value for a task, either via sched_setattr() or via the cgroup interface (see [Documentation/admin-guide/cgroup-v2.rst](~kernel/administration/admin-guide/cgroup-v2)). As its name imply, this can be used to clamp task_util() in the previous criterion.
+Furthermore, uclamp lets userspace specify a minimum and a maximum utilization value for a task, either via sched_setattr() or via the cgroup interface (see [Documentation/admin-guide/cgroup-v2.rst](~kernel/administration/admin-guide/resources/cgroup-v2)). As its name imply, this can be used to clamp task_util() in the previous criterion.
 
 <a id="rst-wakeup-cpu-selection"></a>
 

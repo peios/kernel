@@ -469,7 +469,7 @@ B. Minimal main() -->
 
 ## 5. Tasks CPU affinity
 
-> Deadline tasks cannot have a cpu affinity mask smaller than the root domain they are created on. So, using `sched_setaffinity(2)` won't work. Instead, the the deadline task should be created in a restricted root domain. This can be done using the cpuset controller of either cgroup v1 (deprecated) or cgroup v2. See [Documentation/admin-guide/cgroup-v1/cpusets.rst](<~kernel/administration/admin-guide/cgroup-v1/cpusets#rst-cpusets-1>) and [Documentation/admin-guide/cgroup-v2.rst](<~kernel/administration/admin-guide/cgroup-v2#rst-cgroup-v2>) for more information.
+> Deadline tasks cannot have a cpu affinity mask smaller than the root domain they are created on. So, using `sched_setaffinity(2)` won't work. Instead, the the deadline task should be created in a restricted root domain. This can be done using the cpuset controller of either cgroup v1 (deprecated) or cgroup v2. See [Documentation/admin-guide/cgroup-v1/cpusets.rst](<~kernel/administration/admin-guide/cgroup-v1/cpusets#rst-cpusets-1>) and [Documentation/admin-guide/cgroup-v2.rst](<~kernel/administration/admin-guide/resources/cgroup-v2#rst-cgroup-v2>) for more information.
 
 <a id="rst-using-cgroup-v1-cpuset-controller"></a>
 
