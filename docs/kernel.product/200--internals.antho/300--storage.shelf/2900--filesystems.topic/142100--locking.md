@@ -4,6 +4,9 @@ type: reference
 description: "The text below describes the locking rules for VFS-related methods. It is (believed to be) up-to-date. Please, if you change anything in prototypes or locking protocols - update this file. And update the relevant instances in the tree,…"
 ---
 
+> **Peios:** The VFS also has Peios `validate_mountpoint` and `getlease` callbacks. See the [VFS reference](<~kernel/internals/filesystems/vfs>) for their contracts. Layered lease queries must preserve the outer `lease_file` identity when forwarding to a backing file.
+
+
 <a id="rst-locking"></a>
 
 The text below describes the locking rules for VFS-related methods. It is (believed to be) up-to-date. *Please*, if you change anything in prototypes or locking protocols - update this file. And update the relevant instances in the tree, don't leave that to maintainers of filesystems/devices/ etc. At the very least, put the list of dubious cases in the end of this file. Don't turn it into log - maintainers of out-of-the-tree code are supposed to be able to use diff(1).
@@ -2630,7 +2633,8 @@ ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *,
                 size_t, unsigned int);
 ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *,
                 size_t, unsigned int);
-int (*setlease)(struct file *, long, struct file_lock **, void **);
+int (*setlease)(struct file *, int, struct file_lease **, void **);
+int (*getlease)(struct file *, struct file *lease_file, unsigned int flavor);
 long (*fallocate)(struct file *, int, loff_t, loff_t);
 void (*show_fdinfo)(struct seq_file *m, struct file *f);
 unsigned (*mmap_capabilities)(struct file *);

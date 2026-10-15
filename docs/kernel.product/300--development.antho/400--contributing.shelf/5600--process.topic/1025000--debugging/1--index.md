@@ -4,6 +4,9 @@ type: reference
 description: "Depending on the issue, a different set of tools is available to track down the problem or even to realize whether there is one in the first place."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-debugging-advice-for-linux-kernel-developers"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

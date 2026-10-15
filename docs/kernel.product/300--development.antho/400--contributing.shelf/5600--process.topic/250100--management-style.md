@@ -4,6 +4,9 @@ type: reference
 description: "This is a short document describing the preferred (or made up, depending on who you ask) management style for the linux kernel. It's meant to mirror the process/coding-style.rst <codingstyle> document to some degree, and mainly written to…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-management-style"></a>
 <a id="rst-managementstyle"></a>
 

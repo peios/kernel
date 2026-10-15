@@ -4,6 +4,9 @@ type: reference
 description: "When writing drivers, you cannot in general use routines which are from the C Library. Some of the functions have been found generally useful and they are listed below. The behaviour of these functions may vary slightly from those defined…"
 ---
 
+> **Peios:** The generated declarations below are read from the kernel source. Peios adds native checks at the file, process, IPC and socket boundaries; inherited comments about Unix permissions or capability names are not a complete access policy. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) and the [VFS callback reference](<~kernel/internals/filesystems/vfs>) for the Peios integration contracts.
+
+
 <a id="rst-the-linux-kernel-api"></a>
 
 <a id="rst-basic-c-library-functions"></a>

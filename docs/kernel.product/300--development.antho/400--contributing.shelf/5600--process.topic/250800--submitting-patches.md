@@ -4,6 +4,9 @@ type: reference
 description: "For a person or company who wishes to submit a change to the Linux kernel, the process can sometimes be daunting if you're not familiar with \"the system.\" This text is a collection of suggestions which can greatly increase the chances of…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-submitting-patches-the-essential-guide-to-getting-your-code-into-the-kernel"></a>
 <a id="rst-submittingpatches"></a>
 

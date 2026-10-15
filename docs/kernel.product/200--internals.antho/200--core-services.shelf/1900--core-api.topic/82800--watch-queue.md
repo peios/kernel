@@ -4,6 +4,9 @@ type: reference
 description: "The general notification mechanism is built on top of the standard pipe driver whereby it effectively splices notification messages from the kernel into pipes opened by userspace. This can be used in conjunction with:"
 ---
 
+> **Peios:** The LSM examples here describe upstream interfaces and implementation choices. Peios configures `landlock,lockdown,integrity,pkm`; SELinux, Smack, AppArmor and their attribute/policy interfaces are not the active native access model. Use the native token/SD interfaces for Peios authority. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-general-notification-mechanism"></a>
 
 The general notification mechanism is built on top of the standard pipe driver whereby it effectively splices notification messages from the kernel into pipes opened by userspace.  This can be used in conjunction with:

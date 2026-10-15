@@ -4,6 +4,9 @@ type: reference
 description: "Introduction"
 ---
 
+> **Peios:** This is an upstream UML host/guest workflow, not the configured Peios kernel build. Host-side `sudo`, `setcap` and ownership recipes assume a Linux host with that authority model. They do not grant native authority when run on Peios. See [Building Peios](<~kernel/development/start-here/building-peios>).
+
+
 <a id="rst-uml-howto"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

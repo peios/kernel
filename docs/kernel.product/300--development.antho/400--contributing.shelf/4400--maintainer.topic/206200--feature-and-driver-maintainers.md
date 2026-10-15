@@ -4,6 +4,9 @@ type: reference
 description: "The term \"maintainer\" spans a very wide range of levels of engagement from people handling patches and pull requests as almost a full time job to people responsible for a small feature or a driver."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-feature-and-driver-maintainers"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

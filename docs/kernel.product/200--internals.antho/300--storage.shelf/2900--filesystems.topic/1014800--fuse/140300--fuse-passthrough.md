@@ -4,6 +4,9 @@ type: reference
 description: "FUSE (Filesystem in Userspace) passthrough is a feature designed to improve the performance of FUSE filesystems for I/O operations. Typically, FUSE operations involve communication between the kernel and a userspace FUSE daemon, which can…"
 ---
 
+> **Peios:** `CAP_SYS_ADMIN` here maps to `SeTcbPrivilege`. Passing this gate does not remove KACS checks on backing files, device handles or mounts. FUSE is outside the unprivileged mount-type allowlist. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-fuse-passthrough"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

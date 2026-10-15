@@ -4,6 +4,9 @@ type: reference
 description: "The Linux kernel development project is widely distributed, with over 100 maintainers each working to keep changes moving through their own repositories. The final step, though, is a centralized one where changes are pulled into the…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-project-continuity"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

@@ -4,6 +4,9 @@ type: reference
 description: "As a part of the 2021 Linux Kernel Maintainers’ Summit, there was a discussion about the challenges in recruiting kernel maintainers as well as maintainer succession. Some of the conclusions from that discussion included that companies…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-contribution-maturity-model"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

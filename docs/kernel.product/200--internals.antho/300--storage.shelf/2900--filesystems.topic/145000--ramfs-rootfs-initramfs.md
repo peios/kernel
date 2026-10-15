@@ -50,7 +50,7 @@ Rootfs is a special instance of ramfs (or tmpfs, if that's enabled), which is al
 
 Most systems just mount another filesystem over rootfs and ignore it.  The amount of space an empty instance of ramfs takes up is tiny.
 
-If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by default.  To force ramfs, add "rootfstype=ramfs" to the kernel command line.
+With Peios PKM and `CONFIG_TMPFS` enabled, rootfs always uses tmpfs, including when `root=` or `rootfstype=ramfs` is present. The tmpfs xattr support stores native security descriptors. Peios seeds the root descriptor before initramfs contents inherit from it. The upstream command-line method of forcing a ramfs rootfs does not apply to this configuration.
 
 <a id="rst-what-is-initramfs"></a>
 

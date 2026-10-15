@@ -4,13 +4,16 @@ type: reference
 description: "Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporation"
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-authorizing-or-not-your-usb-devices-to-connect-to-the-system"></a>
 
 Copyright (C) 2007 Inaky Perez-Gonzalez &lt;[inaky@linux.intel.com](<mailto:inaky@linux.intel.com>)&gt; Intel Corporation
 
 This feature allows you to control if a USB device can be used (or not) in a system. This feature will allow you to implement a lock-down of USB devices, fully controlled by user space.
 
-As of now, when a USB device is connected it is configured and its interfaces are immediately made available to the users.  With this modification, only if root authorizes the device to be configured will then it be possible to use it.
+As of now, when a USB device is connected it is configured and its interfaces are immediately made available to the users.  With this mechanism, the device must be authorized before it can be used. In Peios, changing the authorization attribute requires access through the native sysfs write gate; Unix UID 0 alone is not the authorization rule.
 
 <a id="rst-usage"></a>
 

@@ -4,6 +4,9 @@ type: reference
 description: "The goal of Landlock is to enable restriction of ambient rights (e.g. global filesystem or network access) for a set of processes. Because Landlock is a stackable LSM, it makes it possible to create safe security sandboxes as new security…"
 ---
 
+> **Peios:** Landlock is included in the configured LSM list and can impose additional restrictions. It cannot grant access refused by KACS. Ptrace and cross-process access additionally require the native process rights and PIP dominance described in [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-landlock-unprivileged-access-control"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

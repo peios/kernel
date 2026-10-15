@@ -4,6 +4,9 @@ type: reference
 description: "The Linux kernel community welcomes transparent research on the Linux kernel, the activities involved in producing it, and any other byproducts of its development. Linux benefits greatly from this kind of research, and most aspects of…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-researcher-guidelines-1"></a>
 <a id="rst-researcher-guidelines"></a>
 

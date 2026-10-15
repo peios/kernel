@@ -4,6 +4,9 @@ type: reference
 description: "The Linux Kernel is provided under the terms of the GNU General Public License version 2 only (GPL-2.0), as provided in LICENSES/preferred/GPL-2.0, with an explicit syscall exception described in LICENSES/exceptions/Linux-syscall-note, as…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-licensing-rules"></a>
 <a id="rst-kernel-licensing"></a>
 

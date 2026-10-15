@@ -4,6 +4,9 @@ type: reference
 description: "The Linux Security Module (LSM) framework provides a mechanism for various security checks to be hooked by new kernel extensions. The name \"module\" is a bit of a misnomer since these extensions are not actually loadable kernel modules.…"
 ---
 
+> **Peios:** This is reference material for an upstream LSM or its configuration. Peios configures `landlock,lockdown,integrity,pkm`; alternative MAC LSMs are incompatible with PKM, and this article is not an instruction to replace the Peios security stack. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-linux-security-module-usage"></a>
 
 The Linux Security Module (LSM) framework provides a mechanism for various security checks to be hooked by new kernel extensions. The name "module" is a bit of a misnomer since these extensions are not actually loadable kernel modules. Instead, they are selectable at build-time via CONFIG_DEFAULT_SECURITY and can be overridden at boot-time via the `"security=..."` kernel command line argument, in the case where multiple LSMs were built into a given kernel.

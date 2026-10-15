@@ -4,6 +4,9 @@ type: reference
 description: "default 10"
 ---
 
+> **Peios:** This describes an upstream interface disabled in the configured Peios kernel. Peios uses NTFE; nftables/iptables, IPVS and flow-table configuration are not enabled policy paths. Retained schemas and reference text do not imply runtime availability. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>); NTFE is permissive before its first policy generation is ingested.
+
+
 <a id="rst-ipvs-sysctl"></a>
 
 <a id="rst-proc-sys-net-ipv4-vs-variables"></a>

@@ -4,6 +4,9 @@ type: reference
 description: "These BPF programs allow runtime instrumentation of the LSM hooks by privileged users to implement system-wide MAC (Mandatory Access Control) and Audit policies using eBPF."
 ---
 
+> **Peios:** This is reference material for an upstream LSM or its configuration. Peios configures `landlock,lockdown,integrity,pkm`; alternative MAC LSMs are incompatible with PKM, and this article is not an instruction to replace the Peios security stack. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-lsm-bpf-programs"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0+ -->

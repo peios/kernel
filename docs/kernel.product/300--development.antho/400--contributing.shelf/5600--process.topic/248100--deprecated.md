@@ -4,6 +4,9 @@ type: reference
 description: "In a perfect world, it would be possible to convert all instances of some deprecated API into the new API and entirely remove the old API in a single development cycle. However, due to the size of the kernel, the maintainership hierarchy,…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-deprecated-interfaces-language-features-attributes-and-conventions"></a>
 <a id="rst-deprecated"></a>
 

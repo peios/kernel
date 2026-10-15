@@ -4,6 +4,9 @@ type: reference
 description: "Hardware issues which result in security problems are a different category of security bugs than pure software bugs which only affect the Linux kernel."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-embargoed-hardware-issues-1"></a>
 <a id="rst-embargoed-hardware-issues"></a>
 

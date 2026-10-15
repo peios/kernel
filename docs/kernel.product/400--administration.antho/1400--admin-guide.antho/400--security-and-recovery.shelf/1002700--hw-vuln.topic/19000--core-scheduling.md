@@ -61,7 +61,7 @@ int prctl(int option, unsigned long arg2, unsigned long arg3,
 
   userspace pointer to an unsigned long long for storing the cookie returned by `PR_SCHED_CORE_GET` command. Should be 0 for all other commands.
 
-In order for a process to push a cookie to, or pull a cookie from a process, it is required to have the ptrace access mode: `PTRACE_MODE_READ_REALCREDS` to the process.
+In order for a process to push a cookie to, or pull a cookie from a process, it must pass `PTRACE_MODE_READ_REALCREDS` access to that process. In Peios this invokes native process-read authorization (`PROCESS_VM_READ`) and PIP dominance; matching Unix IDs alone does not satisfy it.
 
 <a id="rst-building-hierarchies-of-tasks"></a>
 

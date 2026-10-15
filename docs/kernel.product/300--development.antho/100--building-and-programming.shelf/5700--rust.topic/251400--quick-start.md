@@ -4,6 +4,9 @@ type: reference
 description: "This document describes how to get started with kernel development in Rust."
 ---
 
+> **Peios:** Use [Building Peios](<~kernel/development/start-here/building-peios>) for the repository build, toolchain, configuration and test entry points. This article describes the underlying Linux machinery or upstream workflow. Its standalone build/install commands do not establish a qualified Peios kernel or signed release modules.
+
+
 <a id="rst-quick-start"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

@@ -4,6 +4,9 @@ type: reference
 description: "Userfaults allow the implementation of on-demand paging from userland and more generally they allow userland to take control of various memory page faults, something otherwise only the kernel code could do."
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-userfaultfd"></a>
 
 <a id="rst-objective"></a>
@@ -48,7 +51,7 @@ The first way, supported since userfaultfd was introduced, is the userfaultfd(2)
 
 The second way, added to the kernel more recently, is by opening /dev/userfaultfd and issuing a USERFAULTFD_IOC_NEW ioctl to it. This method yields equivalent userfaultfds to the userfaultfd(2) syscall.
 
-Unlike userfaultfd(2), access to /dev/userfaultfd is controlled via normal filesystem permissions (user/group/mode), which gives fine grained access to userfaultfd specifically, without also granting other unrelated privileges at the same time (as e.g. granting CAP_SYS_PTRACE would do). Users who have access to /dev/userfaultfd can always create userfaultfds that trap kernel page faults; vm.unprivileged_userfaultfd is not considered.
+Opening `/dev/userfaultfd` and issuing `USERFAULTFD_IOC_NEW` provides a separate access path from the syscall. In Peios, the device handle must be authorized by KACS and the ioctl must pass its native checks; Unix user/group/mode settings alone do not delegate that access. The driver does not consult `vm.unprivileged_userfaultfd` on this path. On the syscall path, `CAP_SYS_PTRACE` maps to enabled `SeDebugPrivilege`.
 
 <a id="rst-initializing-a-userfaultfd"></a>
 

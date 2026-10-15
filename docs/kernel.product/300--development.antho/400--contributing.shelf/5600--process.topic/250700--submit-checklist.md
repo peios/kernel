@@ -4,6 +4,9 @@ type: reference
 description: "Here are some basic things that developers should do if they want to see their kernel patch submissions accepted more quickly."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-patch-submission-checklist"></a>
 <a id="rst-submitchecklist"></a>
 

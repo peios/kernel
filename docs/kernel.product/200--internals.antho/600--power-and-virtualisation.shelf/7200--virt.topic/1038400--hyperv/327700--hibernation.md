@@ -4,6 +4,9 @@ type: reference
 description: "Linux supports the ability to hibernate itself in order to save power. Hibernation is sometimes called suspend-to-disk, as it writes a memory image to disk and puts the hardware into the lowest possible power state. Upon resume from…"
 ---
 
+> **Peios:** The Peios profile forces integrity lockdown. Hibernation is unavailable under that policy, and kernel replacement must satisfy the kexec signature/lockdown path. The optional upstream mechanisms and test recipes below do not override those checks. Native privilege checks also apply. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-hibernating-guest-vms"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

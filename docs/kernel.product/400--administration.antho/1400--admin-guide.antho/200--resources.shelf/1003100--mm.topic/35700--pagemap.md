@@ -4,6 +4,9 @@ type: reference
 description: "pagemap is a new (as of 2.6.25) set of interfaces in the kernel that allow userspace programs to examine the page tables and related information by reading files in /proc."
 ---
 
+> **Peios:** Cross-process reads additionally require native process-read access and PIP dominance. The `CAP_SYS_ADMIN` check for PFNs maps to enabled `SeTcbPrivilege`. `CAP_PERFMON` is not an alternative memory-access grant. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-examining-process-page-tables"></a>
 
 pagemap is a new (as of 2.6.25) set of interfaces in the kernel that allow userspace programs to examine the page tables and related information by reading files in `/proc`.

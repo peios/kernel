@@ -4,6 +4,9 @@ type: reference
 description: "In order to use a diskless system, such as an X-terminal or printer server for example, it is necessary for the root filesystem to be present on a non-disk device. This may be an initramfs (see…"
 ---
 
+> **Peios:** User namespaces and Unix ID mappings do not create native privileges or determine KACS descriptor identity. Mount authorization uses the native privilege/descriptor rules; the descriptor-only new-filesystem allowlist is `tmpfs`, `proc` and `stratafs`. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-mounting-the-root-filesystem-via-nfs-nfsroot"></a>
 
 **Authors:** Written 1996 by Gero Kuhlmann &lt;[gero@gkminix.han.de](<mailto:gero@gkminix.han.de>)&gt;

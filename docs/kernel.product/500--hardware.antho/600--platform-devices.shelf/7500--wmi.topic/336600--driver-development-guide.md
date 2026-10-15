@@ -4,6 +4,9 @@ type: reference
 description: "The WMI subsystem provides a rich driver API for implementing WMI drivers, documented at Documentation/driver-api/wmi.rst. This document will serve as an introductory guide for WMI driver writers using this API. It is supposed to be a…"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-wmi-driver-development-guide"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->

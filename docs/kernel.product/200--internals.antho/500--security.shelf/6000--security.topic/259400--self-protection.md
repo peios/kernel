@@ -4,6 +4,9 @@ type: reference
 description: "Kernel self-protection is the design and implementation of systems and structures within the Linux kernel to protect against security flaws in the kernel itself. This covers a wide range of issues, including removing entire classes of…"
 ---
 
+> **Peios:** The configured Peios baseline already requires integrity lockdown, strict `/dev/mem` handling and module signature enforcement. UID 0 is not universal authority; native privileges and PIP define additional boundaries. LoadPin and the alternative MAC LSMs discussed as upstream options are not the active Peios policy. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-kernel-self-protection"></a>
 
 Kernel self-protection is the design and implementation of systems and structures within the Linux kernel to protect against security flaws in the kernel itself. This covers a wide range of issues, including removing entire classes of bugs, blocking security flaw exploitation methods, and actively detecting attack attempts. Not all topics are explored in this document, but it should serve as a reasonable starting point and answer any frequently asked questions. (Patches welcome, of course\!)

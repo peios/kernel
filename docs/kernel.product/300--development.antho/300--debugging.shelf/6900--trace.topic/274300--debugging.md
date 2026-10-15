@@ -4,6 +4,9 @@ type: reference
 description: "Copyright 2024 Google LLC."
 ---
 
+> **Peios:** Integrity lockdown restricts debugfs access. Read-only files passing its safety checks can remain accessible, but writable or ioctl/mmap-capable debugfs interfaces can fail with `EPERM`. Native authority does not bypass lockdown. These upstream diagnostic recipes therefore depend on interface availability in the configured kernel. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-using-the-tracer-for-debugging"></a>
 
 Copyright 2024 Google LLC.

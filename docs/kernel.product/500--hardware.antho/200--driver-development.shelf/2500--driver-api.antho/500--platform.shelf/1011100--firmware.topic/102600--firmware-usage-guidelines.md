@@ -4,6 +4,9 @@ type: reference
 description: "Users switching to a newer kernel should not have to install newer firmware files to keep their hardware working. At the same time updated firmware files must not cause any regressions for users of older kernel releases."
 ---
 
+> **Peios:** File-based firmware loading has an additional Peios signature check. The development profile defaults to logging (`kacs_fwsig=log`); `kacs_fwsig=enforce` requires PeiosTcb trust for that path. This does not cover the separate `FW_UPLOAD` interface. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-firmware-guidelines"></a>
 
 Users switching to a newer kernel should *not* have to install newer firmware files to keep their hardware working. At the same time updated firmware files must not cause any regressions for users of older kernel releases.

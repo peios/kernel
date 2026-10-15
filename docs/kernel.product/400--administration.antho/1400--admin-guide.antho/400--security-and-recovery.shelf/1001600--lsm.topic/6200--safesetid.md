@@ -4,6 +4,9 @@ type: reference
 description: "SafeSetID is an LSM module that gates the setid family of syscalls to restrict UID/GID transitions from a given UID/GID to only those approved by a system-wide allowlist. These restrictions also prohibit the given UIDs/GIDs from obtaining…"
 ---
 
+> **Peios:** This is reference material for an upstream LSM or its configuration. Peios configures `landlock,lockdown,integrity,pkm`; alternative MAC LSMs are incompatible with PKM, and this article is not an instruction to replace the Peios security stack. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-safesetid"></a>
 
 SafeSetID is an LSM module that gates the setid family of syscalls to restrict UID/GID transitions from a given UID/GID to only those approved by a system-wide allowlist. These restrictions also prohibit the given UIDs/GIDs from obtaining auxiliary privileges associated with CAP_SET\{U/G\}ID, such as allowing a user to set up user namespace UID/GID mappings.

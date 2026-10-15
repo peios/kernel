@@ -4,6 +4,9 @@ type: reference
 description: "This document provides guidance for AI tools and developers using AI assistance when contributing to the Linux kernel."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-ai-coding-assistants"></a>
 <a id="rst-coding-assistants"></a>
 

@@ -4,6 +4,9 @@ type: reference
 description: "Netlink interface for ethtool uses generic netlink family ethtool (userspace application should use macros ETHTOOL_GENL_NAME and ETHTOOL_GENL_VERSION defined in <linux/ethtool_netlink.h> uapi header). This family does not use a specific…"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-netlink-interface-for-ethtool"></a>
 
 <a id="rst-basic-information"></a>

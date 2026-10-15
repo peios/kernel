@@ -4,6 +4,9 @@ type: reference
 description: "2007 Rafael J. Wysocki <rjw@sisk.pl>, GPL"
 ---
 
+> **Peios:** The Peios profile forces integrity lockdown. Hibernation is unavailable under that policy, and kernel replacement must satisfy the kexec signature/lockdown path. The optional upstream mechanisms and test recipes below do not override those checks. Native privilege checks also apply. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-debugging-hibernation-and-suspend"></a>
 
 > - **(C)** 2007 Rafael J. Wysocki &lt;[rjw@sisk.pl](<mailto:rjw@sisk.pl>)&gt;, GPL

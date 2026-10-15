@@ -4,6 +4,9 @@ type: reference
 description: "UDP-Lite is a Standards-Track IETF transport protocol whose characteristic is a variable-length checksum. This has advantages for transport of multimedia (video, VoIP) over wireless networks, as partly damaged packets can still be fed into…"
 ---
 
+> **Peios:** Transport and driver mechanisms described here remain reference material, but any nftables/iptables, IPVS, NFQUEUE or legacy netfilter policy examples assume an upstream configuration. The Peios profile disables those policy paths and uses NTFE. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>); NTFE is permissive before its first policy generation is ingested.
+
+
 <a id="rst-the-udp-lite-protocol-rfc-3828"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

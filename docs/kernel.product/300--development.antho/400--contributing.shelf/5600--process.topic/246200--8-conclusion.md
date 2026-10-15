@@ -4,6 +4,9 @@ type: reference
 description: "There are numerous sources of information on Linux kernel development and related topics. First among those will always be the Documentation directory found in the kernel source distribution. Start with the top-level process/howto.rst…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-for-more-information"></a>
 <a id="rst-development-conclusion"></a>
 

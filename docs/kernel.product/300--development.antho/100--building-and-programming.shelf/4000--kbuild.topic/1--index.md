@@ -4,6 +4,9 @@ type: reference
 description: "Reference for Kernel Build System."
 ---
 
+> **Peios:** Use [Building Peios](<~kernel/development/start-here/building-peios>) for the repository build, toolchain, configuration and test entry points. This article describes the underlying Linux machinery or upstream workflow. Its standalone build/install commands do not establish a qualified Peios kernel or signed release modules.
+
+
 <a id="rst-kernel-build-system"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

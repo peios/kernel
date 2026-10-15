@@ -1745,7 +1745,7 @@ IP Fragmentation:
 
 - **ip_unprivileged_port_start - INTEGER**
 
-  This is a per-namespace sysctl.  It defines the first unprivileged port in the network namespace.  Privileged ports require root or CAP_NET_BIND_SERVICE in order to bind to them. To disable all privileged ports, set this to 0.  They must not overlap with the ip_local_port_range.
+  This per-namespace sysctl defines the first unprivileged port in the inherited Linux port model. Peios treats `CAP_NET_BIND_SERVICE` as a compatibility pass, so this threshold is not a native authority boundary. Native socket and port-reservation policy still applies. Setting the value to 0 disables the Linux privileged-port distinction. The privileged range must not overlap `ip_local_port_range`.
 
   Default: 1024
 
@@ -1795,7 +1795,7 @@ IP Fragmentation:
 
 - **ping_group_range - 2 INTEGERS**
 
-  Restrict ICMP_PROTO datagram sockets to users in the group range. The default is "1 0", meaning, that nobody (not even root) may create ping sockets.  Setting it to "100 100" would grant permissions to the single group. "0 4294967294" would enable it for the world, "100 4294967294" would enable it for the users, but not daemons.
+  In upstream Linux this range authorizes ICMP datagram sockets by group membership. With Peios PKM enabled the group-range gate is bypassed: datagram ping uses the ordinary native network-policy path. Changing this sysctl does not grant or deny Peios ping authority. Raw sockets retain their separate privilege checks.
 
 - **tcp_early_demux - BOOLEAN**
 
@@ -3862,6 +3862,11 @@ IPv6 Update by: Pekka Savola &lt;[pekkas@netcore.fi](<mailto:pekkas@netcore.fi>)
 <a id="rst-proc-sys-net-bridge-variables"></a>
 
 ## /proc/sys/net/bridge/\* Variables:
+
+These variables belong to the optional upstream bridge-netfilter path. Peios
+disables `CONFIG_BRIDGE_NETFILTER` and the iptables/arptables engines, so this
+section does not describe available policy controls in the configured build.
+NTFE policy is separate from these compatibility reference entries.
 
 bridge-nf-call-arptables - BOOLEAN
 

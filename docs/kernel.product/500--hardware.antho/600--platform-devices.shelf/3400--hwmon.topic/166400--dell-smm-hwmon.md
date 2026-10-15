@@ -4,6 +4,9 @@ type: reference
 description: "On many Dell laptops the System Management Mode (SMM) BIOS can be queried for the status of fans and temperature sensors. Userspace utilities like sensors can be used to return the readings. The userspace suite i8kutils can also be used to…"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-kernel-driver-dell-smm-hwmon"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->

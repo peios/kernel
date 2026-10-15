@@ -1755,6 +1755,14 @@ int security_inode_mknod(struct inode *dir, struct dentry *dentry,
 	return call_int_hook(inode_mknod, dir, dentry, mode, dev);
 }
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_inode_rename_flags(struct inode *old_dir,
+				       struct dentry *old_dentry,
+				       struct inode *new_dir,
+				       struct dentry *new_dentry,
+				       unsigned int flags);
+#endif
+
 /**
  * security_inode_rename() - Check if renaming a file is allowed
  * @old_dir: parent directory of the old file
@@ -1767,13 +1775,6 @@ int security_inode_mknod(struct inode *dir, struct dentry *dentry,
  *
  * Return: Returns 0 if permission is granted.
  */
-#ifdef CONFIG_SECURITY_PKM
-extern int pkm_kacs_inode_rename_flags(struct inode *old_dir,
-				       struct dentry *old_dentry,
-				       struct inode *new_dir,
-				       struct dentry *new_dentry,
-				       unsigned int flags);
-#endif
 
 
 int security_inode_rename(struct inode *old_dir, struct dentry *old_dentry,

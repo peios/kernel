@@ -4,6 +4,9 @@ type: reference
 description: "The Linux kernel is written in the C programming language c-language. More precisely, it is typically compiled with gcc gcc under -std=gnu11 gcc-c-dialect-options: the GNU dialect of ISO C11. clang clang is also supported; see…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-programming-language-1"></a>
 <a id="rst-programming-language"></a>
 

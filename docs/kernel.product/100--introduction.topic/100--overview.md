@@ -7,6 +7,9 @@ description: "Find operating guides, development guidance and kernel reference."
 The Peios kernel is based on Linux. It manages hardware and system resources,
 and provides the fundamental services used by the rest of the Peios operating system.
 
+Start with [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for native authority, process access,
+filesystems and network policy.
+
 Choose a starting point for the work you are doing:
 
 - **Operate a system:** [Administration](<~kernel/administration/admin-guide/overview/index>)
@@ -27,3 +30,7 @@ can be browsed by device class without overwhelming the guides.
 This collection includes documentation inherited from Linux. Architecture,
 device and interface reference coverage does not by itself indicate which
 features are enabled or qualified in a particular Peios build.
+
+## Native Peios subsystems
+
+[Kernel architecture and reading guide](<~kernel/introduction/architecture-and-reading-guide>) connects KACS, KMES, LCS, StrataFS and NTFE. For callers, start with [Native kernel interfaces](<~kernel/userspace/native/start-here/overview>).

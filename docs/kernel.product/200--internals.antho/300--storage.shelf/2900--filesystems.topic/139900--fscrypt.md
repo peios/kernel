@@ -4,6 +4,9 @@ type: reference
 description: "fscrypt is a library which filesystems can hook into to support transparent encryption of files and directories."
 ---
 
+> **Peios:** Filesystem encryption remains distinct from native access control. References to root or Linux capabilities below describe the inherited threat model and compatibility checks. UID 0 is not a KACS bypass; `CAP_FOWNER` is a compatibility pass, and descriptor, handle and ioctl checks still apply. An fscrypt key is not a native file-access grant. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-filesystem-level-encryption-fscrypt"></a>
 
 <a id="rst-introduction"></a>
@@ -78,7 +81,7 @@ However, these ioctls have some limitations:
 
 #### Full system compromise
 
-An attacker who gains "root" access and/or the ability to execute arbitrary kernel code can freely exfiltrate data that is protected by any in-use fscrypt keys.  Thus, usually fscrypt provides no meaningful protection in this scenario.  (Data that is protected by a key that is absent throughout the entire attack remains protected, modulo the limitations of key removal mentioned above in the case where the key was removed prior to the attack.)
+An attacker able to execute arbitrary kernel code can exfiltrate data protected by in-use fscrypt keys. In Peios, Unix UID 0 alone is not equivalent to this compromise: native authorization still governs managed file and process access. An attacker with sufficient native authority to read unlocked files can obtain their plaintext without breaking the encryption.  Thus, usually fscrypt provides no meaningful protection in this scenario.  (Data that is protected by a key that is absent throughout the entire attack remains protected, modulo the limitations of key removal mentioned above in the case where the key was removed prior to the attack.)
 
 However, if [hardware-wrapped keys](<#rst-hardware-wrapped-keys>) are used, such attackers will be unable to exfiltrate the master keys or file contents keys in a form that will be usable after the system is powered off.  This may be useful if the attacker is significantly time-limited and/or bandwidth-limited, so they can only exfiltrate some data and need to rely on a later offline attack to exfiltrate the rest of it.
 
@@ -92,7 +95,7 @@ v1 encryption policies have some weaknesses with respect to online attacks:
 
 - A compromise of a per-file key also compromises the master key from which it was derived.
 
-- Non-root users cannot securely remove encryption keys.
+- Removing v1 keys through the filesystem keyring API requires `CAP_SYS_ADMIN`, mapped to enabled `SeTcbPrivilege` in Peios. The legacy process-keyring mechanism has separate removal limitations.
 
 All the above problems are fixed with v2 encryption policies.  For this reason among others, it is recommended to use v2 encryption policies on all new encrypted directories.
 
@@ -385,7 +388,7 @@ If the file is not yet encrypted, then FS_IOC_SET_ENCRYPTION_POLICY verifies tha
 
 Alternatively, if the file is already encrypted, then FS_IOC_SET_ENCRYPTION_POLICY validates that the specified encryption policy exactly matches the actual one.  If they match, then the ioctl returns 0.  Otherwise, it fails with EEXIST.  This works on both regular files and directories, including nonempty directories.
 
-When a v2 encryption policy is assigned to a directory, it is also required that either the specified key has been added by the current user or that the caller has CAP_FOWNER in the initial user namespace. (This is needed to prevent a user from encrypting their data with another user's key.)  The key must remain added while FS_IOC_SET_ENCRYPTION_POLICY is executing.  However, if the new encrypted directory does not need to be accessed immediately, then the key can be removed right away afterwards.
+The inherited v2 key-claim check accepts either a key added by the current user or `CAP_FOWNER`. Peios treats `CAP_FOWNER` as a compatibility pass, so this is not an independent guarantee that the caller supplied or owns the key; the check can also accept a policy whose key is not yet present. A matching key is still needed to access encrypted content. Native handle rights and the remaining filesystem policy checks apply independently.
 
 Note that the ext4 filesystem does not allow the root directory to be encrypted, even if it is empty.  Users who want to encrypt an entire filesystem with one key should consider using dm-crypt instead.
 
@@ -427,7 +430,7 @@ The extended (\_EX) version of the ioctl is more general and is recommended to u
 
 #### FS_IOC_GET_ENCRYPTION_POLICY_EX
 
-The FS_IOC_GET_ENCRYPTION_POLICY_EX ioctl retrieves the encryption policy, if any, for a directory or regular file.  No additional permissions are required beyond the ability to open the file.  It takes in a pointer to struct fscrypt_get_policy_ex_arg, defined as follows:
+The FS_IOC_GET_ENCRYPTION_POLICY_EX ioctl retrieves the encryption policy, if any, for a directory or regular file.  On a managed Peios handle, KACS additionally requires `FILE_READ_ATTRIBUTES` for this ioctl; opening the file with an unrelated grant is not enough.  It takes in a pointer to struct fscrypt_get_policy_ex_arg, defined as follows:
 
 
 
@@ -484,6 +487,14 @@ Since Linux v5.7, the ioctl FS_IOC_GET_ENCRYPTION_NONCE is supported. On encrypt
 
 This ioctl can be useful for automated tests which verify that the encryption is being done correctly.  It is not needed for normal use of fscrypt.
 
+Native ioctl authorization applies before the filesystem handles these requests.
+On managed Peios handles, encryption-policy/key-status queries require
+`FILE_READ_ATTRIBUTES`; setting a policy or adding/removing a key requires
+`FILE_WRITE_ATTRIBUTES`. The v1 key operations and remove-all-users operation
+also retain `CAP_SYS_ADMIN`, mapped to enabled `SeTcbPrivilege`. Supplying a
+key makes decryption possible but does not grant file access. UID-based key
+claims and keyring quotas remain inherited bookkeeping, not native SD grants.
+
 <a id="rst-adding-keys"></a>
 
 ### Adding keys
@@ -531,7 +542,7 @@ struct fscrypt_add_key_arg must be zeroed, then initialized as follows:
 
 - If the key is being added for use by v1 encryption policies, then `key_spec.type` must contain FSCRYPT_KEY_SPEC_TYPE_DESCRIPTOR, and `key_spec.u.descriptor` must contain the descriptor of the key being added, corresponding to the value in the `master_key_descriptor` field of struct fscrypt_policy_v1. To add this type of key, the calling process must have the CAP_SYS_ADMIN capability in the initial user namespace.
 
-  Alternatively, if the key is being added for use by v2 encryption policies, then `key_spec.type` must contain FSCRYPT_KEY_SPEC_TYPE_IDENTIFIER, and `key_spec.u.identifier` is an *output* field which the kernel fills in with a cryptographic hash of the key.  To add this type of key, the calling process does not need any privileges.  However, the number of keys that can be added is limited by the user's quota for the keyrings service (see `Documentation/security/keys/core.rst`).
+  Alternatively, if the key is being added for use by v2 encryption policies, then `key_spec.type` must contain FSCRYPT_KEY_SPEC_TYPE_IDENTIFIER, and `key_spec.u.identifier` is an *output* field which the kernel fills in with a cryptographic hash of the key.  This v2 add operation has no additional fscrypt capability requirement, but Peios still requires the native handle rights described above.  However, the number of keys that can be added is limited by the user's quota for the keyrings service (see `Documentation/security/keys/core.rst`).
 
 - `raw_size` must be the size of the `raw` key provided, in bytes. Alternatively, if `key_id` is nonzero, this field must be 0, since in that case the size is implied by the specified Linux keyring key.
 
@@ -605,7 +616,7 @@ Two ioctls are available for removing a key that was added by [FS_IOC_ADD_ENCRYP
 
 - [FS_IOC_REMOVE_ENCRYPTION_KEY_ALL_USERS](<#rst-fs-ioc-remove-encryption-key-all-users>)
 
-These two ioctls differ only in cases where v2 policy keys are added or removed by non-root users.
+For v2 policy keys, the ordinary removal ioctl releases the current UID's claim; the all-users variant removes all claims and additionally requires `CAP_SYS_ADMIN` (enabled `SeTcbPrivilege` in Peios). Native handle checks apply to both.
 
 These ioctls don't work on keys that were added via the legacy process-subscribed keyrings mechanism.
 

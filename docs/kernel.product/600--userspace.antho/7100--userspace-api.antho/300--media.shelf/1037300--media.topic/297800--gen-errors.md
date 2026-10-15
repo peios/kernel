@@ -4,6 +4,9 @@ type: reference
 description: "Reference for Generic Error Codes."
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-generic-error-codes"></a>
 <a id="rst-gen-errors"></a>
 

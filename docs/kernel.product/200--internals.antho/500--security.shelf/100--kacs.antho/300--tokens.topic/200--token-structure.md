@@ -1,0 +1,274 @@
+---
+title: "Token Structure"
+description: "Every token field by mutability class — fixed identity, adjustable privileges, one-way elevation — and what each carries."
+type: reference
+---
+
+<a id="trm-3-2-2"></a>
+
+Token fields fall into three mutability classes. **Fixed** fields are
+set at creation and never change — every security-critical identity
+field is fixed. **Adjustable** fields can be modified at runtime
+through the adjustment operations ([Token Adjustment](<~kernel/internals/kacs/tokens/token-adjustment#trm-3-2-5>)). **One-way** fields can be
+set or tightened but never cleared or loosened. <a id="cite-token.mutability-classes"></a>
+
+<a id="trm-3-2-2-1"></a>
+
+## Identity core (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `user_sid` | SID | The token's primary identity. |
+| `user_deny_only` | bool | When true, the user SID matches only deny ACEs, never allow ACEs. Set at creation by CreateToken or FilterToken. True whenever `write_restricted` is true. <a id="cite-token.user-deny-only-with-write-restricted"></a> |
+| `groups` | SID_AND_ATTRIBUTES[] | Group memberships. The set of SIDs is fixed at creation; the per-group attribute flags are adjustable. |
+| `restricted_sids` | SID_AND_ATTRIBUTES[]? | Secondary SID list for restricted tokens, null on unrestricted ones. Set at creation by CreateToken or FilterToken. AccessCheck treats the list as presence-based: a restricting SID participates whenever it is present, and neither `SE_GROUP_ENABLED` nor `SE_GROUP_USE_FOR_DENY_ONLY` affects restricted-pass matching. <a id="cite-token.restricted-sids-presence-based"></a> |
+| `write_restricted` | bool | When true, the restricted SID check applies only to write access. Set at creation by CreateToken or FilterToken. |
+
+The **logon SID** — `S-1-5-5-X-Y`, tying the token to its
+LogonSession — is not stored as a token field at all. It is derived
+from the session on every read, and materialised once in `groups`
+carrying `SE_GROUP_LOGON_ID`, which is where AccessCheck finds it. <a id="cite-token.logon-sid-materialised-in-groups"></a>
+
+The group SID set is fixed at creation — adjustment never adds or
+removes a SID. <a id="cite-token.group-set-fixed"></a> Individual groups can be enabled or disabled by
+modifying `SE_GROUP_ENABLED`, within two limits: a mandatory group
+(`SE_GROUP_MANDATORY`) cannot be disabled, and a deny-only group
+(`SE_GROUP_USE_FOR_DENY_ONLY`) cannot be re-enabled. <a id="cite-token.group-toggle-limits"></a>
+
+A token holds at most 1024 group entries including the kernel-injected
+logon SID, so CreateToken accepts at most 1023 caller-supplied groups. <a id="cite-token.group-limit-1024"></a>
+
+<a id="trm-3-2-2-2"></a>
+
+## Token type (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `token_type` | enum | Primary or Impersonation. |
+| `impersonation_level` | enum | Anonymous, Identification, Impersonation, or Delegation. On every token it is the ceiling on what may be derived from it: an impersonation token acts at this level, and a primary token bounds everything captured from, conveyed by, or duplicated out of the process carrying it ([Impersonation Levels](<~kernel/internals/kacs/impersonation/levels-and-admission#trm-3-5-1>)). |
+
+<a id="trm-3-2-2-3"></a>
+
+## Integrity (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `integrity_level` | uint | Numeric integrity level. Standard values are 0 (Untrusted), 4096 (Low), 8192 (Medium), 12288 (High), 16384 (System), but any unsigned integer is valid and is compared numerically against object labels. <a id="cite-token.integrity-level-any-unsigned"></a> |
+| `mandatory_policy` | flags | `NO_WRITE_UP` (0x0001) and `NEW_PROCESS_MIN` (0x0002). Per-token MIC enforcement policy, set at creation. |
+
+`mandatory_policy` is immutable: a process cannot change its own MIC
+constraints at runtime, neither loosening nor tightening them. <a id="cite-token.mandatory-policy-immutable"></a> This is
+a deliberate departure from MS-DTYP, where the mandatory policy is
+runtime-modifiable — which reduces MIC to a constraint that stops only
+processes not actively trying to bypass it. Immutability is what makes
+MIC a real boundary here, and it is also what allows the impersonation
+integrity ceiling ([Impersonation Levels](<~kernel/internals/kacs/impersonation/levels-and-admission#trm-3-5-1>)) to be enforced unconditionally.
+
+<a id="trm-3-2-2-4"></a>
+
+## Privileges (adjustable)
+
+Each privilege on a token has four independent states.
+
+**Present** — the privilege exists on the token. A present privilege
+can be removed permanently, but no privilege can be added after
+creation. <a id="cite-token.priv.no-add-after-creation"></a> **Enabled** — the privilege is currently active; only
+present privileges can be enabled or disabled. <a id="cite-token.priv.enable-requires-present"></a> **Enabled by default**
+— the creation-time enabled state, which adjustment can restore.
+**Used** — the privilege has been exercised during this token's
+lifetime; monotonic, and never cleared once set. <a id="cite-token.priv.used-is-monotonic"></a>
+
+The lifecycle runs: present and disabled, to enabled, to used, then
+optionally disabled, then optionally removed permanently. Removal
+clears the privilege from the present, enabled, and enabled-by-default
+states together. <a id="cite-token.priv.removal-clears-three-states"></a>
+
+The four states are encoded as four 64-bit bitmasks, one bit per
+defined privilege, which makes a privilege check constant-time and a
+multi-privilege operation atomic.
+
+<a id="trm-3-2-2-5"></a>
+
+## Elevation (one-way)
+
+| Field | Type | Description |
+|---|---|---|
+| `elevation_type` | enum | Default (non-elevated), Full (elevated), or Limited (filtered). |
+
+A token is created as Default. <a id="cite-token.elevation-default-at-creation"></a> Only `KACS_IOC_LINK_TOKENS` sets Full
+or Limited, when a linked pair is established, and once set neither
+reverts to Default on that token object. <a id="cite-token.elevation-only-link-sets"></a> The role is sticky: relinking
+can replace the partner but never converts Full to Limited or the
+reverse. <a id="cite-token.elevation-role-sticky"></a> DuplicateToken and FilterToken produce new token objects
+whose `elevation_type` starts again at Default, because a new token is
+not part of any linked pair. <a id="cite-token.elevation-resets-on-derivation"></a>
+
+Linked pairs are associated at the LogonSession level rather than
+stored on individual tokens; [Linked Tokens and Elevation](<~kernel/internals/kacs/tokens/linked-tokens-and-elevation#trm-3-2-6>) describes the pairing mechanism.
+
+<a id="trm-3-2-2-6"></a>
+
+## Default object security (adjustable)
+
+| Field | Description |
+|---|---|
+| `owner_sid_index` | Index into `[user_sid, groups...]` selecting the default owner SID for new objects: 0 is the user SID, 1..N are `groups[0..N-1]`. The referenced SID is the user SID or a group carrying `SE_GROUP_OWNER`. <a id="cite-token.owner-index-rule"></a> |
+| `primary_group_index` | Index into `[user_sid, groups...]` selecting the default primary group. The referenced SID is the user SID or any group SID on the token. <a id="cite-token.primary-group-index-rule"></a> |
+| `default_dacl` | The DACL applied to objects this token creates when no explicit descriptor is supplied. |
+
+Storing indices rather than SID copies keeps the owner and primary
+group consistent with the group array they name.
+
+<a id="trm-3-2-2-7"></a>
+
+## Metadata (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `token_id` | LUID | Unique identifier for this token instance. |
+| `token_guid` | UUID | 128-bit identifier for this token instance, generated by the kernel at creation and immutable. Used by KMES for identity stamping and event correlation; readable through `KACS_TOKEN_CLASS_GUID` under `TOKEN_QUERY`. |
+| `auth_id` | LUID | The LogonSession LUID, linking the token to the authentication event that produced it. |
+| `source` | TOKEN_SOURCE | Who minted the token: an 8-character name plus a LUID. |
+| `created_at` | timestamp | When the original token was minted by CreateToken. Copied unchanged by DuplicateToken, FilterToken, and `NEW_PROCESS_MIN`, so it tracks original minting rather than duplication. <a id="cite-token.created-at-tracks-minting"></a> |
+| `expiration` | timestamp | When the token becomes invalid; zero means no expiry. Not enforced by AccessCheck. <a id="cite-token.expiration-not-enforced"></a> |
+| `origin` | LUID | The originating LogonSession for derived tokens, such as S4U or network logon. |
+
+<a id="trm-3-2-2-8"></a>
+
+## Mutation tracking (adjustable)
+
+| Field | Description |
+|---|---|
+| `modified_id` | Counter incremented on any token adjustment. <a id="cite-token.modified-id-bumps-on-adjustment"></a> |
+
+Marking a privilege used is audit and accounting state rather than an
+access-decision input, so it stays monotonic but does not bump
+`modified_id`. Setting the elevation type is the one other mutation
+that leaves the counter alone. <a id="cite-token.modified-id-exemptions"></a>
+
+The counter is intended as a cache invalidation key — a `modified_id`
+that has changed since a cached decision was taken means the decision
+is stale. Nothing currently reads it for that purpose: it is
+maintained on every adjustment and reported through the statistics
+query class, and no cache anywhere invalidates on it. <a id="cite-token.modified-id-nothing-invalidates"></a>
+
+<a id="trm-3-2-2-9"></a>
+
+## Interactivity scope (adjustable)
+
+| Field | Description |
+|---|---|
+| `interactivity_scope` | 0 for services, which have no interactive environment; 1 and above for interactive and remote user environments. Changing it requires `SeTcbPrivilege`. <a id="cite-token.interactivity-scope-needs-tcb"></a> |
+
+<a id="trm-3-2-2-10"></a>
+
+## Claims and security attributes (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `user_claims` | CLAIM_ATTRIBUTES[] | Name-value pairs from the user's directory object, fed into conditional ACE evaluation. |
+| `device_claims` | CLAIM_ATTRIBUTES[] | Name-value pairs from the machine's directory object. |
+
+<a id="trm-3-2-2-11"></a>
+
+## LCS registry credentials (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `lcs_scope_guids` | GUID[] | Ordered private registry scope GUIDs used by LCS private hive routing. LCS checks the list in order before falling back to global hives. |
+| `lcs_private_layers` | string[] | Registry layer names visible to this token even when disabled globally, using LCS layer-name syntax and matching rules. |
+
+These are KACS-owned credential material belonging to LCS. They are
+fixed at creation and copied by duplication and filtering, and
+attaching them is authorized by the same trusted-minting gate as the
+rest of CreateToken — only a caller holding `SeCreateTokenPrivilege`
+can create a token carrying them. <a id="cite-token.lcs-credentials-fixed-and-gated"></a>
+
+<a id="trm-3-2-2-12"></a>
+
+## Device identity (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `device_groups` | SID_AND_ATTRIBUTES[]? | The machine's group memberships, for compound identity. |
+| `restricted_device_groups` | SID_AND_ATTRIBUTES[]? | Filtered device groups for restricted tokens. |
+
+<a id="trm-3-2-2-13"></a>
+
+## Confinement (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `confinement_sid` | SID? | Places the token in a default-deny sandbox; null means unconfined. When set, AccessCheck switches to default-deny and access requires an explicit grant to this SID or to a SID present in `confinement_capabilities`. <a id="cite-token.confinement-sid-default-deny"></a> |
+| `confinement_capabilities` | SID_AND_ATTRIBUTES[] | Declared access capabilities for a confined process, empty if none. The `attributes` field is carried for wire-format uniformity only: AccessCheck treats capability membership as presence-based and consults neither `SE_GROUP_ENABLED` nor `SE_GROUP_USE_FOR_DENY_ONLY` when matching confinement SIDs. <a id="cite-token.confinement-capabilities-presence-based"></a> |
+| `isolation_boundary` | bool | Adds namespace filtering on top of confinement, making objects outside the boundary invisible rather than merely denied. Requires `confinement_sid`. Settable at creation but not enforced. <a id="cite-token.isolation-boundary-not-enforced"></a> |
+| `confinement_exempt` | bool | Escape hatch: confinement restrictions are not evaluated at all. <a id="cite-token.confinement-exempt-skips-evaluation"></a> |
+
+`ALL_APPLICATION_PACKAGES` participates only when it is present in
+`confinement_capabilities`. KACS never synthesises it, and equally
+never rejects an otherwise valid confined token merely because it is
+present — strict confinement is expressed by the caller omitting it. <a id="cite-token.all-application-packages-not-synthesised"></a>
+Deciding which capabilities a package token receives is authd's job
+and policy tooling's, not the kernel's.
+
+<a id="trm-3-2-2-14"></a>
+
+## Audit (fixed)
+
+| Field | Type | Description |
+|---|---|---|
+| `audit_policy` | u32 | Per-token audit overrides as a bitmask, fixed at creation — no adjustment operation exists. <a id="cite-token.audit-policy-fixed"></a> |
+
+| Flag | Value | Description |
+|---|---|---|
+| `OBJECT_ACCESS_SUCCESS` | 0x0001 | Audit successful object access. |
+| `OBJECT_ACCESS_FAILURE` | 0x0002 | Audit failed object access. |
+| `PRIVILEGE_USE_SUCCESS` | 0x0004 | Audit successful privilege exercises: the privilege contributed requested bits that survive into the final granted result. <a id="cite-token.audit-policy.privilege-use-success"></a> |
+| `PRIVILEGE_USE_FAILURE` | 0x0008 | Audit failed privilege exercises: the privilege contributed requested bits during evaluation, but they do not survive into the final result. <a id="cite-token.audit-policy.privilege-use-failure"></a> |
+
+The policy is additive. It forces audit events that system-wide policy
+would not generate, and cannot suppress events that system-wide policy
+requires. <a id="cite-token.audit-policy-additive"></a> It follows impersonation: when service A impersonates client
+B and B's token has a category enabled, operations during
+impersonation are audited under B's identity. <a id="cite-token.audit-policy-follows-impersonation"></a> The creation default is
+0. <a id="cite-token.audit-policy-default-zero"></a>
+
+The audit records these categories produce describe the effective token
+in their `subject.token` fields: the user SID as `sid`, the groups as
+`groups` with their attribute words as the parallel `group-attributes`,
+the integrity level as `integrity`, `token_id` as `id`, `auth_id` as
+`auth-id`, the token type as `type` (`primary` or `impersonation`), the
+impersonation level as `impersonation` (0 for a primary token), and the
+projected Linux UID as `uid` ([Audit Event Schemas](<~kernel/internals/kacs/auditing/event-families-and-delivery#trm-3-c>)).
+
+<a id="trm-3-2-2-15"></a>
+
+## Credential projection (fixed)
+
+| Field | Description |
+|---|---|
+| `projected_uid` | Linux UID for the user SID, precomputed by authd when the token is minted (PSPU [Overview](<~kernel/internals/kmes/overview#trm-2-1>)); 65534 for the anonymous identity. <a id="cite-token.projection.anonymous-is-nobody"></a> |
+| `projected_gid` | Linux primary GID, precomputed the same way; 65534 for the anonymous identity. |
+| `projected_supplementary_gids` | Linux supplementary GIDs, one per group SID, precomputed the same way. |
+
+authd computes these at token creation and they are stored on the
+token; KACS never resolves a SID-to-UID mapping at runtime. <a id="cite-token.projection.precomputed-never-resolved"></a> Projection
+reflects all groups regardless of enabled state, so adjusting groups
+does not trigger recalculation. <a id="cite-token.projection.ignores-enabled-state"></a> [Credential Projection](<~kernel/internals/security/credentials#trm-3-10-1>) covers how the projection is
+used.
+
+<a id="trm-3-2-2-16"></a>
+
+## Token security (adjustable)
+
+| Field | Description |
+|---|---|
+| `security_descriptor` | The token's own SD, controlling who may query, adjust, duplicate, or impersonate it. <a id="cite-token.own-sd-governs-handle-ops"></a> |
+
+<a id="trm-3-2-2-17"></a>
+
+## Internal
+
+| Field | Description |
+|---|---|
+| `refcount` | Reference count; the token is freed when the last reference drops. Not exposed to userspace. |

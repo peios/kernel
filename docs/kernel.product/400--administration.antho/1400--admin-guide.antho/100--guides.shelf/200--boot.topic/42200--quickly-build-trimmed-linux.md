@@ -4,6 +4,9 @@ type: reference
 description: "This guide explains how to swiftly build Linux kernels that are ideal for testing purposes, but perfectly fine for day-to-day use, too."
 ---
 
+> **Peios:** Use [Building Peios](<~kernel/development/start-here/building-peios>) for the repository build, toolchain, configuration and test entry points. This article describes the underlying Linux machinery or upstream workflow. Its standalone build/install commands do not establish a qualified Peios kernel or signed release modules.
+
+
 <a id="rst-how-to-quickly-build-a-trimmed-linux-kernel"></a>
 
 <!-- SPDX-License-Identifier: (GPL-2.0+ OR CC-BY-4.0) -->

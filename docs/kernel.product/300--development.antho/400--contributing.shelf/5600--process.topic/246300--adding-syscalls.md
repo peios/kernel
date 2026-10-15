@@ -4,6 +4,9 @@ type: reference
 description: "This document describes what's involved in adding a new system call to the Linux kernel, over and above the normal submission advice in Documentation/process/submitting-patches.rst <submittingpatches>."
 ---
 
+> **Peios:** This article describes the Linux upstream syscall-development process. Peios also has native syscall entries starting at 1000 in the x86-64 table. Design new Peios authorization in terms of native objects, rights and privileges; choosing a Linux capability or matching Unix IDs alone is not sufficient. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) and [Building Peios](<~kernel/development/start-here/building-peios>).
+
+
 <a id="rst-adding-a-new-system-call"></a>
 <a id="rst-addsyscalls"></a>
 

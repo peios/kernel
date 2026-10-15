@@ -4,6 +4,9 @@ type: reference
 description: "Most filesystem developers will have encountered idmappings. They are used when reading from or writing ownership to disk, reporting ownership to userspace, or for permission checking. This document is aimed at filesystem developers that…"
 ---
 
+> **Peios:** Idmapped mounts translate Unix ownership metadata. They do not remap native token identities or security-descriptor principals, and creating a user namespace does not grant native privileges. Treat the Unix ownership examples below as metadata examples; KACS file and mount checks still apply. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-idmappings"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

@@ -4,6 +4,9 @@ type: reference
 description: "KVM strives to be a welcoming community; contributions from newcomers are valued and encouraged. Please do not be discouraged or intimidated by the length of this document and the many rules/guidelines it contains. Everyone makes mistakes,…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-kvm-x86"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

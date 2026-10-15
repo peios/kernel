@@ -23,3 +23,11 @@ that commonly need to be understood together.
 
 For tuning a running system, use [Administration](<~kernel/administration/admin-guide/overview/index>).
 For implementing or testing a change, use [Kernel development](<~kernel/development/start-here/overview>).
+
+## Native Peios subsystems
+
+- [KACS](<~kernel/internals/kacs/start-here/overview>): access control and executable trust.
+- [KMES](<~kernel/internals/kmes/overview>): event emission and delivery.
+- [LCS](<~kernel/internals/lcs/start-here/overview>): layered configuration and registry services.
+- [StrataFS](<~kernel/internals/stratafs/start-here/overview>): layered filesystem resolution and mutation.
+- [NTFE](<~kernel/internals/ntfe/overview>): packet policy and flow decisions.

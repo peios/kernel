@@ -4,6 +4,9 @@ type: reference
 description: "Sleep states are global low-power states of the entire system in which user space code cannot be executed and the overall system activity is significantly reduced."
 ---
 
+> **Peios:** The Peios profile forces integrity lockdown. Hibernation is unavailable under that policy, and kernel replacement must satisfy the kexec signature/lockdown path. The optional upstream mechanisms and test recipes below do not override those checks. Native privilege checks also apply. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-system-sleep-states"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

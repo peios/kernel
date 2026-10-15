@@ -4,6 +4,9 @@ type: reference
 description: "Dynamic debug allows you to dynamically enable/disable kernel debug-print code to obtain additional kernel information."
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-dynamic-debug"></a>
 
 <a id="rst-introduction"></a>
@@ -12,7 +15,7 @@ description: "Dynamic debug allows you to dynamically enable/disable kernel debu
 
 Dynamic debug allows you to dynamically enable/disable kernel debug-print code to obtain additional kernel information.
 
-If `/proc/dynamic_debug/control` exists, your kernel has dynamic debug.  You'll need root access (sudo su) to use this.
+If `/proc/dynamic_debug/control` exists, your kernel has dynamic debug. Access requires authorization for that control interface; Unix UID 0 alone is not a Peios authority grant. The debugfs route also remains subject to lockdown.
 
 Dynamic debug provides:
 

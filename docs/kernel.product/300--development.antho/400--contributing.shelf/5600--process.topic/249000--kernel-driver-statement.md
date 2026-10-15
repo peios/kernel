@@ -4,6 +4,9 @@ type: reference
 description: "We, the undersigned Linux kernel developers, consider any closed-source Linux kernel module or driver to be harmful and undesirable. We have repeatedly found them to be detrimental to Linux users, businesses, and the greater Linux…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-kernel-driver-statement"></a>
 <a id="rst-process-statement-driver"></a>
 

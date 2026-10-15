@@ -4,6 +4,9 @@ type: reference
 description: "Direct filesystem lookup is the most common form of firmware lookup performed by the kernel. The kernel looks for the firmware directly on the root filesystem in the paths documented in the section 'Firmware search paths'. The filesystem…"
 ---
 
+> **Peios:** File-based firmware loading has an additional Peios signature check. The development profile defaults to logging (`kacs_fwsig=log`); `kacs_fwsig=enforce` requires PeiosTcb trust for that path. This does not cover the separate `FW_UPLOAD` interface. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-direct-filesystem-lookup"></a>
 
 Direct filesystem lookup is the most common form of firmware lookup performed by the kernel. The kernel looks for the firmware directly on the root filesystem in the paths documented in the section 'Firmware search paths'. The filesystem lookup is implemented in fw_get_filesystem_firmware(), it uses common core kernel file loader facility kernel_read_file_from_path(). The max path allowed is PATH_MAX -- currently this is 4096 characters.

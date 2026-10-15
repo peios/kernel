@@ -4,6 +4,9 @@ type: reference
 description: "Jesper Juhl, August 2005"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-applying-patches-to-the-linux-kernel"></a>
 <a id="rst-applying-patches"></a>
 

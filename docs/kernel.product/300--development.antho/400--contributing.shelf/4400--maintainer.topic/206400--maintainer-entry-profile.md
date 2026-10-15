@@ -4,6 +4,9 @@ type: reference
 description: "The Maintainer Entry Profile supplements the top-level process documents (submitting-patches, submitting drivers...) with subsystem/device-driver-local customs as well as details about the patch submission life-cycle. A contributor uses…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-maintainer-entry-profile"></a>
 <a id="rst-maintainerentryprofile"></a>
 

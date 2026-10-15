@@ -4,6 +4,9 @@ type: reference
 description: "The purpose of this document is to help developers (and their managers) work with the development community with a minimum of frustration. It is an attempt to document how this community works in a way which is accessible to those who are…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-a-guide-to-the-kernel-development-process"></a>
 <a id="rst-development-process-main"></a>
 

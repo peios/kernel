@@ -4,6 +4,9 @@ type: reference
 description: "These days most developers use git send-email instead of regular email clients. The man page for this is quite good. On the receiving end, maintainers use git am to apply the patches."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-email-clients-info-for-linux"></a>
 <a id="rst-email-clients"></a>
 

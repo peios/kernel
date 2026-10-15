@@ -4,6 +4,9 @@ type: reference
 description: "We don't cause regressions -- this document describes what this \"first rule of Linux kernel development\" means in practice for developers. It complements Documentation/admin-guide/reporting-regressions.rst, which covers the topic from a…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-handling-regressions"></a>
 
 <!-- SPDX-License-Identifier: (GPL-2.0+ OR CC-BY-4.0) -->

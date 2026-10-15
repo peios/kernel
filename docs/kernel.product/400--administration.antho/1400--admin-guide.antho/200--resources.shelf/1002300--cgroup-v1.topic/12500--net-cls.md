@@ -4,6 +4,9 @@ type: reference
 description: "The Network classifier cgroup provides an interface to tag network packets with a class identifier (classid)."
 ---
 
+> **Peios:** Transport and driver mechanisms described here remain reference material, but any nftables/iptables, IPVS, NFQUEUE or legacy netfilter policy examples assume an upstream configuration. The Peios profile disables those policy paths and uses NTFE. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>); NTFE is permissive before its first policy generation is ingested.
+
+
 <a id="rst-network-classifier-cgroup"></a>
 
 The Network classifier cgroup provides an interface to tag network packets with a class identifier (classid).

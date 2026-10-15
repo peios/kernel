@@ -4,6 +4,9 @@ type: reference
 description: "SoC platforms or subarchitectures should follow all the rules from Documentation/process/maintainer-soc.rst. This document referenced in MAINTAINERS impose additional requirements listed below."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-soc-platforms-with-dts-compliance-requirements"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

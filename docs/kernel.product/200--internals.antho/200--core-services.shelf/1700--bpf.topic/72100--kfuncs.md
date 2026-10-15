@@ -4,6 +4,9 @@ type: reference
 description: "BPF Kernel Functions or more commonly known as kfuncs are functions in the Linux kernel which are exposed for use by BPF programs. Unlike normal BPF helpers, kfuncs do not have a stable interface and can change from one kernel release to…"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-bpf-kernel-functions-kfuncs"></a>
 <a id="rst-kfuncs-header-label"></a>
 

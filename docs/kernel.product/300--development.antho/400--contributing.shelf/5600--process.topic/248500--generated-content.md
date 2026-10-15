@@ -4,6 +4,9 @@ type: reference
 description: "Kernel contributors have been using tooling to generate contributions for a long time. These tools can increase the volume of contributions. At the same time, reviewer and maintainer bandwidth is a scarce resource. Understanding which…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-kernel-guidelines-for-tool-generated-content"></a>
 
 <a id="rst-purpose"></a>

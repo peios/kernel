@@ -4,6 +4,9 @@ type: reference
 description: "User based trace events allow user processes to create events and trace data that can be viewed via existing tools, such as ftrace and perf. To enable this feature, build your kernel with CONFIG_USER_EVENTS=y."
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-user-events-user-based-event-tracing"></a>
 
 **Author:** Beau Belgrave

@@ -4,6 +4,9 @@ type: reference
 description: "The firmware API enables kernel code to request files required for functionality from userspace, the uses vary:"
 ---
 
+> **Peios:** File-based firmware loading has an additional Peios signature check. The development profile defaults to logging (`kacs_fwsig=log`); `kacs_fwsig=enforce` requires PeiosTcb trust for that path. This does not cover the separate `FW_UPLOAD` interface. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-introduction"></a>
 
 The firmware API enables kernel code to request files required for functionality from userspace, the uses vary:

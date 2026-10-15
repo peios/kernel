@@ -1,0 +1,204 @@
+---
+title: "Key ioctls"
+description: "The sixteen ioctls acting on a key fd — reading, writing, security, watches, durability and bulk — each gated on the fd's granted mask."
+type: reference
+---
+
+<a id="trm-5-5-3"></a>
+
+Sixteen ioctls act on a key fd. <a id="cite-ioctl.sixteen-act-on-a-key-fd"></a> Each checks the fd's granted mask
+first and returns `EACCES` without contacting the source if the
+required right is absent ([Access Rights](<~kernel/internals/lcs/security/access-rights#trm-5-4-2>)). Numbers, directions and argument
+layouts are in [LCS ABI Reference](<~kernel/userspace/native/lcs/generated-syscall-and-common-abi#trm-5-a>).
+
+Every mutating ioctl accepts an optional transaction fd. <a id="cite-ioctl.mutating-ioctls-accept-a-transaction-fd"></a> So do the four
+read ioctls — a read inside a bound transaction sees the transaction's
+own uncommitted writes. A transaction bound to a different hive is
+`EXDEV`; a committed, aborted or closed one is `EINVAL`; a timed-out
+one is `ETIMEDOUT`; one whose source went Down is `EIO`. An unbound
+transaction fd does not bind on a read, which is simply performed
+non-transactionally.
+
+Every mutating ioctl that names a layer performs layer write
+authorization first ([Writing Into a Layer](<~kernel/internals/lcs/layers/writing-into-a-layer#trm-5-3-4>)).
+
+<a id="trm-5-5-3-1"></a>
+
+## Common errors
+
+| Errno | Condition |
+|---|---|
+| `EACCES` | The granted mask lacks the required right, or layer write authorization failed. |
+| `EFAULT` | An input pointer is invalid, or a non-zero-length output buffer pointer is null or unwritable. |
+| `EIO` | The source is unavailable, failed, or the transaction's source went Down. |
+| `ETIMEDOUT` | The source did not answer within `RequestTimeoutMs`, or the transaction had timed out. |
+| `ENOMEM` | Kernel allocation failure. <a id="cite-ioctl.enomem-on-allocation-failure"></a> |
+| `EXDEV` | The transaction is bound to a different hive. |
+| `ENOENT` | The named layer is not in the layer table. |
+| `EINVAL` | A non-zero reserved or padding field. |
+| `ENOTTY` | An ioctl number this fd type does not implement. <a id="cite-ioctl.enotty-for-an-unimplemented-number"></a> |
+
+<a id="trm-5-5-3-2"></a>
+
+## Reading
+
+**`REG_IOC_QUERY_VALUE`** returns the effective value at a name:
+its type, data, the sequence number of the winning entry, and the
+**canonical name of the winning layer** — which is the layer table's
+spelling, not whatever string the source stored. <a id="cite-ioctl.query-value.result-fields"></a> A base-layer entry
+therefore reports `base`.
+
+A winning tombstone or blanket, or no
+entries at all, is `ENOENT`. <a id="cite-ioctl.query-value.masked-is-enoent"></a>
+
+**`REG_IOC_QUERY_VALUES_BATCH`** returns every effective value on the
+key in one call: name, type and data for each, with tombstoned and
+blanket-masked values omitted. <a id="cite-ioctl.query-values-batch.returns-every-effective-value"></a> This is the call to use when you want
+them all ([Resolution](<~kernel/internals/lcs/layers/resolution#trm-5-3-6>)).
+
+**`REG_IOC_ENUM_VALUES`** and **`REG_IOC_ENUM_SUBKEYS`** return the
+entry at an index, and `ENOENT` past the end. <a id="cite-ioctl.enum.index-and-enoent-past-the-end"></a>
+
+Both re-resolve the full
+set on every call, and enumeration order is undefined — see [Resolution](<~kernel/internals/lcs/layers/resolution#trm-5-3-6>) for
+why the batch call usually wins. <a id="cite-ioctl.enum.re-resolves-and-order-is-undefined"></a>
+
+`ENUM_SUBKEYS` performs no per-child access check. It returns every
+visible child with its last write time, subkey count and value count. <a id="cite-ioctl.enum-subkeys.child-fields"></a>
+The caller learns names and must open each child separately to read
+anything ([Access Rights](<~kernel/internals/lcs/security/access-rights#trm-5-4-2>)).
+
+**`REG_IOC_QUERY_KEY_INFO`** returns the key's name, last write time,
+subkey and value counts, the maximum subkey name length, maximum value
+name length and maximum value data size, the descriptor size, the
+volatile and symlink flags, and the hive generation number. <a id="cite-ioctl.query-key-info.result-fields"></a> It requires
+`READ_CONTROL`.
+
+For a non-root key, the name is the stored key record's informational name,
+with its original spelling, rather than the spelling used to open the fd.
+The required buffer length is that stored name's UTF-8 byte length, including
+when the opening spelling folds to it but has a different byte length.
+The source name must fold to the leaf the fd resolved; an unrelated name
+is malformed key metadata, audited and refused with `EIO`, including on
+a buffer-length probe. Hive roots have no child name and instead report
+the preserved hive name from source registration, with its own byte length.
+<a id="cite-ioctl.query-key-info.stored-name"></a>
+
+It is declared `_IOWR`, which is what it does: it reads the caller's
+output-buffer fields out of the argument structure before writing it
+back. <a id="cite-ioctl.query-key-info.is-iowr"></a>
+
+It was declared `_IOR`, and because the direction bits are part of
+the encoded ioctl number and the kernel dispatches on the whole encoded
+value, correcting that was an ABI break rather than a relabelling. A
+binary built against the old constant gets `ENOTTY` from a kernel
+carrying the new one. <a id="cite-ioctl.query-key-info.old-constant-gets-enotty"></a>
+
+<a id="trm-5-5-3-2-1"></a>
+
+### The hive generation number
+
+A monotonic per-hive change epoch owned by the kernel. It is not a
+sequence number and must not be read as one: sources neither report it
+nor persist it ([The Sequence Counter](<~kernel/internals/lcs/layers/the-sequence-counter#trm-5-3-7>)).
+
+It is incremented once per committed mutation, or once per committed
+transaction per affected hive, however many operations that transaction
+contained. <a id="cite-ioctl.hive-generation.one-increment-per-commit"></a>
+
+Its baseline is initialised from the source's reported
+maximum sequence at registration so that observed values are monotonic
+relative to persisted entries; saturating at `U64_MAX` is `EOVERFLOW`. <a id="cite-ioctl.hive-generation.saturation-is-eoverflow"></a>
+
+It is exposed on every key because it is cheap and because a watcher
+that receives `OVERFLOW` can compare the generation it last saw with
+the current one and skip the recovery re-read entirely if nothing has
+committed ([Queues and Overflow](<~kernel/internals/lcs/watches/queues-and-overflow#trm-5-6-4>)).
+
+Layer operations produce a single generation increment covering the
+metadata key deletion, `RSI_DELETE_LAYER`, the recomputation and the
+resulting watch effects. There is no generation at which the metadata
+key is gone but the layer's entries are still resolving. <a id="cite-ioctl.hive-generation.layer-operation-is-one-increment"></a>
+
+An operation
+affecting several hives increments each independently. <a id="cite-ioctl.hive-generation.per-hive-independent"></a>
+
+<a id="trm-5-5-3-3"></a>
+
+## Writing
+
+**`REG_IOC_SET_VALUE`** writes a value entry in a layer. LCS allocates
+a sequence number and tells the source to store
+`(key GUID, value name, layer) → (type, data, sequence)`, then updates
+the key's last write time. <a id="cite-ioctl.set-value.stores-the-layer-tuple"></a>
+
+Writing type `REG_TOMBSTONE` is the explicit tombstone operation and
+requires zero-length data ([Values](<~kernel/internals/lcs/data-model/values#trm-5-2-6>)).
+
+A non-zero `expected_sequence` makes the write **conditional**. It is
+passed to the source, which atomically verifies that the layer's own
+current entry carries that sequence number before writing, and answers
+`RSI_CAS_FAILED` if not — which LCS returns as `EAGAIN`. LCS reads the key's entries before every write, for watch dispatch,
+but there is no kernel-side query-then-write for the condition: the
+check is the source's, and it is atomic there or nowhere. <a id="cite-ioctl.set-value.expected-sequence-is-a-cas"></a>
+
+The condition is evaluated against the **layer's own entry**, not
+against the effective value. <a id="cite-ioctl.set-value.cas-tests-the-layers-own-entry"></a> A higher-precedence layer overriding a
+value is not a lost update; it is the layer system working.
+
+Additional errors:
+
+- `EINVAL` for an unknown type or a tombstone with data.
+- `EAGAIN` for a failed conditional write.
+- `ENOSPC` for the layer cap or oversized data. <a id="cite-ioctl.set-value.enospc-layer-cap-or-oversized-data"></a>
+- `ENAMETOOLONG` for the value name. <a id="cite-ioctl.set-value.enametoolong-value-name"></a>
+- `EPERM` for a `Precedence` above 0 without `SeTcbPrivilege` ([Writing Into a Layer](<~kernel/internals/lcs/layers/writing-into-a-layer#trm-5-3-4>)).
+
+**`REG_IOC_DELETE_VALUE`** removes one layer's entry at a value name —
+whether that entry was a value or a tombstone. <a id="cite-ioctl.delete-value.removes-one-layers-entry"></a> Removing a layer's
+opinion lets lower-precedence layers surface.
+
+The operation is meant to be idempotent, and it is idempotent as far as
+a caller sees, provided the source answers `RSI_OK` for an entry that
+was not there. LCS does not mask a source's `RSI_NOT_FOUND`; that
+propagates as `ENOENT`. Idempotency is a source obligation, not a
+kernel behaviour. <a id="cite-ioctl.delete-value.source-not-found-is-enoent"></a>
+
+**`REG_IOC_BLANKET_TOMBSTONE`** sets or removes a blanket tombstone for
+a layer on this key ([Tombstones](<~kernel/internals/lcs/data-model/tombstones#trm-5-2-7>)). A new sequence number is assigned for
+dispatch ordering, and watch events are generated for every value whose
+effective state changed.
+
+**`REG_IOC_DELETE_KEY`** removes this key's path entry from a layer. <a id="cite-ioctl.delete-key.removes-the-path-entry"></a>
+
+The parent GUID comes from the fd's ancestor chain and the child name
+from the last component of its resolved path. <a id="cite-ioctl.delete-key.parent-and-name-from-the-fd"></a> `ENOTEMPTY` if the key
+has visible children; `EINVAL` on a hive root ([Deletion and Orphans](<~kernel/internals/lcs/data-model/deletion-and-orphans#trm-5-2-9>)).
+
+**`REG_IOC_HIDE_KEY`** creates a HIDDEN path entry at the same place
+instead, masking lower-precedence entries. <a id="cite-ioctl.hide-key.creates-a-hidden-entry"></a> The caller must hold an open
+fd to the key, which is how it proved access to it. <a id="cite-ioctl.hide-key.requires-an-open-fd"></a> `EINVAL` on a hive
+root.
+
+<a id="trm-5-5-3-4"></a>
+
+## Security
+
+**`REG_IOC_GET_SECURITY`** and **`REG_IOC_SET_SECURITY`** read and
+merge Security Descriptor components, selected by a `security_info`
+bitmask. [Inheritance and Hive Roots](<~kernel/internals/lcs/security/inheritance-and-hive-roots#trm-5-4-3>) covers the rights, the merge, and the validation.
+
+<a id="trm-5-5-3-5"></a>
+
+## Watches, durability, bulk
+
+**`REG_IOC_NOTIFY`** arms, re-arms or disarms a watch ([The Watch Model](<~kernel/internals/lcs/watches/the-watch-model#trm-5-6-1>)).
+
+**`REG_IOC_FLUSH`** tells the source to persist pending writes for this
+key's hive, and returns when persistence is confirmed. <a id="cite-ioctl.flush.persists-and-waits-for-confirmation"></a> The hive name
+comes from the first component of the fd's resolved path. <a id="cite-ioctl.flush.hive-from-the-fd-path"></a> It requires
+`KEY_SET_VALUE` ([Access Rights](<~kernel/internals/lcs/security/access-rights#trm-5-4-2>)).
+
+**`REG_IOC_BACKUP`** and **`REG_IOC_RESTORE`** export and replace a
+subtree. They are privilege-gated with no per-key access check, and
+they are covered in [The Stream](<~kernel/internals/lcs/backup-and-restore/the-stream#trm-5-9-1>).

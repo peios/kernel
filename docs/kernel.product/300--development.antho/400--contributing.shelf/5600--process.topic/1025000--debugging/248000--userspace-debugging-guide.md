@@ -4,6 +4,9 @@ type: reference
 description: "This document provides a brief overview of common tools to debug the Linux Kernel from userspace. For debugging advice aimed at driver developers go here </process/debugging/driver_development_debugging_guide>. For general debugging…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-userspace-debugging-advice"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

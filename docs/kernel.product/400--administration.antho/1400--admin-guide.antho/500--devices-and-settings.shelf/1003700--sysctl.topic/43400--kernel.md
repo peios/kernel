@@ -4,6 +4,9 @@ type: reference
 description: "Copyright (c) 1998, 1999, Rik van Riel <riel@nl.linux.org>"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-documentation-for-proc-sys-kernel"></a>
 
 <!-- See scripts/check-sysctl-docs to keep this up to date -->
@@ -1065,21 +1068,11 @@ A comma separated list of extra system information to be dumped when soft/hard l
 
 ## modprobe
 
-The full path to the usermode helper for autoloading kernel modules, by default `CONFIG_MODPROBE_PATH`, which in turn defaults to "/sbin/modprobe".  This binary is executed when the kernel requests a module.  For example, if userspace passes an unknown filesystem type to mount(), then the kernel will automatically request the corresponding filesystem module by executing this usermode helper. This usermode helper should insert the needed module into the kernel.
+The full path to the usermode helper for autoloading kernel modules, by default `CONFIG_MODPROBE_PATH`, which Peios configures as `/bin/modprobe`.  This binary is executed when the kernel requests a module.  For example, if userspace passes an unknown filesystem type to mount(), then the kernel will automatically request the corresponding filesystem module by executing this usermode helper. This usermode helper should insert the needed module into the kernel.
 
 This sysctl only affects module autoloading.  It has no effect on the ability to explicitly insert modules.
 
-This sysctl can be used to debug module loading requests:
-
-
-
-```text
-echo '#! /bin/sh' > /tmp/modprobe
-echo 'echo "$@" >> /tmp/modprobe.log' >> /tmp/modprobe
-echo 'exec /sbin/modprobe "$@"' >> /tmp/modprobe
-chmod a+x /tmp/modprobe
-echo /tmp/modprobe > /proc/sys/kernel/modprobe
-```
+Peios requires kernel-initiated usermode helpers to execute with at least `PeiosTcb` trust. An arbitrary logging shell script substituted through this sysctl is therefore not a valid helper. Keep the configured, appropriately signed helper and use the available module-request tracing facilities to diagnose autoloading.
 
 Alternatively, if this sysctl is set to the empty string, then module autoloading is completely disabled.  The kernel will not try to execute a usermode helper at all, nor will it call the kernel_module_request LSM hook.
 

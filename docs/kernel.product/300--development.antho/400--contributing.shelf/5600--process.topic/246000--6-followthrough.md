@@ -4,6 +4,9 @@ type: reference
 description: "At this point, you have followed the guidelines given so far and, with the addition of your own engineering skills, have posted a perfect series of patches. One of the biggest mistakes that even experienced kernel developers can make is to…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-followthrough"></a>
 <a id="rst-development-followthrough"></a>
 

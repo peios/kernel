@@ -4,6 +4,9 @@ type: reference
 description: "Set the maximum value of timeout after which an ADD_ADDR control message will be resent to an MPTCP peer that has not acknowledged a previous ADD_ADDR message. A dynamically estimated retransmission timeout based on the estimated…"
 ---
 
+> **Peios:** Interface availability and resource limits do not grant native access. Peios applies descriptor/handle checks, its sysfs write gate and mapped privilege checks where applicable. Read inherited privileged/unprivileged terminology with [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-mptcp-sysfs-variables"></a>
 
 <a id="rst-proc-sys-net-mptcp-variables"></a>

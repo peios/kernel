@@ -4,6 +4,9 @@ type: reference
 description: "The LOCALIO auxiliary RPC protocol allows the Linux NFS client and server to reliably handshake to determine if they are on the same host. Select \"NFS client and server support for LOCALIO auxiliary protocol\" in menuconfig to enable…"
 ---
 
+> **Peios:** Transport and driver mechanisms described here remain reference material, but any nftables/iptables, IPVS, NFQUEUE or legacy netfilter policy examples assume an upstream configuration. The Peios profile disables those policy paths and uses NTFE. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>); NTFE is permissive before its first policy generation is ingested.
+
+
 <a id="rst-nfs-localio"></a>
 
 <a id="rst-overview"></a>

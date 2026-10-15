@@ -4,6 +4,9 @@ type: reference
 description: "This document is aimed at Linux kernel developers, and especially at subsystem maintainers. It contains a subset of information discussed in the more general \"Protecting Code Integrity\" guide published by the Linux Foundation. Please read…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-kernel-maintainer-pgp-guide"></a>
 <a id="rst-pgpguide"></a>
 

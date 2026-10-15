@@ -4,6 +4,9 @@ type: reference
 description: "Subsystem maintainers routinely use git request-pull as part of the process of sending work upstream. Normally, the result includes a nice diffstat that shows which files will be touched and how much of each will be changed. Occasionally,…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-handling-messy-pull-request-diffstats"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

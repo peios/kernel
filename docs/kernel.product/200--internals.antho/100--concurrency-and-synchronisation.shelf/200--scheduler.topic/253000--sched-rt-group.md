@@ -4,6 +4,9 @@ type: reference
 description: "Fiddling with these settings can result in an unstable system, the knobs are root only and assumes root knows what he is doing."
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-real-time-group-scheduling"></a>
 
 <!-- CONTENTS

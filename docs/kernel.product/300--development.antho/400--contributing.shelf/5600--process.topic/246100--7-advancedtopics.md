@@ -4,6 +4,9 @@ type: reference
 description: "At this point, hopefully, you have a handle on how the development process works. There is still more to learn, however! This section will cover a number of topics which can be helpful for developers wanting to become a regular part of the…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-advanced-topics"></a>
 <a id="rst-development-advancedtopics"></a>
 

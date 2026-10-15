@@ -4,6 +4,9 @@ type: reference
 description: "Kernel reference: The Speakup User's Guide."
 ---
 
+> **Peios:** This inherited Speakup guide includes Linux distribution, service and Unix-root administration examples. Those are not Peios service-management or authorization instructions. Device access and privileged operations must satisfy native policy; see [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 For Speakup 3.1.2 and Later  
 By Gene Collins  
 Updated by others  

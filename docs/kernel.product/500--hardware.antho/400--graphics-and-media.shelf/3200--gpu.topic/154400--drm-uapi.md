@@ -4,6 +4,9 @@ type: reference
 description: "The DRM core exports several interfaces to applications, generally intended to be used through corresponding libdrm wrapper functions. In addition, drivers export device-specific interfaces for use by userspace drivers & device-aware…"
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-userland-interfaces"></a>
 
 <!-- Copyright 2020 DisplayLink (UK) Ltd. -->

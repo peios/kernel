@@ -4,6 +4,9 @@ type: reference
 description: "Linux is probably the Unix-like operating system that supports the widest variety of hardware devices. The reasons for this are presumably"
 ---
 
+> **Peios:** Privileged debug and door-control operations use the driver capability checks; `CAP_SYS_ADMIN` maps to enabled `SeTcbPrivilege`. Native device and ioctl access is also required. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-a-linux-cd-rom-standard"></a>
 
 **Author:** David van Leeuwen &lt;[david@ElseWare.cistron.nl](<mailto:david@ElseWare.cistron.nl>)&gt;

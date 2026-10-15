@@ -4,6 +4,9 @@ type: reference
 description: "Maintaining a subsystem, as a general rule, requires a familiarity with the Git source-code management system. Git is a powerful tool with a lot of features; as is often the case with such tools, there are right and wrong ways to use those…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-rebasing-and-merging"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

@@ -6,7 +6,7 @@ description: "Find build, programming, testing and maintenance guidance."
 
 Use this section when changing the kernel or investigating its behaviour.
 
-1. **Build and program:** start with the [Build system](<~kernel/development/kbuild/index>),
+1. **Build and program:** start with [Building Peios](<~kernel/development/start-here/building-peios>), then the [Build system](<~kernel/development/kbuild/index>),
    [Kernel programming](<~kernel/development/kernel-hacking/index>) and
    [Rust](<~kernel/development/rust/index>) guidance.
 2. **Test the change:** the [Development tools](<~kernel/development/dev-tools/index>)

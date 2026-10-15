@@ -4,6 +4,9 @@ type: reference
 description: "Some features of the Intel Stratix10 SoC require a level of privilege higher than the kernel is granted. Such secure features include FPGA programming. In terms of the ARMv8 architecture, the kernel runs at Exception Level 1 (EL1), access…"
 ---
 
+> **Peios:** File-based firmware loading has an additional Peios signature check. The development profile defaults to logging (`kacs_fwsig=log`); `kacs_fwsig=enforce` requires PeiosTcb trust for that path. This does not cover the separate `FW_UPLOAD` interface. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-other-firmware-interfaces"></a>
 
 <a id="rst-dmi-interfaces"></a>

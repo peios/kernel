@@ -4,6 +4,9 @@ type: reference
 description: "This document is the humble beginning of a manual for kernel maintainers. There is a lot yet to go here! Please feel free to propose (and write) additions to this manual."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-kernel-maintainer-handbook"></a>
 
 This document is the humble beginning of a manual for kernel maintainers. There is a lot yet to go here\!  Please feel free to propose (and write) additions to this manual.

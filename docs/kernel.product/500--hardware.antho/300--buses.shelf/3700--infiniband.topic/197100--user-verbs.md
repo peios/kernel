@@ -4,6 +4,9 @@ type: reference
 description: "The ib_uverbs module, built by enabling CONFIG_INFINIBAND_USER_VERBS, enables direct userspace access to IB hardware via \"verbs,\" as described in chapter 11 of the InfiniBand Architecture Specification."
 ---
 
+> **Peios:** Interface availability and resource limits do not grant native access. Peios applies descriptor/handle checks, its sysfs write gate and mapped privilege checks where applicable. Read inherited privileged/unprivileged terminology with [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-userspace-verbs-access"></a>
 
 > The ib_uverbs module, built by enabling CONFIG_INFINIBAND_USER_VERBS, enables direct userspace access to IB hardware via "verbs," as described in chapter 11 of the InfiniBand Architecture Specification.
@@ -54,4 +57,4 @@ description: "The ib_uverbs module, built by enabling CONFIG_INFINIBAND_USER_VER
 > /dev/infiniband/uverbs0
 > ```
 >
-> and so on.  Since the InfiniBand userspace verbs should be safe for use by non-privileged processes, it may be useful to add an appropriate MODE or GROUP to the udev rule.
+> and so on.  The upstream Linux recipe delegates access with a udev MODE or GROUP rule. In Peios, device descriptors and handle/ioctl authorization must grant the required access; MODE or GROUP alone does not do so. Memory-lock privilege checks also retain their native interpretation.

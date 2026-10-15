@@ -4,6 +4,9 @@ type: reference
 description: "The code_of_conduct is a general document meant to provide a set of rules for almost any open source community. Every open-source community is unique and the Linux kernel is no exception. Because of this, this document describes how we in…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-contributor-covenant-code-of-conduct-interpretation"></a>
 <a id="rst-code-of-conduct-interpretation"></a>
 

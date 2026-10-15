@@ -4,6 +4,9 @@ type: reference
 description: "Reference for Driver Basics."
 ---
 
+> **Peios:** The generated declarations below are read from the kernel source. Peios adds native checks at the file, process, IPC and socket boundaries; inherited comments about Unix permissions or capability names are not a complete access policy. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) and the [VFS callback reference](<~kernel/internals/filesystems/vfs>) for the Peios integration contracts.
+
+
 <a id="rst-driver-basics"></a>
 
 <a id="rst-driver-entry-and-exit-points"></a>

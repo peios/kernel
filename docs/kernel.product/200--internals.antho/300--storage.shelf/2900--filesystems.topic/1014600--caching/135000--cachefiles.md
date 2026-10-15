@@ -4,6 +4,9 @@ type: reference
 description: "CacheFiles is a caching backend that's meant to use as a cache a directory on an already mounted filesystem of a local type (such as Ext3)."
 ---
 
+> **Peios:** Unix mode, ownership and ACL examples describe the inherited metadata model. On managed Peios mounts, native security descriptors and granted handle rights determine access; `chmod`, `chown` and POSIX ACL recipes alone do not delegate it. Mount operations also require native authorization. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for mount-policy defaults and the tmpfs rootfs rule.
+
+
 <a id="rst-cache-on-already-mounted-filesystem"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

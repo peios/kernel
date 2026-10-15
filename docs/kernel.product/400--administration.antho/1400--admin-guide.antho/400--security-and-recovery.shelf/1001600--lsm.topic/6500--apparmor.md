@@ -4,6 +4,9 @@ type: reference
 description: "AppArmor is MAC style security extension for the Linux kernel. It implements a task centered policy, with task \"profiles\" being created and loaded from user space. Tasks on the system that do not have a profile defined for them run in an…"
 ---
 
+> **Peios:** This is reference material for an upstream LSM or its configuration. Peios configures `landlock,lockdown,integrity,pkm`; alternative MAC LSMs are incompatible with PKM, and this article is not an instruction to replace the Peios security stack. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-apparmor"></a>
 
 <a id="rst-what-is-apparmor"></a>

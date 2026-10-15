@@ -4,6 +4,9 @@ type: reference
 description: "CEC_G_MODE, CEC_S_MODE - Get or set exclusive use of the CEC adapter"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-ioctls-cec-g-mode-and-cec-s-mode"></a>
 <a id="rst-cec-s-mode"></a>
 <a id="rst-cec-g-mode"></a>

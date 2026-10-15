@@ -4,6 +4,9 @@ type: reference
 description: "Android binderfs is a filesystem for the Android binder IPC mechanism. It allows to dynamically add and remove binder devices at runtime. Binder devices located in a new binderfs instance are independent of binder devices located in other…"
 ---
 
+> **Peios:** User namespaces and Unix ID mappings do not create native privileges or determine KACS descriptor identity. Mount authorization uses the native privilege/descriptor rules; the descriptor-only new-filesystem allowlist is `tmpfs`, `proc` and `stratafs`. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-the-android-binderfs-filesystem"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

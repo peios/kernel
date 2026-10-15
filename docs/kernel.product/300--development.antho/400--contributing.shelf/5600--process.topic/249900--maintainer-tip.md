@@ -4,6 +4,9 @@ type: reference
 description: "The tip tree is a collection of several subsystems and areas of development. The tip tree is both a direct development tree and an aggregation tree for several sub-maintainer trees. The tip tree gitweb URL is:…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-the-tip-tree-handbook"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

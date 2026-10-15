@@ -4,6 +4,9 @@ type: reference
 description: "\"We don't cause regressions\" is the first rule of Linux kernel development; Linux founder and lead developer Linus Torvalds established it himself and ensures it's obeyed."
 ---
 
+> **Peios:** The upstream Linux build, report and distribution procedures below apply in that context. Use [Building Peios](<~kernel/development/start-here/building-peios>) and the workspace `_styleguide` for Peios development and track Peios work in Acta.
+
+
 <a id="rst-reporting-regressions"></a>
 
 <!-- SPDX-License-Identifier: (GPL-2.0+ OR CC-BY-4.0) -->

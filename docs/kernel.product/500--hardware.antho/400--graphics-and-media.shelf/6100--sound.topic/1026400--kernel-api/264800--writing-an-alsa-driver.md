@@ -4,6 +4,9 @@ type: reference
 description: "This document describes how to write an ALSA (Advanced Linux Sound Architecture) driver. The document focuses mainly on PCI soundcards. In the case of other device types, the API might be different, too. However, at least the ALSA kernel…"
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-writing-an-alsa-driver"></a>
 
 **Author:** Takashi Iwai &lt;[tiwai@suse.de](<mailto:tiwai@suse.de>)&gt;

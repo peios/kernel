@@ -1,0 +1,179 @@
+---
+title: "Mount Admission"
+description: "What a caller must be entitled to and what a configuration must satisfy — evaluation order, loop detection, and mount immutability."
+type: reference
+---
+
+<a id="trm-4-2-3"></a>
+
+A stratafs mount is configured entirely at mount time. This section
+covers what the caller must be entitled to, the conditions a
+configuration has to satisfy, and the order in which those conditions
+are evaluated.
+
+<a id="trm-4-2-3-1"></a>
+
+## Entitlement <a id="cite-mount.create-requires-init-userns-cap"></a>
+
+Establishing a mount with no create stratum takes no privilege of its
+own. The filesystem type carries `FS_USERNS_MOUNT`, and stratafs is on
+the allowlist of types a mount namespace's descriptor may admit
+([A Private Mount Table](<~kernel/internals/kacs/mount-namespaces/a-private-mount-table#trm-3-13-1>)), so a caller may establish one in a mount namespace it created
+without the mount privilege; what the caller needs beyond that is only
+the access that resolving the stratum paths already requires, which
+falls out of the resolution itself. A user namespace by itself confers
+nothing here, as everywhere under KACS.
+
+A stack that carries `create` is different. Copy-up is authorised by
+the outer handle and deliberately requires no add-entry right on the
+create stratum ([Checks on Merged Directories](<~kernel/internals/stratafs/security/checks-on-merged-directories#trm-4-6-2>)), so the mount configuration carries authority
+to materialise names in a real directory outside the mount. The caller
+establishing such a stack must be operating in the **initial** user
+namespace and hold `CAP_SYS_ADMIN` there; anything else fails with
+`EPERM`.
+
+The test is made in `get_tree`, before the tree is built and therefore
+before any stratum path is resolved, and it is stricter than requiring
+the capability alone: the credential's own user namespace must *be* the
+initial one, not merely a namespace in which the capability resolves.
+This is the closure the KACS copy-up context depends on. The check is
+made once, when the immutable stack is established, rather than at each
+copy-up, so descriptor delegation cannot reintroduce authorisation
+against the acting task, and no reconfiguration can re-supply the
+strata list.
+
+There is no explicit per-stratum entitlement check in the mount path.
+Both halves come out of the ordinary machinery: traverse rights are
+enforced by the path walk, which runs under the mounting caller's
+credentials, and the right to read a stratum directory's attributes is
+enforced by using the security-checking `vfs_getattr` rather than its
+unchecked variant, which reaches KACS's `getattr` hook and demands
+`FILE_READ_ATTRIBUTES`.
+
+One seam is worth recording: the path walk uses the credentials
+captured on the filesystem context, while `vfs_getattr` runs outside
+that override and so uses the acting task's. For a mount established
+the ordinary way the two are the same task. For one established with
+`fsopen` and `fsconfig` from different tasks they need not be.
+
+Nothing re-checks entitlement if a stratum directory later appears.
+That is sound because every access through the mount is checked against
+the providing object in any case ([Access Check Delegation](<~kernel/internals/stratafs/security/access-check-delegation#trm-4-6-1>)), so a caller who mounts a
+stratum they cannot read still cannot read it.
+
+<a id="trm-4-2-3-2"></a>
+
+## Validity
+
+| Condition | Error |
+|---|---|
+| The stratum stack is empty | `EINVAL` <a id="cite-mount.admit.empty-stack-einval"></a> |
+| The stack exceeds 16 strata | `EINVAL` <a id="cite-mount.admit.too-many-strata-einval"></a> |
+| More than one stratum carries `create` | `EINVAL` <a id="cite-mount.admit.multiple-create-einval"></a> |
+| A stratum carries both `create` and `ro` | `EINVAL` <a id="cite-mount.admit.create-with-ro-einval"></a> |
+| The same directory appears as more than one stratum | `EINVAL` <a id="cite-mount.admit.duplicate-stratum-einval"></a> |
+| A malformed `strata=` value ([Mount Options](<~kernel/administration/stratafs/mount-options#trm-4-2-2>)) | `EINVAL` <a id="cite-mount.admit.malformed-value-einval"></a> |
+| A create-bearing stack from outside the initial user namespace, or without `CAP_SYS_ADMIN` there | `EPERM` <a id="cite-mount.admit.create-requires-privilege-eperm"></a> |
+| A stratum's path names something other than a directory | `ENOTDIR` <a id="cite-mount.admit.not-a-directory-enotdir"></a> |
+| A stratum's directory is absent and the stratum does not carry `am` | `ENOENT` <a id="cite-mount.admit.absent-without-am-enoent"></a> |
+| The composed stack reaches the kernel's maximum stacking depth | `ELOOP` <a id="cite-mount.admit.stacking-depth-eloop"></a> |
+| A stratum lies within the mount point, or within another stratafs mount whose strata include this mount point | `ELOOP` <a id="cite-mount.admit.recursive-stratum-eloop"></a> |
+| Sixteen consecutive collisions allocating a mount cookie | `EAGAIN` <a id="cite-mount.admit.cookie-exhaustion-eagain"></a> |
+
+Two strata are the same directory when they resolve to the same
+directory object, not merely when their paths are equal as strings: the
+comparison is on resolved inodes, so two paths reaching one directory
+through different symbolic links or bind mounts are caught. Absent
+strata are skipped and never compared. <a id="cite-mount.duplicate-strata-by-inode"></a>
+
+<a id="trm-4-2-3-3"></a>
+
+## Evaluation order <a id="cite-mount.admission-evaluation-order"></a>
+
+The conditions that depend on nothing but the option string are decided
+first, during parsing and stack-wide validation, and are reported
+whatever the caller's access. The `EPERM` admission test comes next, in
+`get_tree`, still before any path is touched. Only then are the strata
+resolved.
+
+The purpose of that ordering is to stop the validity conditions being
+an oracle: a caller with no right to traverse a directory should not be
+able to name it as a stratum and learn from the errno whether it exists
+and whether it is a directory.
+
+The path walk and the attribute read both run under the caller's
+credentials, so a path the caller cannot resolve returns `EACCES` from
+the walk itself, and the `EACCES` is propagated unchanged.
+
+The check is stack-wide because it runs in two passes. The first
+resolves and stats every stratum; an `EACCES` from any of them is the
+answer, whatever an earlier stratum reported. Only when every stratum
+has passed entitlement does the second pass apply the type, duplicate
+and depth conditions. A caller who names a readable non-directory first
+and an unreadable path second is told `EACCES`, not `ENOTDIR`.
+<a id="cite-mount.entitlement-is-decided-in-two-passes"></a>
+
+The mount-point loop condition is evaluated in a different call
+entirely, after the tree has been built, and so always follows every
+entitlement check.
+
+<a id="trm-4-2-3-4"></a>
+
+## Loops <a id="cite-mount.loop-detected-at-mount"></a>
+
+A stratum inside the mount point is detected directly. The indirect
+case — a stratum inside *another* stratafs mount whose own strata
+include this mount point — is detected by recursing into any stratum
+whose superblock carries the stratafs magic, bounded by a visited-
+superblock set and by the kernel's maximum stacking depth. This runs
+through a Peios-added `super_operations` hook, `validate_mountpoint`,
+wired into the new-mount, bind and move-mount paths by the patch series;
+it is not an upstream interface.
+
+That check cannot bind after the fact: a mount established within a
+stratum, or a bind mount of this mount into one of its own strata, can
+create a cycle later. Resolution is guarded separately, and differently
+— not by a depth counter but by a per-task, per-superblock re-entrancy
+list. A task that is already resolving in a superblock and re-enters it
+gets `ELOOP` immediately, so a cycle spanning any number of stratafs
+mounts terminates the moment it returns to one it is already inside.
+
+<a id="trm-4-2-3-5"></a>
+
+## Immutability and mount identity <a id="cite-mount.strata-shared-between-mounts"></a>
+
+The stack is fixed for the life of the mount; changing one is expressed
+by unmounting and mounting again ([Mount Options](<~kernel/administration/stratafs/mount-options#trm-4-2-2>)).
+
+Two stratafs mounts may name the same directory as a stratum. Each
+resolves independently and neither is aware of the other; where both
+have a create stratum in common they mutate the same objects, with the
+same result as any two writers of one directory. There is no registry
+of stratum paths to make them aware of each other.
+
+There is a registry of *mounts*, but it exists for a different purpose.
+Each mount draws a random non-zero cookie and inserts itself into a
+global table, retrying up to sixteen times on collision; a second
+random non-zero cookie is drawn once per boot. The pair identifies
+which live mount owns a staging entry, so that a mount sharing a create
+stratum can distinguish another mount's copy-up in flight from an
+orphan left by a crash ([Copy-Up](<~kernel/internals/stratafs/mutation/copy-up#trm-4-5-2>)).
+
+<a id="trm-4-2-3-6"></a>
+
+## An all-absent stack <a id="cite-mount.all-absent-stack-is-legal"></a>
+
+A mount succeeds even when no stratum root is present at all — a stack
+whose only strata are absent `am` strata is legal. The root inode is
+constructed with no provider, and reports mode `S_IFDIR` with no
+permission bits.
+
+Such a root still carries a security descriptor, since an object with
+none would refuse every access check made on the mount root and the
+provider-less root could never be observed. stratafs synthesises it:
+owned by the mounter, with read and traverse for everyone, and nothing
+more — there is nothing beneath such a root to write. The moment a
+stratum root appears the root's descriptor is that root's own, and
+when it goes again the synthesised one returns; KACS never caches a
+StrataFS root's descriptor, so no access is decided against a root that
+has since gained or lost its provider. <a id="cite-mount.all-absent-root-serves-a-synthesised-descriptor"></a>

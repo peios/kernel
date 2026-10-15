@@ -1,8 +1,11 @@
 ---
 title: "Overlay Filesystem"
 type: reference
-description: "Written by: Neil Brown Please see MAINTAINERS file for where to send questions."
+description: "OverlayFS layering, copy-up and native descriptor handling in Peios."
 ---
+
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->
 
@@ -501,48 +504,37 @@ Once the copy_up is complete, the overlay filesystem simply provides direct acce
 
 ### Permission model
 
-An overlay filesystem stashes credentials that will be used when accessing lower or upper filesystems.
+OverlayFS stashes credentials for operations on its backing layers. The old
+mount API records the mounting task's credentials. With the new API, superblock
+creation normally records the `FSCONFIG_CMD_CREATE` caller; setting
+`override_creds` records the caller supplying that option instead. These credentials include
+the KACS subject, not just Unix IDs.
 
-In the old mount api the credentials of the task calling mount(2) are stashed. In the new mount api the credentials of the task creating the superblock through FSCONFIG_CMD_CREATE command of fsconfig(2) are stashed.
+Access involves checks on the overlay object for the caller and on backing
+objects under the saved operation context. In Peios, copying Unix owner, group,
+mode and POSIX ACL data is not sufficient to preserve access. KACS explicitly
+preserves native descriptors during copy-up: `pkm_kacs_inode_copy_up()` captures
+the source SD and carries it on the prepared credential for the upper inode's
+creation. The canonical SD xattr is excluded from the ordinary xattr-copy loop;
+it is not discarded without replacement. An unmanaged source has no managed
+descriptor to preserve.
 
-Starting with kernel v6.15 it is possible to use the "override_creds" mount option which will cause the credentials of the calling task to be recorded. Note that "override_creds" is only meaningful when used with the new mount api as the old mount api combines setting options and superblock creation in a single mount(2) syscall.
+For an ordinary creation through an overlay, the KACS create hook derives the
+new descriptor using the calling subject and the overlay parent rather than
+silently substituting the mounter as the creator. It also carries the caller's
+projected IDs to the backing creation. Native file-handle grants and subsequent
+operation checks continue to apply.
 
-Permission checking in the overlay filesystem follows these principles:
+Consequently, `cp -a` followed by a bind mount is not a general access-policy
+equivalent of an OverlayFS mount. Generic userspace xattr copying cannot write
+the canonical Peios SD, and server-side checks on remote backing filesystems
+remain distinct. A setup must provide appropriate descriptors, mount policy
+and backing credentials; enabling OverlayFS does not qualify every layer
+combination.
 
-> 1. permission check SHOULD return the same result before and after copy up
->
-> 2. task creating the overlay mount MUST NOT gain additional privileges
->
-> 3. task\[\*\] MAY gain additional privileges through the overlay, compared to direct access on underlying lower or upper filesystems
-
-This is achieved by performing two permission checks on each access:
-
-> - **a)** check if current task is allowed access based on local DAC (owner, group, mode and posix acl), as well as MAC checks
->
-> - **b)** check if stashed credentials would be allowed real operation on lower or upper layer based on underlying filesystem permissions, again including MAC checks
-
-Check (a) ensures consistency (1) since owner, group, mode and posix acls are copied up.  On the other hand it can result in server enforced permissions (used by NFS, for example) being ignored (3).
-
-Check (b) ensures that no task gains permissions to underlying layers that the stashed credentials do not have (2).  This also means that it is possible to create setups where the consistency rule (1) does not hold; normally, however, the stashed credentials will have sufficient privileges to perform all operations.
-
-Another way to demonstrate this model is drawing parallels between:
-
-
-
-```text
-mount -t overlay overlay -olowerdir=/lower,upperdir=/upper,... /merged
-```
-
-and:
-
-
-
-```text
-cp -a /lower /upper
-mount --bind /upper /merged
-```
-
-The resulting access permissions should be the same.  The difference is in the time of copy (on-demand vs. up-front).
+Creating an OverlayFS mount requires enabled `SeManageVolumePrivilege` or
+`SeTcbPrivilege`: OverlayFS is outside the new-mount descriptor-only allowlist.
+The `userxattr` option does not remove that native mount requirement.
 
 <a id="rst-multiple-lower-layers"></a>
 
@@ -878,7 +870,7 @@ When overlay is mounted with "volatile" option, the directory "$workdir/work/inc
 
 ### User xattr
 
-The "-o userxattr" mount option forces overlayfs to use the "user.overlay." xattr namespace instead of "trusted.overlay.".  This is useful for unprivileged mounting of overlayfs.
+The "-o userxattr" mount option forces overlayfs to use the "user.overlay." xattr namespace instead of "trusted.overlay.".  This selects the xattr namespace; it does not grant unprivileged OverlayFS mounting in Peios.
 
 <a id="rst-testsuite"></a>
 
@@ -888,7 +880,7 @@ There's a testsuite originally developed by David Howells and currently maintain
 
 [https://github.com/amir73il/unionmount-testsuite.git](<https://github.com/amir73il/unionmount-testsuite.git>)
 
-Run as root:
+Run in a native context authorized for the mounts and file operations used by the test:
 
 
 
@@ -896,3 +888,133 @@ Run as root:
 # cd unionmount-testsuite
 # ./run --ov --verify
 ```
+
+## Peios implementation details
+
+<a id="trm-3-9-8"></a>
+
+Overlayfs is a different problem from the StrataFS context of [The StrataFS Copy-Up Context](<~kernel/internals/stratafs/security/kacs-admission-and-object-phases#trm-3-9-7>).
+Nothing here needs an authorization exemption: the caller has already
+been authorized against the merged inode. What has to be corrected is
+the **descriptor** the new object ends up wearing.
+
+Both of the inputs the inheritance algorithm needs ([PCDS inheritance](https://learn.peios.org/peios/advanced-peios/pcds/security-descriptor/inheritance)) are
+wrong by the time the real create runs:
+
+- **The parent is wrong.** Overlayfs creates on the upper filesystem, in
+  the upper directory or — for a copy-up, or a create over a whiteout —
+  in the overlay's **workdir**. Neither is the directory the caller
+  named. A backing directory is also a distinct inode with its own
+  descriptor cache, so a descriptor set at runtime through the overlay
+  is not the one a create sees.
+- **The subject is wrong.** Overlayfs performs upper-layer work under
+  the mounter's credentials. The subject the inheritance algorithm sees
+  is therefore the principal that mounted the filesystem, not the one
+  making the object.
+
+Left alone, the second is the more damaging: on a live image the root
+is an overlay mounted by the system, so every object created anywhere
+on it came out owned by SYSTEM, and every inherited `CREATOR OWNER` ACE
+resolved to SYSTEM rather than to the principal that created the object.
+
+KACS resolves the descriptor **before** the create, while both inputs
+are still right, and hands the answer down. <a id="cite-facs.ovl-copy-up.resolve-before-create"></a>
+
+<a id="trm-3-9-8-1"></a>
+
+## The descriptor rides on a credential <a id="cite-facs.ovl-copy-up.descriptor-on-credential"></a>
+
+The kernel offers two hooks for this, and both work the same way: they
+hand the LSM a credential to fill in, and overlayfs then performs the
+creation under it.
+
+| Hook | Fires for | KACS resolves |
+|---|---|---|
+| `security_inode_copy_up` | A lower object being materialised in the upper layer | The source object's own effective descriptor <a id="cite-facs.ovl-copy-up.copy-up-hook-resolves-source"></a> |
+| `security_dentry_create_files_as` | An ordinary create, mkdir, mknod, symlink or tmpfile | Inheritance from the overlay parent, for the calling principal <a id="cite-facs.ovl-copy-up.create-hook-resolves-inheritance"></a> |
+
+Either way the result is attached to that credential, and the inode
+creation path prefers it over computing inheritance itself. <a id="cite-facs.ovl-copy-up.creation-prefers-attached"></a>
+
+The credential is what makes the lifetime sound, and it is the reason
+this needs no context of its own:
+
+- Overlayfs installs the credential with `override_creds()` and reverts
+  it through a scope guard, on every exit path including errors. <a id="cite-facs.ovl-copy-up.credential-reverted-on-every-path"></a>
+- Each scope wraps exactly one creation and nothing else. <a id="cite-facs.ovl-copy-up.one-creation-per-scope"></a> A create over
+  a whiteout makes one temporary object and then *renames* it over the
+  whiteout, rather than creating a second.
+- Releasing the credential releases the descriptor. <a id="cite-facs.ovl-copy-up.release-frees-descriptor"></a>
+
+So there is nothing to arm and nothing to disarm. Outside that scope the
+credential is simply not current.
+
+A credential *derived* from one carrying a pending descriptor does not
+inherit it. <a id="cite-facs.ovl-copy-up.derived-credential-does-not-inherit"></a> Without that rule the descriptor would escape its create and
+be stamped on the next unrelated object the task made.
+
+<a id="trm-3-9-8-2"></a>
+
+## A copied-up object keeps its own descriptor <a id="cite-facs.ovl-copy-up.copy-up-preserves-descriptor"></a>
+
+A copy-up is not a new object, and inheritance is the wrong answer for
+it even from the right parent: the object already had a descriptor.
+KACS carries the source's across, whether that descriptor was stored on
+the lower inode or synthesized for it under a mount policy ([File Descriptor Storage](<~kernel/internals/kacs/file-security/descriptor-storage-and-caching#trm-3-9-5>)). <a id="cite-facs.ovl-copy-up.source-descriptor-may-be-synthesised"></a>
+
+Without this the defect runs in both directions. An object with a
+deliberately narrow descriptor is widened by the act of writing to it,
+and a deliberately permissive one is narrowed — in both cases changing
+what *other* principals may do to it as a side effect of somebody
+else's write. The principal doing the writing already held write access;
+nothing about that should re-decide the object's policy for everyone
+else.
+
+<a id="trm-3-9-8-3"></a>
+
+## An ordinary create inherits from the overlay <a id="cite-facs.ovl-copy-up.create-inherits-from-overlay"></a>
+
+A genuinely new object has nothing to preserve, so it inherits — but
+from the merged directory the caller named and as the caller, which is
+what it would have got had overlayfs not been in the way. The parent's
+descriptor is read through the overlay inode, so a descriptor set at
+runtime governs the children created after it, and `CREATOR OWNER`
+resolves to the principal making the object. <a id="cite-facs.ovl-copy-up.creator-owner-resolves-to-caller"></a>
+
+A creator descriptor supplied explicitly to a native create ([KACS-Native Open](<~kernel/internals/kacs/file-security/kacs-native-open#trm-3-9-2>)) is
+picked up here for the same reason. <a id="cite-facs.ovl-copy-up.supplied-descriptor-honoured"></a> The request records the parent the
+caller resolved — an overlay inode — so a match attempted at inode
+creation time, where only the backing inode is visible, could never
+fire, and the descriptor the caller asked for would be silently replaced
+by inheritance.
+
+A caller with no token is left alone rather than denied here, so the
+inode creation path reaches its own denial. <a id="cite-facs.ovl-copy-up.no-token-passes-through"></a> Two places must not decide
+the same thing differently.
+
+<a id="trm-3-9-8-4"></a>
+
+## The descriptor xattr is not copied <a id="cite-facs.ovl-copy-up.canonical-xattr-discarded"></a>
+
+On copy-up the canonical descriptor xattr is discarded during the xattr
+copy rather than replicated, because the credential above already
+carries it; copying it as well would overwrite the descriptor with the
+same answer. It could not be copied through that path in any case — the
+canonical xattr is not readable or writable as an ordinary xattr, since
+descriptor mutation is the dedicated interface's job ([The Set-Security Interface](<~kernel/internals/kacs/file-security/the-set-security-interface#trm-3-9-6>)).
+
+<a id="trm-3-9-8-5"></a>
+
+## Failure <a id="cite-facs.ovl-copy-up.resolve-failure-fails-create"></a>
+
+Failing to resolve a descriptor fails the create. That holds for both
+hooks: a source whose descriptor cannot be read fails the copy-up, and a
+parent whose descriptor cannot be resolved — or which does not grant the
+caller the right to add the object — fails the create.
+
+The alternative in each case is to fall back to inheritance from a
+backing directory as the mounter, which is the outcome this exists to
+prevent, and which leaves nothing behind to find later.
+
+An object on an unmanaged mount is the one case that passes through
+untouched: there is nothing there to preserve or to inherit. <a id="cite-facs.ovl-copy-up.unmanaged-untouched"></a>

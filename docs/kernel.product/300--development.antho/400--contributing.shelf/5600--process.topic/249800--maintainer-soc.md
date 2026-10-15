@@ -4,6 +4,9 @@ type: reference
 description: "The SoC subsystem is a place of aggregation for SoC-specific code. The main components of the subsystem are:"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-soc-subsystem"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

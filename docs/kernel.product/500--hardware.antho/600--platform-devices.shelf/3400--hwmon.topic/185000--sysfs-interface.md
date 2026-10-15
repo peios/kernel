@@ -4,6 +4,9 @@ type: reference
 description: "The libsensors library offers an interface to the raw sensors data through the sysfs interface. Since lm-sensors 3.0.0, libsensors is completely chip-independent. It assumes that all the kernel drivers implement the standard sysfs…"
 ---
 
+> **Peios:** Interface availability and resource limits do not grant native access. Peios applies descriptor/handle checks, its sysfs write gate and mapped privilege checks where applicable. Read inherited privileged/unprivileged terminology with [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-naming-and-data-format-standards-for-sysfs-files"></a>
 
 The libsensors library offers an interface to the raw sensors data through the sysfs interface. Since lm-sensors 3.0.0, libsensors is completely chip-independent. It assumes that all the kernel drivers implement the standard sysfs interface described in this document. This makes adding or updating support for any given chip very easy, as libsensors, and applications using it, do not need to be modified. This is a major improvement compared to lm-sensors 2.

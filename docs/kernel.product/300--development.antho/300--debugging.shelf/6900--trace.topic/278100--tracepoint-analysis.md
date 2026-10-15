@@ -4,6 +4,9 @@ type: reference
 description: "Tracepoints (see Documentation/trace/tracepoints.rst) can be used without creating custom kernel modules to register probe functions using the event tracing infrastructure."
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-notes-on-analysing-behaviour-using-events-and-tracepoints"></a>
 
 **Author:** Mel Gorman (PCL information heavily based on email from Ingo Molnar)

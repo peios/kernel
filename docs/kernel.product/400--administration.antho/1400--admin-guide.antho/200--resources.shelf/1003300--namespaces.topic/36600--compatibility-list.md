@@ -4,6 +4,9 @@ type: reference
 description: "This document contains the information about the problems user may have when creating tasks living in different namespaces."
 ---
 
+> **Peios:** User namespaces and Unix ID mappings do not create native privileges or determine KACS descriptor identity. Mount authorization uses the native privilege/descriptor rules; the descriptor-only new-filesystem allowlist is `tmpfs`, `proc` and `stratafs`. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-namespaces-compatibility-list"></a>
 
 This document contains the information about the problems user may have when creating tasks living in different namespaces.

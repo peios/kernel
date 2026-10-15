@@ -4,6 +4,9 @@ type: reference
 description: "This chapter describes how maintainers can create and submit pull requests to other maintainers. This is useful for transferring changes from one maintainers tree to another maintainers tree."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-creating-pull-requests"></a>
 
 This chapter describes how maintainers can create and submit pull requests to other maintainers. This is useful for transferring changes from one maintainers tree to another maintainers tree.

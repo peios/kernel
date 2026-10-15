@@ -851,6 +851,7 @@ enum skb_tstamp_type {
  *	@dst_pending_confirm: need to confirm neighbour
  *	@decrypted: Decrypted SKB
  *	@slow_gro: state present at GRO time, slower prepare step required
+ *	@ntfe_refusal: packet emitted by NTFE as a refusal response
  *	@tstamp_type: When set, skb->tstamp has the
  *		delivery_time clock base of skb->tstamp.
  *	@napi_id: id of the NAPI struct this skb came from

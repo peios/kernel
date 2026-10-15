@@ -4,6 +4,9 @@ type: reference
 description: "The intent of this file is to give a brief summary of hugetlbpage support in the Linux kernel. This support is built on top of multiple page size support that is provided by most modern architectures. For example, x86 CPUs normally support…"
 ---
 
+> **Peios:** Unix mode and ownership updates described here are metadata operations, not native access delegation. Sysfs writes have a separate KACS gate; managed-file operations use descriptors and handle grants. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-hugetlb-pages"></a>
 
 <a id="rst-overview"></a>

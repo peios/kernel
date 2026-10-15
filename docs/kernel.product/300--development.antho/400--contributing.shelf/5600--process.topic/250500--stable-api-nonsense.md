@@ -4,6 +4,9 @@ type: reference
 description: "(all of your questions answered and then some)"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-the-linux-kernel-driver-interface"></a>
 <a id="rst-stable-api-nonsense"></a>
 

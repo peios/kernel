@@ -1,223 +1,151 @@
 ---
 title: "unshare system call"
 type: reference
-description: "This document describes the new system call, unshare(). The document provides an overview of the feature, why it is needed, how it can be used, its interface specification, design, implementation and how it can be tested."
+description: "Unsharing process resources and namespaces in the Peios kernel."
 ---
 
 <a id="rst-unshare-system-call"></a>
 
-This document describes the new system call, unshare(). The document provides an overview of the feature, why it is needed, how it can be used, its interface specification, design, implementation and how it can be tested.
+`unshare()` separates selected parts of the calling task's context from other
+tasks that share them. It does not create a new process or grant native authority.
 
 <a id="rst-change-log"></a>
 
-## Change Log
+## Document history
 
-version 0.1  Initial document, Janak Desai ([janak@us.ibm.com](<mailto:janak@us.ibm.com>)), Jan 11, 2006
+Adapted from Janak Desai's January 2006 design document for the implementation
+in the Peios kernel. The old proposal's address-space splitting and
+unimplemented-System-V-semaphore descriptions do not describe this kernel.
 
 <a id="rst-contents"></a>
-
-## Contents
-
-> 1. Overview
->
-> 2. Benefits
->
-> 3. Cost
->
-> 4. Requirements
->
-> 5. Functional Specification
->
-> 6. High Level Design
->
-> 7. Low Level Design
->
-> 8. Test Specification
->
-> 9. Future Work
-
 <a id="rst-overview"></a>
 
-## 1) Overview
+## Overview
 
-Most legacy operating system kernels support an abstraction of threads as multiple execution contexts within a process. These kernels provide special resources and mechanisms to maintain these "threads". The Linux kernel, in a clever and simple manner, does not make distinction between processes and "threads". The kernel allows processes to share resources and thus they can achieve legacy "threads" behavior without requiring additional data structures and mechanisms in the kernel. The power of implementing threads in this manner comes not only from its simplicity but also from allowing application programmers to work outside the confinement of all-or-nothing shared resources of legacy threads. On Linux, at the time of thread creation using the clone system call, applications can selectively choose which resources to share between threads.
-
-unshare() system call adds a primitive to the Linux thread model that allows threads to selectively 'unshare' any resources that were being shared at the time of their creation. unshare() was conceptualized by Al Viro in the August of 2000, on the Linux-Kernel mailing list, as part of the discussion on POSIX threads on Linux.  unshare() augments the usefulness of Linux threads for applications that would like to control shared resources without creating a new process. unshare() is a natural addition to the set of available primitives on Linux that implement the concept of process/thread as a virtual machine.
+`clone()` selects resources to share when creating a task. `unshare()` lets an
+existing task stop sharing selected resources, subject to flag combinations,
+task state, namespace configuration and authorization checks. An unshared file
+descriptor table still refers to the same open file descriptions: it does not
+reopen files, reset their positions or obtain new KACS handle grants.
 
 <a id="rst-benefits"></a>
-
-## 2) Benefits
-
-unshare() would be useful to large application frameworks such as PAM where creating a new process to control sharing/unsharing of process resources is not possible. Since namespaces are shared by default when creating a new process using fork or clone, unshare() can benefit even non-threaded applications if they have a need to disassociate from default shared namespace. The following lists two use-cases where unshare() can be used.
-
 <a id="rst-per-security-context-namespaces"></a>
 
-### 2.1 Per-security context namespaces
+## Private filesystem views
 
-unshare() can be used to implement polyinstantiated directories using the kernel's per-process namespace mechanism. Polyinstantiated directories, such as per-user and/or per-security context instance of /tmp, /var/tmp or per-security context instance of a user's home directory, isolate user processes when working with these directories. Using unshare(), a PAM module can easily setup a private namespace for a user at login. Polyinstantiated directories are required for Common Criteria certification with Labeled System Protection Profile, however, with the availability of shared-tree feature in the Linux kernel, even regular Linux systems can benefit from setting up private namespaces at login and polyinstantiating /tmp, /var/tmp and other directories deemed appropriate by system administrators.
+A private mount namespace permits changes to a task's mount view without
+necessarily changing the original namespace. Mount propagation settings can
+still propagate events between namespaces. Creating the namespace and making
+mounts within it are separate operations with their own authorization.
+
+Peios has a native mount-namespace creation path. When the requested nsproxy
+namespace flags select only `CLONE_NEWNS`, `kernel/nsproxy.c` does not impose
+its generic `CAP_SYS_ADMIN` gate. Native mount-namespace checks still apply.
+Adding another nsproxy namespace type, such as `CLONE_NEWNET` or `CLONE_NEWIPC`,
+retains that gate, interpreted as enabled `SeTcbPrivilege`. A new user namespace
+does not create native token privileges. See
+[Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
 
 <a id="rst-unsharing-of-virtual-memory-and-or-open-files"></a>
 
-### 2.2 unsharing of virtual memory and/or open files
+## File tables and address spaces
 
-Consider a client/server application where the server is processing client requests by creating processes that share resources such as virtual memory and open files. Without unshare(), the server has to decide what needs to be shared at the time of creating the process which services the request. unshare() allows the server an ability to disassociate parts of the context during the servicing of the request. For large and complex middleware application frameworks, this ability to unshare() after the process was created can be very useful.
+`CLONE_FILES` can copy a shared file descriptor table. `CLONE_FS` can separate
+the root directory, working directory and umask context. In contrast,
+`CLONE_VM`, `CLONE_SIGHAND` and `CLONE_THREAD` do not split an actively shared
+address space, signal-handler table or thread group. They are accepted only
+when the corresponding sharing checks establish there is nothing to split;
+otherwise the call fails with `EINVAL`.
 
 <a id="rst-cost"></a>
-
-## 3) Cost
-
-In order to not duplicate code and to handle the fact that unshare() works on an active task (as opposed to clone/fork working on a newly allocated inactive task) unshare() had to make minor reorganizational changes to copy\_\* functions utilized by clone/fork system call. There is a cost associated with altering existing, well tested and stable code to implement a new feature that may not get exercised extensively in the beginning. However, with proper design and code review of the changes and creation of an unshare() test for the LTP the benefits of this new feature can exceed its cost.
-
 <a id="rst-requirements"></a>
 
-## 4) Requirements
+## Allocation and lifetime
 
-unshare() reverses sharing that was done using clone(2) system call, so unshare() should have a similar interface as clone(2). That is, since flags in clone(int flags, void \*stack) specifies what should be shared, similar flags in unshare(int flags) should specify what should be unshared. Unfortunately, this may appear to invert the meaning of the flags from the way they are used in clone(2). However, there was no easy solution that was less confusing and that allowed incremental context unsharing in future without an ABI change.
-
-unshare() interface should accommodate possible future addition of new context flags without requiring a rebuild of old applications. If and when new context flags are added, unshare() design should allow incremental unsharing of those resources on an as needed basis.
+The implementation prepares replacement contexts before publishing them to
+the current task. Allocation can fail. Contexts still shared with other tasks
+remain alive through their references. Operations must obey the relevant task,
+filesystem-context, namespace and credential locking rules.
 
 <a id="rst-functional-specification"></a>
 
-## 5) Functional Specification
+## Interface
 
-- **NAME**
+```c
+#define _GNU_SOURCE
+#include <sched.h>
 
-  unshare - disassociate parts of the process execution context
+int unshare(int flags);
+```
 
-- **SYNOPSIS**
+The libc interface returns zero on success, or `-1` with `errno` on failure.
+Flags include:
 
-  \#include &lt;sched.h&gt;
+| Flag | Effect or constraint |
+| --- | --- |
+| `CLONE_FILES` | Separate the file descriptor table if shared. |
+| `CLONE_FS` | Separate filesystem context if needed. |
+| `CLONE_NEWNS` | Create a mount namespace; implies `CLONE_FS`. |
+| `CLONE_NEWUSER` | Create a user namespace; implies `CLONE_THREAD` and `CLONE_FS`, with user-namespace and single-thread checks. |
+| `CLONE_NEWUTS`, `CLONE_NEWIPC`, `CLONE_NEWNET`, `CLONE_NEWCGROUP` | Request the corresponding namespace, subject to configuration and authorization. |
+| `CLONE_NEWPID`, `CLONE_NEWTIME` | Change the namespace context used for subsequent children; these do not move the caller into the new PID/time namespace. |
+| `CLONE_SYSVSEM` | Detach from the shared System V semaphore undo list. `CLONE_NEWIPC` also detaches it. |
+| `CLONE_VM` | Implies `CLONE_SIGHAND`; requires an already single-threaded, unshared context. |
+| `CLONE_SIGHAND` | Implies `CLONE_THREAD`; cannot split a shared signal-handler table. |
+| `CLONE_THREAD` | Requires an empty thread group apart from the caller. |
 
-  int unshare(int flags);
-
-- **DESCRIPTION**
-
-  unshare() allows a process to disassociate parts of its execution context that are currently being shared with other processes. Part of execution context, such as the namespace, is shared by default when a new process is created using fork(2), while other parts, such as the virtual memory, open file descriptors, etc, may be shared by explicit request to share them when creating a process using clone(2).
-
-  The main use of unshare() is to allow a process to control its shared execution context without creating a new process.
-
-  The flags argument specifies one or bitwise-or'ed of several of the following constants.
-
-  - **CLONE_FS**
-
-    If CLONE_FS is set, file system information of the caller is disassociated from the shared file system information.
-
-  - **CLONE_FILES**
-
-    If CLONE_FILES is set, the file descriptor table of the caller is disassociated from the shared file descriptor table.
-
-  - **CLONE_NEWNS**
-
-    If CLONE_NEWNS is set, the namespace of the caller is disassociated from the shared namespace.
-
-  - **CLONE_VM**
-
-    If CLONE_VM is set, the virtual memory of the caller is disassociated from the shared virtual memory.
-
-- **RETURN VALUE**
-
-  On success, zero returned. On failure, -1 is returned and errno is
-
-- **ERRORS**
-
-  - **EPERM   CLONE_NEWNS was specified by a non-root process (process**
-
-    without CAP_SYS_ADMIN).
-
-  - **ENOMEM  Cannot allocate sufficient memory to copy parts of caller's**
-
-    context that need to be unshared.
-
-  EINVAL  Invalid flag was specified as an argument.
-
-- **CONFORMING TO**
-
-  The unshare() call is Linux-specific and  should  not be used in programs intended to be portable.
-
-- **SEE ALSO**
-
-  clone(2), fork(2)
+Unknown or incompatible flags and unsupported sharing requests can return
+`EINVAL`. Authorization failures can return `EPERM` or a native denial such as
+`EACCES`; allocation failures can return `ENOMEM`. Namespace creation also has
+its own configuration, nesting and resource limits, so this is not an exhaustive
+error list. UID 0 alone is not the native authorization rule.
 
 <a id="rst-high-level-design"></a>
-
-## 6) High Level Design
-
-Depending on the flags argument, the unshare() system call allocates appropriate process context structures, populates it with values from the current shared version, associates newly duplicated structures with the current task structure and releases corresponding shared versions. Helper functions of clone (copy\_\*) could not be used directly by unshare() because of the following two reasons.
-
-> 1. clone operates on a newly allocated not-yet-active task structure, where as unshare() operates on the current active task. Therefore unshare() has to take appropriate task_lock() before associating newly duplicated context structures
->
-> 2. unshare() has to allocate and duplicate all context structures that are being unshared, before associating them with the current task and releasing older shared structures. Failure do so will create race conditions and/or oops when trying to backout due to an error. Consider the case of unsharing both virtual memory and namespace. After successfully unsharing vm, if the system call encounters an error while allocating new namespace structure, the error return code will have to reverse the unsharing of vm. As part of the reversal the system call will have to go back to older, shared, vm structure, which may not exist anymore.
-
-Therefore code from copy\_\* functions that allocated and duplicated current context structure was moved into new dup\_\* functions. Now, copy\_\* functions call dup\_\* functions to allocate and duplicate appropriate context structures and then associate them with the task structure that is being constructed. unshare() system call on the other hand performs the following:
-
-> 1. Check flags to force missing, but implied, flags
->
-> 2. For each context structure, call the corresponding unshare() helper function to allocate and duplicate a new context structure, if the appropriate bit is set in the flags argument.
->
-> 3. If there is no error in allocation and duplication and there are new context structures then lock the current task structure, associate new context structures with the current task structure, and release the lock on the current task structure.
->
-> 4. Appropriately release older, shared, context structures.
-
 <a id="rst-low-level-design"></a>
-
-## 7) Low Level Design
-
-Implementation of unshare() can be grouped in the following 4 different items:
-
-> - **a)** Reorganization of existing copy\_\* functions
->
-> - **b)** unshare() system call service function
->
-> - **c)** unshare() helper functions for each different process context
->
-> - **d)** Registration of system call number for different architectures
-
 <a id="rst-reorganization-of-copy-functions"></a>
 
-### 7.1) Reorganization of copy\_\* functions
+## Implementation
 
-Each copy function such as copy_mm, copy_namespace, copy_files, etc, had roughly two components. The first component allocated and duplicated the appropriate structure and the second component linked it to the task structure passed in as an argument to the copy function. The first component was split into its own function. These dup\_\* functions allocated and duplicated the appropriate context structure. The reorganized copy\_\* functions invoked their corresponding dup\_\* functions and then linked the newly duplicated structures to the task structure with which the copy function was called.
+`ksys_unshare()` in `kernel/fork.c` normalizes implied flags, checks supported
+combinations, prepares filesystem/file-table changes, then prepares the user
+namespace and nsproxy. Namespace-specific creation code runs its own checks.
+The function also prepares credential accounting before publishing new state.
 
 <a id="rst-unshare-system-call-service-function"></a>
 
-### 7.2) unshare() system call service function
-
-> - Check flags Force implied flags. If CLONE_THREAD is set force CLONE_VM. If CLONE_VM is set, force CLONE_SIGHAND. If CLONE_SIGHAND is set and signals are also being shared, force CLONE_THREAD. If CLONE_NEWNS is set, force CLONE_FS.
->
-> - For each context flag, invoke the corresponding unshare\_\* helper routine with flags passed into the system call and a reference to pointer pointing the new unshared structure
->
-> - If any new structures are created by unshare\_\* helper functions, take the task_lock() on the current task, modify appropriate context pointers, and release the task lock.
->
-> - For all newly unshared structures, release the corresponding older, shared, structures.
+On success it detaches semaphore state when requested, handles shared-memory
+state for a new IPC namespace, installs the nsproxy, swaps the filesystem and
+file-table pointers under the required locks, and commits new user-namespace
+credentials. It then releases old or unused references. Failure paths release
+prepared state rather than leaving partially installed replacement contexts.
 
 <a id="rst-unshare-helper-functions"></a>
 
-### 7.3) unshare\_\* helper functions
-
-For unshare\_\* helpers corresponding to CLONE_SYSVSEM, CLONE_SIGHAND, and CLONE_THREAD, return -EINVAL since they are not implemented yet. For others, check the flag value to see if the unsharing is required for that structure. If it is, invoke the corresponding dup\_\* function to allocate and duplicate the structure and return a pointer to it.
+`unshare_fs()`, `unshare_fd()`, `unshare_userns()` and
+`unshare_nsproxy_namespaces()` prepare the relevant changes. Unlike the original
+design proposal, `CLONE_SYSVSEM` is implemented. No helper clones a live shared
+address space to implement `CLONE_VM` unsharing.
 
 <a id="rst-finally"></a>
 
-### 7.4) Finally
-
-Appropriately modify architecture specific code to register the new system call.
+Architecture syscall tables expose the existing `unshare` syscall; adding a
+new resource flag does not require a new syscall number.
 
 <a id="rst-test-specification"></a>
 
-## 8) Test Specification
+## Validation considerations
 
-The test for unshare() should test the following:
-
-> 1. Valid flags: Test to check that clone flags for signal and signal handlers, for which unsharing is not implemented yet, return -EINVAL.
->
-> 2. Missing/implied flags: Test to make sure that if unsharing namespace without specifying unsharing of filesystem, correctly unshares both namespace and filesystem information.
->
-> 3. For each of the four (namespace, filesystem, files and vm) supported unsharing, verify that the system call correctly unshares the appropriate structure. Verify that unsharing them individually as well as in combination with each other works as expected.
->
-> 4. Concurrent execution: Use shared memory segments and futex on an address in the shm segment to synchronize execution of about 10 threads. Have a couple of threads execute execve, a couple \_exit and the rest unshare with different combination of flags. Verify that unsharing is performed as expected and that there are no oops or hangs.
+Test actual resource separation, implied flags, invalid combinations, failure
+cleanup and namespace limits. For file tables, distinguish an independent table
+from the shared open file descriptions it contains. For Peios, include native
+authorization denials and the difference between mount-only namespace requests
+and combined namespace requests. These are review requirements, not a report
+that this documentation change ran runtime tests.
 
 <a id="rst-future-work"></a>
 
-## 9) Future Work
+## Unsupported sharing changes
 
-The current implementation of unshare() does not allow unsharing of signals and signal handlers. Signals are complex to begin with and to unshare signals and/or signal handlers of a currently running process is even more complex. If in the future there is a specific need to allow unsharing of signals and/or signal handlers, it can be incrementally added to unshare() without affecting legacy applications using unshare().
+Splitting a live thread group, shared signal-handler table or shared address
+space is not implemented by `unshare()`. Programs requiring a separate address
+space should use an appropriate process-creation interface instead.

@@ -4,6 +4,9 @@ type: reference
 description: "This document describes how to check if some Linux kernel problem occurs in code currently supported by developers -- to then explain how to locate the change causing the issue, if it is a regression (e.g. did not happen with earlier…"
 ---
 
+> **Peios:** The upstream Linux build, report and distribution procedures below apply in that context. Use [Building Peios](<~kernel/development/start-here/building-peios>) and the workspace `_styleguide` for Peios development and track Peios work in Acta.
+
+
 <a id="rst-how-to-verify-bugs-and-bisect-regressions"></a>
 
 <!-- SPDX-License-Identifier: (GPL-2.0+ OR CC-BY-4.0) -->

@@ -4,6 +4,9 @@ type: reference
 description: "As developers of the Linux kernel, we have a keen interest in how our software is used and how the license for our software is enforced. Compliance with the reciprocal sharing obligations of GPL-2.0 is critical to the long-term…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-linux-kernel-enforcement-statement"></a>
 <a id="rst-process-statement-kernel"></a>
 

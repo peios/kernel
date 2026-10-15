@@ -4,6 +4,9 @@ type: reference
 description: "The following is a consolidated list of the kernel parameters as implemented by the __setup(), early_param(), core_param() and module_param() macros and sorted into English Dictionary order (defined as ignoring all punctuation and sorting…"
 ---
 
+> **Peios:** This is the inherited Linux parameter catalogue. Peios configuration fixes several defaults and adds native parameters: `kacs_fwsig=log|enforce` selects file-based firmware checking, and `stratafs.test_hooks=1` enables the compiled StrataFS test hooks for a test boot. Integrity lockdown and required module signatures remain enforced; `rootfstype=ramfs` does not replace the PKM tmpfs rootfs. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-the-kernel-s-command-line-parameters"></a>
 <a id="rst-kernelparameters"></a>
 

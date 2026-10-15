@@ -4,6 +4,9 @@ type: reference
 description: "This document serves as a starting point and lookup for debugging device drivers in the media subsystem and to debug these drivers from userspace."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-debugging-and-tracing-in-the-media-subsystem"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

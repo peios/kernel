@@ -4,6 +4,9 @@ type: reference
 description: "From: https://blog.ffwll.ch/2013/11/botching-up-ioctls.html"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-how-to-avoid-botching-up-ioctls"></a>
 
 From: [https://blog.ffwll.ch/2013/11/botching-up-ioctls.html](<https://blog.ffwll.ch/2013/11/botching-up-ioctls.html>)

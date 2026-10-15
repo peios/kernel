@@ -4,6 +4,9 @@ type: reference
 description: "This document is designed to provide a list of the minimum levels of software necessary to run the current kernel version."
 ---
 
+> **Peios:** Use [Building Peios](<~kernel/development/start-here/building-peios>) for the repository build, toolchain, configuration and test entry points. This article describes the underlying Linux machinery or upstream workflow. Its standalone build/install commands do not establish a qualified Peios kernel or signed release modules.
+
+
 <a id="rst-minimal-requirements-to-compile-the-kernel"></a>
 <a id="rst-changes"></a>
 

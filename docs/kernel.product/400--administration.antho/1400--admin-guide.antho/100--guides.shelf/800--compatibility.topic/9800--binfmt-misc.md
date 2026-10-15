@@ -4,6 +4,9 @@ type: reference
 description: "This Kernel feature allows you to invoke almost (for restrictions see below) every program by simply typing its name in the shell. This includes for example compiled Java(TM), Python or Emacs programs."
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-kernel-support-for-miscellaneous-binary-formats-binfmt-misc"></a>
 
 This Kernel feature allows you to invoke almost (for restrictions see below) every program by simply typing its name in the shell. This includes for example compiled Java(TM), Python or Emacs programs.
@@ -60,7 +63,7 @@ Here is what the fields mean:
     >
     > - **`C` - credentials**
     >
-    >   Currently, the behavior of binfmt_misc is to calculate the credentials and security token of the new process according to the interpreter. When this flag is included, these attributes are calculated according to the binary. It also implies the `O` flag. This feature should be used with care as the interpreter will run with root permissions when a setuid binary owned by root is run with binfmt_misc.
+    >   Currently, the behavior of binfmt_misc is to calculate the credentials and security token of the new process according to the interpreter. When this flag is included, these attributes are calculated according to the binary. It also implies the `O` flag. In upstream Linux this can cause a root-owned set-user-ID binary to run its interpreter with elevated Unix credentials. In Peios, it does not mint native token authority; exec access, signing/PIP and PSB rules still apply.
     >
     > - **`F` - fix binary**
     >

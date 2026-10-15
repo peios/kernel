@@ -4,6 +4,9 @@ type: reference
 description: "The need for a document like this one became apparent in the linux-kernel mailing list as the same questions, asking for pointers to information, appeared again and again."
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-index-of-further-kernel-documentation"></a>
 <a id="rst-kernel-docs"></a>
 

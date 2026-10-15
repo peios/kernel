@@ -1,0 +1,125 @@
+{
+  "status": "implemented for review; originals retained",
+  "kernel_main": "fd763de6ef498489711a885e7d6f92162db5aff0",
+  "preservation": {
+    "original_trm_files": 181,
+    "original_kernel_doc_files": 10535,
+    "source_articles": 151,
+    "content_pages": 165,
+    "new_and_extended_articles": 201,
+    "named_claims": 3180,
+    "section_destinations": 1011,
+    "generated_pages": 15,
+    "existing_articles_extended": [
+      "docs/kernel.product/100--introduction.topic/100--overview.md",
+      "docs/kernel.product/200--internals.antho/300--storage.shelf/2900--filesystems.topic/144400--overlayfs.md",
+      "docs/kernel.product/200--internals.antho/50--start-here.topic/100--overview.md",
+      "docs/kernel.product/200--internals.antho/500--security.shelf/6000--security.topic/257900--credentials.md"
+    ],
+    "originals_retained": true,
+    "claim_anchors_preserved": true,
+    "documentation_and_tooling_only": true,
+    "unrelated_original_docs_preserved": true
+  },
+  "authority": {
+    "mapped_articles": 9632,
+    "authored_articles": 7,
+    "runtime_dependencies": 7651,
+    "assets": 87,
+    "errors": 0
+  },
+  "rendered_site": {
+    "html_pages": 10211,
+    "local_links_and_assets": 3279988,
+    "errors": []
+  },
+  "external_learn_links": {
+    "routes": 19,
+    "missing": [],
+    "fragments_checked": 7,
+    "validation": "all routes and fragments resolve against the local learn tree"
+  },
+  "render_checks": {
+    "articles": [
+      "kernel/introduction/architecture-and-reading-guide",
+      "kernel/internals/kacs/start-here/overview",
+      "kernel/userspace/native/kacs/generated-token-and-session-abi",
+      "kernel/internals/stratafs/security/copy-up-descriptors"
+    ],
+    "inherited_diagnostics": 29,
+    "diagnostics_unchanged": true,
+    "browser_visual_check": "Unavailable: no browser connected; HTML and HTTP checked."
+  },
+  "generator_validation": {
+    "outputs_current": 15,
+    "ownership_and_coverage_tests_passed": 3,
+    "canonical_source_matches_original_tables": true,
+    "initial_table_differences": "source and generator paths only"
+  },
+  "preview": {
+    "address": "127.0.0.1:8725",
+    "kind": "static snapshot of strict Trail build",
+    "http_checks": [
+      {
+        "path": "kernel/introduction/architecture-and-reading-guide/",
+        "status": 200,
+        "bytes": 25684,
+        "html": true
+      },
+      {
+        "path": "kernel/internals/kacs/start-here/overview/",
+        "status": 200,
+        "bytes": 30824,
+        "html": true
+      },
+      {
+        "path": "kernel/internals/kmes/overview/",
+        "status": 200,
+        "bytes": 26143,
+        "html": true
+      },
+      {
+        "path": "kernel/internals/lcs/start-here/overview/",
+        "status": 200,
+        "bytes": 35044,
+        "html": true
+      },
+      {
+        "path": "kernel/internals/stratafs/start-here/overview/",
+        "status": 200,
+        "bytes": 28691,
+        "html": true
+      },
+      {
+        "path": "kernel/internals/ntfe/overview/",
+        "status": 200,
+        "bytes": 30914,
+        "html": true
+      },
+      {
+        "path": "kernel/userspace/native/start-here/overview/",
+        "status": 200,
+        "bytes": 17545,
+        "html": true
+      },
+      {
+        "path": "kernel/administration/stratafs/mount-options/",
+        "status": 200,
+        "bytes": 28222,
+        "html": true
+      },
+      {
+        "path": "kernel/development/native-subsystems/overview/",
+        "status": 200,
+        "bytes": 23806,
+        "html": true
+      }
+    ],
+    "original_port": "8724 was occupied by another Trail server; it was left intact"
+  },
+  "editorial_scope": "Reorganisation, split/merge integration, canonical source paths, source-grounded boot invariants and scoped NTFE authority wording; not a fresh full semantic audit of all TRM prose.",
+  "runtime_kernel_changes": false,
+  "committed": false,
+  "recovery_artifacts": "/home/jack/projects/peios/.tmp/pei-1505-trm-work",
+  "trail_binary_sha256": "2cc02b091919566358692bc9ebcd0561c24bf09039dedfe186f25385d752e69e"
+}

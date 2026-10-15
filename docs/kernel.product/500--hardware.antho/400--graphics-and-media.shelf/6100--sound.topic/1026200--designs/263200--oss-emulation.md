@@ -4,6 +4,9 @@ type: reference
 description: "Jan. 22, 2004 Takashi Iwai <tiwai@suse.de>"
 ---
 
+> **Peios:** References to Unix root and file modes below describe the inherited interface conventions. They are not sufficient Peios authorization: native descriptor/handle checks, the separate sysfs write gate, and mapped native privileges apply as appropriate. Debugfs additionally remains subject to integrity lockdown. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-notes-on-kernel-oss-emulation"></a>
 
 Jan. 22, 2004  Takashi Iwai &lt;[tiwai@suse.de](<mailto:tiwai@suse.de>)&gt;

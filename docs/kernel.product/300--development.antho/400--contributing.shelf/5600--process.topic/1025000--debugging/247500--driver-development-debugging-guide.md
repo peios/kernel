@@ -4,6 +4,9 @@ type: reference
 description: "This document serves as a general starting point and lookup for debugging device drivers. While this guide focuses on debugging that requires re-compiling the module/kernel, the userspace debugging guide…"
 ---
 
+> **Peios:** This is inherited Linux development and upstream contribution guidance. For Peios repository changes, follow the workspace `_styleguide` and use [Building Peios](<~kernel/development/start-here/building-peios>). Upstream mailing lists, maintainer roles and release processes below apply when contributing to Linux upstream.
+
+
 <a id="rst-debugging-advice-for-driver-development"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

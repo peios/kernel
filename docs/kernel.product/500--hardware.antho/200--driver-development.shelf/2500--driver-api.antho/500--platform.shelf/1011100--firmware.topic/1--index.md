@@ -4,6 +4,9 @@ type: reference
 description: "Reference for Linux Firmware API."
 ---
 
+> **Peios:** File-based firmware loading has an additional Peios signature check. The development profile defaults to logging (`kacs_fwsig=log`); `kacs_fwsig=enforce` requires PeiosTcb trust for that path. This does not cover the separate `FW_UPLOAD` interface. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-linux-firmware-api"></a>
 
 - [Introduction](<~kernel/hardware/driver-api/firmware/introduction>)

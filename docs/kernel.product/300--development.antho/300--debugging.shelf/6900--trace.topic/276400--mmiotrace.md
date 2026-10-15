@@ -4,6 +4,12 @@ type: reference
 description: "Home page and links to optional user space tools:"
 ---
 
+> **Peios:** Integrity lockdown restricts debugfs access. Read-only files passing its safety checks can remain accessible, but writable or ioctl/mmap-capable debugfs interfaces can fail with `EPERM`. Native authority does not bypass lockdown. These upstream diagnostic recipes therefore depend on interface availability in the configured kernel. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-in-kernel-memory-mapped-i-o-tracing"></a>
 
 Home page and links to optional user space tools:

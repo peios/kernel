@@ -4,6 +4,9 @@ type: reference
 description: "The first step is to download the Kernel's source code, either via a distribution-specific source file or via the Kernel's main git tree1."
 ---
 
+> **Peios:** The upstream Linux build, report and distribution procedures below apply in that context. Use [Building Peios](<~kernel/development/start-here/building-peios>) and the workspace `_styleguide` for Peios development and track Peios work in Acta.
+
+
 <a id="rst-building-support-for-a-media-device"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

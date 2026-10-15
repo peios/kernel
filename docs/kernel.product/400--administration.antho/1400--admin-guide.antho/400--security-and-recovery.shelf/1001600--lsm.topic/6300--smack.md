@@ -4,6 +4,9 @@ type: reference
 description: "\"Good for you, you've decided to clean the elevator!\" - The Elevator, from Dark Star"
 ---
 
+> **Peios:** This is reference material for an upstream LSM or its configuration. Peios configures `landlock,lockdown,integrity,pkm`; alternative MAC LSMs are incompatible with PKM, and this article is not an instruction to replace the Peios security stack. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-smack"></a>
 
 > "Good for you, you've decided to clean the elevator\!" - The Elevator, from Dark Star

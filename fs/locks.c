@@ -1740,8 +1740,9 @@ void lease_get_mtime(struct inode *inode, struct timespec64 *time)
 EXPORT_SYMBOL(lease_get_mtime);
 
 /**
- *	__fcntl_getlease - Enquire what lease is currently active
- *	@filp: the file
+ *	generic_getlease - Enquire what lease is currently active
+ *	@filp: the backing file whose inode stores the lease
+ *	@lease_file: the file identifying the lease owner
  *	@flavor: type of lease flags to check
  *
  *	The value returned by this function will be one of
@@ -1792,6 +1793,18 @@ static int generic_getlease(struct file *filp, struct file *lease_file,
 	return type;
 }
 
+/**
+ * kernel_getlease - Query a file lease or delegation through its filesystem
+ * @filp: the file whose lease state is queried
+ * @lease_file: the original lease owner, or NULL to use @filp
+ * @flavor: FL_LEASE or FL_DELEG
+ *
+ * Dispatch to the filesystem getlease method when present, otherwise query
+ * the generic inode lease state. Layered filesystems preserve @lease_file
+ * while forwarding the query to a backing file.
+ *
+ * Return: F_RDLCK, F_WRLCK or F_UNLCK, or a negative error from the filesystem.
+ */
 int kernel_getlease(struct file *filp, struct file *lease_file,
 		    unsigned int flavor)
 {

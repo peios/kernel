@@ -4,6 +4,9 @@ type: reference
 description: "Written by Paul Menage <menage@google.com> based on Documentation/admin-guide/cgroup-v1/cpusets.rst"
 ---
 
+> **Peios:** Linux capability names in this interface retain their API meaning, but KACS evaluates them through native token privileges or compatibility rules. UID 0, `setcap` and Unix mode bits do not independently grant native authority. Object access and PIP checks remain additional constraints where applicable. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the mapping and exceptions.
+
+
 <a id="rst-control-groups"></a>
 
 Written by Paul Menage &lt;[menage@google.com](<mailto:menage@google.com>)&gt; based on [Documentation/admin-guide/cgroup-v1/cpusets.rst](~kernel/administration/admin-guide/cgroup-v1/cpusets)

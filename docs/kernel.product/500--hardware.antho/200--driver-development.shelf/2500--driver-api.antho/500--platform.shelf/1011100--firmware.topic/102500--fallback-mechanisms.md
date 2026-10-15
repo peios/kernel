@@ -1,16 +1,21 @@
 ---
 title: "Fallback mechanisms"
 type: reference
-description: "A fallback mechanism is supported to allow to overcome failures to do a direct filesystem lookup on the root filesystem or when the firmware simply cannot be installed for practical reasons on the root filesystem. The kernel configuration…"
+description: "Optional upstream firmware-request fallback mechanisms, disabled in the configured Peios build."
 ---
+
+> **Peios:** File-based firmware loading has an additional Peios signature check. The development profile defaults to logging (`kacs_fwsig=log`); `kacs_fwsig=enforce` requires PeiosTcb trust for that path. This does not cover the separate `FW_UPLOAD` interface. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
 
 <a id="rst-fallback-mechanisms"></a>
 
-A fallback mechanism is supported to allow to overcome failures to do a direct filesystem lookup on the root filesystem or when the firmware simply cannot be installed for practical reasons on the root filesystem. The kernel configuration options related to supporting the firmware fallback mechanism are:
+The Peios base configuration disables `CONFIG_FW_LOADER_USER_HELPER`, so the sysfs firmware-request fallback described below is not enabled in the configured build. The separate device firmware-upload facility (`FW_UPLOAD`) can still be enabled.
 
-> - CONFIG_FW_LOADER_USER_HELPER: enables building the firmware fallback mechanism. Most distributions enable this option today. If enabled but CONFIG_FW_LOADER_USER_HELPER_FALLBACK is disabled, only the custom fallback mechanism is available and for the request_firmware_nowait() call.
+The fallback is an optional upstream mechanism for failed filesystem lookups or firmware that cannot be installed on the root filesystem. Its configuration options are:
+
+> - CONFIG_FW_LOADER_USER_HELPER: enables building the firmware fallback mechanism. If enabled but CONFIG_FW_LOADER_USER_HELPER_FALLBACK is disabled, only the custom fallback mechanism is available and for the request_firmware_nowait() call.
 >
-> - CONFIG_FW_LOADER_USER_HELPER_FALLBACK: force enables each request to enable the kobject uevent fallback mechanism on all firmware API calls except request_firmware_direct(). Most distributions disable this option today. The call request_firmware_nowait() allows for one alternative fallback mechanism: if this kconfig option is enabled and your second argument to request_firmware_nowait(), uevent, is set to false you are informing the kernel that you have a custom fallback mechanism and it will manually load the firmware. Read below for more details.
+> - CONFIG_FW_LOADER_USER_HELPER_FALLBACK: force enables each request to enable the kobject uevent fallback mechanism on all firmware API calls except request_firmware_direct(). The call request_firmware_nowait() allows for one alternative fallback mechanism: if this kconfig option is enabled and your second argument to request_firmware_nowait(), uevent, is set to false you are informing the kernel that you have a custom fallback mechanism and it will manually load the firmware. Read below for more details.
 
 Note that this means when having this configuration:
 
@@ -70,7 +75,7 @@ Using:
 echo 1 > /sys/$DEVPATH/loading
 ```
 
-Will clean any previous partial load at once and make the firmware API return an error. When loading firmware the firmware_class grows a buffer for the firmware in PAGE_SIZE increments to hold the image as it comes in.
+This discards any previous partial load and starts a fresh loading attempt. Writing `0` completes a load; writing `-1` aborts it. When loading firmware the firmware_class grows a buffer for the firmware in PAGE_SIZE increments to hold the image as it comes in.
 
 firmware_data_read() and firmware_loading_show() are just provided for the test_firmware driver for testing, they are not called in normal use or expected to be used regularly by userspace.
 

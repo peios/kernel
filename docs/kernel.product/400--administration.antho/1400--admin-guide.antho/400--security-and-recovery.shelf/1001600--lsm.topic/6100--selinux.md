@@ -4,6 +4,9 @@ type: reference
 description: "Information about the SELinux kernel subsystem can be found at the following links:"
 ---
 
+> **Peios:** This is reference material for an upstream LSM or its configuration. Peios configures `landlock,lockdown,integrity,pkm`; alternative MAC LSMs are incompatible with PKM, and this article is not an instruction to replace the Peios security stack. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-selinux"></a>
 
 Information about the SELinux kernel subsystem can be found at the following links:

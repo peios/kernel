@@ -1,8 +1,11 @@
 ---
-title: "Credentials in Linux"
+title: "Kernel credentials"
 type: reference
-description: "By: David Howells <dhowells@redhat.com>"
+description: "Linux credential lifetimes and their relationship to Peios tokens and access checks."
 ---
+
+> **Peios:** This article explains Linux credential structures and their lifetimes. In Peios, native tokens, security descriptors and PIP determine authority; Unix fields and capability sets are compatibility views. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>). Examples of other LSMs describe upstream models.
+
 
 <a id="rst-credentials-in-linux"></a>
 
@@ -16,175 +19,81 @@ By: David Howells &lt;[dhowells@redhat.com](<mailto:dhowells@redhat.com>)&gt;
 
 ## Overview
 
-There are several parts to the security check performed by Linux when one object acts upon another:
+An access check relates a subject, an object and a requested operation. In
+Peios, KACS evaluates native tokens, object security descriptors (SDs), enabled
+privileges and, for process access, process integrity protection (PIP). A
+task's Unix IDs and Linux capability sets are not substitutes for that context.
 
-> 1. Objects.
->
->    > Objects are things in the system that may be acted upon directly by userspace programs.  Linux has a variety of actionable objects, including:
->    >
->    > > - Tasks
->    > >
->    > > - Files/inodes
->    > >
->    > > - Sockets
->    > >
->    > > - Message queues
->    > >
->    > > - Shared memory segments
->    > >
->    > > - Semaphores
->    > >
->    > > - Keys
->    >
->    > As a part of the description of all these objects there is a set of credentials.  What's in the set depends on the type of object.
->
-> 2. Object ownership.
->
->    > Amongst the credentials of most objects, there will be a subset that indicates the ownership of that object.  This is used for resource accounting and limitation (disk quotas and task rlimits for example).
->    >
->    > In a standard UNIX filesystem, for instance, this will be defined by the UID marked on the inode.
->
-> 3. The objective context.
->
->    > Also amongst the credentials of those objects, there will be a subset that indicates the 'objective context' of that object.  This may or may not be the same set as in (2) - in standard UNIX files, for instance, this is the defined by the UID and the GID marked on the inode.
->    >
->    > The objective context is used as part of the security calculation that is carried out when an object is acted upon.
->
-> 4. Subjects.
->
->    > A subject is an object that is acting upon another object.
->    >
->    > Most of the objects in the system are inactive: they don't act on other objects within the system.  Processes/tasks are the obvious exception: they do stuff; they access and manipulate things.
->    >
->    > Objects other than tasks may under some circumstances also be subjects. For instance an open file may send SIGIO to a task using the UID and EUID given to it by a task that called `fcntl(F_SETOWN)` upon it.  In this case, the file struct will have a subjective context too.
->
-> 5. The subjective context.
->
->    > A subject has an additional interpretation of its credentials.  A subset of its credentials forms the 'subjective context'.  The subjective context is used as part of the security calculation that is carried out when a subject acts.
->    >
->    > A Linux task, for example, has the FSUID, FSGID and the supplementary group list for when it is acting upon a file - which are quite separate from the real UID and GID that normally form the objective context of the task.
->
-> 6. Actions.
->
->    > Linux has a number of actions available that a subject may perform upon an object.  The set of actions available depends on the nature of the subject and the object.
->    >
->    > Actions include reading, writing, creating and deleting files; forking or signalling and tracing tasks.
->
-> 7. Rules, access control lists and security calculations.
->
->    > When a subject acts upon an object, a security calculation is made.  This involves taking the subjective context, the objective context and the action, and searching one or more sets of rules to see whether the subject is granted or denied permission to act in the desired manner on the object, given those contexts.
->    >
->    > There are two main sources of rules:
->    >
->    > - **a.** Discretionary access control (DAC):
->    >
->    >   > Sometimes the object will include sets of rules as part of its description.  This is an 'Access Control List' or 'ACL'.  A Linux file may supply more than one ACL.
->    >   >
->    >   > A traditional UNIX file, for example, includes a permissions mask that is an abbreviated ACL with three fixed classes of subject ('user', 'group' and 'other'), each of which may be granted certain privileges ('read', 'write' and 'execute' - whatever those map to for the object in question).  UNIX file permissions do not allow the arbitrary specification of subjects, however, and so are of limited use.
->    >   >
->    >   > A Linux file might also sport a POSIX ACL.  This is a list of rules that grants various permissions to arbitrary subjects.
->    >
->    > - **b.** Mandatory access control (MAC):
->    >
->    >   > The system as a whole may have one or more sets of rules that get applied to all subjects and objects, regardless of their source. SELinux and Smack are examples of this.
->    >   >
->    >   > In the case of SELinux and Smack, each object is given a label as part of its credentials.  When an action is requested, they take the subject label, the object label and the action and look for a rule that says that this action is either granted or denied.
+The Linux credential container remains important: `task_struct::real_cred`
+is the task's objective credential set, while `task_struct::cred` is its
+subjective set, used when it acts on objects. They normally agree, but trusted
+kernel code can temporarily override the subjective credentials. KACS attaches
+its credential security data, including a token reference and projected IDs,
+through the LSM security blob. Native process state has its own lifetime and
+synchronization; it is also referenced from task security data.
+
+This does not mean that every Unix field is ignored. Accounting, network
+protocols and some inherited subsystem checks still use IDs or mode bits.
+For example, `/proc/sys` checks its table permissions against the current
+effective UID and groups, with optional subsystem-specific permission callbacks.
+Those checks coexist with native authorization where an operation has a KACS
+gate. UID 0 is neither a universal bypass nor universally irrelevant.
 
 <a id="rst-types-of-credentials"></a>
 
-## Types of Credentials
+## Credential data
 
-The Linux kernel supports the following types of credentials:
+- **Native authority:** the effective token supplies the subject for KACS
+  checks. Its identity, privileges and restrictions are distinct from numeric
+  Unix IDs and stored Linux capability sets. Process SDs and PIP provide
+  additional process-access constraints.
+- **Unix compatibility fields:** `struct cred` retains real, effective, saved
+  and filesystem IDs, supplementary groups and accounting references. The
+  Peios `current_fsuid()` and `current_fsgid()` accessors use the KACS projection;
+  reading `cred->fsuid` directly is not equivalent. Unix ID setters ordinarily
+  preserve the existing identity; they are not a native token-installation or
+  privilege-dropping interface.
+- **Linux capability sets:** effective, permitted, inheritable, ambient and
+  bounding sets remain represented. KACS capability checks consult the token
+  or an explicit compatibility rule rather than treating these sets as native
+  grants. `capset()` must retain the compatibility-allow bits in the effective,
+  permitted and inheritable sets; clearing them fails. Changing other stored
+  bits does not grant or remove native privileges. Bounding-set and ambient
+  operations also have KACS guards.
+- **Securebits:** these flags participate in inherited credential handling;
+  they do not turn Unix compatibility credentials into native authority.
+- **Keys and keyrings:** per-thread, per-process and session keyring references
+  allow subsystems such as network filesystems to obtain authentication
+  material. Key permissions and protocol credentials remain separate from a
+  Peios token.
 
-> 1. Traditional UNIX credentials.
->
->    > > - Real User ID
->    > >
->    > > - Real Group ID
->    >
->    > The UID and GID are carried by most, if not all, Linux objects, even if in some cases it has to be invented (FAT or CIFS files for example, which are derived from Windows).  These (mostly) define the objective context of that object, with tasks being slightly different in some cases.
->    >
->    > > - Effective, Saved and FS User ID
->    > >
->    > > - Effective, Saved and FS Group ID
->    > >
->    > > - Supplementary groups
->    >
->    > These are additional credentials used by tasks only.  Usually, an EUID/EGID/GROUPS will be used as the subjective context, and real UID/GID will be used as the objective.  For tasks, it should be noted that this is not always true.
->
-> 2. Capabilities.
->
->    > > - Set of permitted capabilities
->    > >
->    > > - Set of inheritable capabilities
->    > >
->    > > - Set of effective capabilities
->    > >
->    > > - Capability bounding set
->    >
->    > These are only carried by tasks.  They indicate superior capabilities granted piecemeal to a task that an ordinary task wouldn't otherwise have. These are manipulated implicitly by changes to the traditional UNIX credentials, but can also be manipulated directly by the `capset()` system call.
->    >
->    > The permitted capabilities are those caps that the process might grant itself to its effective or permitted sets through `capset()`.  This inheritable set might also be so constrained.
->    >
->    > The effective capabilities are the ones that a task is actually allowed to make use of itself.
->    >
->    > The inheritable capabilities are the ones that may get passed across `execve()`.
->    >
->    > The bounding set limits the capabilities that may be inherited across `execve()`, especially when a binary is executed that will execute as UID 0.
->
-> 3. Secure management flags (securebits).
->
->    > These are only carried by tasks.  These govern the way the above credentials are manipulated and inherited over certain operations such as execve().  They aren't used directly as objective or subjective credentials.
->
-> 4. Keys and keyrings.
->
->    > These are only carried by tasks.  They carry and cache security tokens that don't fit into the other standard UNIX credentials.  They are for making such things as network filesystem keys available to the file accesses performed by processes, without the necessity of ordinary programs having to know about security details involved.
->    >
->    > Keyrings are a special type of key.  They carry sets of other keys and can be searched for the desired key.  Each process may subscribe to a number of keyrings:
->    >
->    > > Per-thread keying Per-process keyring Per-session keyring
->    >
->    > When a process accesses a key, if not already present, it will normally be cached on one of these keyrings for future accesses to find.
->    >
->    > For more information on using keys, see `Documentation/security/keys/*`.
->
-> 5. LSM
->
->    > The Linux Security Module allows extra controls to be placed over the operations that a task may do.  Currently Linux supports several LSM options.
->    >
->    > Some work by labelling the objects in a system and then applying sets of rules (policies) that say what operations a task with one label may do to an object with another label.
->
-> 6. AF_KEY
->
->    > This is a socket-based approach to credential management for networking stacks \[RFC 2367\].  It isn't discussed by this document as it doesn't interact directly with task and file credentials; rather it keeps system level credentials.
-
-When a file is opened, part of the opening task's subjective context is recorded in the file struct created.  This allows operations using that file struct to use those credentials instead of the subjective context of the task that issued the operation.  An example of this would be a file opened on a network filesystem where the credentials of the opened file should be presented to the server, regardless of who is actually doing a read or a write upon it.
+See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the
+capability mapping, token-setter behaviour and configured LSMs. AF_KEY manages
+networking key material through a separate socket API and is outside this
+credential-container discussion.
 
 <a id="rst-file-markings"></a>
 
-## File Markings
+## File markings and execution
 
-Files on disk or obtained over the network may have annotations that form the objective security context of that file.  Depending on the type of filesystem, this may include one or more of the following:
+Managed-file access uses the canonical SD (`security.peios.sd`, or
+`system.ntfs_security` on NTFS3). Unix ownership, mode bits and protocol ACLs
+may still be exposed, but copying those fields does not reproduce a native SD.
+POSIX ACL updates are unsupported by the KACS hooks.
 
-> - UNIX UID, GID, mode;
->
-> - Windows user ID;
->
-> - Access control list;
->
-> - LSM security label;
->
-> - UNIX exec privilege escalation bits (SUID/SGID);
->
-> - File capabilities exec privilege escalation bits.
-
-These are compared to the task's subjective security context, and certain operations allowed or disallowed as a result.  In the case of execve(), the privilege escalation bits come into play, and may allow the resulting process extra privileges, based on the annotations on the executable file.
+SUID/SGID markings and Linux file capabilities do not grant native token
+privileges on `execve()`. Execution must pass file-execute and process security
+baseline (PSB) checks. Verified Peios image signatures can establish a PIP
+label, subject to the exec transition rules; a PIP label is not a replacement
+token. Tracing and `no_new_privs` prevent raising that label above the current
+one. Ordinary unsigned images may execute without a PIP label if the other
+checks allow it; kernel-initiated usermode helpers require `PeiosTcb` trust.
 
 <a id="rst-task-credentials"></a>
 
 ## Task Credentials
 
-In Linux, all of a task's credentials are held in (uid, gid) or through (groups, keys, LSM security) a refcounted structure of type 'struct cred'. Each task points to its credentials by a pointer called 'cred' in its task_struct.
+`struct cred` is a reference-counted container for Unix credential fields and references to groups, keys and LSM security data. Its publication rules govern the container; referenced native tokens and process-state objects also have their own lifetime and locking rules. Do not infer that every object reachable from a published credential is immutable.
 
 Once a set of credentials has been prepared and committed, it may not be changed, barring the following exceptions:
 
@@ -220,7 +129,7 @@ To catch accidental credential alteration at compile time, struct task_struct ha
 
 ### Accessing Task Credentials
 
-A task being able to alter only its own credentials permits the current process to read or replace its own credentials without the need for any form of locking -- which simplifies things greatly.  It can just call:
+A task can inspect its own current credential pointer without an RCU read-side lock. This does not remove the synchronization requirements of shared referenced objects or of a credential-changing operation. To obtain the current pointer, call:
 
 
 
@@ -235,12 +144,12 @@ There are convenience wrappers for retrieving specific aspects of a task's crede
 
 
 ```text
-uid_t current_uid(void)         Current's real UID
-gid_t current_gid(void)         Current's real GID
-uid_t current_euid(void)        Current's effective UID
-gid_t current_egid(void)        Current's effective GID
-uid_t current_fsuid(void)       Current's file access UID
-gid_t current_fsgid(void)       Current's file access GID
+kuid_t current_uid(void)         Current's real UID
+kgid_t current_gid(void)         Current's real GID
+kuid_t current_euid(void)        Current's effective UID
+kgid_t current_egid(void)        Current's effective GID
+kuid_t current_fsuid(void)       Current's file access UID
+kgid_t current_fsgid(void)       Current's file access GID
 kernel_cap_t current_cap(void)  Current's effective capabilities
 struct user_struct *current_user(void)  Current's user account
 ```
@@ -250,9 +159,9 @@ There are also convenience wrappers for retrieving specific associated pairs of 
 
 
 ```text
-void current_uid_gid(uid_t *, gid_t *);
-void current_euid_egid(uid_t *, gid_t *);
-void current_fsuid_fsgid(uid_t *, gid_t *);
+void current_uid_gid(kuid_t *, kgid_t *);
+void current_euid_egid(kuid_t *, kgid_t *);
+void current_fsuid_fsgid(kuid_t *, kgid_t *);
 ```
 
 which return these pairs of values through their arguments after retrieving them from the current task's credentials.
@@ -305,7 +214,7 @@ void foo(struct task_struct *t, struct foo_data *f)
         tcred = __task_cred(t);
         f->uid = tcred->uid;
         f->gid = tcred->gid;
-        f->groups = get_group_info(tcred->groups);
+        f->groups = get_group_info(tcred->group_info);
         rcu_read_unlock();
         ...
 }
@@ -323,15 +232,15 @@ This does all the RCU magic inside of it.  The caller must call put_cred() on th
 
 > [!NOTE]
 >
-> The result of `__task_cred()` should not be passed directly to `get_cred()` as this may race with `commit_cred()`.
+> The result of `__task_cred()` should not be passed directly to `get_cred()` as this may race with `commit_creds()`.
 
 There are a couple of convenience functions to access bits of another task's credentials, hiding the RCU magic from the caller:
 
 
 
 ```text
-uid_t task_uid(task)            Task's real UID
-uid_t task_euid(task)           Task's effective UID
+kuid_t task_uid(task)            Task's real UID
+kuid_t task_euid(task)           Task's effective UID
 ```
 
 If the caller is holding the RCU read lock at the time anyway, then:
@@ -358,7 +267,7 @@ where 'member' is a non-pointer member of the cred struct.  For instance:
 
 
 ```text
-uid_t task_cred_xxx(task, suid);
+kuid_t task_cred_xxx(task, suid);
 ```
 
 will retrieve 'struct cred::suid' from the task, doing the appropriate RCU magic.  This may not be used for pointer members as what they point to may disappear the moment the RCU read lock is dropped.
@@ -367,7 +276,7 @@ will retrieve 'struct cred::suid' from the task, doing the appropriate RCU magic
 
 ### Altering Credentials
 
-As previously mentioned, a task may only alter its own credentials, and may not alter those of another task.  This means that it doesn't need to use any locking to alter its own credentials.
+Credential publication is performed by the task whose credentials change. Peios also has coordinated native token-installation paths; use their synchronization and authorization rules rather than writing another task's credential pointer. Copying or changing Unix fields alone does not install a native identity.
 
 To alter the current process's credentials, a function should first prepare a new set of credentials by calling:
 
@@ -377,13 +286,11 @@ To alter the current process's credentials, a function should first prepare a ne
 struct cred *prepare_creds(void);
 ```
 
-this locks current-&gt;cred_replace_mutex and then allocates and constructs a duplicate of the current process's credentials, returning with the mutex still held if successful.  It returns NULL if not successful (out of memory).
-
-The mutex prevents `ptrace()` from altering the ptrace state of a process while security checks on credentials construction and changing is taking place as the ptrace state may alter the outcome, particularly in the case of `execve()`.
+This allocates a duplicate of the current credentials, takes references to their shared members and calls the LSM preparation hook. It returns NULL on allocation or LSM preparation failure. It does not acquire a `cred_replace_mutex`; callers must obey the synchronization rules of the operation that is changing credentials.
 
 The new credentials set should be altered appropriately, and any security checks and hooks done.  Both the current and the proposed sets of credentials are available for this purpose as current_cred() will return the current set still at this point.
 
-When replacing the group list, the new list must be sorted before it is added to the credential, as a binary search is used to test for membership.  In practice, this means groups_sort() should be called before set_groups() or set_current_groups(). groups_sort() must not be called on a `struct group_list` which is shared as it may permute elements as part of the sorting process even if the array is already sorted.
+When replacing the group list, the new list must be sorted before it is added to the credential, as a binary search is used to test for membership.  In practice, this means groups_sort() should be called before set_groups() or set_current_groups(). groups_sort() must not be called on a `struct group_info` which is shared as it may permute elements as part of the sorting process even if the array is already sorted.
 
 When the credential set is ready, it should be committed to the current process by calling:
 
@@ -393,7 +300,7 @@ When the credential set is ready, it should be committed to the current process 
 int commit_creds(struct cred *new);
 ```
 
-This will alter various aspects of the credentials and the process, giving the LSM a chance to do likewise, then it will use `rcu_assign_pointer()` to actually commit the new credentials to `current->cred`, it will release `current->cred_replace_mutex` to allow `ptrace()` to take place, and it will notify the scheduler and others of the changes.
+This updates credential-related accounting and process state, then publishes the new objective and subjective credentials with `rcu_assign_pointer()`. It notifies interested subsystems and drops the old credential references. It does not release a credential-replacement mutex.
 
 This function is guaranteed to return 0, so that it can be tail-called at the end of such functions as `sys_setresuid()`.
 
@@ -409,32 +316,9 @@ Should the security checks fail or some other error occur after `prepare_creds()
 void abort_creds(struct cred *new);
 ```
 
-This releases the lock on `current->cred_replace_mutex` that `prepare_creds()` got and then releases the new credentials.
+This drops the reference to the uncommitted new credentials. It does not release a credential-replacement mutex.
 
-A typical credentials alteration function would look something like this:
-
-
-
-```text
-int alter_suid(uid_t suid)
-{
-        struct cred *new;
-        int ret;
-
-        new = prepare_creds();
-        if (!new)
-                return -ENOMEM;
-
-        new->suid = suid;
-        ret = security_alter_suid(new);
-        if (ret < 0) {
-                abort_creds(new);
-                return ret;
-        }
-
-        return commit_creds(new);
-}
-```
+A credential-changing operation must perform its real authorization checks before `commit_creds()`, and call `abort_creds()` on failure. There is no generic `security_alter_suid()` hook. Unix ID changes must follow the existing syscall and LSM fixup paths; native token changes must use the native token-installation path.
 
 <a id="rst-managing-credentials"></a>
 
@@ -452,22 +336,133 @@ There are some functions to help manage credentials:
 
 <a id="rst-open-file-credentials"></a>
 
-## Open File Credentials
+## Open file credentials
 
-When a new file is opened, a reference is obtained on the opening task's credentials and this is attached to the file struct as `f_cred` in place of `f_uid` and `f_gid`.  Code that used to access `file->f_uid` and `file->f_gid` should now access `file->f_cred->fsuid` and `file->f_cred->fsgid`.
+An opened `struct file` holds a reference to the opening credentials in
+`f_cred`. The pointer remains stable for the file's lifetime, so accessing the
+container does not require a fresh RCU lookup. Referenced objects retain their
+own synchronization rules. Network filesystems can use these credentials when
+authenticating operations to a remote server.
 
-It is safe to access `f_cred` without the use of RCU or locking because the pointer will not change over the lifetime of the file struct, and nor will the contents of the cred struct pointed to, barring the exceptions listed above (see the Task Credentials section).
+KACS separately records a granted-access snapshot on a managed file handle.
+Later operations check the rights required by that operation; an SD change is
+not general revocation of existing handles. `SCM_RIGHTS` transfers the existing
+grant rather than authorizing a new open under the receiver's token. Internal
+copy-up handles are rejected by the receive hook.
 
-To avoid "confused deputy" privilege escalation attacks, access control checks during subsequent operations on an opened file should use these credentials instead of "current"'s credentials, as the file may have been passed to a more privileged process.
+Do not universally substitute `f_cred` for the current subject in access checks.
+Some checks deliberately use the current effective token, including the sysfs
+write gate and continuous-access auditing. Follow the specific handle or
+operation contract. Likewise, direct reads of `f_cred->fsuid` do not provide the
+Peios projected-ID semantics of the current-credential accessors.
 
 <a id="rst-overriding-the-vfs-s-use-of-credentials"></a>
 
-## Overriding the VFS's Use of Credentials
+## Overriding the VFS's use of credentials
 
-Under some circumstances it is desirable to override the credentials used by the VFS, and that can be done by calling into such as `vfs_mkdir()` with a different set of credentials.  This is done in the following places:
+Trusted kernel code can temporarily install subjective credentials with
+`override_creds()` and restore them with `revert_creds()`. This is used by
+stacking filesystems and other operations that act in a saved context. The
+override must carry the correct LSM subject and obey its lifetime rules;
+changing numeric UID fields alone is not a KACS subject switch.
 
-> - `sys_faccessat()`.
->
-> - `vfs_coredump()`.
->
-> - nfs4recover.c.
+In Peios, `access()` and `faccessat()` do not use the upstream real-UID
+credential-override path: that code is excluded under `CONFIG_SECURITY_PKM`.
+They perform the check in the current effective context. They therefore must
+not be used as a test of what a different native token could access.
+
+## Peios implementation details
+
+<a id="trm-3-10-1"></a>
+
+KACS tokens are the sole identity-based authorization mechanism, and
+Linux applications do not know tokens exist. They call `getuid()`,
+`getgid()` and `getgroups()`, read `/proc/self/status`, and assume
+those numbers determine their access. KACS projects token identity
+onto standard Linux credentials so unmodified applications work.
+
+When a token is installed on a process, the process's Linux
+credentials are set to match. <a id="cite-cred.projection.on-token-install"></a> The numbers themselves are **already on
+the token**: the user SID's projected uid, the primary group SID's
+projected gid, and a projected supplementary gid per group SID are all
+computed by authd when the token is minted, and KACS copies them. <a id="cite-cred.projection.uid-from-token"></a>
+
+**KACS never resolves a SID to a number itself.** It holds no directory
+handle and consults nothing at install time — which is what makes
+projection cheap enough to do on every credential change, and what
+keeps a name-service outage from being able to change what a running
+process may do.
+
+How a SID becomes a number is therefore not KACS's rule to state, and
+this chapter deliberately does not restate it. The authority is the
+principal source interface's numeric scope (PSPU [Overview](<~kernel/internals/kmes/overview#trm-2-1>)): identifiers are
+**computed** — an authority grants a source a band `(base, count)` and
+derives `base + r` from a relative identifier — rather than looked up
+per principal, and a source's assertion outside its band is refused
+rather than clamped.
+
+`65534` does appear in KACS, but not as a "no attribute was set"
+fallback: it is `ANONYMOUS_PROJECTED_ID`, what the projected-id
+accessors return for the anonymous identity and for an invalid token
+pointer. <a id="cite-cred.projection.anonymous-sentinel"></a> It is a sentinel for *no identity*, not a default for an
+identity whose number could not be found.
+
+The consequences are mostly convenient ones. No process runs as UID 0
+unless it holds the SYSTEM token — enforced, not merely expected: a
+token creation naming a projected UID of 0 with any user SID other
+than `S-1-5-18` is rejected, and the projection path refuses it again
+at install time. <a id="cite-cred.projection.uid0-system-only"></a> Home directories work naturally, because
+`getpwuid(getuid())` returns the right answer when the UID is real and
+consistent with NSS. And different services get different UIDs, which
+is incidental defence in depth alongside KACS's own enforcement.
+
+<a id="trm-3-10-1-1"></a>
+
+## Projection is one-way <a id="cite-cred.projection.one-way"></a>
+
+Token state flows into credential fields and never the reverse. The
+projected credentials are observational compatibility data; the token
+is the authority. The `setuid` family restores the old credential
+rather than deriving a token from it ([setuid Behaviour](<~kernel/internals/kacs/linux-credentials/setuid-behaviour#trm-3-10-3>)).
+
+Projection reflects **all** groups regardless of enabled state, so
+adjusting groups never triggers recalculation. <a id="cite-cred.projection.all-groups"></a>
+
+Projected credentials reflect the **effective** token — the
+impersonated one during impersonation, the primary one otherwise. <a id="cite-cred.projection.effective-token"></a> When
+a service thread impersonates a client and creates a file, the file is
+owned by the client's projected UID, quota is charged to the client,
+and audit attributes to the client.
+
+The two accessors deliberately disagree during impersonation.
+`current_fsuid()` reads the projected UID from the *effective*
+credential, so it yields the client's UID; `getuid()` reads the
+*primary* credential's UID, so it yields the service's. During
+impersonation `getuid()` returns the service and `current_fsuid()`
+returns the client, and that is the intended behaviour rather than an
+inconsistency. <a id="cite-cred.projection.getuid-vs-fsuid"></a> Only `getuid()` and `getgid()` are redirected to the
+primary credential; `geteuid()` and `getegid()` keep their Linux
+meaning and follow the effective credential, so during impersonation
+they report the client.
+
+One caveat applies to a credential carrying no token at all — a blank
+credential, or one created before KACS initialised. `current_fsuid()`
+falls back to `cred->fsuid` in that case, and the capability
+switchboard denies before consulting the ALLOW list ([DAC Neutralisation](<~kernel/internals/kacs/linux-credentials/dac-neutralisation#trm-3-10-2>)), so
+Linux DAC becomes authoritative for such a task. <a id="cite-cred.projection.tokenless-dac-fallback"></a>
+
+<a id="trm-3-10-1-2"></a>
+
+## Precomputed values
+
+Every token carries precomputed projected UID and GID values,
+calculated by authd at creation and stored on the token. KACS never
+resolves a SID-to-UID mapping at runtime; the accessors are pure field
+reads.
+
+Because SIDs are one namespace while Linux UIDs and GIDs are two,
+authd allocates from a **single unified counter** across all principal
+types rather than a separate one per namespace, so every SID projects
+to a unique number whichever Linux namespace it lands in. A user and a
+group can never collide on a number, which is what lets one SID answer
+both `getuid()` and `getgid()` questions without ambiguity.

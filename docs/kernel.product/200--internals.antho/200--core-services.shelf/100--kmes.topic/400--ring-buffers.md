@@ -1,0 +1,185 @@
+---
+title: "Ring Buffers"
+description: "One ring per logical CPU — how they are organised, the two producer metadata pages, wrap handling, the write protocol and notification."
+type: reference
+---
+
+<a id="trm-2-5"></a>
+
+<a id="trm-2-5-1"></a>
+
+## Organisation
+
+KMES maintains one ring buffer per logical CPU, created for every CPU
+in the kernel's possible-CPU set when the module initialises — before
+LCS exists, using the compiled-in default capacity — and buffering
+events from that first instant. These boot-time buffers are ordinary
+buffers: same layout, same overwrite semantics, same generation
+model, immediately attachable. If LCS never becomes available they
+simply remain the live buffers indefinitely. <a id="cite-ring.created-at-init-for-possible-cpus"></a>
+
+Each ring is an independent, reference-counted object holding its
+capacity, generation, sequence counter, write and tail positions,
+futex counter, dropped-event counter, two metadata pages, and the data
+region. There is no shared state between rings on the write path: each
+CPU writes only to its own ring, using plain non-atomic fields under
+preemption disablement, and the only ordering machinery is a set of
+release stores at publication points. Fds taken by consumers hold
+references, so a ring — including a superseded generation — survives
+until the last consumer releases it. <a id="cite-ring.independent-refcounted"></a>
+
+The data region is a `vzalloc` allocation of exactly `capacity` bytes,
+zeroed once at creation and never scrubbed afterwards; overwritten
+regions retain stale bytes, which is why the consumer contract forbids
+reading beyond an event's `event_size`. <a id="cite-ring.data-zeroed-once-not-scrubbed"></a> Capacity is always a power of
+two — enforced at every entry point — so position wrap is a bitwise
+AND with `capacity - 1`. The permitted range is 64 KB to 256 MB, with
+a 4 MB default. <a id="cite-ring.capacity-range"></a>
+
+<a id="trm-2-5-2"></a>
+
+## The two producer metadata pages <a id="cite-ring.mirrored-metadata-stores"></a>
+
+Producer metadata exists twice. The kernel writes its working copy to
+a private page allocated with the ring, and mirrors every store to a
+second, consumer-visible page. The consumer-visible page is
+shmem-backed and allocated lazily at the first `kmes_attach` for the
+ring; shmem backing is what makes the notification futex work, since
+a shared (inode-keyed) futex needs a page-backed mapping. <a id="cite-ring.shared-page-lazy-shmem"></a> Every
+producer store — `write_pos`, `tail_pos`, `futex_counter`,
+`generation` — is a release store performed to both pages; the static
+fields are initialised at ring creation and re-stamped when the shared
+page appears. The mmap handler exposes only the shared page. The field
+offsets on the page are part of the consumer contract, defined in the
+PSPK event stream chapter.
+
+<a id="trm-2-5-3"></a>
+
+## Consumer mapping permissions <a id="cite-consumer.mapping-permissions"></a>
+
+The producer metadata page and both aliases of the data region are read-only
+to consumers. The consumer metadata page is read-write: ordinary stores and
+authorised `process_vm_writev` writes can set `need_wake`. A consumer can remove
+write permission from that page with `mprotect` and restore it later.
+
+A write-enabling `mprotect` covering any producer or data byte fails with
+`EACCES`, including requests spanning the consumer page and a protected region.
+Write faults and writable page pins must not upgrade the protected pages.
+These boundaries follow the original mapping offsets when `mprotect` splits a
+VMA; a new VMA start does not move the consumer page. Process access gates for
+remote writes still apply.
+
+<a id="trm-2-5-4"></a>
+
+## Wrap handling <a id="cite-ring.consumer-sees-contiguous-wrap"></a>
+
+The consumer's data region is double virtual mapped — the same
+physical pages appear twice consecutively — so a consumer reads an
+event that crosses the physical end of the buffer as one contiguous
+byte sequence. The producer side has no such mapping: kernel writes
+into the `vzalloc` region are wrap-aware, splitting a byte-range copy
+that crosses the boundary into two `memcpy` calls and masking scalar
+stores per byte. The contiguity guarantee is a property of the
+consumer's view, produced by the mmap layout rather than by the
+writer.
+
+<a id="trm-2-5-5"></a>
+
+## Write protocol
+
+Each ring has exactly one writer — its CPU — and the write path takes
+no locks and performs no cross-CPU atomics. For a single kernel
+emission: capture the timestamp; take the next sequence number; if
+the event fails a structural check, count the drop and stop ([Emission API](<~kernel/internals/kmes/emission-api#trm-2-3>));
+otherwise make room, write the event at `write_pos & (capacity - 1)`,
+publish the new `write_pos` (old value plus event size) with a
+release store, and check `need_wake`. The release store is what makes
+the event atomic from the consumer's side: the bytes are complete
+before the position that makes them reachable moves.
+
+Making room is the overwrite walk. While the live span
+(`write_pos - tail_pos`) plus the incoming event exceeds capacity,
+KMES reads the `event_size` of the event at the tail and advances
+`tail_pos` past it, counting each overwritten event in the internal
+dropped-event counter, and publishes the advanced tail with a release
+store before the new data lands on top of it. <a id="cite-ring.overwrite-advances-tail-first"></a> Walking the tail is
+sequential and possibly cache-cold — the tail can be megabytes from
+the write position — a cost accepted in preference to maintaining an
+index of event offsets on the hot write path.
+
+The walk carries a corruption guard: if the size field read at the
+tail is zero, larger than the capacity, or larger than the live span,
+KMES abandons the walk and resynchronises by jumping `tail_pos`
+straight to `write_pos`, discarding the entire surviving window in
+one step (the discarded span is not itemised in the drop counter) and
+emitting a tracepoint. <a id="cite-ring.tail-resync-guard"></a>
+
+For a batch, KMES first walks the reservations for every accepted event
+using local write and tail positions. It publishes the resulting tail
+with one release store **before writing any event bytes**, so a
+concurrent consumer can detect that the record it was reading has been
+overwritten. Publishing the tail only after the writes would allow the
+consumer's tail re-check to accept torn data.
+
+After writing the events, KMES publishes the final write position with
+one release store and checks `need_wake` once, provided at least one
+event was written. New batch records become available at that final
+write-position store; the tail still transitions once per batch rather
+than once per overwritten event. <a id="cite-ring.batch-one-tail-transition"></a>
+
+<a id="trm-2-5-6"></a>
+
+## Notification <a id="cite-ring.need-wake-protocol"></a>
+
+The wake path reads the consumer page's `need_wake` byte — the single
+consumer-writable byte KMES ever reads, treated as a boolean and
+trusted for nothing else. If it is zero, notification costs that one
+read. If set, KMES increments the futex counter with a release store
+and wakes every thread waiting on it. The futex is a shared,
+inode-keyed futex on the shmem producer page at the counter's offset —
+a consequence a consumer must match: a `FUTEX_PRIVATE_FLAG` wait on
+the mapped address is never woken. <a id="cite-ring.futex-is-shared-inode-keyed"></a> Before any consumer has attached,
+the shared page does not exist and the wake is skipped entirely,
+though the private counter still advances. <a id="cite-ring.wake-skipped-before-attach"></a>
+
+The `futex_wake` call itself is issued after preemption is re-enabled,
+outside the write window; only the counter increment happens inside
+it. Waking a thread that is already awake is a harmless no-op, which
+is also why the consumer's relaxed clearing of `need_wake` is safe.
+
+<a id="trm-2-5-7"></a>
+
+## Capacity swaps <a id="cite-ring.swap-under-stop-machine"></a>
+
+A valid `BufferCapacity` configuration change replaces every ring.
+New rings are allocated first, at the old generation plus one, fully
+initialised before any CPU can see them. The switch itself runs under
+`stop_machine`: with every CPU quiesced, each ring's surviving events
+are migrated to its replacement, the per-CPU live pointers are
+switched, and each old ring's published generation is bumped to the
+new value — signalling consumers on the old mapping to re-attach. <a id="cite-ring.swap.generation-bump-signals-reattach"></a> If
+an old ring's `need_wake` is set, its futex counter is bumped inside
+the quiesced section and the wake is issued after it, so consumers
+asleep on a dead generation do not sleep forever. <a id="cite-ring.swap.wakes-stale-sleepers"></a>
+
+Migration copies the surviving span in sequence order, re-compacted
+contiguously from position zero: the new ring starts with
+`tail_pos = 0` and `write_pos` equal to the bytes copied, and the
+sequence and dropped-event counters carry over, so sequence numbers
+are continuous across a swap. <a id="cite-ring.swap.migration-recompacts"></a> When the new capacity is smaller than
+the surviving span, the oldest events are skipped from the tail
+forward until the suffix fits — loss is bounded to the oldest prefix,
+traced but not counted as drops. <a id="cite-ring.swap.shrink-skips-oldest"></a> Old positions are meaningless in the
+new ring; a consumer re-locates by sequence number, per the PSPK
+protocol.
+
+If allocating the new rings fails, the old rings stay live at their
+size, no generation changes, and the failure is reported through a
+`kmes.buffer.swap.failed` event ([Self-Configuration](<~kernel/internals/kmes/self-configuration#trm-2-6>)). <a id="cite-ring.swap.alloc-failure-keeps-old"></a> A migration abort — a corrupt
+size field encountered inside the quiesced section — abandons the
+swap the same way and is reported the same way, with `-EIO` as the
+error. <a id="cite-ring.swap.abort-emits-event"></a> There is no automatic retry;
+the next configuration write or reboot tries again. A superseded
+generation's pages stay valid for as long as any consumer keeps them
+mapped, so during and after a swap old and new rings coexist until
+the last old fd closes. <a id="cite-ring.swap.generations-coexist"></a>

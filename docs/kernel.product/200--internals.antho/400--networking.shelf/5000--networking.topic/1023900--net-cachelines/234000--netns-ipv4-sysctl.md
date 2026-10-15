@@ -4,6 +4,9 @@ type: reference
 description: "Reference for netns_ipv4 struct fast path usage breakdown."
 ---
 
+> **Peios:** Transport and driver mechanisms described here remain reference material, but any nftables/iptables, IPVS, NFQUEUE or legacy netfilter policy examples assume an upstream configuration. The Peios profile disables those policy paths and uses NTFE. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>); NTFE is permissive before its first policy generation is ingested.
+
+
 <a id="rst-netns-ipv4-struct-fast-path-usage-breakdown"></a>
 
 <!-- SPDX-License-Identifier: GPL-2.0 -->

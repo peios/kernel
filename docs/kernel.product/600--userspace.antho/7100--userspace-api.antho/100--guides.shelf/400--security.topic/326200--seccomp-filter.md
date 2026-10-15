@@ -4,6 +4,9 @@ type: reference
 description: "A large number of system calls are exposed to every userland process with many of them going unused for the entire lifetime of the process. As system calls change and mature, bugs are found and eradicated. A certain subset of userland…"
 ---
 
+> **Peios:** The privileged filter-installation check `CAP_SYS_ADMIN` maps to enabled `SeTcbPrivilege`; user-namespace UID 0 does not create it. `no_new_privs` also prevents exec from raising the PIP label. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>).
+
+
 <a id="rst-seccomp-bpf-secure-computing-with-filters"></a>
 
 <a id="rst-introduction"></a>
@@ -44,7 +47,7 @@ An additional seccomp mode is added and is enabled using the same prctl(2) call 
 
   If `fork`/`clone` and `execve` are allowed by @prog, any child processes will be constrained to the same filters and system call ABI as the parent.
 
-  Prior to use, the task must call `prctl(PR_SET_NO_NEW_PRIVS, 1)` or run with `CAP_SYS_ADMIN` privileges in its namespace.  If these are not true, `-EACCES` will be returned.  This requirement ensures that filter programs cannot be applied to child processes with greater privileges than the task that installed them.
+  Before installing a filter, the task must set `no_new_privs` (for example, `prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)`) or pass the namespace `CAP_SYS_ADMIN` check. In Peios the latter requires enabled `SeTcbPrivilege`; creating a user namespace does not grant it. Otherwise installation fails with `EACCES`. The unprivileged path prevents exec-based elevation through the installed filter. It does not revoke existing native authority or prevent separately authorized native token operations.
 
   Additionally, if `prctl(2)` is allowed by the attached filter, additional filters may be layered on which will increase evaluation time, but allow for further decreasing the attack surface during execution of a process.
 
@@ -179,7 +182,7 @@ Userspace can also add file descriptors to the notifying process via `ioctl(SECC
 
 The notifying process can be preempted, resulting in the notification being aborted. This can be problematic when trying to take actions on behalf of the notifying process that are long-running and typically retryable (mounting a filesystem). Alternatively, at filter installation time, the `SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV` flag can be set. This flag makes it such that when a user notification is received by the supervisor, the notifying process will ignore non-fatal signals until the response is sent. Signals that are sent prior to the notification being received by userspace are handled normally.
 
-It is worth noting that `struct seccomp_data` contains the values of register arguments to the syscall, but does not contain pointers to memory. The task's memory is accessible to suitably privileged traces via `ptrace()` or `/proc/pid/mem`. However, care should be taken to avoid the TOCTOU mentioned above in this document: all arguments being read from the tracee's memory should be read into the tracer's memory before any policy decisions are made. This allows for an atomic decision on syscall arguments.
+It is worth noting that `struct seccomp_data` contains the values of register arguments to the syscall, but does not contain pointers to memory. Reading a different process's memory through `/proc/PID/mem` needs native `PROCESS_VM_READ` access and PIP dominance; ptrace attachment requires `PROCESS_VM_WRITE`. `SeDebugPrivilege` can rescue eligible descriptor denials but cannot bypass PIP. However, care should be taken to avoid the TOCTOU mentioned above in this document: all arguments being read from the tracee's memory should be read into the tracer's memory before any policy decisions are made. This allows for an atomic decision on syscall arguments.
 
 <a id="rst-sysctls"></a>
 

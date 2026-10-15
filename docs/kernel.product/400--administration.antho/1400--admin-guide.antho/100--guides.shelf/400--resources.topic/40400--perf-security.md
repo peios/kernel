@@ -1,7 +1,7 @@
 ---
 title: "Perf events and tool security"
 type: reference
-description: "Usage of Performance Counters for Linux (perf_events) 1 , 2 , 3 can impose a considerable risk of leaking sensitive data accessed by monitored processes. The data leakage is possible both in scenarios of direct usage of perf_events system…"
+description: "Native profiling authorization, Linux perf controls and the cgroup-mode boundary."
 ---
 
 <a id="rst-perf-events-and-tool-security"></a>
@@ -27,130 +27,57 @@ Data that belong to the fourth category can potentially contain sensitive proces
 
 ## perf_events access control
 
-To perform security checks, the Linux implementation splits processes into two categories <a id="rst-footnote-reference-11"></a>[6](#rst-footnote-6) : a) privileged processes (whose effective user ID is 0, referred to as superuser or root), and b) unprivileged processes (whose effective UID is nonzero). Privileged processes bypass all kernel security permission checks so perf_events performance monitoring is fully available to privileged processes without access, scope and resource restrictions.
+Peios authorizes performance monitoring through native token privileges and
+process access checks. UID 0 does not bypass these checks. `setcap`, `capsh`
+and set-user-ID wrappers do not grant native profiling authority.
 
-Unprivileged processes are subject to a full security permission check based on the process's credentials <a id="rst-footnote-reference-12"></a>[5](#rst-footnote-5) (usually: effective UID, effective GID, and supplementary group list).
+- Profiling the calling process needs no additional KACS profiling privilege,
+  but Linux perf scope, event and resource checks still apply.
+- Profiling another process requires enabled `SeProfileSingleProcessPrivilege`,
+  `PROCESS_QUERY_INFORMATION` access to that process, and PIP dominance.
+- System-wide profiling with `perf_event_open(pid == -1)` outside cgroup mode
+  requires enabled `SeSystemProfilePrivilege`.
 
-Linux divides the privileges traditionally associated with superuser into distinct units, known as capabilities <a id="rst-footnote-reference-13"></a>[6](#rst-footnote-6) , which can be independently enabled and disabled on per-thread basis for processes and files of unprivileged users.
+The compatibility `CAP_PERFMON` check passes for any of
+`SeSystemProfilePrivilege`, `SeProfileSingleProcessPrivilege` or
+`SeLoadDriverPrivilege`. Passing it does not bypass the operation-specific
+checks above. `CAP_SYS_ADMIN` maps to `SeTcbPrivilege`; `CAP_SYS_PTRACE` maps to
+`SeDebugPrivilege`. Debug privilege does not bypass process integrity protection.
+Nor does profiling authority grant unrestricted access to `/proc/PID/mem`.
 
-Unprivileged processes with enabled CAP_PERFMON capability are treated as privileged processes with respect to perf_events performance monitoring and observability operations, thus, bypass *scope* permissions checks in the kernel. CAP_PERFMON implements the principle of least privilege <a id="rst-footnote-reference-14"></a>[13](#rst-footnote-13) (POSIX 1003.1e: 2.2.2.39) for performance monitoring and observability operations in the kernel and provides a secure approach to performance monitoring and observability in the system.
-
-For backward compatibility reasons the access to perf_events monitoring and observability operations is also open for CAP_SYS_ADMIN privileged processes but CAP_SYS_ADMIN usage for secure monitoring and observability use cases is discouraged with respect to the CAP_PERFMON capability. If system audit records <a id="rst-footnote-reference-15"></a>[14](#rst-footnote-14) for a process using perf_events system call API contain denial records of acquiring both CAP_PERFMON and CAP_SYS_ADMIN capabilities then providing the process with CAP_PERFMON capability singly is recommended as the preferred secure approach to resolve double access denial logging related to usage of performance monitoring and observability.
-
-Prior Linux v5.9 unprivileged processes using perf_events system call are also subject for PTRACE_MODE_READ_REALCREDS ptrace access mode check <a id="rst-footnote-reference-16"></a>[7](#rst-footnote-7) , whose outcome determines whether monitoring is permitted. So unprivileged processes provided with CAP_SYS_PTRACE capability are effectively permitted to pass the check. Starting from Linux v5.9 CAP_SYS_PTRACE capability is not required and CAP_PERFMON is enough to be provided for processes to make performance monitoring and observability operations.
-
-Other capabilities being granted to unprivileged processes can effectively enable capturing of additional data required for later performance analysis of monitored processes or a system. For example, CAP_SYSLOG capability permits reading kernel space memory addresses from /proc/kallsyms file.
+**Cgroup profiling has a different boundary in this implementation.** With
+`PERF_FLAG_PID_CGROUP`, `pid` is a cgroup directory file descriptor and `cpu`
+selects a CPU. This path skips both the per-process KACS profiling call and the
+explicit system-wide `SeSystemProfilePrivilege` call. It still checks the
+cgroup handle and inherited perf scope, event and resource rules. In particular,
+CPU-event access uses `perf_event_paranoid` and `perfmon_capable()`; that is not
+the same as requiring `SeSystemProfilePrivilege`. There is no per-target
+process-query/PIP check from these skipped gates for each process observed in
+the cgroup. The Peios base configuration enables cgroup perf support. Treat
+this as an implementation boundary, not an assurance of equivalent protection
+across profiling modes.
 
 <a id="rst-privileged-perf-users-groups"></a>
 
-## Privileged Perf users groups
+## Delegating profiling access
 
-Mechanisms of capabilities, privileged capability-dumb files <a id="rst-footnote-reference-17"></a>[6](#rst-footnote-6), file system ACLs <a id="rst-footnote-reference-18"></a>[10](#rst-footnote-10) and sudo <a id="rst-footnote-reference-19"></a>[15](#rst-footnote-15) utility can be used to create dedicated groups of privileged Perf users who are permitted to execute performance monitoring and observability without limits. The following steps can be taken to create such groups of privileged Perf users.
-
-1. Create perf_users group of privileged Perf users, assign perf_users group to Perf tool executable and limit access to the executable for other users in the system who are not in the perf_users group:
-
-
-
-```text
-# groupadd perf_users
-# ls -alhF
--rwxr-xr-x  2 root root  11M Oct 19 15:12 perf
-# chgrp perf_users perf
-# ls -alhF
--rwxr-xr-x  2 root perf_users  11M Oct 19 15:12 perf
-# chmod o-rwx perf
-# ls -alhF
--rwxr-x---  2 root perf_users  11M Oct 19 15:12 perf
-```
-
-2. Assign the required capabilities to the Perf tool executable file and enable members of perf_users group with monitoring and observability privileges <a id="rst-footnote-reference-20"></a>[6](#rst-footnote-6) :
-
-
-
-```text
-# setcap "cap_perfmon,cap_sys_ptrace,cap_syslog=ep" perf
-# setcap -v "cap_perfmon,cap_sys_ptrace,cap_syslog=ep" perf
-perf: OK
-# getcap perf
-perf = cap_sys_ptrace,cap_syslog,cap_perfmon+ep
-```
-
-If the libcap <a id="rst-footnote-reference-21"></a>[16](#rst-footnote-16) installed doesn't yet support "cap_perfmon", use "38" instead, i.e.:
-
-
-
-```text
-# setcap "38,cap_ipc_lock,cap_sys_ptrace,cap_syslog=ep" perf
-```
-
-Note that you may need to have 'cap_ipc_lock' in the mix for tools such as 'perf top', alternatively use 'perf top -m N', to reduce the memory that it uses for the perf ring buffer, see the memory allocation section below.
-
-Using a libcap without support for CAP_PERFMON will make cap_get_flag(caps, 38, CAP_EFFECTIVE, &amp;val) fail, which will lead the default event to be 'cycles:u', so as a workaround explicitly ask for the 'cycles' event, i.e.:
-
-
-
-```text
-# perf top -e cycles
-```
-
-To get kernel and user samples with a perf binary with just CAP_PERFMON.
-
-As a result, members of perf_users group are capable of conducting performance monitoring and observability by using functionality of the configured Perf tool executable that, when executes, passes perf_events subsystem scope checks.
-
-In case Perf tool executable can't be assigned required capabilities (e.g. file system is mounted with nosuid option or extended attributes are not supported by the file system) then creation of the capabilities privileged environment, naturally shell, is possible. The shell provides inherent processes with CAP_PERFMON and other required capabilities so that performance monitoring and observability operations are available in the environment without limits. Access to the environment can be open via sudo utility for members of perf_users group only. In order to create such environment:
-
-1. Create shell script that uses capsh utility <a id="rst-footnote-reference-22"></a>[16](#rst-footnote-16) to assign CAP_PERFMON and other required capabilities into ambient capability set of the shell process, lock the process security bits after enabling SECBIT_NO_SETUID_FIXUP, SECBIT_NOROOT and SECBIT_NO_CAP_AMBIENT_RAISE bits and then change the process identity to sudo caller of the script who should essentially be a member of perf_users group:
-
-
-
-```text
-# ls -alh /usr/local/bin/perf.shell
--rwxr-xr-x. 1 root root 83 Oct 13 23:57 /usr/local/bin/perf.shell
-# cat /usr/local/bin/perf.shell
-exec /usr/sbin/capsh --iab=^cap_perfmon --secbits=239 --user=$SUDO_USER -- -l
-```
-
-2. Extend sudo policy at /etc/sudoers file with a rule for perf_users group:
-
-
-
-```text
-# grep perf_users /etc/sudoers
-%perf_users    ALL=/usr/local/bin/perf.shell
-```
-
-3. Check that members of perf_users group have access to the privileged shell and have CAP_PERFMON and other required capabilities enabled in permitted, effective and ambient capability sets of an inherent process:
-
-
-
-```text
-$ id
-uid=1003(capsh_test) gid=1004(capsh_test) groups=1004(capsh_test),1000(perf_users) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-$ sudo perf.shell
-[sudo] password for capsh_test:
-$ grep Cap /proc/self/status
-CapInh:        0000004000000000
-CapPrm:        0000004000000000
-CapEff:        0000004000000000
-CapBnd:        000000ffffffffff
-CapAmb:        0000004000000000
-$ capsh --decode=0000004000000000
-0x0000004000000000=cap_perfmon
-```
-
-As a result, members of perf_users group have access to the privileged environment where they can use tools employing performance monitoring APIs governed by CAP_PERFMON Linux capability.
-
-This specific access control management is only available to superuser or root running processes with CAP_SETPCAP, CAP_SETFCAP <a id="rst-footnote-reference-23"></a>[6](#rst-footnote-6) capabilities.
+Run the tool with a native token whose enabled privileges and target access
+permit the intended operation. The old Linux recipes that assigned file
+capabilities to `perf` or used `capsh` through `sudo` are not Peios delegation
+procedures. File execution access and any required PIP trust must also be
+established. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for the capability mapping and object-access rules.
 
 <a id="rst-unprivileged-users"></a>
 
-## Unprivileged users
+## Linux perf scope controls
 
-perf_events *scope* and *access* control for unprivileged processes is governed by perf_event_paranoid <a id="rst-footnote-reference-24"></a>[2](#rst-footnote-2) setting:
+The following are the inherited Linux perf scope controls. They are additional to KACS: even `perf_event_paranoid=-1` does not bypass the native cross-process or system-wide profiling gates above. Here, capability checks use the native mappings described earlier.
+
+The Linux perf scope control is governed by perf_event_paranoid <a id="rst-footnote-reference-24"></a>[2](#rst-footnote-2) setting:
 
 - **-1:**
 
-  Impose no *scope* and *access* restrictions on using perf_events performance monitoring. Per-user per-cpu perf_event_mlock_kb <a id="rst-footnote-reference-25"></a>[2](#rst-footnote-2) locking limit is ignored when allocating memory buffers for storing performance data. This is the least secure mode since allowed monitored *scope* is maximized and no perf_events specific limits are imposed on *resources* allocated for performance monitoring.
+  Disable these paranoid-level Linux scope restrictions; the native gates described above and other event checks remain. Per-user per-cpu perf_event_mlock_kb <a id="rst-footnote-reference-25"></a>[2](#rst-footnote-2) locking limit is ignored when allocating memory buffers for storing performance data. This is the least secure mode since allowed monitored *scope* is maximized and the paranoid-level memory-lock exception is broadest. File-descriptor limits and other event/resource constraints still apply.
 
 - **&gt;=0:**
 
@@ -172,7 +99,7 @@ perf_events *scope* and *access* control for unprivileged processes is governed 
 
 ### Open file descriptors
 
-The perf_events system call API <a id="rst-footnote-reference-27"></a>[2](#rst-footnote-2) allocates file descriptors for every configured PMU event. Open file descriptors are a per-process accountable resource governed by the RLIMIT_NOFILE <a id="rst-footnote-reference-28"></a>[11](#rst-footnote-11) limit (ulimit -n), which is usually derived from the login shell process. When configuring Perf collection for a long list of events on a large server system, this limit can be easily hit preventing required monitoring configuration. RLIMIT_NOFILE limit can be increased on per-user basis modifying content of the limits.conf file <a id="rst-footnote-reference-29"></a>[12](#rst-footnote-12) . Ordinarily, a Perf sampling session (perf record) requires an amount of open perf_event file descriptors that is not less than the number of monitored events multiplied by the number of monitored CPUs.
+The perf_events system call API <a id="rst-footnote-reference-27"></a>[2](#rst-footnote-2) allocates file descriptors for every configured PMU event. Open file descriptors are a per-process accountable resource governed by the RLIMIT_NOFILE <a id="rst-footnote-reference-28"></a>[11](#rst-footnote-11) limit (ulimit -n), which is usually derived from the login shell process. When configuring Perf collection for a long list of events on a large server system, this limit can be easily hit preventing required monitoring configuration. Configure the limit through the process launcher or an authorized resource-limit operation. Linux distributions may use `limits.conf` through PAM <a id="rst-footnote-reference-29"></a>[12](#rst-footnote-12), but editing that file alone is not a Peios kernel configuration interface. Ordinarily, a Perf sampling session (perf record) requires an amount of open perf_event file descriptors that is not less than the number of monitored events multiplied by the number of monitored CPUs.
 
 <a id="rst-memory-allocation"></a>
 
@@ -182,7 +109,7 @@ The amount of memory available to user processes for capturing performance monit
 
 For example, if a machine has eight cores and perf_event_mlock_kb limit is set to 516 KiB, then a user process is provided with 516 KiB \* 8 = 4128 KiB of memory above the RLIMIT_MEMLOCK limit (ulimit -l) for perf_event mmap buffers. In particular, this means that, if the user wants to start two or more performance monitoring processes, the user is required to manually distribute the available 4128 KiB between the monitoring processes, for example, using the --mmap-pages Perf record mode option. Otherwise, the first started performance monitoring process allocates all available 4128 KiB and the other processes will fail to proceed due to the lack of memory.
 
-RLIMIT_MEMLOCK and perf_event_mlock_kb resource constraints are ignored for processes with the CAP_IPC_LOCK capability. Thus, perf_events/Perf privileged users can be provided with memory above the constraints for perf_events/Perf performance monitoring purpose by providing the Perf executable with CAP_IPC_LOCK capability.
+RLIMIT_MEMLOCK and perf_event_mlock_kb resource constraints are ignored for processes with the CAP_IPC_LOCK capability. In Peios this check requires enabled `SeLockMemoryPrivilege` in the subject token; assigning a file capability to the executable is not a grant mechanism.
 
 <a id="rst-bibliography"></a>
 
@@ -283,3 +210,17 @@ RLIMIT_MEMLOCK and perf_event_mlock_kb resource constraints are ignored for proc
 
 
 **[16]** [https://git.kernel.org/pub/scm/libs/libcap/libcap.git/](<https://git.kernel.org/pub/scm/libs/libcap/libcap.git/>)<a id="rst-https-git-kernel-org-pub-scm-libs-libcap-libcap-git"></a>
+
+<a id="rst-footnote-reference-11"></a>
+<a id="rst-footnote-reference-12"></a>
+<a id="rst-footnote-reference-13"></a>
+<a id="rst-footnote-reference-14"></a>
+<a id="rst-footnote-reference-15"></a>
+<a id="rst-footnote-reference-16"></a>
+<a id="rst-footnote-reference-17"></a>
+<a id="rst-footnote-reference-18"></a>
+<a id="rst-footnote-reference-19"></a>
+<a id="rst-footnote-reference-20"></a>
+<a id="rst-footnote-reference-21"></a>
+<a id="rst-footnote-reference-22"></a>
+<a id="rst-footnote-reference-23"></a>

@@ -4,6 +4,9 @@ type: reference
 description: "Written 1996,2000 by Werner Almesberger <werner.almesberger@epfl.ch> and Hans Lermen <lermen@fgan.de>"
 ---
 
+> **Peios:** Unix mode, ownership and ACL examples describe the inherited metadata model. On managed Peios mounts, native security descriptors and granted handle rights determine access; `chmod`, `chown` and POSIX ACL recipes alone do not delegate it. Mount operations also require native authorization. See [Peios kernel behaviour](<~kernel/introduction/peios-behaviour>) for mount-policy defaults and the tmpfs rootfs rule.
+
+
 <a id="rst-using-the-initial-ram-disk-initrd"></a>
 
 Written 1996,2000 by Werner Almesberger &lt;[werner.almesberger@epfl.ch](<mailto:werner.almesberger@epfl.ch>)&gt; and Hans Lermen &lt;[lermen@fgan.de](<mailto:lermen@fgan.de>)&gt;
