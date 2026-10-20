@@ -7,7 +7,8 @@ type: reference
 <a id="trm-4-1"></a>
 
 stratafs presents an ordered set of existing directories — its
-**strata** — as one merged directory tree. Each stratum is an ordinary
+**strata**, or layers, which give it its name — as one merged
+directory tree. Each stratum is an ordinary
 directory on an ordinary filesystem, owned and written by whatever
 agent owns it, with no coordination with stratafs and no notification
 to it. The merged view reflects changes to any stratum without a

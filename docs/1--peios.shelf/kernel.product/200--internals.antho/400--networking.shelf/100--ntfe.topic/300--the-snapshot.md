@@ -161,7 +161,7 @@ all ([Ingestion and generations](<~kernel/internals/ntfe/policy-ingestion-and-va
 
 The fields are the three `Network.*` facts the interface layer — the
 fourth layer, which netd builds and judges in userspace — conditions on
-beside its own (see [the interface layer](https://learn.peios.org/peios/advanced-peios/netd/the-interface-layer/building-a-generation/)):
+beside its own (see [the interface layer](https://learn.peios.org/peios/reference/netd/the-interface-layer/building-a-generation/)):
 netd fills them from the interface record when it judges an interface,
 the kernel from the table when it judges a packet, so
 `Network.Trust.Equal` reads the same record in either layer. <a id="cite-ntfe-snapshot.network-facts-match-interface-layer"></a>

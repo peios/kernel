@@ -43,6 +43,31 @@ authentication package as `auth-package`, and the creation time as
 or `remote-interactive` — and the time in realtime nanoseconds, though
 the kernel holds it to whole seconds.
 
+### Logon types
+
+The logon type records how the issuer established the session. It
+describes the situation, not the principal: one principal can hold
+sessions of several types at once. Session creation rejects any value
+outside this table with `-EINVAL`.
+
+| Value | Name | The issuer asserts | Origin |
+|---|---|---|---|
+| 2 | Interactive | A user signed in at the machine | Local |
+| 3 | Network | A client on another machine authenticated to use a service here | Remote |
+| 4 | Batch | A scheduled job started | Local |
+| 5 | Service | A service started | Local |
+| 8 | NetworkCleartext | As Network, and the credential was presented in the clear | Remote |
+| 9 | NewCredentials | The caller's local identity is unchanged, and only the credentials it presents to other machines differ | Remote |
+| 10 | RemoteInteractive | A user signed in from another machine, to a terminal or a desktop | Remote |
+
+The kernel takes the issuer's word for the type and never verifies it.
+Its only use of the type is the origin column: the `CAP_SYS_BOOT`
+mapping additionally requires `SeRemoteShutdownPrivilege` for a
+remote-origin session. The well-known
+group SIDs that let an ACE distinguish one kind of session from
+another, such as `INTERACTIVE` and `NETWORK`, are placed on the token
+by the issuer, not derived by the kernel from the logon type.
+
 There is one rollback path for the case where authd creates a session
 but no token ever becomes live for it:
 `kacs_destroy_empty_logon_session`, which requires `SeTcbPrivilege`

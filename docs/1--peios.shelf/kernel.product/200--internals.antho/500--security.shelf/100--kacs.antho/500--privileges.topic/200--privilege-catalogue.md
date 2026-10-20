@@ -238,7 +238,10 @@ without error, and are simply inert. <a id="cite-priv.bits.unallocated-accepted-
 
 `SeChangeNotifyPrivilege` is granted to every principal, as an authd
 policy decision rather than a kernel one: the issuer's floor grants it
-to Everyone. <a id="cite-priv.default.change-notify-to-everyone"></a> `SeCreateSymbolicLinkPrivilege` is **not** granted by
-default despite being the other traditional default-grant privilege —
-authd deliberately omits it from the floor, and no shipped seed grants
-it. <a id="cite-priv.default.symlink-not-granted"></a> Either can be removed from a specific token by FilterToken.
+to Everyone. <a id="cite-priv.default.change-notify-to-everyone"></a> `SeCreateSymbolicLinkPrivilege`, the other traditional
+default-grant privilege, is deliberately **not** in the floor: a
+machine with no authd policy seed applied doesn't grant it. <a id="cite-priv.default.symlink-not-granted"></a> authd's
+shipped policy seed grants it to Everyone, because build systems and
+packaging tools assume it; a site can remove it there without
+affecting the floor. Either can be removed from a specific token by
+FilterToken.

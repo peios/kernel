@@ -6,7 +6,7 @@ type: reference
 
 <a id="trm-2-1"></a>
 
-The Kernel Mediated Event Subsystem is the sole event emission path in
+The Kernel Mediated Event Subsystem (KMES) is the sole event emission path in
 Peios. Kernel subsystems and userspace processes alike emit events
 exclusively through KMES — there is no alternative path. KMES stamps
 each event with trusted metadata at emission time, buffers it in

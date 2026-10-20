@@ -128,4 +128,4 @@ These are data conventions shared by tools. LCS still treats ordinary
 value payloads as opaque bytes; its special handling of a link key's
 `REG_LINK` default value is described in [Symlinks](<~kernel/internals/lcs/data-model/symlinks#trm-5-2-4>). For choosing and entering
 a type as an operator, see
-[Keys, values, and types](https://learn.peios.org/peios/using-peios/peiosutils/registry-tools/reg/).
+[Keys, values, and types](https://learn.peios.org/peios/using-peios/registry/reg/).
