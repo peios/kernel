@@ -701,6 +701,55 @@ static void test_copy_up_descriptors(void)
 	      "parent materialization must not copy directory contents");
 }
 
+static void test_file_position(bool copy_up)
+{
+	const char *source = copy_up ? "/lower1/seek-copy" :
+				       "/lower0/seek-in-place";
+	const char *merged = copy_up ? "/merged/seek-copy" :
+				       "/merged/seek-in-place";
+	const char *target = copy_up ? "/lower0/seek-copy" : source;
+	char buffer[2];
+	int fd;
+
+	write_text(source, "0123456789");
+	fd = open(merged, O_RDWR | O_CLOEXEC);
+	if (fd < 0)
+		fail("open position test");
+	check(read(fd, buffer, 2) == 2 && !memcmp(buffer, "01", 2),
+	      "initial sequential read");
+	check(lseek(fd, 0, SEEK_CUR) == 2,
+	      "SEEK_CUR must retain the position after read");
+	check(lseek(fd, 3, SEEK_CUR) == 5,
+	      "positive SEEK_CUR must use the outer position");
+	check(read(fd, buffer, 2) == 2 && !memcmp(buffer, "56", 2),
+	      "read must start at the relative seek result");
+	check(lseek(fd, -3, SEEK_CUR) == 4,
+	      "negative SEEK_CUR must use the advanced read position");
+	if (copy_up)
+		check(access(target, F_OK) == -1 && errno == ENOENT,
+		      "read and seek must not trigger copy-up");
+	check(write(fd, "XY", 2) == 2, "sequential write at seek position");
+	check(lseek(fd, 0, SEEK_CUR) == 6,
+	      "SEEK_CUR must retain write position after provider handoff");
+	check(pread(fd, buffer, 2, 0) == 2 && !memcmp(buffer, "01", 2),
+	      "positioned read must use its explicit offset");
+	check(pwrite(fd, "Z", 1, 9) == 1,
+	      "positioned write must use its explicit offset");
+	check(lseek(fd, 0, SEEK_CUR) == 6,
+	      "positioned I/O must leave the sequential position unchanged");
+	check_errno(lseek(fd, -100, SEEK_CUR), EINVAL,
+		    "negative resulting file position must fail");
+	check(lseek(fd, 0, SEEK_CUR) == 6,
+	      "failed seek must preserve the sequential position");
+	check(read(fd, buffer, 2) == 2 && !memcmp(buffer, "67", 2),
+	      "sequential read must resume after the written bytes");
+	if (close(fd))
+		fail("close position test");
+	expect_text(target, "0123XY678Z");
+	if (copy_up)
+		expect_text(source, "0123456789");
+}
+
 static void test_mmap_copy_up(void)
 {
 	char *mapping;
@@ -1472,6 +1521,8 @@ int main(int argc, char **argv)
 	test_origin_and_statfs();
 	test_fsync_snapshot_gate();
 	test_copy_up_descriptors();
+	test_file_position(false);
+	test_file_position(true);
 	test_mmap_copy_up();
 	test_lock_survives_copy_up();
 	test_ofd_lock_close_after_copy_up();

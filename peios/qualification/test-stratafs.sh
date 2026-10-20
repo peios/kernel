@@ -61,7 +61,7 @@ status=$?
 set -e
 
 fail=0
-pass_marker='STRATAFS_SMOKE_PASS: 148 checks'
+pass_marker='STRATAFS_SMOKE_PASS: 178 checks'
 fatal_re='STRATAFS_SMOKE_FAIL:|stratafs: staging recovery scan failed:|BUG:|Kernel panic|Oops:|KASAN:|UBSAN:|NULL pointer|Call Trace:|INFO: task .* blocked for more than|WARNING:'
 grep -Fq "$pass_marker" "$log" || {
     echo "  MISSING: $pass_marker"

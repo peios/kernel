@@ -68,6 +68,11 @@ The one exception is copy-up, which [Inode Identity and Lifecycle](<~kernel/inte
 own write caused a copy-up keeps its inode while that inode's backing
 object becomes the copy.
 
+The open file description retains its sequential file position across
+copy-up. `read` and `write` advance that position, and `lseek` with
+`SEEK_CUR` uses it even after the backing file changes. Positioned I/O
+through `pread` or `pwrite` leaves it unchanged.
+
 <a id="trm-4-4-1-4"></a>
 
 ## Live strata <a id="cite-coherency.stratum-replaceable-while-mounted"></a>

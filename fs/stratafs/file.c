@@ -203,6 +203,12 @@ static loff_t stratafs_llseek(struct file *file, loff_t offset, int whence)
 	loff_t ret;
 
 	mutex_lock(&info->mutation_lock);
+	/*
+	 * Reads and writes advance the outer position through their kiocb, not
+	 * the backing file's f_pos. Copy-up also replaces the backing file.
+	 * Seek relative to the position owned by this open description.
+	 */
+	info->real->f_pos = file->f_pos;
 	ret = vfs_llseek(info->real, offset, whence);
 	if (ret >= 0)
 		file->f_pos = ret;
