@@ -2,12 +2,40 @@
 
 #include <linux/backing-file.h>
 #include <linux/filelock.h>
+#include <linux/lockdep.h>
 #include <linux/mman.h>
 #include <linux/mount.h>
 #include <linux/poll.h>
 #include <linux/splice.h>
 
 #include "stratafs.h"
+
+#ifdef CONFIG_STRATAFS_KUNIT_TEST
+#include <kunit/test.h>
+#include <linux/shmem_fs.h>
+#endif
+
+void stratafs_file_info_init_locks(struct stratafs_file_info *info,
+				   const struct super_block *sb)
+{
+#ifdef CONFIG_LOCKDEP
+	static struct lock_class_key keys[FILESYSTEM_MAX_STACK_DEPTH];
+	unsigned int depth = sb->s_stack_depth;
+#endif
+
+	mutex_init(&info->mutation_lock);
+	spin_lock_init(&info->real_lock);
+#ifdef CONFIG_LOCKDEP
+	/*
+	 * Flush can nest distinct mounts' open-description mutexes. Assign
+	 * the admitted mount-depth class once, before publishing this info.
+	 * Live providers can change depth; this does not assert lock order.
+	 */
+	if (WARN_ON_ONCE(!depth || depth > FILESYSTEM_MAX_STACK_DEPTH))
+		return;
+	lockdep_set_class(&info->mutation_lock, &keys[depth - 1]);
+#endif
+}
 
 bool stratafs_stratum_accepts(const struct super_block *sb, unsigned int index,
 			      const struct path *provider)
@@ -148,7 +176,7 @@ static int stratafs_open(struct inode *inode, struct file *file)
 	info->real = real;
 	info->provider = provider;
 	info->provider_index = index;
-	mutex_init(&info->mutation_lock);
+	stratafs_file_info_init_locks(info, inode->i_sb);
 	file->private_data = info;
 	if ((file->f_flags & O_TRUNC) && S_ISREG(inode->i_mode)) {
 		if (route == STRATAFS_ROUTE_READ_ONLY) {
@@ -227,7 +255,7 @@ static ssize_t stratafs_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 	mutex_lock(&info->mutation_lock);
 	real = get_file(info->real);
 	mutex_unlock(&info->mutation_lock);
-	/* User faults may take mmap_lock, which precedes mutation_lock. */
+	/* User faults may take mmap_lock; forward without mutation_lock. */
 	ret = backing_file_read_iter(real, iter, iocb, iocb->ki_flags, &ctx);
 	fput(real);
 	return ret;
@@ -323,37 +351,135 @@ static int stratafs_fsync(struct file *file, loff_t start, loff_t end,
 	return ret;
 }
 
+static struct file *stratafs_real_file_get(struct stratafs_file_info *info,
+					   unsigned int *index)
+{
+	struct file *real;
+
+	spin_lock(&info->real_lock);
+	real = get_file(info->real);
+	*index = info->provider_index;
+	spin_unlock(&info->real_lock);
+	return real;
+}
+
+static struct file *stratafs_prepare_mmap_provider(struct file *file)
+{
+	struct stratafs_file_info *info = file->private_data;
+	struct file *real = NULL;
+	int route;
+	int ret = 0;
+
+	mutex_lock(&info->mutation_lock);
+	route = stratafs_route_existing(file_inode(file)->i_sb,
+					info->provider_index, &info->provider,
+					true);
+	if (route == STRATAFS_ROUTE_READ_ONLY) {
+		ret = -EROFS;
+		stratafs_audit_refusal(file->f_path.dentry, "mmap",
+				       info->provider_index, ret, false);
+		goto out;
+	}
+	if (route == STRATAFS_ROUTE_COPY_UP) {
+		ret = stratafs_copy_up_file(file);
+		if (ret)
+			goto out;
+	}
+	real = get_file(info->real);
+out:
+	mutex_unlock(&info->mutation_lock);
+	return ret ? ERR_PTR(ret) : real;
+}
+
+static int stratafs_prepare_mmap_layer(struct file *file, unsigned int depth)
+{
+	const struct cred *cred;
+	const struct cred *old_cred;
+	struct file *real;
+	int ret;
+
+	if (file->f_op == &stratafs_file_operations) {
+		if (depth >= FILESYSTEM_MAX_STACK_DEPTH)
+			return -ELOOP;
+		real = stratafs_prepare_mmap_provider(file);
+		if (IS_ERR(real))
+			return PTR_ERR(real);
+		cred = get_cred(file->f_cred);
+	} else {
+		real = stratafs_fuse_mmap_file_get(file, &cred);
+		if (!real)
+			return 0;
+		if (depth >= FILESYSTEM_MAX_STACK_DEPTH) {
+			ret = -ELOOP;
+			goto out;
+		}
+	}
+	/* Match backing_file_mmap's credentials without nesting mutexes. */
+	old_cred = override_creds(cred);
+	ret = stratafs_prepare_mmap_layer(real, depth + 1);
+	revert_creds(old_cred);
+out:
+	fput(real);
+	put_cred(cred);
+	return ret;
+}
+
+int stratafs_prepare_mmap(struct file *file, unsigned long flags)
+{
+	unsigned long type = flags & MAP_TYPE;
+
+	if (!file || !S_ISREG(file_inode(file)->i_mode) ||
+	    (file->f_mode & (FMODE_READ | FMODE_WRITE)) !=
+		    (FMODE_READ | FMODE_WRITE) ||
+	    (type != MAP_SHARED && type != MAP_SHARED_VALIDATE))
+		return 0;
+	return stratafs_prepare_mmap_layer(file, 0);
+}
+
+static int stratafs_mmap_route(const struct super_block *sb, unsigned int index,
+			       const struct path *provider)
+{
+	struct stratafs_sb_info *sbi = STRATAFS_SB(sb);
+	int route;
+
+	/*
+	 * Assume a create root is present: a possible copy-up needs a fresh
+	 * preparation, and resolving the root here could acquire freeze locks.
+	 */
+	route = stratafs_rust_route_existing(
+		index, stratafs_stratum_accepts(sb, index, provider),
+		sbi->create_index, true, true,
+		sb_rdonly((struct super_block *)sb));
+	if (route == STRATAFS_ROUTE_READ_ONLY)
+		return -EROFS;
+	if (route == STRATAFS_ROUTE_COPY_UP)
+		return -EAGAIN;
+	return 0;
+}
+
 static int stratafs_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	struct stratafs_file_info *info = file->private_data;
 	struct backing_file_ctx ctx = stratafs_backing_ctx(file);
-	int route;
+	unsigned int index;
+	struct file *real;
 	int ret;
 
-	mutex_lock(&info->mutation_lock);
+	real = stratafs_real_file_get(info, &index);
 	if (S_ISREG(file_inode(file)->i_mode) && (vma->vm_flags & VM_SHARED) &&
 	    (vma->vm_flags & VM_MAYWRITE)) {
-		route = stratafs_route_existing(file_inode(file)->i_sb,
-						info->provider_index,
-						&info->provider, true);
-		if (route == STRATAFS_ROUTE_READ_ONLY)
-			goto read_only;
-		if (route == STRATAFS_ROUTE_COPY_UP) {
-			ret = stratafs_copy_up_file(file);
-			if (ret)
-				goto out;
-			info = file->private_data;
+		ret = stratafs_mmap_route(file_inode(file)->i_sb, index,
+					  &real->f_path);
+		if (ret) {
+			stratafs_audit_refusal(file->f_path.dentry, "mmap",
+					       index, ret, false);
+			goto out;
 		}
 	}
-	ret = backing_file_mmap(info->real, vma, &ctx);
+	ret = backing_file_mmap(real, vma, &ctx);
 out:
-	mutex_unlock(&info->mutation_lock);
+	fput(real);
 	return ret;
-read_only:
-	ret = -EROFS;
-	stratafs_audit_refusal(file->f_path.dentry, "mmap",
-			       info->provider_index, ret, false);
-	goto out;
 }
 
 static long stratafs_fallocate(struct file *file, int mode, loff_t offset,
@@ -889,3 +1015,223 @@ const struct file_operations stratafs_file_operations = {
 #endif
 	.fasync = stratafs_fasync,
 };
+
+#ifdef CONFIG_STRATAFS_KUNIT_TEST
+struct stratafs_mmap_fixture {
+	struct stratafs_sb_info sbi;
+	struct super_block sb;
+	struct inode inode;
+	struct dentry dentry;
+	struct file outer[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct stratafs_file_info info[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct file *provider[2];
+};
+
+static void stratafs_mmap_fixture_cleanup(void *data)
+{
+	struct stratafs_mmap_fixture *f = data;
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(f->provider); i++)
+		if (!IS_ERR_OR_NULL(f->provider[i])) {
+			file_inode(f->provider[i])->i_flags &= ~S_IMMUTABLE;
+			fput(f->provider[i]);
+		}
+}
+
+static struct stratafs_mmap_fixture *stratafs_mmap_fixture(struct kunit *test)
+{
+	struct stratafs_mmap_fixture *f;
+	unsigned int i;
+
+	f = kunit_kzalloc(test, sizeof(*f), GFP_KERNEL);
+	if (!f)
+		return NULL;
+	if (kunit_add_action_or_reset(test, stratafs_mmap_fixture_cleanup, f))
+		return NULL;
+	for (i = 0; i < ARRAY_SIZE(f->provider); i++) {
+		f->provider[i] = shmem_kernel_file_setup("stratafs-mmap", 0,
+							 EMPTY_VMA_FLAGS);
+		if (IS_ERR(f->provider[i]))
+			return NULL;
+	}
+	f->sb.s_fs_info = &f->sbi;
+	f->sbi.count = 2;
+	f->sbi.create_index = -1;
+	f->sbi.strata[0].path = "create";
+	f->sbi.strata[1].path = "provider";
+	f->inode.i_sb = &f->sb;
+	f->inode.i_mode = S_IFREG | 0600;
+	f->dentry.d_sb = &f->sb;
+	spin_lock_init(&f->dentry.d_lock);
+	for (i = 0; i < ARRAY_SIZE(f->outer); i++) {
+		/*
+		 * The fixture owns these synthetic files. Preparation may
+		 * borrow references, but must never drop their initial one.
+		 */
+		file_ref_init(&f->outer[i].f_ref, 1);
+		f->outer[i].f_inode = &f->inode;
+		f->outer[i].f_op = &stratafs_file_operations;
+		f->outer[i].f_mode = FMODE_READ | FMODE_WRITE;
+		f->outer[i].f_cred = current_cred();
+		f->outer[i].__f_path.dentry = &f->dentry;
+		f->outer[i].private_data = &f->info[i];
+		mutex_init(&f->info[i].mutation_lock);
+		spin_lock_init(&f->info[i].real_lock);
+		f->info[i].real = f->provider[0];
+		f->info[i].provider = f->provider[0]->f_path;
+	}
+	return f;
+}
+
+static void stratafs_kunit_mmap_retry_after_provider_change(struct kunit *test)
+{
+	struct vm_area_struct vma = {
+		.vm_flags = VM_SHARED | VM_MAYWRITE,
+	};
+	struct stratafs_mmap_fixture *f = stratafs_mmap_fixture(test);
+	unsigned long refs;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	f->sbi.create_index = 0;
+	f->info[0].provider_index = 1;
+	KUNIT_ASSERT_EQ(test,
+			stratafs_mmap_route(&f->sb, 1, &f->provider[0]->f_path),
+			0);
+	/* A provider that accepted preparation now needs a higher copy. */
+	file_inode(f->provider[0])->i_flags |= S_IMMUTABLE;
+	refs = file_count(f->provider[0]);
+	KUNIT_EXPECT_EQ(test, stratafs_mmap(&f->outer[0], &vma), -EAGAIN);
+	KUNIT_EXPECT_EQ(test, file_count(f->provider[0]), refs);
+	KUNIT_EXPECT_PTR_EQ(test, f->info[0].real, f->provider[0]);
+}
+
+static void stratafs_kunit_mmap_definitive_read_only(struct kunit *test)
+{
+	struct vm_area_struct vma = {
+		.vm_flags = VM_SHARED | VM_MAYWRITE,
+	};
+	struct stratafs_mmap_fixture *f = stratafs_mmap_fixture(test);
+	unsigned long refs;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	file_inode(f->provider[0])->i_flags |= S_IMMUTABLE;
+	f->info[0].provider_index = 1;
+	refs = file_count(f->provider[0]);
+	/* No create layer, or one not above the selected provider. */
+	KUNIT_EXPECT_EQ(test, stratafs_mmap(&f->outer[0], &vma), -EROFS);
+	f->sbi.create_index = 1;
+	KUNIT_EXPECT_EQ(test, stratafs_mmap(&f->outer[0], &vma), -EROFS);
+	f->sbi.create_index = 0;
+	f->sb.s_flags |= SB_RDONLY;
+	KUNIT_EXPECT_EQ(test, stratafs_mmap(&f->outer[0], &vma), -EROFS);
+	KUNIT_EXPECT_EQ(test, file_count(f->provider[0]), refs);
+}
+
+static void stratafs_kunit_mmap_preparation_controls(struct kunit *test)
+{
+	struct stratafs_mmap_fixture *f = stratafs_mmap_fixture(test);
+	struct file *file;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	file = &f->outer[0];
+	f->sb.s_flags |= SB_RDONLY;
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(file, MAP_PRIVATE), 0);
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(file, MAP_TYPE), 0);
+	file->f_mode = FMODE_READ;
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(file, MAP_SHARED), 0);
+	file->f_mode = FMODE_WRITE;
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(file, MAP_SHARED_VALIDATE),
+			0);
+	file->f_mode = FMODE_READ | FMODE_WRITE;
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(file, MAP_SHARED), -EROFS);
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(file, MAP_SHARED_VALIDATE),
+			-EROFS);
+}
+
+static void stratafs_mmap_put_cred(void *data)
+{
+	put_cred(data);
+}
+
+static void stratafs_kunit_mmap_nested_preparation_cleanup(struct kunit *test)
+{
+	struct stratafs_mmap_fixture *f = stratafs_mmap_fixture(test);
+	const struct cred *cred = current_cred();
+	struct cred *parent_cred;
+	unsigned long refs;
+	unsigned int i;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	parent_cred = prepare_creds();
+	KUNIT_ASSERT_NOT_NULL(test, parent_cred);
+	KUNIT_ASSERT_EQ(test,
+			kunit_add_action_or_reset(test, stratafs_mmap_put_cred,
+						  parent_cred),
+			0);
+	f->outer[0].f_cred = parent_cred;
+	refs = file_count(f->provider[0]);
+	f->info[0].real = &f->outer[1];
+	KUNIT_EXPECT_EQ(
+		test, stratafs_prepare_mmap(&f->outer[0], MAP_SHARED_VALIDATE),
+		0);
+	KUNIT_EXPECT_EQ(test, file_count(f->provider[0]), refs);
+	KUNIT_EXPECT_PTR_EQ(test, current_cred(), cred);
+	/* Cycles are bounded even if a malformed chain evades mount checks. */
+	f->info[1].real = &f->outer[0];
+	KUNIT_EXPECT_EQ(test, stratafs_prepare_mmap(&f->outer[0], MAP_SHARED),
+			-ELOOP);
+	KUNIT_EXPECT_PTR_EQ(test, current_cred(), cred);
+	for (i = 0; i < ARRAY_SIZE(f->outer); i++) {
+		KUNIT_EXPECT_EQ(test, file_count(&f->outer[i]), 1UL);
+		KUNIT_EXPECT_FALSE(test,
+				   mutex_is_locked(&f->info[i].mutation_lock));
+	}
+}
+
+static void stratafs_kunit_mmap_pin_survives_replacement(struct kunit *test)
+{
+	struct stratafs_mmap_fixture *f = stratafs_mmap_fixture(test);
+	struct file *before;
+	struct file *after;
+	unsigned long refs;
+	unsigned int index;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	f->info[0].provider_index = 1;
+	refs = file_count(f->provider[0]);
+	before = stratafs_real_file_get(&f->info[0], &index);
+	KUNIT_EXPECT_EQ(test, index, 1U);
+	KUNIT_EXPECT_EQ(test, file_count(f->provider[0]), refs + 1);
+	mutex_lock(&f->info[0].mutation_lock);
+	spin_lock(&f->info[0].real_lock);
+	f->info[0].real = f->provider[1];
+	f->info[0].provider_index = 0;
+	spin_unlock(&f->info[0].real_lock);
+	mutex_unlock(&f->info[0].mutation_lock);
+	after = stratafs_real_file_get(&f->info[0], &index);
+	KUNIT_EXPECT_EQ(test, index, 0U);
+	KUNIT_EXPECT_PTR_EQ(test, before, f->provider[0]);
+	KUNIT_EXPECT_PTR_EQ(test, after, f->provider[1]);
+	KUNIT_EXPECT_EQ(test, file_count(before), refs + 1);
+	fput(after);
+	fput(before);
+	KUNIT_EXPECT_EQ(test, file_count(f->provider[0]), refs);
+}
+
+static struct kunit_case stratafs_mmap_cases[] = {
+	KUNIT_CASE(stratafs_kunit_mmap_retry_after_provider_change),
+	KUNIT_CASE(stratafs_kunit_mmap_definitive_read_only),
+	KUNIT_CASE(stratafs_kunit_mmap_preparation_controls),
+	KUNIT_CASE(stratafs_kunit_mmap_nested_preparation_cleanup),
+	KUNIT_CASE(stratafs_kunit_mmap_pin_survives_replacement),
+	{}
+};
+
+static struct kunit_suite stratafs_mmap_suite = {
+	.name = "stratafs_mmap",
+	.test_cases = stratafs_mmap_cases,
+};
+
+kunit_test_suite(stratafs_mmap_suite);
+#endif

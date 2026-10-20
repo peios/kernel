@@ -71,6 +71,8 @@ is not achieved.
 | Rmdir or directory rename where list is refused on a participant | `EACCES` |
 | Modifying a special file's mode, descriptor or extended attributes where its provider will not accept modification | `EROFS` |
 | Establishing a shared write-capable mapping where routing yields read-only | `EROFS` |
+| A route change after shared mapping preparation could require another copy-up | `EAGAIN`; retry the whole `mmap` call |
+| StrataFS or FUSE passthrough layers exceed the supported stacking depth during shared mapping preparation | `ELOOP` |
 | Replacing disposition where [Removal](<~kernel/internals/stratafs/mutation/removal#trm-4-5-4>) would refuse the removal, or where a stratum above the create stratum would still hold the name | `EROFS` |
 | Replacing disposition on anything but a regular file | `EOPNOTSUPP` |
 | Rename where the source's provider will not accept modification | `EROFS` |
@@ -90,6 +92,11 @@ is not achieved.
 | A dentry whose private state is missing, or whose provider identity no longer matches | `ESTALE` |
 | `ioctl` on a regular file | `ENOTTY`, or `ENOIOCTLCMD` for the compat form |
 | `remap_file_range` with flags outside dedupe and advisory | `EINVAL` |
+
+Shared mapping preparation can publish a copy-up before a later mapping
+check fails. That copy remains published; the mapping failure does not
+restore the earlier provider. Copies completed by earlier layers also
+remain if preparation fails deeper in the backing chain.
 
 <a id="trm-4-8-4"></a>
 

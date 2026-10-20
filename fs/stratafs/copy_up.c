@@ -1903,9 +1903,11 @@ int stratafs_copy_up_file(struct file *file)
 		fput(info->retired_real);
 	info->retired_real = info->real;
 	path_put(&info->provider);
-	info->real = real;
 	info->provider = published;
+	spin_lock(&info->real_lock);
+	info->real = real;
 	info->provider_index = sbi->create_index;
+	spin_unlock(&info->real_lock);
 	ret = 0;
 	goto out_audit;
 

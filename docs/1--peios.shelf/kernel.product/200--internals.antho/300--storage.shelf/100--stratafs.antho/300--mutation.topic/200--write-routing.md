@@ -79,11 +79,12 @@ Where the name is held by no stratum, the operation is a creation and
 
 ## When the decision is made
 
-Routing happens when a modifying operation is performed, not when a
-descriptor is opened. Every mutating entry point calls
-`route_existing` afresh against the provider it currently holds;
-nothing caches a route decision, and a descriptor opened before the
-predicate changed is not revisited. <a id="cite-write.routed-per-operation"></a>
+Routing happens as part of a modifying operation, not an ordinary open.
+Most mutating entry points call `route_existing` afresh against their
+selected provider. Shared write-capable mappings prepare the route before
+the memory mapping lock is taken and recheck the selected provider in the
+mapping callback. Opening a descriptor does not reserve a writable route.
+<a id="cite-write.routed-per-operation"></a>
 
 | Operation | Routes |
 |---|---|
@@ -132,18 +133,33 @@ perform, and routing it is a decision about strata alone.
 
 ## Shared writable mappings <a id="cite-write.mmap-routes-on-maywrite"></a>
 
-Establishing a shared writable mapping routes, even though no bytes
-have been written, because stores through such a mapping reach the
-object without any further filesystem operation — establishment is the
-last point at which routing can occur.
+Establishing a shared mapping that can become writable routes before any
+bytes are written. Stores through the mapping can then modify its backing
+object without another filesystem operation that could perform copy-up.
 
-The test is on `VM_SHARED` together with `VM_MAYWRITE`, the "could
-become writable" bit rather than the "is writable" bit. A `PROT_READ`
-shared mapping taken from a writable descriptor therefore routes,
-because it can acquire write access later through `mprotect` with no
-filesystem operation in between. A private mapping, and a shared
-mapping that cannot acquire write access, do not route. Where routing
-yields read-only, the mapping is refused with `EROFS`.
+Preparation applies to regular files mapped with `MAP_SHARED` or
+`MAP_SHARED_VALIDATE` through a readable, writable open file description.
+This includes `PROT_READ`: the shared mapping retains `VM_MAYWRITE` and can
+later gain write access through `mprotect`. Private mappings and shared
+mappings that cannot gain write access do not trigger preparation.
+Ordinary writable opens remain lazy; opening alone does not copy up a file.
+
+The existing KACS mapping checks run before preparation. Preparation
+follows direct StrataFS providers and the selected backing file of FUSE
+passthrough mappings. It completes routing and any required copy-up for
+each StrataFS layer before the VFS acquires `mmap_lock`. It grants no
+additional access, and the backing file's mapping checks still apply.
+
+The mapping callback pins the selected provider and forwards only an
+in-place route. If a route change after preparation could require another
+copy-up, the mapping fails with `EAGAIN`. Retry the whole `mmap`
+call so that preparation runs again. Definitive read-only conditions still
+fail with `EROFS`.
+
+A completed copy-up remains published if a later mapping check or provider
+callback fails. The same applies if an earlier layer completes copy-up
+before preparation fails in a deeper layer. Preparation does not roll back
+copies that another operation could already have observed.
 
 <a id="trm-4-5-1-5"></a>
 

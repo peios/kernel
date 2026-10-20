@@ -10,6 +10,8 @@ struct dentry;
 struct path;
 
 #if IS_ENABLED(CONFIG_STRATAFS_FS)
+/* After mapping authorization, before taking mmap_lock. */
+int stratafs_prepare_mmap(struct file *file, unsigned long flags);
 int stratafs_kacs_creation_parent(const struct path *outer_parent,
 				  struct path *security_parent);
 int stratafs_kacs_removal_parent(const struct path *outer_target,
@@ -28,6 +30,11 @@ void stratafs_kacs_audit_deferred_refusal(const struct dentry *outer,
  * Used only to classify a failed outer VFS check, never to authorize unlink.
  */
 bool stratafs_kacs_deferred_target_gone(const struct file *file);
+#else
+static inline int stratafs_prepare_mmap(struct file *file, unsigned long flags)
+{
+	return 0;
+}
 #endif
 
 /* Kernel TRM sections 3.9.5 and 4.6.4: the KACS/StrataFS mount policy

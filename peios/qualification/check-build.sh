@@ -4,8 +4,9 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
-mkdir "$work/include"
+mkdir -p "$work/include/linux"
 ln -s "$here/../../include/uapi/pkm" "$work/include/pkm"
+ln -s "$here/../../include/uapi/linux/fuse.h" "$work/include/linux/fuse.h"
 for source in "$here"/*.c; do
     gcc -static -O2 -Wall -Wextra -Werror -I"$work/include" \
         "$source" -o "$work/$(basename "${source%.c}")"

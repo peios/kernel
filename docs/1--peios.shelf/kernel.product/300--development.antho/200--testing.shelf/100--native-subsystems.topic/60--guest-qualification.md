@@ -30,6 +30,7 @@ from a passing guest run.
 ```sh
 ./peios/bazel run //:qualify-mntns -- /path/to/bzImage
 ./peios/bazel run //:qualify-stratafs -- /path/to/bzImage
+./peios/bazel run //:qualify-stratafs-fuse -- /path/to/bzImage
 ./peios/bazel run //:qualify-stratafs-dir-bench -- /path/to/bzImage
 ```
 
@@ -41,9 +42,16 @@ finding the image does not establish that the configuration meets its needs.
 The mount-namespace harness exercises KACS objects through syscalls and checks
 both child and parent results. The StrataFS smoke harness exercises a mounted
 filesystem. The directory benchmark validates its expected result rows and
-completion marker; retain those rows when comparing performance. All three
-reject their failure markers, kernel warnings and fatal diagnostics, and require
-successful QEMU exit.
+completion marker; retain those rows when comparing performance. These
+harnesses reject their failure markers, kernel warnings, and fatal
+diagnostics, and require successful QEMU exit.
+
+The FUSE passthrough harness also needs `CONFIG_FUSE_FS=y` and
+`CONFIG_FUSE_PASSTHROUGH=y`. It checks lazy opens, shared mappings,
+read-only and private controls, copy publication, and mapping lifetime.
+It requires a clean guest poweroff. Its direct entry point is
+`peios/qualification/test-stratafs-fuse.sh`, with the same image or
+output-tree argument.
 
 ## Module signatures
 
@@ -106,6 +114,7 @@ the current script interfaces. Timeout values are in seconds.
 | --- | --- | --- | --- |
 | Mount namespaces | `mntns-qemu.log` | `PKM_MNTNS_LOG` | `PKM_MNTNS_TIMEOUT` (120) |
 | StrataFS smoke | `stratafs-qemu.log` | `PKM_STRATAFS_LOG` | `PKM_STRATAFS_TIMEOUT` (120) |
+| StrataFS FUSE passthrough | `stratafs-fuse-qemu.log` | `PKM_STRATAFS_FUSE_LOG` | `PKM_STRATAFS_FUSE_TIMEOUT` (120) |
 | Directory benchmark | `stratafs-dir-bench-qemu.log` | `PKM_STRATAFS_DIR_BENCH_LOG` | `PKM_STRATAFS_DIR_BENCH_TIMEOUT` (1200) |
 | Module signatures | `modsig-qemu.log` | `PKM_MODSIG_LOG` | `PKM_MODSIG_TIMEOUT` (120) |
 | Firmware signatures | `fwsig-enforce-qemu.log`, `fwsig-log-qemu.log` | `PKM_FWSIG_LOGDIR` | `PKM_FWSIG_TIMEOUT` (120 per boot) |

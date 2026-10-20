@@ -2,6 +2,7 @@
 
 #include <linux/bitops.h>
 #include <linux/cred.h>
+#include <linux/lockdep.h>
 #include <linux/mount.h>
 #include <linux/namei.h>
 #include <linux/pagemap.h>
@@ -196,6 +197,30 @@ char *stratafs_inode_relative(struct inode *inode)
 	return relative ?: ERR_PTR(-ENOMEM);
 }
 
+/*
+ * Nested mounts acquire distinct StrataFS inode locks during backing lookup.
+ * Classify them by the depth admitted at mount time, once before publication.
+ * Live path resolution can later reach a different depth: this classification
+ * does not promise a descending lock order. Lockdep still records cross-depth
+ * dependencies, and inodes at the same recorded depth still share a class.
+ */
+static void stratafs_init_inode_lock_class(struct inode *inode)
+{
+#ifdef CONFIG_LOCKDEP
+	static struct lock_class_key inode_keys[FILESYSTEM_MAX_STACK_DEPTH];
+	static struct lock_class_key dir_keys[FILESYSTEM_MAX_STACK_DEPTH];
+	unsigned int depth = inode->i_sb->s_stack_depth;
+
+	/* Admission bounds depth before creating any inode for this mount. */
+	if (WARN_ON_ONCE(!depth || depth > FILESYSTEM_MAX_STACK_DEPTH))
+		return;
+	if (S_ISDIR(inode->i_mode))
+		lockdep_set_class(&inode->i_rwsem, &dir_keys[depth - 1]);
+	else
+		lockdep_set_class(&inode->i_rwsem, &inode_keys[depth - 1]);
+#endif
+}
+
 struct inode *stratafs_new_inode(struct super_block *sb,
 				 const struct path *provider,
 				 unsigned int provider_index,
@@ -253,6 +278,7 @@ struct inode *stratafs_new_inode(struct super_block *sb,
 		inode->i_op = &stratafs_special_inode_operations;
 		inode->i_fop = &stratafs_file_operations;
 	}
+	stratafs_init_inode_lock_class(inode);
 	return inode;
 
 fail_provider:

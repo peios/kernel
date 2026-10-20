@@ -7,6 +7,7 @@
 #include <linux/kacs_stratafs.h>
 #include <linux/mutex.h>
 #include <linux/path.h>
+#include <linux/spinlock.h>
 #include <linux/xarray.h>
 
 #define STRATAFS_MAGIC STRATAFS_SUPER_MAGIC
@@ -96,6 +97,8 @@ struct stratafs_inode_info {
 
 struct stratafs_file_info {
 	struct mutex mutation_lock;
+	/* Leaf lock for paired real/provider_index publication and pinning. */
+	spinlock_t real_lock;
 	struct file *real;
 	/* Keep the former provider alive for locks taken before copy-up. */
 	struct file *retired_real;
@@ -154,6 +157,8 @@ extern const struct file_operations stratafs_dir_operations;
 extern const struct super_operations stratafs_super_operations;
 extern const struct xattr_handler *const stratafs_xattr_handlers[];
 ssize_t stratafs_listxattr(struct dentry *dentry, char *list, size_t size);
+void stratafs_file_info_init_locks(struct stratafs_file_info *info,
+				   const struct super_block *sb);
 
 struct dentry *stratafs_lookup(struct inode *dir, struct dentry *dentry,
 			       unsigned int flags);
@@ -223,6 +228,17 @@ bool stratafs_stratum_accepts(const struct super_block *sb, unsigned int index,
 int stratafs_route_existing(const struct super_block *sb,
 			    unsigned int provider_index,
 			    const struct path *provider, bool copyable);
+#ifdef CONFIG_FUSE_PASSTHROUGH
+/* Returns owned file and credential references, or NULL for no forwarding. */
+struct file *stratafs_fuse_mmap_file_get(struct file *file,
+					 const struct cred **cred);
+#else
+static inline struct file *stratafs_fuse_mmap_file_get(struct file *file,
+						       const struct cred **cred)
+{
+	return NULL;
+}
+#endif
 void stratafs_audit_refusal(const struct dentry *dentry, const char *operation,
 			    int provider_index, int result, bool deferred);
 

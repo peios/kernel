@@ -232,7 +232,10 @@ local_test(
 local_test(
     name = "qualification-build-test",
     size = "small",
-    srcs = [":style-sources"],
+    srcs = [
+        "include/uapi/linux/fuse.h",
+        ":style-sources",
+    ],
     command = "exec bash peios/qualification/check-build.sh",
     tags = [
         "external",
@@ -256,6 +259,12 @@ local_command(
 local_command(
     name = "qualify-stratafs",
     command = 'exec bash peios/qualification/test-stratafs.sh "$@"',
+    workspace = True,
+)
+
+local_command(
+    name = "qualify-stratafs-fuse",
+    command = 'exec bash peios/qualification/test-stratafs-fuse.sh "$@"',
     workspace = True,
 )
 

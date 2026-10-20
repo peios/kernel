@@ -873,6 +873,109 @@ static void test_mmap_copy_up(void)
 	expect_text("/lower1/mmap-upgrade", "upgrade-old");
 }
 
+static void test_mmap_preparation(void)
+{
+	char *mapping;
+	int fd;
+
+	write_text("/lower1/mmap-private", "private-old");
+	fd = open("/merged/mmap-private", O_RDWR | O_CLOEXEC);
+	if (fd < 0)
+		fail("open private mmap file");
+	mapping = mmap(NULL, 11, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+	if (mapping == MAP_FAILED)
+		fail("private writable mmap");
+	memcpy(mapping, "PRIVATE", 7);
+	if (munmap(mapping, 11) || close(fd))
+		fail("close private mapping");
+	check(access("/lower0/mmap-private", F_OK) == -1 && errno == ENOENT,
+	      "private writable mapping must not prepare a copy");
+	expect_text("/lower1/mmap-private", "private-old");
+
+	write_text("/lower1/mmap-readonly", "readonly-old");
+	fd = open("/merged/mmap-readonly", O_RDONLY | O_CLOEXEC);
+	if (fd < 0)
+		fail("open read-only mmap file");
+	mapping = mmap(NULL, 12, PROT_READ, MAP_SHARED, fd, 0);
+	if (mapping == MAP_FAILED)
+		fail("read-only shared mmap");
+	check(!memcmp(mapping, "readonly-old", 12),
+	      "read-only mapping must expose the selected provider");
+	check_errno(mprotect(mapping, 12, PROT_READ | PROT_WRITE), EACCES,
+		    "read-only description must not gain shared write access");
+	if (munmap(mapping, 12) || close(fd))
+		fail("close read-only mapping");
+	check(access("/lower0/mmap-readonly", F_OK) == -1 && errno == ENOENT,
+	      "read-only shared mapping must not prepare a copy");
+
+	write_text("/lower1/mmap-writeonly", "writeonly-old");
+	fd = open("/merged/mmap-writeonly", O_WRONLY | O_CLOEXEC);
+	if (fd < 0)
+		fail("open write-only mmap file");
+	mapping = mmap(NULL, 13, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	check_errno(mapping == MAP_FAILED ? -1 : 0, EACCES,
+		    "shared mapping requires a readable open description");
+	if (close(fd))
+		fail("close write-only mmap file");
+	check(access("/lower0/mmap-writeonly", F_OK) == -1 && errno == ENOENT,
+	      "write-only mapping rejection must not prepare a copy");
+
+	write_text("/lower1/mmap-failed", "mmap-lower");
+	fd = open("/merged/mmap-failed", O_RDWR | O_CLOEXEC);
+	if (fd < 0)
+		fail("open later-failing mmap file");
+	check(access("/lower0/mmap-failed", F_OK) == -1 && errno == ENOENT,
+	      "writable open must remain lazy before mapping preparation");
+	/*
+	 * do_mmap rejects unsupported MAP_SYNC after the security hook has
+	 * prepared this shared write-capable description.
+	 */
+	mapping = mmap(NULL, 10, PROT_READ, MAP_SHARED_VALIDATE | MAP_SYNC, fd,
+		       0);
+	check_errno(mapping == MAP_FAILED ? -1 : 0, EOPNOTSUPP,
+		    "unsupported mapping flag must fail after preparation");
+	expect_text("/lower0/mmap-failed", "mmap-lower");
+	check(pwrite(fd, "POST", 4, 0) == 4,
+	      "description must retain its prepared copy after mmap failure");
+	if (close(fd))
+		fail("close later-failing mmap file");
+	expect_text("/lower0/mmap-failed", "POST-lower");
+	expect_text("/lower1/mmap-failed", "mmap-lower");
+}
+
+static void test_nested_mmap_preparation(void)
+{
+	char *mapping;
+	int fd;
+
+	make_dir("/nested-mmap");
+	if (mount("none", "/nested-mmap", "stratafs", 0,
+		  "strata=/merged+create"))
+		fail("mount nested mmap stratafs");
+	write_text("/lower1/mmap-nested", "nested-old");
+	fd = open("/nested-mmap/mmap-nested", O_RDWR | O_CLOEXEC);
+	if (fd < 0)
+		fail("open nested mmap file");
+	check(access("/lower0/mmap-nested", F_OK) == -1 && errno == ENOENT,
+	      "nested writable open must remain lazy");
+	mapping = mmap(NULL, 10, PROT_READ, MAP_SHARED_VALIDATE, fd, 0);
+	if (mapping == MAP_FAILED)
+		fail("nested shared write-upgradable mmap");
+	check(!access("/lower0/mmap-nested", F_OK),
+	      "nested write-upgradable mapping must prepare the inner copy");
+	if (close(fd))
+		fail("close mapped nested description");
+	if (mprotect(mapping, 10, PROT_READ | PROT_WRITE))
+		fail("make nested mapping writable");
+	memcpy(mapping, "NESTED", 6);
+	if (msync(mapping, 10, MS_SYNC) || munmap(mapping, 10))
+		fail("close nested writable mapping");
+	expect_text("/lower0/mmap-nested", "NESTED-old");
+	expect_text("/lower1/mmap-nested", "nested-old");
+	if (umount("/nested-mmap"))
+		fail("unmount nested mmap stratafs");
+}
+
 static void test_lock_survives_copy_up(void)
 {
 	int fd;
@@ -1326,6 +1429,7 @@ static void test_overlayfs_copy_up_truncate(void)
 {
 	const char *replacement = "overlayfs-new";
 	char path[128];
+	char *mapping;
 	unsigned int i;
 	int fd;
 
@@ -1404,6 +1508,25 @@ static void test_overlayfs_copy_up_truncate(void)
 	expect_text("/overlay-merged/hello", replacement);
 	expect_text("/overlay-root/b/hello", replacement);
 	expect_text("/overlay-root/a/hello", "");
+
+	write_text("/overlay-root/a/mmap", "overlay-old");
+	fd = open("/overlay-merged/mmap", O_RDWR | O_CLOEXEC);
+	if (fd < 0)
+		fail("open overlay-backed mmap file");
+	check(access("/overlay-root/b/mmap", F_OK) == -1 && errno == ENOENT,
+	      "overlay-backed writable open must remain lazy");
+	mapping = mmap(NULL, 11, PROT_READ, MAP_SHARED, fd, 0);
+	if (mapping == MAP_FAILED)
+		fail("overlay-backed shared write-upgradable mmap");
+	check(!access("/overlay-root/b/mmap", F_OK),
+	      "overlay-backed mapping must prepare the writable copy");
+	if (mprotect(mapping, 11, PROT_READ | PROT_WRITE))
+		fail("make overlay-backed mapping writable");
+	memcpy(mapping, "OVERLAY", 7);
+	if (msync(mapping, 11, MS_SYNC) || munmap(mapping, 11) || close(fd))
+		fail("close overlay-backed mapping");
+	expect_text("/overlay-root/b/mmap", "OVERLAY-old");
+	expect_text("/overlay-root/a/mmap", "overlay-old");
 
 	make_dir("/overlay-root/a/dir");
 	make_dir("/overlay-merged/dir/child");
@@ -1606,6 +1729,8 @@ int main(int argc, char **argv)
 	test_append_flags(false);
 	test_append_flags(true);
 	test_mmap_copy_up();
+	test_mmap_preparation();
+	test_nested_mmap_preparation();
 	test_lock_survives_copy_up();
 	test_ofd_lock_close_after_copy_up();
 	test_posix_lock_close_after_copy_up();

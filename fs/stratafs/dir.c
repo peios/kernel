@@ -698,7 +698,7 @@ static int stratafs_tmpfile(struct mnt_idmap *idmap, struct inode *dir,
 	finfo->provider = real->f_path;
 	path_get(&finfo->provider);
 	finfo->provider_index = sbi->create_index;
-	mutex_init(&finfo->mutation_lock);
+	stratafs_file_info_init_locks(finfo, dir->i_sb);
 	dentry->d_fsdata = dinfo;
 	dentry->d_op = &stratafs_dentry_operations;
 	d_instantiate(dentry, inode);

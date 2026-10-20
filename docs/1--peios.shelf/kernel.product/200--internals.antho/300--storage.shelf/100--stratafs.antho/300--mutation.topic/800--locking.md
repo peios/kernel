@@ -122,15 +122,40 @@ The superblock's identity lock and staging lock are each taken alone.
 two files' mutation locks: the input file's is taken, a reference
 grabbed, and released before the output file's is taken.
 
+StrataFS assigns inode and per-file lockdep classes during initialization,
+before publication. The inode's `i_rwsem` and the file's mutation lock use
+classes based on the mount's admitted stacking depth. Directory and
+non-directory inodes use separate classes.
+
+Dynamic path resolution can reach a different depth, so these classes do
+not guarantee descending acquisition order. Lockdep still records
+dependencies and detects reverse-order cycles across depths.
+
 Reads and writes select and retain a reference to their backing file
 under the mutation lock. Writes finish routing, any copy-up, and append
 flag synchronization before releasing it. The data transfer runs without
 the mutation lock because faults on user buffers can acquire the memory
-mapping lock, which is already held when a mapping takes the mutation
-lock. An operation finishes against its selected provider even if a
+mapping lock. An operation finishes against its selected provider even if a
 concurrent operation copies up the descriptor. Writes that complete
 successfully before forwarding returns refresh the outer inode from its
 current provider under the mutation lock.
+
+Shared write-capable mapping preparation follows the backing chain through
+StrataFS and FUSE passthrough. It takes each StrataFS layer's mutation lock
+before the VFS acquires `mmap_lock`, then releases it before preparing the
+next layer. Each forwarding step uses the credentials that its backing
+mapping would use.
+
+StrataFS does not take the mutation lock, resolve paths, perform copy-up,
+or acquire provider freeze protection in its mapping callback.
+
+A separate leaf spinlock protects the backing file and matching provider
+index. Copy-up publishes this pair while holding the mutation lock. The
+mapping callback takes a reference to the selected file under the leaf
+lock, then releases the lock before checking the route, auditing a refusal,
+or forwarding to the backing filesystem. The reference preserves identity
+and lifetime, not the provider's read-only or immutable state. A changed
+route can require the caller to retry the whole mapping operation.
 
 For mutations the ordering is: the KACS decision, then parent
 materialisation, then write access on the target mount, then the

@@ -5,6 +5,7 @@
 #include <linux/errno.h>
 #include <linux/file.h>
 #include <linux/fs.h>
+#include <linux/kacs_stratafs.h>
 #include <linux/mm.h>
 #include <linux/mmap_lock.h>
 #include <linux/mman.h>
@@ -897,10 +898,12 @@ int pkm_kacs_mmap_file(struct file *file, unsigned long reqprot,
 	 * authorize or continuously audit the same operation a second time
 	 * against the kernel-private provider handle.
 	 */
-	if (pkm_kacs_backing_file_inherited(file))
-		return 0;
-
-	return pkm_kacs_check_mmap_snapshot(file, prot, flags);
+	if (!pkm_kacs_backing_file_inherited(file)) {
+		ret = pkm_kacs_check_mmap_snapshot(file, prot, flags);
+		if (ret)
+			return ret;
+	}
+	return stratafs_prepare_mmap(file, flags);
 }
 
 int pkm_kacs_file_mprotect(struct vm_area_struct *vma, unsigned long reqprot,
