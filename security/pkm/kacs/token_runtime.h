@@ -1083,6 +1083,15 @@ long pkm_kacs_kunit_open_then_change_sd_for_subject(
 long pkm_kacs_kunit_open_file_for_subject(
 	const struct pkm_kacs_kunit_file_open_args *args,
 	u32 *granted_access_out);
+enum pkm_kacs_kunit_snapshot_reader {
+	PKM_KACS_KUNIT_SNAPSHOT_OPEN,
+	PKM_KACS_KUNIT_SNAPSHOT_LIVE_EXEC,
+	PKM_KACS_KUNIT_SNAPSHOT_QUERY_PATH,
+	PKM_KACS_KUNIT_SNAPSHOT_QUERY_HANDLE,
+	PKM_KACS_KUNIT_SNAPSHOT_EXEC_LABEL,
+	PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY,
+};
+
 struct pkm_kacs_kunit_open_snapshot_args {
 	const void *subject_token;
 	const u8 *selected_sd;
@@ -1092,6 +1101,7 @@ struct pkm_kacs_kunit_open_snapshot_args {
 	bool native;
 	bool warm;
 	bool replace_slot;
+	enum pkm_kacs_kunit_snapshot_reader reader;
 };
 
 struct pkm_kacs_kunit_open_snapshot_result {
@@ -1101,6 +1111,8 @@ struct pkm_kacs_kunit_open_snapshot_result {
 	u32 next_managed;
 	u32 hook_calls;
 	u32 retained_refs;
+	u32 first_value;
+	u32 next_value;
 };
 
 long pkm_kacs_kunit_open_snapshot_race(

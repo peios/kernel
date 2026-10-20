@@ -40,8 +40,9 @@ long pkm_kacs_inode_get_effective_cache(
 	struct pkm_kacs_inode_sd_cache **cache_out);
 long pkm_kacs_inode_ensure_effective_cache(struct file *file,
 					   struct pkm_kacs_inode_security *sec);
-long pkm_kacs_inode_ensure_effective_cache_by_inode(
-	struct inode *inode, struct pkm_kacs_inode_security *sec);
+long pkm_kacs_inode_get_effective_cache_by_inode(
+	struct inode *inode, struct pkm_kacs_inode_security *sec,
+	struct pkm_kacs_inode_sd_cache **cache_out);
 void pkm_kacs_inode_replace_sd_cache_locked(
 	struct pkm_kacs_inode_security *sec,
 	struct pkm_kacs_inode_sd_cache *new_cache);

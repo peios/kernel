@@ -909,11 +909,8 @@ long pkm_kacs_query_file_sd_core(const void *subject_token, struct file *file,
 	}
 
 	sec = pkm_kacs_inode(inode);
-	ret = pkm_kacs_inode_ensure_effective_cache(file, sec);
+	ret = pkm_kacs_inode_get_effective_cache(file, sec, &cache);
 	if (!ret) {
-		cache = pkm_kacs_inode_sd_cache_get_current(inode, sec);
-		if (!cache)
-			return -EACCES;
 		if (use_live_access_check) {
 			const void *caap_cache = NULL;
 

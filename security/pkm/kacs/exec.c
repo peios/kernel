@@ -96,14 +96,9 @@ static long pkm_kacs_exec_file_integrity_label(const struct file *file,
 	}
 
 	sec = pkm_kacs_inode(inode);
-	ret = pkm_kacs_inode_ensure_effective_cache((struct file *)file, sec);
+	ret = pkm_kacs_inode_get_effective_cache((struct file *)file, sec,
+						 &cache);
 	if (!ret) {
-		cache = pkm_kacs_inode_sd_cache_get_current(inode, sec);
-		if (!cache) {
-			trace_kacs_exec(false, false, 0, 0,
-					KACS_EXEC_INTEGRITY_NO_CACHE, -EACCES);
-			return -EACCES;
-		}
 		if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
 		    cache->len == 0) {
 			trace_kacs_exec(false, false, 0, 0,

@@ -64,6 +64,15 @@ denial or change which descriptor this open evaluates; a later open resolves
 again and can select the replacement. A missing or corrupt selected entry
 still fails closed. <a id="cite-facs.storage.open-pins-selected-descriptor"></a>
 
+Live file access checks, executable integrity-label reads, descriptor queries,
+and copy-up descriptor reads also retain the immutable entry selected during
+resolution until they finish evaluating or copying it. This includes the
+inode-only descriptor read used by stacking filesystems. Invalidation after
+selection cannot alone cause a refusal or substitute a different descriptor;
+the next operation resolves again. A selected missing or corrupt descriptor
+still fails closed even if another thread repairs the cache before the reader
+finishes. <a id="cite-facs.storage.readers-pin-selected-descriptor"></a>
+
 CAAP is evaluated under its own, later cache lock; the descriptor selection
 and CAAP evaluation are not an atomic snapshot of both policies. The inode
 mutex is not held for the access check, and CAAP is not held across lazy

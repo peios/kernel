@@ -248,13 +248,10 @@ pkm_kacs_copy_up_copy_effective_sd(const struct path *path,
 
 	pkm_kacs_init_path_anchor_file(&anchor, path);
 	inode_sec = pkm_kacs_inode(inode);
-	ret = pkm_kacs_inode_ensure_effective_cache(&anchor, inode_sec);
+	ret = pkm_kacs_inode_get_effective_cache(&anchor, inode_sec, &cache);
 	if (ret)
 		return (int)ret;
 
-	cache = pkm_kacs_inode_sd_cache_get_current(inode, inode_sec);
-	if (!cache)
-		return -EACCES;
 	if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
 	    cache->len == 0 || cache->len > PKM_KACS_MAX_SD_BYTES) {
 		pkm_kacs_inode_sd_cache_free(cache);

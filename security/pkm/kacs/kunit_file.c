@@ -4814,6 +4814,149 @@ static void pkm_kunit_legacy_open_keeps_selected_sd_snapshot(struct kunit *test)
 	pkm_kunit_open_keeps_selected_sd_snapshot(test, false);
 }
 
+static void pkm_kunit_reader_keeps_selected_sd_snapshot(
+	struct kunit *test, enum pkm_kacs_kunit_snapshot_reader reader)
+{
+	const void *subject;
+	const u8 *selected, *replacement;
+	static const u8 corrupt[] = { 0xff };
+	size_t selected_len = 0, replacement_len = 0;
+	bool label = reader == PKM_KACS_KUNIT_SNAPSHOT_EXEC_LABEL;
+	/*
+	 * The path-query subject owns both descriptors and keeps implicit
+	 * READ_CONTROL; handle queries retain their grant. Compare bytes,
+	 * rather than expecting either query to deny the replacement.
+	 */
+	bool metadata = reader == PKM_KACS_KUNIT_SNAPSHOT_QUERY_PATH ||
+			reader == PKM_KACS_KUNIT_SNAPSHOT_QUERY_HANDLE ||
+			reader == PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY;
+	u32 warm, scenario;
+	u32 access = KACS_FILE_EXECUTE | KACS_ACCESS_READ_CONTROL;
+	long invalid = reader == PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY ?
+			       -EOPNOTSUPP :
+			       -EACCES;
+
+	subject = kacs_rust_kunit_create_impersonation_variant_token(
+		PKM_KUNIT_USER_KIND_LOCAL_SERVICE, KACS_TOKEN_TYPE_PRIMARY,
+		KACS_IMLEVEL_DELEGATION, PKM_KUNIT_IL_SYSTEM, 0, 0);
+	KUNIT_ASSERT_NOT_NULL(test, subject);
+	if (label) {
+		/* Raw xattr reads require complete, owner-bearing descriptors. */
+		selected = pkm_kunit_create_labeled_file_sd(
+			subject, PKM_KUNIT_IL_LOW, &selected_len);
+		replacement = pkm_kunit_create_labeled_file_sd(
+			subject, PKM_KUNIT_IL_HIGH, &replacement_len);
+	} else {
+		selected = pkm_kunit_create_precise_file_sd(subject, access,
+							    &selected_len);
+		replacement = pkm_kunit_create_precise_file_sd(
+			subject, 0, &replacement_len);
+	}
+	if (!selected || !replacement) {
+		KUNIT_FAIL(test, "could not allocate fixture descriptors");
+		goto out;
+	}
+	KUNIT_EXPECT_EQ(
+		test,
+		kacs_rust_validate_stored_sd_bytes(selected, selected_len), 0);
+	KUNIT_EXPECT_EQ(test,
+			kacs_rust_validate_stored_sd_bytes(replacement,
+							   replacement_len),
+			0);
+	for (warm = reader == PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY ? 1 : 0;
+	     warm < 2; warm++) {
+		for (scenario = 0; scenario < 4; scenario++) {
+			struct pkm_kacs_kunit_open_snapshot_args args = {
+				.subject_token = subject,
+				.selected_sd = selected,
+				.selected_sd_len = selected_len,
+				.replacement_sd = replacement,
+				.replacement_sd_len = replacement_len,
+				.warm = warm,
+				.replace_slot = scenario != 0,
+				.reader = reader,
+			};
+			struct pkm_kacs_kunit_open_snapshot_result result;
+			bool valid = scenario < 2;
+			long ret;
+
+			/* Invalidate/replace a valid SD, or repair missing/corrupt. */
+			if (!valid) {
+				args.selected_sd = scenario == 2 ? NULL :
+								   corrupt;
+				args.selected_sd_len =
+					scenario == 2 ? 0 : sizeof(corrupt);
+				args.replacement_sd = selected;
+				args.replacement_sd_len = selected_len;
+			}
+			ret = pkm_kacs_kunit_open_snapshot_race(&args, &result);
+			KUNIT_EXPECT_EQ_MSG(test, ret, 0L,
+					    "warm=%u scenario=%u", warm,
+					    scenario);
+			if (ret)
+				continue;
+			KUNIT_EXPECT_EQ(test, result.hook_calls, 1U);
+			KUNIT_EXPECT_EQ(test, result.first_ret,
+					valid ? 0L : invalid);
+			KUNIT_EXPECT_EQ(test, result.next_ret,
+					valid && !label && !metadata ? -EACCES :
+								       0L);
+			if (label) {
+				if (valid)
+					KUNIT_EXPECT_EQ(test,
+							result.first_value,
+							PKM_KUNIT_IL_LOW);
+				KUNIT_EXPECT_EQ(test, result.next_value,
+						valid ? PKM_KUNIT_IL_HIGH :
+							PKM_KUNIT_IL_LOW);
+			} else if (metadata) {
+				if (valid)
+					KUNIT_EXPECT_EQ(test,
+							result.first_value, 1U);
+				KUNIT_EXPECT_EQ(test, result.next_value, 0U);
+			}
+			KUNIT_EXPECT_EQ(test, result.retained_refs, 1U);
+		}
+	}
+	if (IS_ENABLED(CONFIG_PROVE_LOCKING))
+		KUNIT_EXPECT_TRUE(test, debug_locks);
+out:
+	pkm_kacs_free((void *)selected);
+	pkm_kacs_free((void *)replacement);
+	kacs_rust_token_drop(subject);
+}
+
+static void pkm_kunit_live_exec_keeps_selected_sd_snapshot(struct kunit *test)
+{
+	pkm_kunit_reader_keeps_selected_sd_snapshot(
+		test, PKM_KACS_KUNIT_SNAPSHOT_LIVE_EXEC);
+}
+
+static void pkm_kunit_query_path_keeps_selected_sd_snapshot(struct kunit *test)
+{
+	pkm_kunit_reader_keeps_selected_sd_snapshot(
+		test, PKM_KACS_KUNIT_SNAPSHOT_QUERY_PATH);
+}
+
+static void
+pkm_kunit_query_handle_keeps_selected_sd_snapshot(struct kunit *test)
+{
+	pkm_kunit_reader_keeps_selected_sd_snapshot(
+		test, PKM_KACS_KUNIT_SNAPSHOT_QUERY_HANDLE);
+}
+
+static void pkm_kunit_exec_label_keeps_selected_sd_snapshot(struct kunit *test)
+{
+	pkm_kunit_reader_keeps_selected_sd_snapshot(
+		test, PKM_KACS_KUNIT_SNAPSHOT_EXEC_LABEL);
+}
+
+static void pkm_kunit_getsecurity_keeps_selected_sd_snapshot(struct kunit *test)
+{
+	pkm_kunit_reader_keeps_selected_sd_snapshot(
+		test, PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY);
+}
+
 static void pkm_kunit_native_open_read_success(struct kunit *test)
 {
 	struct pkm_kacs_kunit_native_open_args args = {
@@ -10882,6 +11025,11 @@ static struct kunit_case pkm_kunit_file_cases[] = {
 	KUNIT_CASE(pkm_kunit_legacy_cold_open_and_set_sd_lock_order),
 	KUNIT_CASE(pkm_kunit_native_open_keeps_selected_sd_snapshot),
 	KUNIT_CASE(pkm_kunit_legacy_open_keeps_selected_sd_snapshot),
+	KUNIT_CASE(pkm_kunit_live_exec_keeps_selected_sd_snapshot),
+	KUNIT_CASE(pkm_kunit_query_path_keeps_selected_sd_snapshot),
+	KUNIT_CASE(pkm_kunit_query_handle_keeps_selected_sd_snapshot),
+	KUNIT_CASE(pkm_kunit_exec_label_keeps_selected_sd_snapshot),
+	KUNIT_CASE(pkm_kunit_getsecurity_keeps_selected_sd_snapshot),
 	KUNIT_CASE(pkm_kunit_native_open_read_success),
 	KUNIT_CASE(pkm_kunit_native_open_append_only_sets_write_mode),
 	KUNIT_CASE(pkm_kunit_native_open_caches_exact_requested_mask),

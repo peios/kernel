@@ -798,6 +798,17 @@ pkm_kacs_inode_sd_cache_get_current(const struct inode *inode,
 	return owned;
 }
 
+static void
+pkm_kacs_inode_effective_cache_selected(struct inode *inode,
+					struct pkm_kacs_inode_security *sec)
+{
+#ifdef CONFIG_SECURITY_PKM_KUNIT
+	if (sec->kunit_effective_cache_selected)
+		sec->kunit_effective_cache_selected(
+			inode, sec->kunit_effective_cache_context);
+#endif
+}
+
 long pkm_kacs_inode_get_effective_cache(
 	struct file *file, struct pkm_kacs_inode_security *sec,
 	struct pkm_kacs_inode_sd_cache **cache_out)
@@ -831,8 +842,10 @@ long pkm_kacs_inode_get_effective_cache(
 			goto resolve;
 		}
 		*cache_out = cache;
-		if (!pending)
+		if (!pending) {
+			pkm_kacs_inode_effective_cache_selected(inode, sec);
 			return 0;
+		}
 		/*
 		 * A current entry that is still pending belongs to an object
 		 * synthesised as an ancestor -- only to supply inheritance
@@ -850,6 +863,7 @@ long pkm_kacs_inode_get_effective_cache(
 		mutex_unlock(&sec->lock);
 		if (needs_persist)
 			pkm_kacs_inode_queue_sd_persist(file, sec);
+		pkm_kacs_inode_effective_cache_selected(inode, sec);
 		return 0;
 	}
 
@@ -881,6 +895,8 @@ resolve:
 
 	if (needs_persist)
 		pkm_kacs_inode_queue_sd_persist(file, sec);
+	if (!ret)
+		pkm_kacs_inode_effective_cache_selected(inode, sec);
 	return ret;
 }
 
@@ -896,8 +912,9 @@ long pkm_kacs_inode_ensure_effective_cache(struct file *file,
 	return ret;
 }
 
-long pkm_kacs_inode_ensure_effective_cache_by_inode(
-	struct inode *inode, struct pkm_kacs_inode_security *sec)
+long pkm_kacs_inode_get_effective_cache_by_inode(
+	struct inode *inode, struct pkm_kacs_inode_security *sec,
+	struct pkm_kacs_inode_sd_cache **cache_out)
 {
 	struct pkm_kacs_inode_sd_cache *cache;
 	struct vfsmount mnt = {};
@@ -906,13 +923,16 @@ long pkm_kacs_inode_ensure_effective_cache_by_inode(
 	struct dentry *alias;
 	long ret;
 
+	if (!cache_out)
+		return -EINVAL;
+	*cache_out = NULL;
 	if (!inode || !sec)
 		return -EINVAL;
 
 	/*
-	 * Already resolved: nothing to do, and in particular no dentry needed.
+	 * Already resolved: retain the snapshot, with no dentry needed.
 	 * Worth checking here rather than leaving it to
-	 * pkm_kacs_inode_ensure_effective_cache() below, because the alias
+	 * pkm_kacs_inode_get_effective_cache() below, because the alias
 	 * lookup is the one step that can fail for reasons unrelated to the SD.
 	 * A current entry that still owes its write-back (a pending ancestor
 	 * accessed in its own right, PEI-698) does need the dentry, so it
@@ -926,9 +946,12 @@ long pkm_kacs_inode_ensure_effective_cache_by_inode(
 				PKM_KACS_INODE_SD_SOURCE_SYNTHETIC_PENDING;
 		bool reread = pkm_kacs_inode_sd_cache_rereads_each_time(inode);
 
-		pkm_kacs_inode_sd_cache_free(cache);
-		if (!pending && !reread)
+		if (!pending && !reread) {
+			*cache_out = cache;
+			pkm_kacs_inode_effective_cache_selected(inode, sec);
 			return 0;
+		}
+		pkm_kacs_inode_sd_cache_free(cache);
 	}
 
 	/*
@@ -950,7 +973,7 @@ long pkm_kacs_inode_ensure_effective_cache_by_inode(
 	path.dentry = alias;
 	pkm_kacs_init_path_anchor_file(&file, &path);
 
-	ret = pkm_kacs_inode_ensure_effective_cache(&file, sec);
+	ret = pkm_kacs_inode_get_effective_cache(&file, sec, cache_out);
 	dput(alias);
 	return ret;
 }

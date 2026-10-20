@@ -2922,6 +2922,7 @@ out_free:
 
 struct pkm_kacs_kunit_open_snapshot_context {
 	const struct pkm_kacs_kunit_open_snapshot_args *args;
+	struct file *file;
 	struct pkm_kacs_inode_sd_cache *observed;
 	u32 calls;
 	long ret;
@@ -2935,6 +2936,7 @@ static void pkm_kacs_kunit_change_sd_before_open_stamp(struct file *file,
 	struct pkm_kacs_inode_security *sec = pkm_kacs_inode(file_inode(file));
 
 	sec->kunit_open_cache_selected = NULL;
+	sec->kunit_effective_cache_selected = NULL;
 	race->calls++;
 	/* An independent observer pin lets the fixture check for leaked pins. */
 	race->observed =
@@ -2956,10 +2958,95 @@ static void pkm_kacs_kunit_change_sd_before_open_stamp(struct file *file,
 		race->ret = pkm_kacs_inode_ensure_effective_cache(file, sec);
 }
 
+static void pkm_kacs_kunit_change_sd_before_reader(struct inode *inode,
+						   void *context)
+{
+	struct pkm_kacs_kunit_open_snapshot_context *race = context;
+
+	(void)inode;
+	pkm_kacs_kunit_change_sd_before_open_stamp(race->file, context);
+}
+
+static long pkm_kacs_kunit_exec_snapshot(struct file *file, const void *token,
+					 u32 *integrity)
+{
+	const struct cred *old = current_cred();
+	struct pkm_kacs_boot_snapshot snapshot = {};
+	struct cred *new;
+	long ret;
+
+	new = prepare_creds();
+	if (!new)
+		return -ENOMEM;
+	ret = pkm_kacs_bprm_creds_from_file_core(token, token, file, new, old,
+						 true, false, false, 0, false);
+	if (!ret) {
+		if (kacs_rust_kunit_token_snapshot(pkm_kacs_cred(new)->token,
+						   &snapshot))
+			*integrity = snapshot.integrity_level;
+		else
+			ret = -EACCES;
+	}
+	abort_creds(new);
+	return ret;
+}
+
 static long pkm_kacs_kunit_stamp_snapshot(
-	struct file *file, const struct pkm_kacs_kunit_open_snapshot_args *args)
+	struct file *file, const struct pkm_kacs_kunit_open_snapshot_args *args,
+	u32 *value)
 {
 	const void *subject = args->subject_token;
+	const u8 *subset = NULL;
+	const u8 *expected = NULL;
+	size_t subset_len = 0;
+	size_t expected_len = 0;
+	void *sd = NULL;
+	long ret;
+
+	switch (args->reader) {
+	case PKM_KACS_KUNIT_SNAPSHOT_LIVE_EXEC:
+		return pkm_kacs_authorize_live_file_access_core(
+			subject, file, KACS_FILE_EXECUTE);
+	case PKM_KACS_KUNIT_SNAPSHOT_QUERY_PATH:
+	case PKM_KACS_KUNIT_SNAPSHOT_QUERY_HANDLE:
+		if (args->reader == PKM_KACS_KUNIT_SNAPSHOT_QUERY_PATH) {
+			file->f_mode = FMODE_PATH;
+		} else {
+			file->f_mode = FMODE_READ;
+			pkm_kacs_file(file)->managed = 1;
+			pkm_kacs_file(file)->granted_access =
+				KACS_ACCESS_READ_CONTROL;
+		}
+		ret = pkm_kacs_query_file_sd_core(
+			subject, file, KACS_SECINFO_DACL, &subset, &subset_len);
+		if (!ret && args->selected_sd &&
+		    !kacs_rust_query_file_sd_subset(
+			    args->selected_sd, args->selected_sd_len,
+			    KACS_SECINFO_DACL, &expected, &expected_len))
+			*value = subset_len == expected_len &&
+				 !memcmp(subset, expected, subset_len);
+		pkm_kacs_free((void *)expected);
+		pkm_kacs_free((void *)subset);
+		return ret;
+	case PKM_KACS_KUNIT_SNAPSHOT_EXEC_LABEL:
+		return pkm_kacs_kunit_exec_snapshot(file, subject, value);
+	case PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY:
+		ret = pkm_kacs_inode_getsecurity(&nop_mnt_idmap,
+						 file_inode(file), "peios.sd",
+						 &sd, true);
+		if (ret >= 0) {
+			*value = args->selected_sd &&
+				 ret == args->selected_sd_len &&
+				 !memcmp(sd, args->selected_sd, ret);
+			kfree(sd);
+			return 0;
+		}
+		return ret;
+	case PKM_KACS_KUNIT_SNAPSHOT_OPEN:
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	if (args->native)
 		return pkm_kacs_stamp_native_file_granted_access_for_subject(
@@ -2989,6 +3076,7 @@ long pkm_kacs_kunit_open_snapshot_race(
 	if (ret)
 		goto out_free;
 	sec = pkm_kacs_inode(&state->inode);
+	race.file = &state->file;
 	if (args->selected_sd) {
 		mutex_lock(&sec->lock);
 		ret = pkm_kacs_kunit_fake_setxattr_locked(
@@ -3002,11 +3090,19 @@ long pkm_kacs_kunit_open_snapshot_race(
 		if (ret)
 			goto out_cleanup;
 	}
-	sec->kunit_open_cache_context = &race;
-	sec->kunit_open_cache_selected =
-		pkm_kacs_kunit_change_sd_before_open_stamp;
-	out->first_ret = pkm_kacs_kunit_stamp_snapshot(&state->file, args);
+	if (args->reader == PKM_KACS_KUNIT_SNAPSHOT_OPEN) {
+		sec->kunit_open_cache_context = &race;
+		sec->kunit_open_cache_selected =
+			pkm_kacs_kunit_change_sd_before_open_stamp;
+	} else {
+		sec->kunit_effective_cache_context = &race;
+		sec->kunit_effective_cache_selected =
+			pkm_kacs_kunit_change_sd_before_reader;
+	}
+	out->first_ret = pkm_kacs_kunit_stamp_snapshot(&state->file, args,
+						       &out->first_value);
 	sec->kunit_open_cache_selected = NULL;
+	sec->kunit_effective_cache_selected = NULL;
 	out->first_managed = pkm_kacs_file(&state->file)->managed;
 	out->hook_calls = race.calls;
 	ret = race.ret;
@@ -3017,7 +3113,17 @@ long pkm_kacs_kunit_open_snapshot_race(
 	if (race.observed)
 		out->retained_refs = refcount_read(&race.observed->refs);
 	state->file.f_mode = FMODE_READ;
-	out->next_ret = pkm_kacs_kunit_stamp_snapshot(&state->file, args);
+	/*
+	 * The fake inode has no VFS alias. Warm its replacement before the
+	 * inode-only hook; its production warm path needs no alias either.
+	 */
+	if (args->reader == PKM_KACS_KUNIT_SNAPSHOT_GETSECURITY) {
+		ret = pkm_kacs_inode_ensure_effective_cache(&state->file, sec);
+		if (ret)
+			goto out_cleanup;
+	}
+	out->next_ret = pkm_kacs_kunit_stamp_snapshot(&state->file, args,
+						      &out->next_value);
 	out->next_managed = pkm_kacs_file(&state->file)->managed;
 out_cleanup:
 	pkm_kacs_inode_sd_cache_free(race.observed);

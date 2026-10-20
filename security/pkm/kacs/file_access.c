@@ -1143,13 +1143,8 @@ long pkm_kacs_authorize_live_file_access_core(const void *subject_token,
 	}
 
 	sec = pkm_kacs_inode(inode);
-	ret = pkm_kacs_inode_ensure_effective_cache(file, sec);
+	ret = pkm_kacs_inode_get_effective_cache(file, sec, &cache);
 	if (!ret) {
-		cache = pkm_kacs_inode_sd_cache_get_current(inode, sec);
-		if (!cache) {
-			ret = -EACCES;
-			goto log;
-		}
 		cache_state = cache->state;
 		if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
 		    cache->len == 0) {
@@ -1162,7 +1157,6 @@ long pkm_kacs_authorize_live_file_access_core(const void *subject_token,
 		}
 		pkm_kacs_inode_sd_cache_free(cache);
 	}
-log:
 	/*
 	 * Debug instrumentation for the DENY_MISSING boot bring-up. Kept behind
 	 * pr_debug (compiled out / off unless dynamic debug enables it) and the

@@ -212,6 +212,10 @@ struct pkm_kacs_inode_security {
 	/* Fixture-local rendezvous after selection and before the CAAP wait. */
 	void (*kunit_open_cache_selected)(struct file *file, void *context);
 	void *kunit_open_cache_context;
+	/* Successful resolver return, after pinning and dropping all locks. */
+	void (*kunit_effective_cache_selected)(struct inode *inode,
+					       void *context);
+	void *kunit_effective_cache_context;
 #endif
 };
 

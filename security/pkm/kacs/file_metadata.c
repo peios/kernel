@@ -475,7 +475,7 @@ static int pkm_kacs_copy_up_capture_sd(struct dentry *src, u8 **bytes_out,
 	 * addresses a dentry, and missing-SD synthesis walks d_parent. The hook
 	 * gives us the dentry but not the mount, so the anchor carries a zeroed
 	 * vfsmount -- the same shape
-	 * pkm_kacs_inode_ensure_effective_cache_by_inode() builds for the
+	 * pkm_kacs_inode_get_effective_cache_by_inode() builds for the
 	 * inode-only callers.
 	 */
 	mnt.mnt_root = src;
@@ -486,13 +486,10 @@ static int pkm_kacs_copy_up_capture_sd(struct dentry *src, u8 **bytes_out,
 	pkm_kacs_init_path_anchor_file(&anchor, &path);
 
 	inode_sec = pkm_kacs_inode(inode);
-	ret = pkm_kacs_inode_ensure_effective_cache(&anchor, inode_sec);
+	ret = pkm_kacs_inode_get_effective_cache(&anchor, inode_sec, &cache);
 	if (ret)
 		return (int)ret;
 
-	cache = pkm_kacs_inode_sd_cache_get_current(inode, inode_sec);
-	if (!cache)
-		return -EACCES;
 	if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
 	    cache->len == 0 || cache->len > PKM_KACS_MAX_SD_BYTES) {
 		pkm_kacs_inode_sd_cache_free(cache);
@@ -741,13 +738,7 @@ int pkm_kacs_inode_getsecurity(struct mnt_idmap *idmap, struct inode *inode,
 				    KACS_META_GETSECURITY, -EOPNOTSUPP);
 		return -EOPNOTSUPP;
 	}
-	if (pkm_kacs_inode_ensure_effective_cache_by_inode(inode, sec)) {
-		trace_kacs_metadata(inode, PKM_KACS_METADATA_OP_NONE, 0,
-				    KACS_META_GETSECURITY, -EOPNOTSUPP);
-		return -EOPNOTSUPP;
-	}
-	cache = pkm_kacs_inode_sd_cache_get_current(inode, sec);
-	if (!cache) {
+	if (pkm_kacs_inode_get_effective_cache_by_inode(inode, sec, &cache)) {
 		trace_kacs_metadata(inode, PKM_KACS_METADATA_OP_NONE, 0,
 				    KACS_META_GETSECURITY, -EOPNOTSUPP);
 		return -EOPNOTSUPP;
