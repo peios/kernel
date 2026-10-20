@@ -89,11 +89,6 @@ static int ovl_change_flags(struct file *file, unsigned int flags)
 	return 0;
 }
 
-struct ovl_file {
-	struct file *realfile;
-	struct file *upperfile;
-};
-
 struct ovl_file *ovl_file_alloc(struct file *realfile)
 {
 	struct ovl_file *of = kzalloc_obj(struct ovl_file);

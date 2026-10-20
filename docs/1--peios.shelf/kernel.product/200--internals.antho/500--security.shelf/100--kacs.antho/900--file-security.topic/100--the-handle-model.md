@@ -128,6 +128,13 @@ adopted by the outer descriptor, the outer snapshot is installed into
 both blobs as a single transition, after which the backing file
 behaves like any other stacked open.
 
+For an OverlayFS provider, this handoff also reaches the exact private
+backing files opened beneath the staged file. KACS validates the bounded
+chain before changing any snapshot, then copies the original outer handle's
+granted and continuous-audit masks into both blobs of every admitted file.
+The handoff runs after the staged open and before publication. It does not
+relax the active copy-up context's object and phase checks.
+
 The user-visible operation is checked and continuously audited once,
 against the outer handle. Immediate provider re-entry through
 `security_file_permission` or `security_mmap_file` neither repeats the

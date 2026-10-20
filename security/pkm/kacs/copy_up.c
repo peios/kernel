@@ -13,6 +13,7 @@
 #include <linux/dcache.h>
 #include <linux/err.h>
 #include <linux/errno.h>
+#include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/kacs_stratafs.h>
 #include <linux/list.h>
@@ -36,6 +37,7 @@
 #include "mount_policy.h"
 #include "namespace.h"
 #include "object_lifecycle.h"
+#include "overlay_backing.h"
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 #include <kunit/test.h>
@@ -49,6 +51,15 @@
 #include "kunit_common.h"
 #include "sd_access.h"
 #include "token_fd.h"
+#if IS_ENABLED(CONFIG_OVERLAY_FS)
+#include <linux/magic.h>
+#include "../../../fs/overlayfs/ovl_entry.h"
+#endif
+
+/* Internal VFS constructor exported for stackable-filesystem users. */
+extern struct file *alloc_empty_backing_file(int flags, const struct cred *cred,
+					     const struct file *user_file);
+extern void backing_file_set_user_path(struct file *f, const struct path *path);
 #endif
 
 enum pkm_kacs_copy_up_phase {
@@ -988,6 +999,34 @@ out:
 	return ret;
 }
 
+static bool pkm_kacs_copy_up_can_adopt_file_security(
+	struct pkm_kacs_stratafs_copy_up *context,
+	const struct pkm_kacs_file_security *outer_sec,
+	struct pkm_kacs_file_security *backing_sec,
+	struct pkm_kacs_backing_file_security *backing_auth)
+{
+	return context && outer_sec && backing_sec && backing_auth &&
+	       outer_sec->managed && !outer_sec->copy_up_context &&
+	       backing_sec->copy_up_context == context &&
+	       backing_sec->copy_up_phase_generation ==
+		       context->phase_generation &&
+	       !backing_auth->managed && !backing_auth->inherited;
+}
+
+static void pkm_kacs_copy_up_set_file_snapshot(
+	const struct pkm_kacs_file_security *outer_sec,
+	struct pkm_kacs_file_security *backing_sec,
+	struct pkm_kacs_backing_file_security *backing_auth)
+{
+	backing_sec->granted_access = outer_sec->granted_access;
+	backing_sec->continuous_audit_mask = outer_sec->continuous_audit_mask;
+	backing_sec->managed = 1;
+	backing_auth->granted_access = outer_sec->granted_access;
+	backing_auth->continuous_audit_mask = outer_sec->continuous_audit_mask;
+	backing_auth->managed = 1;
+	backing_auth->inherited = 1;
+}
+
 static int pkm_kacs_copy_up_adopt_file_security(
 	struct pkm_kacs_stratafs_copy_up *context,
 	const struct pkm_kacs_file_security *outer_sec,
@@ -996,21 +1035,12 @@ static int pkm_kacs_copy_up_adopt_file_security(
 {
 	struct pkm_kacs_stratafs_copy_up *file_context;
 
-	if (!context || !outer_sec || !backing_sec || !backing_auth ||
-	    !outer_sec->managed || outer_sec->copy_up_context ||
-	    backing_sec->copy_up_context != context ||
-	    backing_sec->copy_up_phase_generation !=
-		    context->phase_generation ||
-	    backing_auth->managed || backing_auth->inherited)
+	if (!pkm_kacs_copy_up_can_adopt_file_security(
+		    context, outer_sec, backing_sec, backing_auth))
 		return -EACCES;
 
-	backing_sec->granted_access = outer_sec->granted_access;
-	backing_sec->continuous_audit_mask = outer_sec->continuous_audit_mask;
-	backing_sec->managed = 1;
-	backing_auth->granted_access = outer_sec->granted_access;
-	backing_auth->continuous_audit_mask = outer_sec->continuous_audit_mask;
-	backing_auth->managed = 1;
-	backing_auth->inherited = 1;
+	pkm_kacs_copy_up_set_file_snapshot(outer_sec, backing_sec,
+					   backing_auth);
 	file_context = backing_sec->copy_up_context;
 	backing_sec->copy_up_context = NULL;
 	backing_sec->copy_up_phase_generation = 0;
@@ -1025,11 +1055,17 @@ int pkm_kacs_stratafs_copy_up_adopt_backing_file(
 	struct pkm_kacs_file_security *outer_sec;
 	struct pkm_kacs_file_security *backing_sec;
 	struct pkm_kacs_backing_file_security *backing_auth;
+	struct file *children[FILESYSTEM_MAX_STACK_DEPTH];
+	struct file *parent = backing_file;
+	struct file *child;
 	const struct path *user_path;
+	unsigned int count = 0, i;
+	int ret;
 
 	if (!pkm_kacs_copy_up_owned(context) || !outer_file || !backing_file ||
 	    !outer_file->f_security || !backing_file->f_security ||
-	    !(backing_file->f_mode & FMODE_BACKING))
+	    !(backing_file->f_mode & FMODE_BACKING) ||
+	    !backing_file_security(backing_file))
 		return -EINVAL;
 	if (context->phase != PKM_KACS_COPY_UP_PHASE_NONE ||
 	    !pkm_kacs_copy_up_staging_path(context, &backing_file->f_path,
@@ -1043,6 +1079,51 @@ int pkm_kacs_stratafs_copy_up_adopt_backing_file(
 	outer_sec = pkm_kacs_file((struct file *)outer_file);
 	backing_sec = pkm_kacs_file(backing_file);
 	backing_auth = pkm_kacs_backing_file(backing_file);
+	if (!pkm_kacs_copy_up_can_adopt_file_security(
+		    context, outer_sec, backing_sec, backing_auth))
+		return -EACCES;
+
+	/*
+	 * The staged open is private until adoption returns. Collect and
+	 * validate every exact OverlayFS child before writing any snapshot.
+	 * A leaf at the depth limit is valid; another wrapper is not.
+	 */
+	for (;;) {
+		child = pkm_kacs_copy_up_overlay_child_get(parent);
+		if (IS_ERR(child)) {
+			ret = PTR_ERR(child);
+			goto out;
+		}
+		if (!child)
+			break;
+		if (count == ARRAY_SIZE(children) || child == backing_file) {
+			fput(child);
+			ret = -ELOOP;
+			goto out;
+		}
+		for (i = 0; i < count; i++) {
+			if (child == children[i]) {
+				fput(child);
+				ret = -ELOOP;
+				goto out;
+			}
+		}
+		children[count++] = child;
+		if (!child->f_security || !backing_file_security(child)) {
+			ret = -EACCES;
+			goto out;
+		}
+		/* Descendants used ordinary open, not the root's exact phase. */
+		if (!pkm_kacs_file(child)->managed ||
+		    pkm_kacs_file(child)->copy_up_context ||
+		    pkm_kacs_file(child)->copy_up_phase_generation ||
+		    pkm_kacs_backing_file(child)->managed ||
+		    pkm_kacs_backing_file(child)->inherited) {
+			ret = -EACCES;
+			goto out;
+		}
+		parent = child;
+	}
 
 	/*
 	 * The outer descriptor's immutable access snapshot is the authority
@@ -1052,8 +1133,17 @@ int pkm_kacs_stratafs_copy_up_adopt_backing_file(
 	 * it.  Exact staging and user-path bindings above prevent this from
 	 * becoming a general snapshot-cloning primitive.
 	 */
-	return pkm_kacs_copy_up_adopt_file_security(context, outer_sec,
-						    backing_sec, backing_auth);
+	ret = pkm_kacs_copy_up_adopt_file_security(context, outer_sec,
+						   backing_sec, backing_auth);
+	if (!ret)
+		for (i = 0; i < count; i++)
+			pkm_kacs_copy_up_set_file_snapshot(
+				outer_sec, pkm_kacs_file(children[i]),
+				pkm_kacs_backing_file(children[i]));
+out:
+	while (count)
+		fput(children[--count]);
+	return ret;
 }
 
 int pkm_kacs_stratafs_copy_up_begin_populate(
@@ -2906,6 +2996,291 @@ pkm_kunit_copy_up_adopts_outer_descriptor_snapshot(struct kunit *test)
 	KUNIT_EXPECT_PTR_EQ(test, backing.copy_up_context, &context);
 }
 
+#if IS_ENABLED(CONFIG_OVERLAY_FS)
+/*
+ * Real backing-file allocations supply the two LSM blobs and refcounts.
+ * The paths and OverlayFS private objects are synthetic and never opened by
+ * VFS. Their initial file references remain fixture-owned; cleanup removes
+ * the borrowed paths before freeing the unopened files.
+ */
+struct pkm_kunit_copy_up_overlay {
+	struct pkm_kacs_stratafs_copy_up context;
+	struct file outer;
+	struct inode outer_inode;
+	struct dentry outer_dentry;
+	struct inode parent_inode;
+	struct dentry parent_dentry;
+	struct file *files[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct ovl_file of[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct ovl_inode inodes[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct ovl_fs ofs[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct ovl_layer layers[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct super_block sb[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct dentry dentries[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct vfsmount mounts[FILESYSTEM_MAX_STACK_DEPTH + 1];
+	struct file_system_type type;
+};
+
+static const struct file_operations pkm_kunit_copy_up_overlay_fops = {};
+
+static void pkm_kunit_copy_up_overlay_cleanup(void *data)
+{
+	struct pkm_kunit_copy_up_overlay *f = data;
+	const struct path empty = {};
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(f->files); i++) {
+		if (!f->files[i])
+			continue;
+		pkm_kacs_copy_up_file_release(f->files[i]);
+		backing_file_set_user_path(f->files[i], &empty);
+		*(struct path *)&f->files[i]->f_path = empty;
+		__fput_sync(f->files[i]);
+	}
+	mutex_destroy(&f->context.lock);
+}
+
+static struct pkm_kunit_copy_up_overlay *
+pkm_kunit_copy_up_overlay_fixture(struct kunit *test)
+{
+	struct pkm_kunit_copy_up_overlay *f;
+	struct pkm_kacs_file_security *sec;
+	struct file *parent;
+	unsigned int i;
+
+	f = kunit_kzalloc(test, sizeof(*f), GFP_KERNEL);
+	if (!f)
+		return NULL;
+	refcount_set(&f->context.refs, 1);
+	mutex_init(&f->context.lock);
+	if (kunit_add_action_or_reset(test, pkm_kunit_copy_up_overlay_cleanup,
+				      f))
+		return NULL;
+	f->outer.f_security = kunit_kzalloc(
+		test, pkm_blob_sizes.lbs_file + sizeof(*sec), GFP_KERNEL);
+	if (!f->outer.f_security)
+		return NULL;
+	f->outer_inode.i_mode = S_IFREG | 0600;
+	f->outer.f_inode = &f->outer_inode;
+	pkm_kacs_kunit_init_copy_up_dentry(&f->outer_dentry, &f->outer_inode,
+					   NULL, "outer");
+	*(struct path *)&f->outer.f_path =
+		(struct path){ .mnt = &f->mounts[0],
+			       .dentry = &f->outer_dentry };
+	sec = pkm_kacs_file(&f->outer);
+	sec->granted_access = KACS_FILE_READ_DATA | KACS_FILE_EXECUTE;
+	sec->continuous_audit_mask = KACS_FILE_EXECUTE;
+	f->type.name = "overlay";
+	f->parent_inode.i_mode = S_IFDIR | 0700;
+	pkm_kacs_kunit_init_copy_up_dentry(&f->parent_dentry, &f->parent_inode,
+					   NULL, "parent");
+	parent = &f->outer;
+	for (i = 0; i < ARRAY_SIZE(f->files); i++) {
+		struct inode *inode = &f->inodes[i].vfs_inode;
+		struct file *file;
+
+		file = alloc_empty_backing_file(O_RDWR, current_cred(), parent);
+		if (IS_ERR(file))
+			return NULL;
+		f->files[i] = file;
+		inode->i_mode = S_IFREG | 0600;
+		inode->i_sb = &f->sb[i];
+		inode->i_fop = &pkm_kunit_copy_up_overlay_fops;
+		f->sb[i].s_type = &f->type;
+		f->sb[i].s_fs_info = &f->ofs[i];
+		f->ofs[i].numlayer = 1;
+		f->ofs[i].layers = &f->layers[i];
+		file->f_inode = inode;
+		file->f_op = inode->i_fop;
+		file->private_data = &f->of[i];
+		pkm_kacs_kunit_init_copy_up_dentry(&f->dentries[i], inode,
+						   &f->parent_dentry, "stage");
+		*(struct path *)&file->f_path =
+			(struct path){ .mnt = &f->mounts[i],
+				       .dentry = &f->dentries[i] };
+		backing_file_set_user_path(file, &parent->f_path);
+		sec = pkm_kacs_file(file);
+		/* Deliberately broader than the delegated outer snapshot. */
+		sec->granted_access = ~0U;
+		sec->continuous_audit_mask = ~0U;
+		if (i) {
+			f->sb[i - 1].s_magic = OVERLAYFS_SUPER_MAGIC;
+			f->of[i - 1].realfile = file;
+			f->inodes[i - 1].__upperdentry = &f->dentries[i];
+			f->layers[i - 1].mnt = &f->mounts[i];
+		}
+		parent = file;
+	}
+	/*
+	 * Keep allocation sources unmanaged until all containers exist, so
+	 * their backing blobs start empty, as for opens under a copy-up phase.
+	 * No test task remains attached while allocating or asserting.
+	 */
+	pkm_kacs_file(&f->outer)->managed = 1;
+	for (i = 0; i < ARRAY_SIZE(f->files); i++)
+		pkm_kacs_file(f->files[i])->managed = 1;
+	f->context.staging = f->files[0]->f_path;
+	f->context.staging_inode = file_inode(f->files[0]);
+	f->context.staging_parent =
+		(struct path){ .mnt = &f->mounts[0],
+			       .dentry = &f->parent_dentry };
+	f->context.staging_parent_inode = &f->parent_inode;
+	f->context.staging_bound = true;
+	f->context.phase_generation = 7;
+	sec = pkm_kacs_file(f->files[0]);
+	sec->granted_access = 0;
+	sec->continuous_audit_mask = 0;
+	sec->copy_up_context = pkm_kacs_stratafs_copy_up_get(&f->context);
+	sec->copy_up_phase_generation = f->context.phase_generation;
+	return f;
+}
+
+static int pkm_kunit_copy_up_overlay_adopt(struct pkm_kunit_copy_up_overlay *f)
+{
+	int ret;
+
+	/*
+	 * KUnit runs cleanup actions in a different kthread. Detach in this
+	 * thread before returning to any assertion, including on rejection.
+	 */
+	ret = pkm_kacs_stratafs_copy_up_enter(&f->context);
+	if (ret)
+		return ret;
+	ret = pkm_kacs_stratafs_copy_up_adopt_backing_file(
+		&f->context, &f->outer, f->files[0]);
+	pkm_kacs_stratafs_copy_up_leave(&f->context);
+	return ret;
+}
+
+static void pkm_kunit_copy_up_overlay_expect_unchanged(
+	struct kunit *test, struct pkm_kunit_copy_up_overlay *f, int expected)
+{
+	struct pkm_kacs_file_security before[ARRAY_SIZE(f->files)];
+	struct pkm_kacs_backing_file_security auth[ARRAY_SIZE(f->files)];
+	unsigned int refs = refcount_read(&f->context.refs);
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(f->files); i++) {
+		memcpy(&before[i], pkm_kacs_file(f->files[i]),
+		       sizeof(before[i]));
+		memcpy(&auth[i], pkm_kacs_backing_file(f->files[i]),
+		       sizeof(auth[i]));
+	}
+	KUNIT_EXPECT_EQ(test, pkm_kunit_copy_up_overlay_adopt(f), expected);
+	KUNIT_EXPECT_NULL(test, pkm_kacs_task(current)->copy_up_context);
+	KUNIT_EXPECT_EQ(test, atomic_read(&f->context.attached), 0);
+	for (i = 0; i < ARRAY_SIZE(f->files); i++) {
+		KUNIT_EXPECT_MEMEQ(test, pkm_kacs_file(f->files[i]), &before[i],
+				   sizeof(before[i]));
+		KUNIT_EXPECT_MEMEQ(test, pkm_kacs_backing_file(f->files[i]),
+				   &auth[i], sizeof(auth[i]));
+		KUNIT_EXPECT_EQ(test, file_count(f->files[i]), 1UL);
+	}
+	KUNIT_EXPECT_EQ(test, refcount_read(&f->context.refs), refs);
+	KUNIT_EXPECT_EQ(test, f->context.phase_generation, 7ULL);
+}
+
+static void pkm_kunit_copy_up_overlay_adopts_exact_chain(struct kunit *test)
+{
+	struct pkm_kunit_copy_up_overlay *f =
+		pkm_kunit_copy_up_overlay_fixture(test);
+	struct pkm_kacs_file_security *outer;
+	unsigned int i;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	outer = pkm_kacs_file(&f->outer);
+	KUNIT_ASSERT_EQ(test, pkm_kunit_copy_up_overlay_adopt(f), 0);
+	KUNIT_EXPECT_NULL(test, pkm_kacs_task(current)->copy_up_context);
+	KUNIT_EXPECT_EQ(test, atomic_read(&f->context.attached), 0);
+	for (i = 0; i < ARRAY_SIZE(f->files); i++) {
+		struct pkm_kacs_file_security *sec = pkm_kacs_file(f->files[i]);
+		struct pkm_kacs_backing_file_security *auth =
+			pkm_kacs_backing_file(f->files[i]);
+
+		KUNIT_EXPECT_EQ(test, sec->granted_access,
+				outer->granted_access);
+		KUNIT_EXPECT_EQ(test, sec->continuous_audit_mask,
+				outer->continuous_audit_mask);
+		KUNIT_EXPECT_TRUE(test, sec->managed);
+		KUNIT_EXPECT_NULL(test, sec->copy_up_context);
+		KUNIT_EXPECT_EQ(test, sec->copy_up_phase_generation, 0ULL);
+		KUNIT_EXPECT_EQ(test, auth->granted_access,
+				outer->granted_access);
+		KUNIT_EXPECT_EQ(test, auth->continuous_audit_mask,
+				outer->continuous_audit_mask);
+		KUNIT_EXPECT_TRUE(test, auth->managed);
+		KUNIT_EXPECT_TRUE(test, auth->inherited);
+		KUNIT_EXPECT_EQ(test, file_count(f->files[i]), 1UL);
+	}
+	KUNIT_EXPECT_EQ(test, refcount_read(&f->context.refs), 1U);
+	/* Replay cannot consume another context pin or alter any snapshot. */
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+}
+
+static void
+pkm_kunit_copy_up_overlay_rejects_late_association(struct kunit *test)
+{
+	struct pkm_kunit_copy_up_overlay *f =
+		pkm_kunit_copy_up_overlay_fixture(test);
+	unsigned int last = ARRAY_SIZE(f->files) - 1;
+	struct path parent_path;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	parent_path = f->files[last - 1]->f_path;
+
+	/* Earlier children are valid and pinned before each last-child error. */
+	f->of[last - 1].upperfile = f->files[last];
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -ESTALE);
+	f->of[last - 1].upperfile = NULL;
+	f->layers[last - 1].mnt = &f->mounts[0];
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -ESTALE);
+	f->layers[last - 1].mnt = &f->mounts[last];
+	backing_file_set_user_path(f->files[last], &f->outer.f_path);
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -ESTALE);
+	backing_file_set_user_path(f->files[last], &parent_path);
+	f->inodes[last - 1].__upperdentry = &f->outer_dentry;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -ESTALE);
+	f->inodes[last - 1].__upperdentry = &f->dentries[last];
+	f->files[last - 1]->f_op = NULL;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -ESTALE);
+	f->files[last - 1]->f_op = &pkm_kunit_copy_up_overlay_fops;
+}
+
+static void pkm_kunit_copy_up_overlay_rejects_late_security(struct kunit *test)
+{
+	struct pkm_kunit_copy_up_overlay *f =
+		pkm_kunit_copy_up_overlay_fixture(test);
+	struct pkm_kacs_file_security *sec;
+	struct pkm_kacs_backing_file_security *auth;
+	unsigned int last = ARRAY_SIZE(f->files) - 1;
+
+	KUNIT_ASSERT_NOT_NULL(test, f);
+	sec = pkm_kacs_file(f->files[last]);
+	auth = pkm_kacs_backing_file(f->files[last]);
+	sec->managed = 0;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+	sec->managed = 1;
+	sec->copy_up_context = &f->context;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+	sec->copy_up_context = NULL;
+	sec->copy_up_phase_generation = 1;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+	sec->copy_up_phase_generation = 0;
+	auth->managed = 1;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+	auth->managed = 0;
+	auth->inherited = 1;
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+	auth->inherited = 0;
+
+	/* The failed handoffs leave the root's original one-shot pin intact. */
+	KUNIT_EXPECT_EQ(test, refcount_read(&f->context.refs), 2U);
+	pkm_kacs_copy_up_file_release(f->files[0]);
+	KUNIT_EXPECT_EQ(test, refcount_read(&f->context.refs), 1U);
+	pkm_kunit_copy_up_overlay_expect_unchanged(test, f, -EACCES);
+}
+#endif
+
 static void
 pkm_kunit_copy_up_publish_identity_matches_vfs_semantics(struct kunit *test)
 {
@@ -3405,11 +3780,6 @@ static void pkm_kunit_post_setxattr_keeps_an_unrelated_cache(struct kunit *test)
 #define PKM_KUNIT_COPY_UP_UNKNOWN_MAY 0x100
 #define PKM_KUNIT_EXPECT_PHASE(test, ctx, expected) \
 	KUNIT_EXPECT_EQ(test, (int)(ctx)->phase, (int)(expected))
-
-/* Internal VFS constructor exported for stackable-filesystem users. */
-extern struct file *alloc_empty_backing_file(int flags, const struct cred *cred,
-					     const struct file *user_file);
-extern void backing_file_set_user_path(struct file *f, const struct path *path);
 
 struct pkm_kunit_copy_up_tree {
 	struct file_system_type *type;
@@ -5071,6 +5441,11 @@ static struct kunit_case pkm_kunit_copy_up_cases[] = {
 	KUNIT_CASE(pkm_kunit_copy_up_source_directory_resume_is_exact),
 	KUNIT_CASE(pkm_kunit_copy_up_context_is_non_nesting),
 	KUNIT_CASE(pkm_kunit_copy_up_adopts_outer_descriptor_snapshot),
+#if IS_ENABLED(CONFIG_OVERLAY_FS)
+	KUNIT_CASE(pkm_kunit_copy_up_overlay_adopts_exact_chain),
+	KUNIT_CASE(pkm_kunit_copy_up_overlay_rejects_late_association),
+	KUNIT_CASE(pkm_kunit_copy_up_overlay_rejects_late_security),
+#endif
 	KUNIT_CASE(pkm_kunit_copy_up_publish_identity_matches_vfs_semantics),
 	KUNIT_CASE(pkm_kunit_copy_up_begin_pins_provider_without_a_check),
 	KUNIT_CASE(pkm_kunit_copy_up_attachment_is_exclusive_and_transferable),

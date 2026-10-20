@@ -202,7 +202,7 @@ Between phases it is unusable and conveys no deletion authority.
 
 ## Backing-file adoption <a id="cite-facs.stratafs-copy-up.backing-adoption"></a>
 
-Once a regular-file copy is published, one exact copy-up-internal
+Before a regular-file copy is published, one exact copy-up-internal
 backing file can become the backing file for the outer StrataFS open
 description. The staging binding is verified, and the backing file's
 recorded user path is confirmed to be that same outer description;
@@ -213,10 +213,25 @@ new AccessCheck against the task that caused the copy-up, which is
 what preserves descriptor delegation when that task is not the opener.
 It is one-shot, and requires the backing file mode. <a id="cite-facs.stratafs-copy-up.adoption-one-shot"></a>
 
-The ordering is worth noting: StrataFS performs the adoption **before**
-publishing the anonymous staged object rather than after, so what is
-verified is the still-bound staging binding rather than a published
-one. <a id="cite-facs.stratafs-copy-up.adoption-before-publish"></a>
+StrataFS performs adoption after opening the staged file and **before**
+publishing the anonymous staged object. KACS verifies the still-bound
+staging object while the owned context has no armed phase.
+<a id="cite-facs.stratafs-copy-up.adoption-before-publish"></a>
+
+If the staged file belongs to OverlayFS, adoption also follows its exact
+private backing files. Each child must be the parent's stored real file,
+name that parent's upper object on its upper mount, and record the parent
+as its user path. Matching a path alone does not establish this relationship.
+The child must have an ordinary managed grant, no copy-up context or phase
+generation, and no inherited backing grant.
+
+KACS pins and validates the entire bounded chain before changing any file's
+snapshot. A stale association, repeated file, or excessive depth rejects the
+handoff without changing those snapshots. Once validation succeeds, every
+admitted file receives the original outer description's granted and
+continuous-audit masks in both security blobs. This preserves delegated
+authority without consulting the task's credentials or weakening phase
+precedence.
 
 <a id="trm-3-9-7-7"></a>
 

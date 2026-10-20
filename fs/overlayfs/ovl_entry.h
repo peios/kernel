@@ -5,6 +5,11 @@
  * Copyright (C) 2016 Red Hat, Inc.
  */
 
+struct ovl_file {
+	struct file *realfile;
+	struct file *upperfile;
+};
+
 struct ovl_config {
 	char *upperdir;
 	char *workdir;
