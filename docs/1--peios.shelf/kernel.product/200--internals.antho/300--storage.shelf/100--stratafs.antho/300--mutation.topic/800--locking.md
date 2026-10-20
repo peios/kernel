@@ -122,6 +122,16 @@ The superblock's identity lock and staging lock are each taken alone.
 two files' mutation locks: the input file's is taken, a reference
 grabbed, and released before the output file's is taken.
 
+Reads and writes select and retain a reference to their backing file
+under the mutation lock. Writes finish routing, any copy-up, and append
+flag synchronization before releasing it. The data transfer runs without
+the mutation lock because faults on user buffers can acquire the memory
+mapping lock, which is already held when a mapping takes the mutation
+lock. An operation finishes against its selected provider even if a
+concurrent operation copies up the descriptor. Writes that complete
+successfully before forwarding returns refresh the outer inode from its
+current provider under the mutation lock.
+
 For mutations the ordering is: the KACS decision, then parent
 materialisation, then write access on the target mount, then the
 parent's directory lock through the VFS's create, remove or rename

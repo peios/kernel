@@ -221,13 +221,15 @@ static ssize_t stratafs_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 	struct file *file = iocb->ki_filp;
 	struct stratafs_file_info *info = file->private_data;
 	struct backing_file_ctx ctx = stratafs_backing_ctx(file);
-
+	struct file *real;
 	ssize_t ret;
 
 	mutex_lock(&info->mutation_lock);
-	ret = backing_file_read_iter(info->real, iter, iocb, iocb->ki_flags,
-				     &ctx);
+	real = get_file(info->real);
 	mutex_unlock(&info->mutation_lock);
+	/* User faults may take mmap_lock, which precedes mutation_lock. */
+	ret = backing_file_read_iter(real, iter, iocb, iocb->ki_flags, &ctx);
+	fput(real);
 	return ret;
 }
 
@@ -267,6 +269,7 @@ static ssize_t stratafs_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 	struct file *file = iocb->ki_filp;
 	struct stratafs_file_info *info = file->private_data;
 	struct backing_file_ctx ctx = stratafs_backing_ctx(file);
+	struct file *real;
 	ssize_t ret;
 
 	mutex_lock(&info->mutation_lock);
@@ -287,10 +290,17 @@ static ssize_t stratafs_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 			goto out;
 	}
 
-	ret = backing_file_write_iter(info->real, iter, iocb, iocb->ki_flags,
-				      &ctx);
-	if (ret >= 0)
+	real = get_file(info->real);
+	mutex_unlock(&info->mutation_lock);
+	/* Pin the selected provider without holding a lock across user faults. */
+	ret = backing_file_write_iter(real, iter, iocb, iocb->ki_flags, &ctx);
+	fput(real);
+	if (ret >= 0) {
+		mutex_lock(&info->mutation_lock);
 		stratafs_refresh_inode(file_inode(file), &info->provider);
+		mutex_unlock(&info->mutation_lock);
+	}
+	return ret;
 out:
 	mutex_unlock(&info->mutation_lock);
 	return ret;
