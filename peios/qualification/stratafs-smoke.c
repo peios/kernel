@@ -750,6 +750,86 @@ static void test_file_position(bool copy_up)
 		expect_text(source, "0123456789");
 }
 
+static void set_append(int fd, bool append)
+{
+	int flags = fcntl(fd, F_GETFL);
+	int expected;
+
+	if (flags < 0)
+		fail("get append flags");
+	expected = append ? flags | O_APPEND : flags & ~O_APPEND;
+	if (fcntl(fd, F_SETFL, expected))
+		fail("set append flags");
+	check(fcntl(fd, F_GETFL) == expected,
+	      "F_SETFL must change only the requested append flag");
+}
+
+static void test_append_flags(bool copy_up)
+{
+	const char *source = copy_up ? "/lower1/append-copy" :
+				       "/lower0/append-in-place";
+	const char *merged = copy_up ? "/merged/append-copy" :
+				       "/merged/append-in-place";
+	const char *target = copy_up ? "/lower0/append-copy" : source;
+	off_t source_offset;
+	off_t target_offset;
+	int pipe_fds[2];
+	int source_fd;
+	int fd;
+
+	write_text(source, "abc");
+	fd = open(merged, O_RDWR | O_APPEND | O_CLOEXEC);
+	if (fd < 0)
+		fail("open append test");
+	check(write(fd, "A", 1) == 1,
+	      "initial append must reach writable provider");
+
+	set_append(fd, false);
+	if (lseek(fd, 0, SEEK_SET) != 0)
+		fail("seek after clearing append");
+	check(write(fd, "X", 1) == 1, "write after clearing append");
+	expect_text(target, "XbcA");
+	set_append(fd, true);
+	check(pwrite(fd, "Y", 1, 0) == 1, "pwrite after setting append");
+	expect_text(target, "XbcAY");
+	set_append(fd, false);
+	check(pwrite(fd, "Z", 1, 1) == 1, "pwrite after clearing append");
+	expect_text(target, "XZcAY");
+
+	set_append(fd, true);
+	check(write(fd, "W", 1) == 1, "write after setting append again");
+	expect_text(target, "XZcAYW");
+	set_append(fd, false);
+	if (pipe2(pipe_fds, O_CLOEXEC) || write(pipe_fds[1], "S", 1) != 1)
+		fail("prepare append splice");
+	target_offset = 2;
+	check(splice(pipe_fds[0], NULL, fd, &target_offset, 1, 0) == 1 &&
+		      target_offset == 3,
+	      "splice after clearing append must use the explicit offset");
+	if (close(pipe_fds[0]) || close(pipe_fds[1]))
+		fail("close append splice pipe");
+	expect_text(target, "XZSAYW");
+
+	set_append(fd, true);
+	check(write(fd, "P", 1) == 1, "append before range copy");
+	set_append(fd, false);
+	write_text("/lower0/append-range-source", "R");
+	source_fd = open("/merged/append-range-source", O_RDONLY | O_CLOEXEC);
+	if (source_fd < 0)
+		fail("open append range source");
+	source_offset = 0;
+	target_offset = 3;
+	check(copy_file_range(source_fd, &source_offset, fd, &target_offset, 1,
+			      0) == 1 &&
+		      source_offset == 1 && target_offset == 4,
+	      "range copy after clearing append must use the explicit offsets");
+	if (close(source_fd) || close(fd))
+		fail("close append test");
+	expect_text(target, "XZSRYWP");
+	if (copy_up)
+		expect_text(source, "abc");
+}
+
 static void test_mmap_copy_up(void)
 {
 	char *mapping;
@@ -1523,6 +1603,8 @@ int main(int argc, char **argv)
 	test_copy_up_descriptors();
 	test_file_position(false);
 	test_file_position(true);
+	test_append_flags(false);
+	test_append_flags(true);
 	test_mmap_copy_up();
 	test_lock_survives_copy_up();
 	test_ofd_lock_close_after_copy_up();

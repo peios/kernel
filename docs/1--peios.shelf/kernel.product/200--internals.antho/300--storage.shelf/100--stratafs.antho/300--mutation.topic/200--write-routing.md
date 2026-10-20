@@ -113,6 +113,12 @@ copies up or fails with `EROFS` there and then. The truncation itself
 is applied afterwards by the VFS through `setattr`, which routes again
 and lands on the copy. <a id="cite-write.o-trunc-routes-at-open"></a>
 
+Writes to regular files use the open file description's current
+`O_APPEND` setting, including changes made with `F_SETFL` after open or
+copy-up. Clearing the flag restores writes at the selected offset and
+allows `splice` and range-copy operations to use their explicit offsets.
+The provider's append-only restrictions and flag checks still apply.
+
 Routing at operation time rather than at open is what makes the rule
 implementable. A filesystem cannot see what an open asked for in
 access-mask terms — the caller's descriptor is stamped by KACS before

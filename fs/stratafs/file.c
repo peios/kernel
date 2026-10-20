@@ -231,6 +231,37 @@ static ssize_t stratafs_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 	return ret;
 }
 
+/* The caller holds mutation_lock and has completed any required copy-up. */
+static int stratafs_sync_append(struct file *file, struct file *real)
+{
+	unsigned int append = READ_ONCE(file->f_flags) & O_APPEND;
+	unsigned int flags = READ_ONCE(real->f_flags);
+	int ret;
+
+	if (!S_ISREG(file_inode(real)->i_mode))
+		return 0;
+	if ((flags & O_APPEND) == append)
+		return 0;
+	if (IS_APPEND(file_inode(real)))
+		return -EPERM;
+	flags = (flags & ~O_APPEND) | append;
+	if (real->f_op->check_flags) {
+		ret = real->f_op->check_flags(flags);
+		if (ret)
+			return ret;
+	}
+
+	/*
+	 * Synchronous backing writes derive IOCB_APPEND from the backing file.
+	 * Preserve other flags, including changes made by its fasync method.
+	 */
+	spin_lock(&real->f_lock);
+	real->f_flags = (real->f_flags & ~O_APPEND) | append;
+	real->f_iocb_flags = iocb_flags(real);
+	spin_unlock(&real->f_lock);
+	return 0;
+}
+
 static ssize_t stratafs_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 {
 	struct file *file = iocb->ki_filp;
@@ -251,6 +282,9 @@ static ssize_t stratafs_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 				goto out;
 			info = file->private_data;
 		}
+		ret = stratafs_sync_append(file, info->real);
+		if (ret)
+			goto out;
 	}
 
 	ret = backing_file_write_iter(info->real, iter, iocb, iocb->ki_flags,
@@ -415,6 +449,9 @@ static ssize_t stratafs_splice_write(struct pipe_inode_info *pipe,
 				goto out;
 			info = out->private_data;
 		}
+		ret = stratafs_sync_append(out, info->real);
+		if (ret)
+			goto out;
 	}
 
 	init_sync_kiocb(&iocb, out);
@@ -510,6 +547,9 @@ static ssize_t stratafs_copy_file_range(struct file *file_in, loff_t pos_in,
 		fput(real_in);
 		real_in = get_file(out_info->real);
 	}
+	ret = stratafs_sync_append(file_out, out_info->real);
+	if (ret)
+		goto out;
 
 	ret = vfs_copy_file_range(real_in, pos_in, out_info->real, pos_out, len,
 				  flags);
@@ -558,6 +598,9 @@ static loff_t stratafs_remap_file_range(struct file *file_in, loff_t pos_in,
 		fput(real_in);
 		real_in = get_file(out_info->real);
 	}
+	ret = stratafs_sync_append(file_out, out_info->real);
+	if (ret)
+		goto out;
 
 	if (remap_flags & REMAP_FILE_DEDUP)
 		ret = vfs_dedupe_file_range_one(real_in, pos_in, out_info->real,
