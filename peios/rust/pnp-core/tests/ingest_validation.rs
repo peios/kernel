@@ -114,6 +114,25 @@ fn counter_view_keys_are_validated_with_the_offending_key() {
 }
 
 #[test]
+fn counter_view_multibyte_arguments_are_rejected_with_the_offending_key() {
+    for condition in [
+        "Counter.x(é).GreaterThan",
+        "Counter.x(1µ).GreaterThan",
+        "Counter.x(秒).GreaterThan",
+        "Counter.x(1🕒).GreaterThan",
+        "Counter.x(SrcAddr+é).GreaterThan",
+    ] {
+        match build_err(rb("r").int(condition, 1).actions(&["PASS"])) {
+            BuildError::BadCounterView { rule, key } => {
+                assert_eq!(rule.as_str(), "r");
+                assert_eq!(key.as_str(), condition);
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+}
+
+#[test]
 fn action_priority_enabled_value_shapes_are_validated() {
     assert!(matches!(
         build_err(rb("r").s("Actions", "PASS")),

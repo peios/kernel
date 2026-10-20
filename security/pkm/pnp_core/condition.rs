@@ -490,7 +490,7 @@ impl CounterView {
 
 /// `<digits><unit>` with unit s/m/h/d; must be > 0 and <= MAX_WINDOW_SECS.
 fn parse_duration(s: &str) -> Option<u32> {
-    let (num, unit) = s.split_at(s.len().checked_sub(1)?);
+    let (num, unit) = s.split_at_checked(s.len().checked_sub(1)?)?;
     if num.is_empty() || !num.bytes().all(|b| b.is_ascii_digit()) {
         return None;
     }
@@ -952,5 +952,14 @@ mod tests {
         assert!(CounterView::parse("x(10)").is_err()); // unitless
         assert!(CounterView::parse("x(Ttl)").is_err()); // not a key fact
         assert!(CounterView::parse("x(10s)y").is_err());
+    }
+
+    #[test]
+    fn counter_view_grammar_refuses_multibyte_arguments() {
+        for spec in ["x(é)", "x(1µ)", "x(秒)", "x(1🕒)", "x(SrcAddr+é)"] {
+            assert!(CounterView::parse(spec).is_err(), "{spec}");
+        }
+        // Stream names are not duration arguments and may contain UTF-8.
+        assert_eq!(CounterView::parse("café(1s)").unwrap().window_secs, 1);
     }
 }

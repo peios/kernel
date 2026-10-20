@@ -160,7 +160,11 @@ when it fills `counter_views` ([The snapshot](<~kernel/internals/ntfe/the-snapsh
 Refusals, each carrying the offending rule's path (`BuildError`):
 unknown fact, <a id="cite-ntfe-ingest.refuse-unknown-fact"></a> unsupported operator, <a id="cite-ntfe-ingest.refuse-unsupported-operator"></a> unparsable pattern, <a id="cite-ntfe-ingest.refuse-unparsable-pattern"></a> a counter view
 that does not parse (bad duration, unknown key fact, duplicate
-arguments, a window over the one-day horizon), <a id="cite-ntfe-ingest.refuse-unparsable-counter-view"></a> a non-list `Actions`, <a id="cite-ntfe-ingest.refuse-non-list-actions"></a> an
+arguments, a window over the one-day horizon, or a multibyte character
+where the argument grammar requires ASCII),
+<a id="cite-ntfe-ingest.refuse-unparsable-counter-view"></a>
+a non-list `Actions`,
+<a id="cite-ntfe-ingest.refuse-non-list-actions"></a> an
 unparsable action, <a id="cite-ntfe-ingest.refuse-unparsable-action"></a> a `REJECT` kind that is not `Refused` or
 `Prohibited`, <a id="cite-ntfe-ingest.refuse-unknown-reject-kind"></a> a `PROMPT` chain nested deeper than `MAX_PROMPT_CHAIN`
 (4), refused as an unparsable action, <a id="cite-ntfe-ingest.refuse-prompt-chain-too-deep"></a> an action the layer does not
