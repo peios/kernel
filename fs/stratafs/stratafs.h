@@ -77,6 +77,7 @@ struct stratafs_paths;
 
 struct stratafs_dentry_info {
 	char *relative;
+	/* After publication, provider fields use the inode's rebind_lock. */
 	struct path provider;
 	struct stratafs_paths *settled_paths;
 	unsigned int provider_index;
@@ -210,6 +211,11 @@ int stratafs_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
 int stratafs_notify_change(const struct path *provider,
 			   const struct iattr *attr);
 
+/*
+ * May sleep; the caller holds a dentry reference. On success, returns an owned
+ * path reference and its matching stratum index, stable across later rebinds.
+ * The caller must not hold the inode's rebind_lock.
+ */
 int stratafs_get_provider(struct dentry *dentry, struct path *path,
 			  unsigned int *index);
 bool stratafs_stratum_accepts(const struct super_block *sb, unsigned int index,

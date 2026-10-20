@@ -373,6 +373,8 @@ int stratafs_get_provider(struct dentry *dentry, struct path *path,
 			  unsigned int *index)
 {
 	struct stratafs_dentry_info *info;
+	struct stratafs_inode_info *iinfo;
+	struct inode *inode;
 
 	if (dentry == dentry->d_sb->s_root) {
 		struct stratafs_paths roots;
@@ -434,17 +436,27 @@ int stratafs_get_provider(struct dentry *dentry, struct path *path,
 		return 0;
 	}
 
-	spin_lock(&dentry->d_lock);
+	inode = d_inode(dentry);
+	iinfo = inode ? STRATAFS_I(inode) : NULL;
+	if (!iinfo)
+		return -ESTALE;
+	/*
+	 * Rebind holds this mutex until the old provider references are
+	 * released. Pin the snapshot before letting it replace those references.
+	 * Holding d_lock here would nest it with the provider's d_lock in dget(),
+	 * including when the provider belongs to another StrataFS mount.
+	 */
+	mutex_lock(&iinfo->rebind_lock);
 	info = dentry->d_fsdata;
 	if (info && info->has_provider) {
 		*path = info->provider;
 		path_get(path);
 		if (index)
 			*index = info->provider_index;
-		spin_unlock(&dentry->d_lock);
+		mutex_unlock(&iinfo->rebind_lock);
 		return 0;
 	}
-	spin_unlock(&dentry->d_lock);
+	mutex_unlock(&iinfo->rebind_lock);
 	return -ESTALE;
 }
 
