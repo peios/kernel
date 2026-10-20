@@ -456,7 +456,7 @@ long pkm_kacs_unlink_delete_on_close_file(struct file *file)
 		return ret;
 	}
 
-	inode_lock(parent_inode);
+	inode_lock_nested(parent_inode, I_MUTEX_PARENT);
 	/*
 	 * The pathname may already be gone.  An unlink by someone else while
 	 * the lineage lived leaves this dentry unhashed (and negative once
