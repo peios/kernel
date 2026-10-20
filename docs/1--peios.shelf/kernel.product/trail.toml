@@ -1,4 +1,5 @@
 title = "Peios Kernel"
 monogram = "Pk"
+icon = "kernel.svg"
 color = "#3b82f6"
 description = "The core of the Peios operating system."
