@@ -162,6 +162,11 @@ an old ring's `need_wake` is set, its futex counter is bumped inside
 the quiesced section and the wake is issued after it, so consumers
 asleep on a dead generation do not sleep forever. <a id="cite-ring.swap.wakes-stale-sleepers"></a>
 
+The outgoing live references remain held until `stop_machine` returns.
+They are released after the pending wakes, in a context where cleanup
+can sleep. The quiesced callback never performs the final release of
+an old ring, which can unmap and free its pages.
+
 Migration copies the surviving span in sequence order, re-compacted
 contiguously from position zero: the new ring starts with
 `tail_pos = 0` and `write_pos` equal to the bytes copied, and the

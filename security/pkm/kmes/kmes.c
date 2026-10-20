@@ -3193,6 +3193,7 @@ int pkm_kmes_current_process_info(u64 *pid_out, u8 *name_out,
 
 struct pkm_kmes_swap_ctx {
 	struct pkm_kmes_cpu_state **new_rings;
+	struct pkm_kmes_cpu_state **old_rings;
 	struct pkm_kmes_cpu_state **wake_rings;
 	int ret;
 };
@@ -3299,7 +3300,8 @@ static int pkm_kmes_swap_stop_machine(void *data)
 			pkm_kmes_ring_get(old);
 			ctx->wake_rings[cpu] = old;
 		}
-		pkm_kmes_ring_put(old);
+		/* Transfer the live reference; final release can sleep. */
+		ctx->old_rings[cpu] = old;
 	}
 
 	return 0;
@@ -3308,6 +3310,7 @@ static int pkm_kmes_swap_stop_machine(void *data)
 static long pkm_kmes_swap_capacity_locked(u64 new_capacity)
 {
 	struct pkm_kmes_cpu_state **new_rings = NULL;
+	struct pkm_kmes_cpu_state **old_rings = NULL;
 	struct pkm_kmes_cpu_state **wake_rings = NULL;
 	u64 current_capacity = 0;
 	unsigned int cpu;
@@ -3329,9 +3332,10 @@ static long pkm_kmes_swap_capacity_locked(u64 new_capacity)
 			KMES_SWAP_BEGIN);
 
 	new_rings = kcalloc(pkm_kmes_cpu_slots, sizeof(*new_rings), GFP_KERNEL);
+	old_rings = kcalloc(pkm_kmes_cpu_slots, sizeof(*old_rings), GFP_KERNEL);
 	wake_rings =
 		kcalloc(pkm_kmes_cpu_slots, sizeof(*wake_rings), GFP_KERNEL);
-	if (!new_rings || !wake_rings) {
+	if (!new_rings || !old_rings || !wake_rings) {
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -3352,6 +3356,7 @@ static long pkm_kmes_swap_capacity_locked(u64 new_capacity)
 	}
 
 	ctx.new_rings = new_rings;
+	ctx.old_rings = old_rings;
 	ctx.wake_rings = wake_rings;
 	ret = stop_machine(pkm_kmes_swap_stop_machine, &ctx, NULL);
 	if (ret)
@@ -3372,13 +3377,10 @@ static long pkm_kmes_swap_capacity_locked(u64 new_capacity)
 	trace_kmes_swap(U16_MAX, current_capacity, new_capacity, 0,
 			KMES_SWAP_COMPLETE);
 
-	kfree(wake_rings);
-	kfree(new_rings);
-	return 0;
-
 out:
-	trace_kmes_swap(U16_MAX, current_capacity, new_capacity, ret,
-			KMES_SWAP_FAILED);
+	if (ret)
+		trace_kmes_swap(U16_MAX, current_capacity, new_capacity, ret,
+				KMES_SWAP_FAILED);
 	if (wake_rings) {
 		for (cpu = 0; cpu < pkm_kmes_cpu_slots; cpu++) {
 			if (wake_rings[cpu])
@@ -3393,7 +3395,12 @@ out:
 				pkm_kmes_ring_put(new_rings[cpu]);
 		}
 	}
+	if (old_rings) {
+		for (cpu = 0; cpu < pkm_kmes_cpu_slots; cpu++)
+			pkm_kmes_ring_put(old_rings[cpu]);
+	}
 	kfree(wake_rings);
+	kfree(old_rings);
 	kfree(new_rings);
 	return ret;
 }
