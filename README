@@ -13,17 +13,17 @@ The native subsystems are:
   provider selection and copy-up governed by Peios authority.
 - **NTFE:** packet policy evaluation, flow decisions and policy generations.
 
-Start with the [architecture and reading guide](docs/kernel.product/100--introduction.topic/300--architecture-and-reading-guide.md)
-for how these services fit together, and [Peios kernel behaviour](docs/kernel.product/100--introduction.topic/200--peios-behaviour.md)
+Start with the [architecture and reading guide](docs/1--peios.shelf/kernel.product/100--introduction.topic/300--architecture-and-reading-guide.md)
+for how these services fit together, and [Peios kernel behaviour](docs/1--peios.shelf/kernel.product/100--introduction.topic/200--peios-behaviour.md)
 for the changes to inherited Linux behaviour.
 
 ## Documentation
 
 The maintained kernel documentation lives in [docs/](docs/), in Trail format.
-The [documentation overview](docs/kernel.product/100--introduction.topic/100--overview.md)
+The [documentation overview](docs/1--peios.shelf/kernel.product/100--introduction.topic/100--overview.md)
 provides routes into internals, development, administration, hardware and
 userspace interfaces. Application and service developers can start with
-[native kernel interfaces](docs/kernel.product/600--userspace.antho/100--native.antho/100--start-here.topic/100--overview.md).
+[native kernel interfaces](docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/100--start-here.topic/100--overview.md).
 
 `Documentation/` contains retained machine-consumed inputs and documentation
 build integration. Edit explanatory articles in `docs/`; the
@@ -45,7 +45,7 @@ Use `TRAIL=/path/to/trail` to select a binary. The default output directory is
 
 The repository contains the directly maintained kernel source. Bazel declares
 build inputs and invokes Kbuild using a pinned container image. Read
-[Building Peios](docs/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md) for setup, outputs and qualification
+[Building Peios](docs/1--peios.shelf/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md) for setup, outputs and qualification
 details before running the commands below.
 
 Kernel builds require an x86_64 Linux host, Python 3.11 or newer, Docker, and the
@@ -72,9 +72,10 @@ networking integration in `net/ntfe/`; and native public interfaces in
 `include/uapi/pkm/`. Peios build, test, packaging and maintenance tools live in
 `peios/`. Changes to existing Linux subsystems are maintained alongside them.
 
-Follow the [kernel coding style](peios/CODING_STYLE.md) and the workspace
-`_styleguide` for shared engineering and Git conventions. The
-[style command guide](docs/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md) describes the required tooling.
+Follow the [kernel coding style](peios/CODING_STYLE.md) and
+[Peios Standards and Conventions](https://learn.peios.org/psc/) for shared
+engineering and Git conventions. The
+[style command guide](docs/1--peios.shelf/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/300--style.md) describes the required tooling.
 Update the relevant articles in `docs/` when changing documented behaviour or
 interfaces, and run the checks appropriate to the affected subsystem.
 
@@ -86,5 +87,5 @@ upstream contribution guides apply when working with those upstream projects.
 
 See [COPYING](COPYING), [LICENSES/](LICENSES/) and individual files' SPDX
 identifiers for the applicable terms. The maintained
-[licensing reference](docs/kernel.product/300--development.antho/400--contributing.shelf/5600--process.topic/249200--license-rules.md)
+[licensing reference](docs/1--peios.shelf/kernel.product/300--development.antho/400--contributing.shelf/5600--process.topic/249200--license-rules.md)
 explains the kernel's licensing conventions.

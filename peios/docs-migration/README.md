@@ -45,7 +45,7 @@ known paths to existing maintained articles and still reports unknown references
 Checkpatch searches maintained legacy device-tree bindings alongside YAML.
 
 The public workflow is documented in the Trail article
-[Maintaining Peios kernel documentation](../../docs/kernel.product/300--development.antho/400--contributing.shelf/2400--doc-guide.topic/10--maintaining-peios-documentation.md).
+[Maintaining Peios kernel documentation](../../docs/1--peios.shelf/kernel.product/300--development.antho/400--contributing.shelf/2400--doc-guide.topic/10--maintaining-peios-documentation.md).
 `pruning-report.json` records validation and recovery information for this phase.
 
 ## Initial import

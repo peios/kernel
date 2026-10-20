@@ -3761,7 +3761,7 @@ sub process {
 
 			my $dt_path = $root . "/Documentation/devicetree/bindings/";
 			my $vp_file = $dt_path . "vendor-prefixes.yaml";
-			my $trail_dt_path = $root . "/docs/kernel.product/500--hardware.antho/100--platforms.shelf/2300--devicetree.topic/";
+			my $trail_dt_path = $root . "/docs/1--peios.shelf/kernel.product/500--hardware.antho/100--platforms.shelf/2300--devicetree.topic/";
 			my $dt_search = "\"$dt_path\"";
 			$dt_search .= " \"$trail_dt_path\"" if -d $trail_dt_path;
 

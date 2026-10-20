@@ -1,78 +1,52 @@
-# Kernel evman fragments
+# Kernel Event Catalogs
 
-`evman` documentation for the events the PKM kernel writes and the fields
-they carry. These fragments install to `/usr/share/evman/`, where
-`evman <event-type | field>` finds them — `kernel.package.pekit.toml` maps
-each one from `@source:`. evman never reads the event stream: a record
-carries a type name and a MessagePack payload, so the *meaning* of each
-event and field lives here. The format and its rules are PGSS §6.10
-(learn, Events → The Catalogue); field naming is §6.4.
-
-**The fragments are the catalogue.** A field that no fragment defines is
-not approved, and nothing may emit it (PGSS §6.4). Adding a `--- field`
-record is adding a field to the platform's vocabulary: it goes to Jack
-first (PEI-617).
-
-## Coverage
-
-The emit sites are the list to check this against: every event type the
-kernel writes is described here, and every field one of them carries is
-defined in exactly one fragment.
-
-| File | Defines | Events | Source of truth |
-|---|---|---|---|
-| `kernel.evman` | The platform fragment: the header fields, and every generic root (`subject`, `object`, `source`, `destination`, `emitter`, `event`, `access`, `outcome`, `trigger`, `operation`, `config`, `policy`, `transaction`, `fields`) | none | PGSS §6.4; `pkm/uapi/pkm/kmes.h` for the header |
-| `kacs.evman` | `privilege.*`, `caap.*`, `linux.cap`, `mitigation.*`, `signature.*`, and other things only KACS knows | `kacs.audit.access.checked`, `kacs.audit.handle.used`, `kacs.audit.privilege.used`, `kacs.caap.sacl.skipped`, `kacs.caap.staging.diverged`, `kacs.session.destroyed`, `kacs.descriptor.rejected`, `kacs.signature.crypto.failed` | `pkm/kacs/kmes_payload.rs`, `pkm/kacs/file_access.c`, `pkm/crates/kacs-core/src/access_check.rs` |
-| `kmes.evman` | `buffer.*`, `loss.*` | `kmes.config.value.rejected`, `kmes.buffer.swap.failed` | `pkm/kmes/kmes.c` |
-| `lcs.evman` | `source.rsi.*`, `request.*` | `lcs.audit.key.opened`, `lcs.audit.backup.{started,ended}`, `lcs.audit.restore.{started,ended}`, `lcs.source.response.rejected`, `lcs.config.value.rejected` | `pkm/crates/lcs-core/src/audit.rs` |
-| `ntfe.evman` | `network.*`, `rule.*`, `flow.*`, NTFE's endpoint attribution | `ntfe.verdict.reported` | `pkm/ntfe/report.c` |
-| `stratafs.evman` | `source.stratum.*`, `destination.stratum.*` | `stratafs.file.copied-up`, `stratafs.mutation.refused` | `pkm/kacs/file_access.c` (StrataFS records are written through KACS) |
-
-Userspace components ship their own fragments from their own repos
-(`peinit/peinit.evman`, `peipkg/peipkg.evman`, `eventd/eventd.evman`), as
-their `.regman` files are.
+These `.evman` fragments define kernel events and their fields. Kernel
+packaging installs them under `/usr/share/evman`, where the `evman` command
+reads them. They describe record meaning; they do not collect events.
 
 ## Ownership
 
-Who may define a path is PGSS §6.10 rule 5, and the lint enforces it. In
-short:
+The fragments are the maintained definitions. Keep event-specific prose
+with its event and general field meaning with its field. Shared roots and
+common role fields belong to `kernel.evman`. Subsystem fragments own their
+domain-specific fields and events:
 
-- The generic roots, and the common things beneath the roles (`token`,
-  `process`, `file`, `key`, `session`), are defined in `kernel.evman` and
-  nowhere else, even when only one subsystem carries them today.
-- A subsystem defines the subtrees of things only it knows about —
-  StrataFS's `source.stratum.*` — and any domain of its own, such as
-  KMES's `buffer`.
-- Anything may *carry* a field another fragment defines. Carrying is a
-  `field:` line on an event; defining is a `--- field` record.
+| Fragment | Subject |
+|---|---|
+| `kernel.evman` | Header fields, generic roots, and common role fields |
+| `kacs.evman` | Access checks, identity, signatures, and process security |
+| `kmes.evman` | Event transport, configuration, and loss |
+| `lcs.evman` | Registry operations and source diagnostics |
+| `ntfe.evman` | Network policy and verdicts |
+| `stratafs.evman` | Stratum changes and filesystem operations |
 
-## Authoring
+Userspace components maintain and package their own fragments in their own
+repositories. An event can carry a field another fragment defines. Defining
+a new field changes the shared vocabulary; review that interface separately
+from an editorial clarification.
 
-The anchor is the name itself — there is no folded anchor to bake, so
-there is no `fmt` step. After editing:
+The format and ownership rules are defined in
+[PGSS's catalog specification](https://learn.peios.org/specifications/pgss/events/the-catalogue/).
+Use `include:` for a named field group and `field:` for an event's presence
+rule and any narrower explanation of the field.
 
-```
-evman lint *.evman     # verify framing, names and the §6.10 rules
-```
+## Verify an edit
 
-Lint all the fragments together, userspace ones included: the rules that
-matter most — one definition per path, no path both a value and a map —
-are only checkable across the whole catalogue. `evman` is built from
-peiosutils (`cargo build -p pu_evman`).
+Run `evman lint` on the complete set of fragments that will be installed
+together. It checks duplicate definitions, field references, ownership,
+presence expressions, and conflicting value and map paths. Linting a single
+fragment cannot establish consistency with the complete catalog.
 
-The prose's first sentence is the summary `evman` shows in an index, so
-lead every record with a complete summary sentence. Inline markup is
-`**bold**` and `` `code` `` only.
+Review the rendered event and field cards with `evman`. The first sentence
+of a record is its index summary. Write a complete sentence and preserve
+field-specific explanations when editing the surrounding event prose.
 
-What lint will not tell you:
+Catalog validation does not verify producer behavior. Check emission sites
+under `security/pkm/`, semantic cores under `peios/rust/`, and the relevant
+`include/uapi/pkm/` declarations when changing types, values, or presence
+rules. A field defined for future use must not be described as already
+emitted.
 
-- **That a value list is right.** Take enumeration values from the code
-  — a `uapi/pkm/trace.h` family, an encoder's name table — never from
-  memory, and re-check them when the code changes.
-- **That a field is emitted.** A record describes what the field means;
-  whether an event carries it is the event's `field:` line, and whether
-  the code writes it is the code. Records for fields no event carries yet
-  say so.
-- **That a condition is true.** `when outcome.success == false` is checked
-  for naming a field the event carries, not for matching what the emitter
-  does.
+The retired staging event book was generated from these definitions.
+Maintaining a separate browsable event reference is deferred. Continue to
+edit and ship the fragments; no generated Learn book needs updating.

@@ -1,10 +1,9 @@
 # Peios Kernel coding style
 
 This is the kernel's exception guide to the
-[central Peios coding style](../../_styleguide/coding-style.md), developed under
-PEI-1506. The central guide supplies the common engineering rules; this document
+[central Peios coding style](https://learn.peios.org/psc/common-coding-rules/scope-and-precedence/),
+developed under PEI-1506. The central guide supplies the common engineering rules; this document
 identifies where the kernel follows different language or repository conventions.
-The relative link uses the current `peios-newtree` checkout layout.
 
 ## Scope
 
