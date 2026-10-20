@@ -6,7 +6,7 @@ type: reference
 
 <a id="trm-3-1"></a>
 
-The Kernel Access Control System is the security core of Peios: an LSM
+The Kernel Access Control Subsystem is the security core of Peios: an LSM
 within PKM providing identity-based access control in the Linux
 kernel. It is the sole identity-based authorization mechanism for
 managed objects. Every identity-based decision — a file open, a

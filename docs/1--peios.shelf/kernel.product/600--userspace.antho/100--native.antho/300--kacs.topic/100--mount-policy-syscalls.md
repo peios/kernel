@@ -63,10 +63,10 @@ Changing a mount's policy affects the entire filesystem's access semantics.
 paths; see its [authority warning](https://learn.peios.org/kernel/internals/kacs/privileges/privilege-catalogue/#system-operations).
 The [SDK wrappers](https://github.com/peios/libpeios/blob/de0018bdcaed14abb796aeccec9c8387fd30e452/src/file.rs#L451-L575) at libpeios
 `de0018bdcaed14abb796aeccec9c8387fd30e452` add no TCB-only gate despite their
-comments. The [command diagnostic](https://learn.peios.org/peios/using-peios/mount-policies/mount#kacs-mount-policy)
-also retains a TCB-only hint. Do not automatically grant TCB or globally remap
+comments. The [`mount` command's](https://learn.peios.org/peios/using-peios/files-and-volumes/mount/)
+diagnostic also retains a TCB-only hint. Do not automatically grant TCB or globally remap
 `CAP_SYS_ADMIN`. A ready-to-use operator interface for changing an existing
-policy is [not established here](https://learn.peios.org/peios/files-and-volumes/mounting-storage/#verify-the-attachment-boundary).
+policy is [not established here](https://learn.peios.org/peios/using-peios/files-and-volumes/mounting-storage/#verify-the-attachment-boundary).
 
 The generated [KACS ABI trace table](~kernel/userspace/native/kacs/generated-syscall-index#trm-3-a)
 retains the `KACS_MP_TCB_DENIED` name and TCB-only descriptions. Those labels
