@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 2
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.14.4"
+          python-version: "3.14.8"
       - name: Install the pinned Rust tools
         run: |
           rustup toolchain install 1.83.0 --profile minimal --component rustfmt
@@ -31,13 +31,21 @@ jobs:
       - name: Install locked style tools
         run: python peios/style.py setup
       - name: Check style and the style command
-        run: ./peios/bazel test //:style //peios/style:tests
+        run: |
+          python peios/style.py check
+          python peios/style/test_style.py
       - name: Test shared Rust cores and userspace ABI bindings
-        run: ./peios/bazel test //:rust-core-tests //:uapi-tests
+        run: |
+          bash peios/rust/check.sh
+          bash peios/rust/peios-uapi/check-codegen-safe.sh
+          bash peios/rust/peios-uapi/check-userspace-clean.sh
       - name: Check generated KMES event tables
-        run: ./peios/bazel test //:kmes-event-table-test
+        run: python peios/gen-kmes-event-table.py --check && python peios/test_kmes_event_table.py
       - name: Check data generators and qualification harnesses
-        run: ./peios/bazel test //:data-generator-tests //:kunit-runner-tests //:qualification-build-test
+        run: |
+          python peios/gen-port-reservations-seed.py --check && python peios/test_data_generators.py
+          python peios/test_kunit_runner.py
+          bash peios/qualification/check-build.sh
       - name: Review kernel checkpatch findings (advisory)
         if: github.event_name == 'pull_request'
-        run: ./peios/bazel run //:style-review -- HEAD^
+        run: bash peios/style/review.sh HEAD^
