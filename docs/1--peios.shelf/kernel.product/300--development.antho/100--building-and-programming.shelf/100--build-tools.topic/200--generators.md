@@ -13,8 +13,8 @@ Edit the kernel event catalog in `peios/packages/data/evman/*.evman`, then
 run:
 
 ```sh
-./peios/bazel run //:generate-kmes-events
-./peios/bazel test //:kmes-event-table-test
+pekit run generate_kmes_events
+pekit test kmes_event_table
 ```
 
 The generator writes `security/pkm/kmes/event_types.h` and `event_types.rs`.
@@ -44,9 +44,9 @@ descriptors
 and capability comment rather than creating a registry tree from nothing.
 
 ```sh
-./peios/bazel run //:generate-port-seed
+pekit run generate_port_seed
 python3 peios/gen-port-reservations-seed.py --check
-./peios/bazel test //:data-generator-tests
+pekit test data_generators
 ```
 
 The Python entry point also accepts `--output PATH` for an existing seed file.
@@ -87,7 +87,7 @@ key is discarded. These are test vectors, not release signing credentials.
 ```sh
 python3 peios/generate-kacs-kunit-mldsa-vectors.py \
     --out security/pkm/kacs/kunit_mldsa_vectors.h
-./peios/bazel test //:mldsa-vector-test
+pekit test mldsa_vectors
 ```
 
 Regeneration deliberately replaces randomized fixtures; it is not a
@@ -136,8 +136,7 @@ retired `libpeios` and `librsi` checkout paths are not required by this guide.
 The host-side checks leave maintained source inputs unchanged:
 
 ```sh
-./peios/bazel test //:kmes-event-table-test //:data-generator-tests
-./peios/bazel test //:kunit-runner-tests //:qualification-build-test
+pekit test kmes_event_table data_generators kunit_runner qualification_build
 ```
 
 The KUnit runner checks use a controlled emulator substitute to exercise

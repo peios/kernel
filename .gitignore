@@ -185,13 +185,11 @@ sphinx_*/
 # Rust analyzer configuration
 /rust-project.json
 
-# Peios Bazel/Kbuild outputs
-/bazel-*
+# Peios build outputs: pekit's, its libraries, and the old Kbuild dev state
+/pekit-out/
+/.gcsl/
 /.peios-dev/
 !peios/keys/*.pem
-!.bazelrc
-!.bazelversion
-!.bazelignore
 
 # Peios CI workflow and Cargo output policy
 !/.github/

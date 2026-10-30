@@ -160,7 +160,7 @@ class StoreTests(unittest.TestCase):
         marker = self.root / "writer-started"
         writer = self.root / "blocking-writer"
         writer.write_text(
-            "#!/usr/bin/python3\nfrom pathlib import Path\nimport time\n"
+            f"#!{sys.executable}\nfrom pathlib import Path\nimport time\n"
             f'Path({str(marker)!r}).write_text("started")\ntime.sleep(30)\n'
         )
         writer.chmod(0o755)

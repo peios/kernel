@@ -26,6 +26,12 @@ write_changed /tmp/keys.h security/pkm/kacs/builtin_signing_keys.h
 write_changed "$cert" certs/peios-modsig.pem
 
 make_args=(make -C /work/src O=/work/out LLVM="$PEIOS_LLVM" CC="clang$PEIOS_LLVM")
+# Kbuild's own host programs, fixdep and objtool say, are compiled by
+# clang unless told otherwise. pekit's build tells it the pinned GCC
+# toolchain, whose glibc sysroot they need; the kernel is still clang's.
+if [[ -n ${PEIOS_HOSTCC:-} ]]; then
+    make_args+=(HOSTCC="$PEIOS_HOSTCC" HOSTCXX="${PEIOS_HOSTCXX:?PEIOS_HOSTCXX goes with PEIOS_HOSTCC}")
+fi
 cp peios/config/config.x86_64.base /work/out/.config
 "${make_args[@]}" olddefconfig
 if [[ $profile == kunit ]]; then

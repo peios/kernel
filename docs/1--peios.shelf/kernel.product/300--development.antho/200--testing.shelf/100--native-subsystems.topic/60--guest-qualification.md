@@ -9,16 +9,16 @@ a supplied kernel. They do not build that kernel or qualify an entire OS release
 Use an x86_64 Linux host with `gcc`, static libc development files, `cpio`,
 `timeout` and `qemu-system-x86_64`; firmware fixture preparation also needs `zstd`.
 QEMU uses KVM when available, with TCG fallback. The harnesses run on the host,
-outside the pinned kernel build container.
+outside pekit's sandbox, with the host's tools.
 
-Run the Bazel commands below from the kernel repository root. Their underlying
+Run the pekit commands below from the kernel repository. Their underlying
 scripts locate the guest C sources relative to themselves and can also be called
 directly from another working directory with absolute input paths.
 
 ## Compile the guest programs
 
 ```sh
-./peios/bazel test //:qualification-build-test
+pekit test qualification_build
 ```
 
 This compiles all guest C programs with static linking and warnings as errors.
@@ -28,13 +28,13 @@ from a passing guest run.
 ## Mount namespaces and StrataFS
 
 ```sh
-./peios/bazel run //:qualify-mntns -- /path/to/bzImage
-./peios/bazel run //:qualify-stratafs -- /path/to/bzImage
-./peios/bazel run //:qualify-stratafs-fuse -- /path/to/bzImage
-./peios/bazel run //:qualify-stratafs-dir-bench -- /path/to/bzImage
+pekit run qualify_mntns /path/to/bzImage
+pekit run qualify_stratafs /path/to/bzImage
+pekit run qualify_stratafs_fuse /path/to/bzImage
+pekit run qualify_stratafs_dir_bench /path/to/bzImage
 ```
 
-Each accepts a direct image, including `bazel-bin/kernel/bzImage`, or a Kbuild
+Each accepts a direct image, including the `bzImage` that `pekit build kernel` gives, or a Kbuild
 output tree containing `arch/x86/boot/bzImage`. Supply a kernel with the relevant
 Peios subsystem and the guest's required filesystem support enabled. A script
 finding the image does not establish that the configuration meets its needs.
@@ -56,7 +56,7 @@ output-tree argument.
 ## Module signatures
 
 ```sh
-./peios/bazel run //:qualify-modsig -- /path/to/kbuild-output /path/to/modules-root
+pekit run qualify_modsig /path/to/kbuild-output /path/to/modules-root
 ```
 
 The first directory must contain `arch/x86/boot/bzImage`. The second must contain
@@ -65,7 +65,7 @@ zstd-compressed modules trusted by the kernel. The harness selects a
 dependency-free module, boots with a copy of it and a corrupted copy, and
 requires the valid module to load and the corrupted one to be rejected.
 
-The flat `bazel-bin/kernel/` directory is not the required Kbuild layout, and its
+The flat directory `pekit build kernel` gives is not the required Kbuild layout, and its
 `modules.tar` contains unsigned modules. Prepare the output layout and separately
 signed module tree before invoking this harness. Confirm signature enforcement
 in the supplied kernel configuration; a load alone is not evidence of enforcement
@@ -96,7 +96,7 @@ The guest reuses the good signature when testing tampered bytes. No private
 signing key is passed to the harness. Once the fixtures are signed:
 
 ```sh
-./peios/bazel run //:qualify-fwsig -- \
+pekit run qualify_fwsig \
     /path/to/kbuild-output /path/to/modules-root /path/to/fixtures
 ```
 

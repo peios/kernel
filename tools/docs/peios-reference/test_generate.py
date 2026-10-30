@@ -20,12 +20,14 @@ class NativeReferenceTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.mapping_path = self.root / 'peios/docs-migration/trm-source-map.json'
         self.mapping_path.parent.mkdir(parents=True)
-        shutil.copy2(SOURCE / self.mapping_path.relative_to(self.root), self.mapping_path)
+        # Copies without the source's modes: a checkout may be read-only, as a
+        # build sandbox's is, and the copies are the test's to change.
+        shutil.copyfile(SOURCE / self.mapping_path.relative_to(self.root), self.mapping_path)
         self.mapping = json.loads(self.mapping_path.read_text())
         for page in self.mapping['generated_pages']:
             dst = self.root / page['path']
             dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(SOURCE / page['path'], dst)
+            shutil.copyfile(SOURCE / page['path'], dst)
 
     def run_generator(self, *args):
         return subprocess.run(['python3', str(HERE / 'generate.py'), '--kernel-root', str(KERNEL),

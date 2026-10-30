@@ -1,0 +1,202 @@
+# The kernel's checks of its own scripts, data and headers, each a test in
+# a sandbox of the pinned tools, as the Bazel build's `local_test`s ran them
+# on the host: the source at `/work/src`, read-only, with the host tools
+# (`tools.gcsl`), the python library's Python and the gcc library's Bootlin
+# C toolchain, its compiler as `cc` and `gcc` too.
+import fs
+import toolchain
+import Toolchain from toolchain
+import BuildEnv from "github.com/gcslib/buildenv"
+import PythonToolchain from "github.com/gcslib/python"
+import "github.com/gcslib/rust"
+
+# Where a check has the C toolchain, the host tools and Python.
+let CHECK_CC = "/opt/cc"
+
+let CHECK_TOOLS = "/opt/tools"
+
+let CHECK_PYTHON = "/opt/python"
+
+# The UAPI headers stay in the subset of C their binding generators
+# reproduce, and compile in userspace.
+def test uapi(with: Checked = checking()) {
+    = checked("bash peios/rust/peios-uapi/check-codegen-safe.sh && bash peios/rust/peios-uapi/check-userspace-clean.sh", with)
+}
+
+# The KMES event table is as its generator makes it, and the generator
+# works.
+def test kmes_event_table(with: Checked = checking()) {
+    = checked("python3 peios/gen-kmes-event-table.py --check && python3 peios/test_kmes_event_table.py", with)
+}
+
+# The port reservation seed is as its generator makes it, and the
+# generators work.
+def test data_generators(with: Checked = checking()) {
+    = checked("python3 peios/gen-port-reservations-seed.py --check && python3 peios/test_data_generators.py", with)
+}
+
+# KUnit's ML-DSA-65 vectors verify with OpenSSL, and a changed message
+# does not.
+def test mldsa_vectors(with: Checked = checking()) {
+    = checked("python3 peios/test_mldsa_vectors.py", with)
+}
+
+# The KUnit runner reads a stand-in emulator's output as it reads QEMU's.
+def test kunit_runner(with: Checked = checking()) {
+    = checked("python3 peios/test_kunit_runner.py", with)
+}
+
+# Every guest test program of the qualification runs compiles, statically,
+# against the UAPI headers.
+def test qualification_build(with: Checked = checking()) {
+    = checked("bash peios/qualification/check-build.sh", with)
+}
+
+# The kernel's owned sources are formatted and linted as the style
+# check's locked tools say.
+def test style(with: Checked = checking()) {
+    = checked("python3 peios/style.py check", with)
+}
+
+# Package assembly's rules, on the definitions' own examples.
+def test package_assembly(with: Checked = checking()) {
+    = checked("python3 peios/packages/test_assembly.py", with)
+}
+
+# Staging's helpers.
+def test package_stage(with: Checked = checking()) {
+    = checked("python3 peios/packages/test_stage.py", with)
+}
+
+# Committing and merging packages with the vendored ppk writer, the
+# store's every blob checked.
+def test package_store(with: Checked = checking(), writer: File = build ppk_writer(), checker: File = build check_blobs()) {
+    = checked(
+        "PPK_WRITER=/work/ppk PPK_CHECKER=/work/check-blobs python3 peios/packages/test_store.py",
+        with,
+        given = [{at = "/work/ppk"; place = writer}, {at = "/work/check-blobs"; place = checker}],
+    )
+}
+
+# A package committed from a tree another step made keeps its files as
+# blobs and its links as links.
+def test package_tree_input(with: Checked = checking(), fixture: Dir = build fixture_package()) {
+    = checked(
+        "python3 peios/packages/tests/test_tree_input.py",
+        with,
+        given = [{at = "/work/src/peios/packages/tests/fixture.ppk"; place = fixture}],
+    )
+}
+
+# The vendored ppk writer's own test of committing a package.
+def test ppk_commit(tests: List<rust.RustTest> = rust.tests(rust.workspace(dir("peios/vendor/ppk"), rust.vendored(file("peios/vendor/ppk/Cargo.lock"))), "ppk")) {
+    let each = for test in tests { = rust.run_test(test) }
+}
+
+# The generators of the kernel's reference documentation.
+def test reference_generators(with: Checked = checking()) {
+    = checked("python3 tools/docs/peios-reference/test_generate.py", with)
+}
+
+# The style check's own tests.
+def test style_tool(with: Checked = checking()) {
+    = checked("python3 peios/style/test_style.py", with)
+}
+
+# The host-side Rust workspace of the kernel's semantic cores, whose crates
+# compile Kbuild's own sources: each `#[path]`s into `security/pkm`, three
+# directories above it.
+let RUST_CORES = ["kacs-core", "lcs-core", "pnp-core", "stratafs-core", "ntfe", "peios-uapi"]
+
+def cores() -> rust.RustWorkspace {
+    let pkm = [{at = "../../../security/pkm"; place = dir("security/pkm")}]
+    = rust.workspace(
+        dir("peios/rust"),
+        rust.vendored(file("peios/rust/Cargo.lock")),
+        crates = for each in RUST_CORES { = {package = each; beside = pkm} },
+    )
+}
+
+# Each core's tests, on the host, against the exact source Kbuild compiles,
+# as `peios/rust/check.sh` ran them.
+def test rust_cores(tests: List<List<rust.RustTest>> = for each in RUST_CORES { = rust.tests(cores(), each) }) {
+    let each = for some in tests {
+        = for test in some { = rust.run_test(test) }
+    }
+}
+
+# Clippy's correctness lints on every core, as `peios/rust/check.sh` ran
+# them: its other groups are allowed, since the cores follow the kernel's
+# style, not Clippy's.
+def test rust_clippy(
+    checked: List<List<{}>> = for each in RUST_CORES {
+        = rust.clippy(cores(), each, flags = ["-Aclippy::all", "-Dclippy::correctness"])
+    },
+) {}
+
+# What a check runs with: the kernel's source and the pinned tools.
+type Checked = {
+    src: Dir,
+    tools: Dir,
+    style: Dir,
+    rustfmt: Dir,
+    c: toolchain.CToolchain,
+    env: BuildEnv,
+    python: PythonToolchain,
+}
+
+# What a check runs with, fetched and built where a test's parameters are,
+# outside its step.
+fn checking() -> Checked {
+    = {
+        src = checked_source()
+        tools = build host_tools()
+        style = build style_tools()
+        rustfmt = build rustfmt()
+        c = toolchain.get(Toolchain::C)
+        env = toolchain.get(Toolchain::BuildEnv)
+        python = toolchain.get(Toolchain::Python)
+    }
+}
+
+# `command`, run by bash in the kernel's source with the pinned tools of
+# `with`.
+#[hermetic]
+fn checked(command: String, with: Checked, given: List<{at: String, place: Dir | File}> = []) -> {} {
+    let c = with.c
+    let cc = "{CHECK_CC}/{c.cc.path.strip_prefix(c.root.path).strip_prefix("/")}"
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = with.env.root},
+        {at = "/"; place = c.runtime},
+        {at = CHECK_CC; place = c.root},
+        {at = CHECK_TOOLS; place = with.tools},
+        {at = CHECK_PYTHON; place = with.python.root},
+        {at = "/opt/style-cache"; place = with.style},
+        {at = "/opt/rustfmt"; place = with.rustfmt},
+        {at = "/work/src"; place = with.src},
+        ...(for each in given { = {at = each.at; place = each.place} }),
+    ]
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {
+            PATH = "/work/bin:{CHECK_TOOLS}/bin:{CHECK_PYTHON}/bin:/opt/rustfmt/bin:/bin:/usr/bin"
+            PEIOS_STYLE_CACHE = "/opt/style-cache"
+            LD_LIBRARY_PATH = "{CHECK_TOOLS}/lib"
+            CC = "/work/bin/cc"
+            HOME = "/tmp"
+            TMPDIR = "/tmp"
+            LC_ALL = "C"
+            PYTHONUTF8 = "1"
+            PYTHONDONTWRITEBYTECODE = "1"
+        },
+    )
+    # Bootlin's wrapper finds the compiler it runs beside the name it was
+    # run by, so `cc` and `gcc` are scripts, not links.
+    let ran = box.exec(
+        "{CHECK_TOOLS}/bin/bash",
+        "-c",
+        "set -euo pipefail; mkdir -p /tmp /work/bin; \
+         for name in cc gcc; do printf '#!/bin/sh\\nexec {cc} \"$@\"\\n' > /work/bin/$name; chmod +x /work/bin/$name; done; \
+         cd /work/src && {command}",
+    )
+}

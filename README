@@ -43,25 +43,23 @@ Use `TRAIL=/path/to/trail` to select a binary. The default output directory is
 
 ## Build and test
 
-The repository contains the directly maintained kernel source. Bazel declares
-build inputs and invokes Kbuild using a pinned container image. Read
+The repository contains the directly maintained kernel source. pekit builds it
+with Kbuild in a sandbox, from a toolchain it builds from pinned sources. Read
 [Building Peios](docs/1--peios.shelf/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md) for setup, outputs and qualification
 details before running the commands below.
 
-Kernel builds require an x86_64 Linux host, Python 3.11 or newer, Docker, and the
-image selected in `peios/build-settings.json` already available in the local
-Docker daemon. The Bazel launcher uses `curl` and `sha256sum` to download and
-verify its pinned binary.
+Kernel builds require an x86_64 Linux host with pekit installed; pekit fetches
+and builds the rest.
 
 From the repository root:
 
 ```sh
-./peios/bazel build //:kernel       # production configuration, development keys
-./peios/bazel run //:kernel-dev     # incremental development build
-./peios/bazel test //:kunit         # build and boot the KUnit configuration
+pekit build kernel   # production configuration, development keys
+pekit run kunit      # build and boot the KUnit configuration
+peios/check          # every host check
 ```
 
-Controlled kernel outputs appear under `bazel-bin/kernel/`. These commands
+pekit prints where the kernel's outputs are, under `pekit-out/`. These commands
 produce development artifacts: module archives are unsigned, and signing,
 native integration qualification and release publication are separate stages.
 

@@ -23,6 +23,10 @@ class StyleTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         shutil.copytree(ROOT / "peios/style", self.root / "peios/style")
+        # The checkout may be read-only, as a build sandbox's is; the copy
+        # is the test's to change.
+        for path in [self.root, *self.root.rglob("*")]:
+            path.chmod(path.stat().st_mode | 0o200)
         (self.root / "peios/style/test_style.py").unlink()
         shutil.copyfile(ROOT / "peios/style.py", self.root / "peios/style.py")
         for name in (".clang-format", ".rustfmt.toml"):

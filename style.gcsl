@@ -1,0 +1,126 @@
+# The style check's tools, as `peios/style.py setup` installs them, but
+# from pinned downloads and in a step: its Python environment, from the
+# wheels `peios/style/requirements.lock` pins by their digests, shfmt and
+# shellcheck, as `peios/style/binary-tools.lock.json` pins them, at the
+# cache path the style check finds them by; and a `rustfmt` that runs the
+# rustfmt of the toolchain its `+VERSION` names, as rustup's does.
+import fs
+import unpack from archive
+import toolchain
+import Toolchain from toolchain
+import BuildEnv from "github.com/gcslib/buildenv"
+import PythonToolchain from "github.com/gcslib/python"
+import RustToolchain from "github.com/gcslib/rust"
+
+# Where the style check's tools are, as `PEIOS_STYLE_CACHE` names it.
+let STYLE_CACHE = "/opt/style-cache"
+
+let STYLE_PYTHON = "/opt/python"
+
+# The wheels of `requirements.lock`: each file's name and digest.
+let WHEELS = [
+    ["00/ef/8d710fb1a5cc0e1985d023bfdee62c77cccaec6be1dee2ed841074a1ee0b", "ast_serialize-0.13.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", "4f55668338bcb871e83ee21ba865fb08b7b4b13af9312742f9878c39f9d84ee3"],
+    ["05/a8/d94adc8025c6a313bed5da994c421fff7dc4288d20028b309b1d45e15032", "clang_format-18.1.8-py2.py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", "2de122b8aa78ba49e326f974131caab2c79f4ae877c227cd4e3e5d82a98d21e5"],
+    ["50/07/79007d2165f649ea93e08c0962d1d62c70af9cde77965255095bf9d96f9a", "librt-0.16.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", "ca8052401c55d7511dda6760719fda7618067e83535d7d0010096d216c34b667"],
+    ["bc/1c/26e16977e25ef2494a74f8ffc872a76ec2c3aa43c3156057cbdf88f352c5", "mypy-2.4.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", "20e9a5cd875837520c43db98dea0b6d0c2197833d95c30127d8f570fb9b1f00b"],
+    ["79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8", "mypy_extensions-1.1.0-py3-none-any.whl", "1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505"],
+    ["f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714", "pathspec-1.1.1-py3-none-any.whl", "a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189"],
+    ["2c/3c/4a01195d93420cad1175bedad13a515dc8a56f95a6e39789b92e582682f5", "ruff-0.17.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", "bc73e7c133e82d55b5f15897b2a442d72c0cb4a0c886c46801ce3c247150b60c"],
+    ["49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80", "typing_extensions-4.16.0-py3-none-any.whl", "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"],
+]
+
+def build style_tools(
+    wheels: List<{at: String, place: Dir | File}> = for each in WHEELS {
+        = {at = "/work/wheels/{each[1]}"; place = fetch("https://files.pythonhosted.org/packages/{each[0]}/{each[1]}", sha256 = each[2])}
+    },
+    shfmt: File = fetch(
+        "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64",
+        sha256 = "76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf",
+    ),
+    shellcheck: Dir = unpack(fetch(
+        "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.gz",
+        sha256 = "b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6",
+    )),
+    config: Dir = dir("peios/style"),
+    script: File = file("peios/style.py"),
+    env: BuildEnv = toolchain.get(Toolchain::BuildEnv),
+    python: PythonToolchain = toolchain.get(Toolchain::Python),
+) {
+    = installed_style(wheels, shfmt, shellcheck.file("shellcheck-v0.11.0/shellcheck"), config, script, env, python)
+}
+
+#[hermetic]
+fn installed_style(
+    wheels: List<{at: String, place: Dir | File}>,
+    shfmt: File,
+    shellcheck: File,
+    config: Dir,
+    script: File,
+    env: BuildEnv,
+    python: PythonToolchain,
+) -> Dir {
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = env.root},
+        {at = "/"; place = python.runtime},
+        {at = STYLE_PYTHON; place = python.root},
+        {at = "/work/src/peios/style"; place = config},
+        {at = "/work/src/peios/style.py"; place = script},
+        {at = "/work/shfmt"; place = shfmt},
+        {at = "/work/shellcheck"; place = shellcheck},
+        ...(for each in wheels { = {at = each.at; place = each.place} }),
+    ]
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {PATH = "{STYLE_PYTHON}/bin:/bin:/usr/bin"; PEIOS_STYLE_CACHE = STYLE_CACHE; HOME = "/tmp"; TMPDIR = "/tmp"},
+    )
+    # The tools' directory is named by the locks' digest, as the style
+    # check computes it.
+    let ran = box.exec(
+        "/bin/sh",
+        "-c",
+        "set -e; mkdir -p /tmp; \
+         tools=$(python3 -I -c 'import sys; sys.path.insert(0, \"/work/src/peios\"); import style; print(style.TOOLS)'); \
+         python3 -m venv \"$tools/.venv\"; \
+         \"$tools/.venv/bin/python\" -m pip install --disable-pip-version-check --no-index --find-links /work/wheels \
+             --require-hashes --only-binary=:all: -r /work/src/peios/style/requirements.lock; \
+         mkdir -p \"$tools/bin\"; cp /work/shfmt \"$tools/bin/shfmt\"; cp /work/shellcheck \"$tools/bin/shellcheck\"; \
+         chmod 0755 \"$tools/bin/shfmt\" \"$tools/bin/shellcheck\"",
+    )
+    = box.dir(STYLE_CACHE)
+}
+
+# rustfmt as rustup runs it: `rustfmt +VERSION` runs that toolchain's.
+# Each version's rustfmt is beside its rustc's libraries, which it loads.
+def build rustfmt(
+    kernel_rust: Dir = build rust_1_83(),
+    rustfmt_1_98: Dir = unpack(fetch(
+        "https://static.rust-lang.org/dist/rustfmt-1.98.1-x86_64-unknown-linux-gnu.tar.xz",
+        sha256 = "b29a1addcbf2aa8f5785075605700e63cbe131b08c8334b50c09cfca8bbc51dc",
+    )).dir("rustfmt-1.98.1-x86_64-unknown-linux-gnu/rustfmt-preview"),
+    rust: RustToolchain = toolchain.get(Toolchain::Rust),
+) {
+    = rustup_like(kernel_rust, rustfmt_1_98, rust.root)
+}
+
+#[hermetic]
+fn rustup_like(kernel_rust: Dir, rustfmt_1_98: Dir, rust_1_98: Dir) -> Dir {
+    let script = "{working_dir().path}/rustfmt"
+    let written = fs.write(
+        script,
+        "#!/bin/sh\n\
+         # rustfmt as rustup runs it: `+VERSION` first names the toolchain.\n\
+         case $1 in\n\
+         +1.83.0) shift; exec \"$(dirname \"$0\")/../1.83.0/bin/rustfmt\" \"$@\" ;;\n\
+         +1.98.1) shift; exec \"$(dirname \"$0\")/../1.98.1/bin/rustfmt\" \"$@\" ;;\n\
+         +*) echo \"rustfmt: no toolchain $1\" >&2; exit 1 ;;\n\
+         *) exec \"$(dirname \"$0\")/../1.98.1/bin/rustfmt\" \"$@\" ;;\n\
+         esac\n",
+    )
+    fs.set_executable(script, true)
+    = fs.compose([
+        {at = "bin/rustfmt"; place = file(script)},
+        {at = "1.83.0"; place = kernel_rust},
+        {at = "1.98.1/bin"; place = rustfmt_1_98.dir("bin")},
+        {at = "1.98.1/lib"; place = rust_1_98.dir("lib")},
+    ])
+}

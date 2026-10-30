@@ -11,7 +11,7 @@ Apply Linux formatting and naming conventions to kernel C and headers, including
 new Peios subsystems and changes to inherited Linux code. This keeps the kernel
 internally consistent and reduces friction when integrating upstream changes.
 
-Peios-only Python, shell and Bazel wrappers follow the central language profiles.
+Peios-only Python and shell wrappers follow the central language profiles.
 Location in the kernel repository alone does not impose C indentation on them.
 Inherited upstream tools and generated or vendored files retain their applicable
 upstream conventions. Kernel Rust follows the kernel's Rust formatter setup,
@@ -71,7 +71,7 @@ Use the repository's [Rust formatter configuration](../.rustfmt.toml) and
 kernel-selected Rust toolchain/edition for kernel Rust. Do not copy the C tab
 or brace rules into Rust files.
 
-Apply the central Python, shell and Bazel profiles to Peios-owned wrapper files
+Apply the central Python and shell profiles to Peios-owned wrapper files
 under this directory, excluding generated output and vendored dependencies.
 Scope tooling by file ownership and language rather than one blanket setting
 for every file in the repository.

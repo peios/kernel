@@ -1,0 +1,378 @@
+# The kernel's build toolchain, every part pinned and none of it the
+# host's: LLVM 18's release for the kernel's C, Rust 1.83.0 and bindgen
+# 0.65.1 for its Rust, and the host tools Kbuild runs, each built from its
+# release, whose signature was checked when it was pinned, with the gcc
+# library's Bootlin C toolchain and the buildenv library's busybox and
+# make. They are what `peios/Containerfile` installed from Debian for the
+# Bazel build.
+#
+# GNU's releases come from kernel.org's mirror of ftp.gnu.org, which is
+# often slow to answer; the SHA-256 pins make the copy the same.
+#
+# Each host tool is built for `/opt/tools` and installed into the
+# directory it gives, which every step that uses the tools places at
+# `/opt/tools` again, so the paths a tool keeps of itself, bison's
+# skeletons and perl's modules say, hold wherever it runs.
+import fs
+import unpack from archive
+import toolchain
+import Toolchain from toolchain
+import BuildEnv from "github.com/gcslib/buildenv"
+import "github.com/gcslib/rust"
+
+# Where every step has the host tools, the C toolchain and a source.
+let TOOLS = "/opt/tools"
+
+let TOOLS_CC = "/opt/cc"
+
+let TOOLS_SRC_IN = "/work/src-in"
+
+let TOOLS_SRC = "/work/src"
+
+let TOOLS_DEST = "/work/dest"
+
+# The time every file of a source is given before it is built, as the
+# buildenv library's `configure_make` gives it, so that make takes none of
+# a release's generated files for out of date.
+let SOURCE_TIME = "2000-01-01 00:00:00"
+
+# What `script` installs into `$DESTDIR$PREFIX`, a `make install` given
+# `DESTDIR=$DESTDIR` itself, since many Makefiles set it, overriding the
+# environment's, `PREFIX` being
+# `/opt/tools`, run in the source `src`, copied, made writable and given
+# one time, with `deps`, installs of other tools for `/opt/tools`, placed
+# there: their programs on `PATH`, their headers and libraries where the C
+# toolchain finds them, and their libraries where programs load them.
+#[hermetic]
+fn tool(
+    src: Dir,
+    script: String,
+    deps: List<Dir> = [],
+    c: toolchain.CToolchain = toolchain.get(Toolchain::C),
+    env: BuildEnv = toolchain.get(Toolchain::BuildEnv),
+) -> Dir {
+    let at = fn(file: File) -> String { "{TOOLS_CC}/{file.path.strip_prefix(c.root.path).strip_prefix("/")}" }
+    let cc = at(c.cc)
+    let prefix = cc.strip_suffix("gcc")
+    # The C toolchain's programs by their usual names too, which a build
+    # system's own scripts run: perl's hints say `gcc`, CMake's bootstrap
+    # `cc`. Each is a script, not a link: Bootlin's wrapper finds the
+    # compiler it runs beside the name it was run by.
+    let names = [
+        ["gcc", "gcc"], ["cc", "gcc"], ["g++", "g++"], ["c++", "g++"], ["cpp", "cpp"], ["nm", "nm"],
+        ["ar", "ar"], ["ranlib", "ranlib"], ["ld", "ld"], ["strip", "strip"], ["objcopy", "objcopy"],
+        ["readelf", "readelf"],
+    ]
+    let unprefixed = (for pair in names {
+        = "printf '#!/bin/sh\\nexec {prefix}{pair[1]} \"$@\"\\n' > /work/bin/{pair[0]} && chmod +x /work/bin/{pair[0]}"
+    }).join("; ")
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = env.root},
+        {at = "/"; place = c.runtime},
+        {at = TOOLS_CC; place = c.root},
+        {at = TOOLS_SRC_IN; place = src},
+        ...(for each in deps { = {at = TOOLS; place = each} }),
+    ]
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {
+            CC = cc
+            CXX = "{prefix}g++"
+            AR = at(c.ar)
+            RANLIB = "{prefix}ranlib"
+            NM = "{prefix}nm"
+            STRIP = "{prefix}strip"
+            LD = at(c.ld)
+            # The releases predate C23, which this GCC defaults to.
+            CFLAGS = "-O2 -std=gnu17"
+            CPPFLAGS = "-I{TOOLS}/include"
+            # A tool linking a library of another finds what that library
+            # needs, and loads them from `/opt/tools` wherever it runs.
+            LDFLAGS = "-L{TOOLS}/lib -Wl,-rpath-link,{TOOLS}/lib -Wl,-rpath,{TOOLS}/lib"
+            LD_LIBRARY_PATH = "{TOOLS}/lib"
+            PKG_CONFIG_PATH = "{TOOLS}/lib/pkgconfig"
+            PATH = "{TOOLS}/bin:/work/bin:{TOOLS_CC}/bin:/bin:/usr/bin"
+            PREFIX = TOOLS
+            DESTDIR = TOOLS_DEST
+            TMPDIR = "/tmp"
+            HOME = "/tmp"
+        },
+    )
+    let ran = box.exec(
+        "/bin/sh",
+        "-c",
+        "set -e; mkdir -p /tmp /work/bin {TOOLS_DEST}{TOOLS}; {unprefixed}; cp -R {TOOLS_SRC_IN} {TOOLS_SRC}; chmod -R u+w {TOOLS_SRC}; \
+         find {TOOLS_SRC} -exec touch -h -d '{SOURCE_TIME}' {{}} +; cd {TOOLS_SRC}; {script}; \
+         test -n \"$(ls {TOOLS_DEST}{TOOLS})\" || {{ echo 'the install put nothing in DESTDIR' >&2; exit 1; }}",
+    )
+    = box.dir("{TOOLS_DEST}{TOOLS}")
+}
+
+# The usual `./configure && make && make install` of an autoconf release,
+# `args` given to `./configure` after its prefix.
+fn configured(args: String) -> String {
+    = "./configure --prefix=$PREFIX {args} && make -j8 && make install DESTDIR=$DESTDIR"
+}
+
+# A release's source, from `url` pinned by `sha256`, its one top
+# directory's contents.
+fn release(url: String, sha256: String) -> Dir {
+    = unpack(fetch(url, sha256 = sha256), strip = 1)
+}
+
+def build m4() {
+    let src = release("https://mirrors.kernel.org/gnu/m4/m4-1.4.19.tar.xz", "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96")
+    = tool(src, configured("--disable-nls LDFLAGS=-static"))
+}
+
+# bison runs m4 itself, the one it was built to find.
+def build bison() {
+    let src = release("https://mirrors.kernel.org/gnu/bison/bison-3.8.2.tar.xz", "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2")
+    = tool(src, configured("--disable-nls M4=/opt/tools/bin/m4 LDFLAGS=-static"), deps = [build m4()])
+}
+
+def build flex() {
+    let src = release("https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz", "e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995")
+    = tool(src, configured("--disable-nls --disable-shared M4=/opt/tools/bin/m4 LDFLAGS=-static"), deps = [build m4()])
+}
+
+# Gavin Howard's bc, which needs nothing to build, unlike GNU bc's `ed`.
+def build bc() {
+    let src = release("https://github.com/gavinhoward/bc/releases/download/7.0.3/bc-7.0.3.tar.xz", "91eb74caed0ee6655b669711a4f350c25579778694df248e28363318e03c7fc4")
+    = tool(src, "PREFIX=$PREFIX LDFLAGS=-static ./configure -G -N -H -E -l && make -j8 && make install DESTDIR=$DESTDIR")
+}
+
+def build bash() {
+    let src = release("https://mirrors.kernel.org/gnu/bash/bash-5.2.37.tar.gz", "9599b22ecd1d5787ad7d3b7bf0c59f312b3396d1e281175dd1f8a4014da621ff")
+    # Without line editing, which a script never needs, and so without
+    # readline's terminal library.
+    = tool(src, configured("--without-bash-malloc --disable-nls --enable-static-link --disable-readline --disable-history --without-curses"))
+}
+
+def build tar() {
+    let src = release("https://mirrors.kernel.org/gnu/tar/tar-1.35.tar.xz", "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16")
+    = tool(src, "FORCE_UNSAFE_CONFIGURE=1 {configured("--disable-nls LDFLAGS=-static")}")
+}
+
+def build xz() {
+    let src = release("https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.xz", "db0590629b6f0fa36e74aea5f9731dc6f8df068ce7b7bafa45301832a5eebc3a")
+    = tool(src, configured("--disable-nls --disable-shared --disable-doc LDFLAGS=-static"))
+}
+
+# zlib, shared too: LLVM's and rustc's programs load `libz.so.1`.
+def build zlib() {
+    let src = release("https://zlib.net/fossils/zlib-1.3.1.tar.gz", "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23")
+    = tool(src, "./configure --prefix=$PREFIX && make -j8 && make install DESTDIR=$DESTDIR")
+}
+
+def build zstd() {
+    let src = release("https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz", "8c29e06cf42aacc1eafc4077ae2ec6c6fcb96a626157e0593d5e82a34fd403c1")
+    = tool(src, "make -j8 -C lib libzstd.a libzstd && make -j8 -C programs zstd-release LDFLAGS=-static && make install-pc install-static install-shared install-includes -C lib PREFIX=$PREFIX DESTDIR=$DESTDIR && make -C programs install PREFIX=$PREFIX DESTDIR=$DESTDIR")
+}
+
+# ncurses' terminal library alone, with the ABI of version 5, as LLVM's
+# release, built on Ubuntu 18.04, loads it: `libtinfo.so.5`.
+def build tinfo() {
+    let src = release("https://mirrors.kernel.org/gnu/ncurses/ncurses-6.5.tar.gz", "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6")
+    # Its libraries alone: the terminal database needs `tic`, a program
+    # this build leaves out.
+    = tool(
+        src,
+        "./configure --prefix=$PREFIX --with-shared --with-termlib --with-abi-version=5 --disable-widec \
+         --without-normal --without-debug --without-cxx --without-cxx-binding --without-ada \
+         --without-progs --without-tests --without-manpages && make -j8 && make install.libs DESTDIR=$DESTDIR",
+    )
+}
+
+# perl, which OpenSSL's build runs: 5.42, the first to know this glibc's
+# locale categories.
+def build perl() {
+    let src = release("https://www.cpan.org/src/5.0/perl-5.42.0.tar.xz", "73cf6cc1ea2b2b1c110a18c14bbbc73a362073003893ffcedc26d22ebdbdd0c3")
+    = tool(src, "./Configure -des -Dprefix=$PREFIX -Dcc=$CC -Uusedl -Dldflags=-static -Dman1dir=none -Dman3dir=none && make -j8 && make install DESTDIR=$DESTDIR")
+}
+
+# OpenSSL's libcrypto, which the kernel's `extract-cert` and `sign-file`
+# link, and its program, which the ML-DSA vector test verifies with: 3.5,
+# the first to know ML-DSA.
+def build openssl() {
+    let src = release("https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz", "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a")
+    = tool(src, "./Configure --prefix=$PREFIX --libdir=lib no-tests && make -j8 && make install_sw DESTDIR=$DESTDIR", deps = [build perl()])
+}
+
+# elfutils' libelf and libdw, for objtool, `resolve_btfids` and pahole.
+def build elfutils() {
+    let src = release("https://sourceware.org/elfutils/ftp/0.192/elfutils-0.192.tar.bz2", "616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4")
+    = tool(
+        src,
+        # This GCC rejects, under elfutils' `-Werror`, a conversion of its
+        # RISC-V disassembler's that older ones allowed.
+        "CFLAGS='-O2 -std=gnu17 -Wno-error=discarded-qualifiers' {configured("--disable-nls --disable-debuginfod --disable-libdebuginfod --without-bzlib --without-lzma --without-zstd")}",
+        deps = [build zlib(), build m4(), build flex(), build bison()],
+    )
+}
+
+def build cmake() {
+    let src = release("https://github.com/Kitware/CMake/releases/download/v3.31.3/cmake-3.31.3.tar.gz", "fac45bc6d410b49b3113ab866074888d6c9e9dc81a141874446eb239ac38cb87")
+    = tool(src, "./bootstrap --prefix=$PREFIX --parallel=8 --no-system-libs -- -DCMAKE_USE_OPENSSL=OFF -DBUILD_TESTING=OFF && make -j8 && make install DESTDIR=$DESTDIR")
+}
+
+# dwarves' pahole, which makes the kernel's BTF, with the libbpf its
+# release carries.
+def build pahole() {
+    let src = release("https://fedorapeople.org/~acme/dwarves/dwarves-1.28.tar.xz", "a4c1a3c16c7d41f27eba8323e05b59fe33581832d5c50ef8390fa102d75a16e3")
+    = tool(
+        src,
+        # Its libbpf's `-Werror` meets the conversion elfutils' does.
+        "export CFLAGS='-O2 -std=gnu17 -Wno-error=discarded-qualifiers'; mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_INSTALL_LIBDIR=lib -D__LIB=lib -DBUILD_SHARED_LIBS=OFF .. && make -j8 && make install DESTDIR=$DESTDIR",
+        deps = [build cmake(), build elfutils(), build zlib()],
+    )
+}
+
+# GNU's own grep, sed, find, core utilities, diff and awk, as the Debian
+# image had them, for scripts that use what busybox's lack:
+# `grep --include`, say.
+def build grep() {
+    let src = release("https://mirrors.kernel.org/gnu/grep/grep-3.11.tar.xz", "1db2aedde89d0dea42b16d9528f894c8d15dae4e190b59aecc78f5a951276eab")
+    = tool(src, configured("--disable-nls --disable-perl-regexp LDFLAGS=-static"))
+}
+
+def build sed() {
+    let src = release("https://mirrors.kernel.org/gnu/sed/sed-4.9.tar.xz", "6e226b732e1cd739464ad6862bd1a1aba42d7982922da7a53519631d24975181")
+    = tool(src, configured("--disable-nls LDFLAGS=-static"))
+}
+
+def build findutils() {
+    let src = release("https://mirrors.kernel.org/gnu/findutils/findutils-4.10.0.tar.xz", "1387e0b67ff247d2abde998f90dfbf70c1491391a59ddfecb8ae698789f0a4f5")
+    = tool(src, configured("--disable-nls LDFLAGS=-static"))
+}
+
+def build coreutils() {
+    let src = release("https://mirrors.kernel.org/gnu/coreutils/coreutils-9.5.tar.xz", "cd328edeac92f6a665de9f323c93b712af1858bc2e0d88f3f7100469470a1b8a")
+    = tool(src, "FORCE_UNSAFE_CONFIGURE=1 {configured("--disable-nls --without-selinux --enable-no-install-program=kill,uptime LDFLAGS=-static")}")
+}
+
+def build diffutils() {
+    let src = release("https://mirrors.kernel.org/gnu/diffutils/diffutils-3.10.tar.xz", "90e5e93cc724e4ebe12ede80df1634063c7a855692685919bfe60b556c9bd09e")
+    = tool(src, configured("--disable-nls LDFLAGS=-static"))
+}
+
+def build gawk() {
+    let src = release("https://mirrors.kernel.org/gnu/gawk/gawk-5.3.1.tar.xz", "694db764812a6236423d4ff40ceb7b6c4c441301b72ad502bb5c27e00cd56f78")
+    = tool(src, configured("--disable-nls --disable-extensions --disable-mpfr LDFLAGS=-static"))
+}
+
+# Every host tool, laid out as one `/opt/tools`.
+def build host_tools() {
+    = merged([
+        build m4(), build bison(), build flex(), build bc(), build bash(), build tar(), build xz(),
+        build zlib(), build zstd(), build tinfo(), build perl(), build openssl(), build elfutils(),
+        build pahole(), build grep(), build sed(), build findutils(), build coreutils(), build diffutils(),
+        build gawk(),
+    ])
+}
+
+# The installs `each`, laid out as one.
+#[hermetic]
+fn merged(each: List<Dir>) -> Dir {
+    = fs.compose(for one in each { = {at = "."; place = one} })
+}
+
+# LLVM 18.1.8's release for x86-64: clang, lld and LLVM's tools, which the
+# kernel builds with, as `LLVM=1` names them, and libclang, which bindgen
+# loads.
+def build llvm() {
+    = release(
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz",
+        "54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36",
+    )
+}
+
+# The component `component` of Rust 1.83.0's part `name`, pinned by
+# `sha256`.
+fn rust_part(name: String, component: String, sha256: String) -> Dir {
+    = unpack(fetch("https://static.rust-lang.org/dist/{name}.tar.xz", sha256 = sha256)).dir("{name}/{component}")
+}
+
+# Rust 1.83.0, as the Bazel build's image had it: rustc, the standard
+# library, its source, which the kernel builds `core` from, and rustfmt.
+def build rust_1_83() {
+    let rustc = rust_part("rustc-1.83.0-x86_64-unknown-linux-gnu", "rustc", "6ec40e0405c8cbed3b786a97d374c144b012fc831b7c22b535f8ecb524f495ad")
+    let std = rust_part("rust-std-1.83.0-x86_64-unknown-linux-gnu", "rust-std-x86_64-unknown-linux-gnu", "c88fe6cb22f9d2721f26430b6bdd291e562da759e8629e2b4c7eb2c7cad705f2")
+    let src = rust_part("rust-src-1.83.0", "rust-src", "1d6af46e3f944b2cb5cfaef7afb42e7ee00abb3285f3b09ca98bbcfff959c0c5")
+    let rustfmt = rust_part("rustfmt-1.83.0-x86_64-unknown-linux-gnu", "rustfmt-preview", "43f799a353d367a78387d49c0c6eaa1082813b88338ddd9f741c2fc1858bb9a2")
+    = rust_install(rustc, std, src, rustfmt)
+}
+
+# Rust's components laid out as one install, each component's own
+# manifest left out.
+#[hermetic]
+fn rust_install(rustc: Dir, std: Dir, src: Dir, rustfmt: Dir) -> Dir {
+    = fs.compose([
+        {at = "lib"; place = rustc.dir("lib")},
+        {at = "lib"; place = std.dir("lib")},
+        {at = "lib"; place = src.dir("lib")},
+        {at = "bin"; place = rustc.dir("bin")},
+        {at = "bin"; place = rustfmt.dir("bin")},
+        {at = "libexec"; place = rustc.dir("libexec")},
+    ])
+}
+
+# bindgen 0.65.1's program, as `cargo install --locked bindgen-cli` builds
+# it, by the rust library's pinned Rust. It loads libclang when it runs.
+def build bindgen() {
+    let src = unpack(
+        fetch("https://static.crates.io/crates/bindgen-cli/bindgen-cli-0.65.1.crate", sha256 = "33373a4e0ec8b6fa2654e0c941ad16631b0d564cfd20e7e4b3db4c5b28f4a237"),
+        strip = 1,
+    )
+    = rust.cargo_build(src, rust.vendored(src.file("Cargo.lock")), bins = ["bindgen"], target = "x86_64-unknown-linux-gnu")
+}
+
+# kmod's `depmod`, which indexes the packaged modules, reading them
+# compressed with zstd as the packages hold them.
+def build kmod() {
+    let src = release("https://www.kernel.org/pub/linux/utils/kernel/kmod/kmod-32.tar.xz", "630ed0d92275a88cb9a7bf68f5700e911fdadaf02e051cf2e4680ff8480bd492")
+    = tool(
+        src,
+        # Without pkg-config, it is told zstd's flags.
+        "export libzstd_CFLAGS=-I/opt/tools/include libzstd_LIBS=-lzstd; \
+         {configured("--disable-manpages --with-zstd --without-xz --without-zlib --without-openssl")}",
+        deps = [build zstd()],
+    )
+}
+
+# xxHash's library, which debugedit hashes with: its v0.8.2 release, a
+# lightweight tag of this commit, which pins it as a digest would.
+def build xxhash() {
+    let src = fetch_git("https://github.com/Cyan4973/xxHash", "bbb27a5efb85b92a0486cf361a8635715a53f6ba")
+    = tool(src, "make -j8 lib && make install_libxxhash install_libxxhash.includes PREFIX=$PREFIX DESTDIR=$DESTDIR")
+}
+
+# debugedit, which rewrites vmlinux's source paths for its debuginfo
+# package.
+def build debugedit() {
+    let src = release("https://sourceware.org/ftp/debugedit/5.1/debugedit-5.1.tar.xz", "ee9b688b2ed8fa62551c54cb5dc31aaa05853e7dedbd9e1237c77894ea5e3626")
+    # Without pkg-config, it is told elfutils' flags, each non-empty, as
+    # autoconf's check of them requires.
+    = tool(
+        src,
+        "export LIBELF_CFLAGS=-I/opt/tools/include LIBELF_LIBS=-lelf LIBDW_CFLAGS=-I/opt/tools/include LIBDW_LIBS='-ldw -lelf' XXHASH_CFLAGS=-I/opt/tools/include XXHASH_LIBS=-lxxhash; {configured("")}",
+        deps = [build elfutils(), build zlib(), build xxhash()],
+    )
+}
+
+# rsync, which `make headers_install` copies the UAPI headers with.
+def build rsync() {
+    let src = release("https://download.samba.org/pub/rsync/src/rsync-3.3.0.tar.gz", "7399e9a6708c32d678a72a63219e96f23be0be2336e50fd1348498d07041df90")
+    = tool(
+        src,
+        configured(
+            "--disable-xxhash --disable-zstd --disable-lz4 --disable-openssl --disable-md2man \
+             --disable-iconv LDFLAGS=-static",
+        ),
+    )
+}
+
+# What staging the kernel's packages runs besides the host tools.
+def build stage_tools() {
+    = merged([build host_tools(), build kmod(), build debugedit(), build rsync()])
+}
