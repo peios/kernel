@@ -36,7 +36,9 @@ let TOOLS_DEST = "/work/dest"
 # a release's generated files for out of date.
 let SOURCE_TIME = "2000-01-01 00:00:00"
 
-# What `script` installs into `$DESTDIR$PREFIX`, a `make install` given
+# What `script` installs into `$DESTDIR$PREFIX`, each static archive made
+# deterministic with `objcopy -D`, since `ar` records its members' times,
+# and made writable first, as perl installs its archives read-only, a `make install` given
 # `DESTDIR=$DESTDIR` itself, since many Makefiles set it, overriding the
 # environment's, `PREFIX` being
 # `/opt/tools`, run in the source `src`, copied, made writable and given
@@ -94,6 +96,8 @@ fn tool(
             PATH = "{TOOLS}/bin:/work/bin:{TOOLS_CC}/bin:/bin:/usr/bin"
             PREFIX = TOOLS
             DESTDIR = TOOLS_DEST
+            # What a compile stamps of its time, `__DATE__` say, is this.
+            SOURCE_DATE_EPOCH = "946684800"
             TMPDIR = "/tmp"
             HOME = "/tmp"
         },
@@ -103,6 +107,8 @@ fn tool(
         "-c",
         "set -e; mkdir -p /tmp /work/bin {TOOLS_DEST}{TOOLS}; {unprefixed}; cp -R {TOOLS_SRC_IN} {TOOLS_SRC}; chmod -R u+w {TOOLS_SRC}; \
          find {TOOLS_SRC} -exec touch -h -d '{SOURCE_TIME}' {{}} +; cd {TOOLS_SRC}; {script}; \
+         find {TOOLS_DEST} -name '*.a' -type f | while read -r archive; do \
+             chmod u+w \"$archive\"; {prefix}objcopy -D \"$archive\"; done; \
          test -n \"$(ls {TOOLS_DEST}{TOOLS})\" || {{ echo 'the install put nothing in DESTDIR' >&2; exit 1; }}",
     )
     = box.dir("{TOOLS_DEST}{TOOLS}")
@@ -185,10 +191,17 @@ def build tinfo() {
 }
 
 # perl, which OpenSSL's build runs: 5.42, the first to know this glibc's
-# locale categories.
+# locale categories. Its host and builder are given, which it would
+# otherwise record of the machine, `-A` setting a value after `Configure`
+# has worked out its own; and the time it records is `SOURCE_DATE_EPOCH`,
+# from a `date` that tells that time.
 def build perl() {
     let src = release("https://www.cpan.org/src/5.0/perl-5.42.0.tar.xz", "73cf6cc1ea2b2b1c110a18c14bbbc73a362073003893ffcedc26d22ebdbdd0c3")
-    = tool(src, "./Configure -des -Dprefix=$PREFIX -Dcc=$CC -Uusedl -Dldflags=-static -Dman1dir=none -Dman3dir=none && make -j8 && make install DESTDIR=$DESTDIR")
+    = tool(src, "mkdir -p /work/fixed-date && printf '#!/bin/sh\\nexec /bin/date -u -d @$SOURCE_DATE_EPOCH \"$@\"\\n' \
+         > /work/fixed-date/date && chmod +x /work/fixed-date/date && export PATH=/work/fixed-date:$PATH && \
+         ./Configure -des -Dprefix=$PREFIX -Dcc=$CC -Uusedl -Dldflags=-static -Dman1dir=none -Dman3dir=none \
+         -Dmyhostname=localhost -Dmydomain=.localdomain -Dcf_by=pekit -Dcf_email=pekit@localhost \
+         -Dperladmin=pekit@localhost -Adefine:myuname='linux localhost' && make -j8 && make install DESTDIR=$DESTDIR")
 }
 
 # OpenSSL's libcrypto, which the kernel's `extract-cert` and `sign-file`
