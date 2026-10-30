@@ -1,7 +1,7 @@
 # Shared-source kernel core tests
 
 The maintained [shared Rust core testing guide](../../docs/1--peios.shelf/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/30--rust-tests.md)
-covers source ownership, toolchain setup, Cargo and Bazel commands, and limits
+covers source ownership, toolchain setup, Cargo and pekit commands, and limits
 of host testing.
 
 ## ABI regeneration

@@ -1,0 +1,280 @@
+# The kernel's ppk packages, as the Bazel build's package family made
+# them: the kernel's built outputs staged into each package's file tree by
+# `peios/packages/stage-kernel.py`, each package committed by
+# `peios/packages/package.py` with the vendored ppk writer, and the family
+# merged into one store, every blob checked by `check-blobs`. The tools'
+# packages, and `kernel-tools-debuginfo`, wait for the kernel's userspace
+# tools (PEI-1637).
+import fs
+import toolchain
+import Toolchain from toolchain
+import BuildEnv from "github.com/gcslib/buildenv"
+import PythonToolchain from "github.com/gcslib/python"
+import "github.com/gcslib/rust"
+
+# The kernel's packages, by their definitions in `peios/packages/legacy/`.
+let KERNEL_PACKAGES = [
+    "kernel", "kernel-modules", "kernel-modules-irf", "kernel-devel", "kernel-headers",
+    "kernel-debuginfo", "kernel-debugsource",
+]
+
+# The version every package has until it is released, as
+# `peios/packages/versions.bzl` gave it.
+let PACKAGE_VERSION = "0.0.0-dev"
+
+let PACKAGE_TOOLS = "/opt/tools"
+
+let PACKAGE_PYTHON = "/opt/python"
+
+let PACKAGE_CC = "/opt/cc"
+
+# The vendored ppk writer, which every package is committed with.
+def build ppk_writer() {
+    let ws = rust.workspace(dir("peios/vendor/ppk"), rust.vendored(file("peios/vendor/ppk/Cargo.lock")))
+    = rust.bin(ws, "ppk")
+}
+
+# The store's blob checker.
+def build check_blobs() {
+    let ws = rust.workspace(dir("peios/packages/check-blobs"), rust.vendored(file("peios/packages/check-blobs/Cargo.lock")))
+    = rust.bin(ws, "check-blobs")
+}
+
+# What packaging runs with, outside its steps.
+type Packaging = {
+    tools: Dir,
+    llvm: Dir,
+    c: toolchain.CToolchain,
+    env: BuildEnv,
+    python: PythonToolchain,
+}
+
+fn packaging() -> Packaging {
+    = {
+        tools = build stage_tools()
+        llvm = build llvm()
+        c = toolchain.get(Toolchain::C)
+        env = toolchain.get(Toolchain::BuildEnv)
+        python = toolchain.get(Toolchain::Python)
+    }
+}
+
+# The kernel's package file trees: `kernel/`, `headers/` and `debuginfo/`,
+# and `build.json`.
+def build kernel_content(
+    kernel: Dir = build kernel(),
+    src: Dir = kernel_source(),
+    recipe: Dir = dir("peios/packages"),
+    with: Packaging = packaging(),
+) {
+    = staged(kernel, src, recipe, with)
+}
+
+#[hermetic]
+fn staged(kernel: Dir, src: Dir, recipe: Dir, with: Packaging) -> Dir {
+    let c = with.c
+    let cc = "{PACKAGE_CC}/{c.cc.path.strip_prefix(c.root.path).strip_prefix("/")}"
+    let prefix = cc.strip_suffix("gcc")
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = with.env.root},
+        {at = "/"; place = c.runtime},
+        {at = PACKAGE_CC; place = c.root},
+        {at = PACKAGE_TOOLS; place = with.tools},
+        {at = "/opt/llvm"; place = with.llvm},
+        {at = PACKAGE_PYTHON; place = with.python.root},
+        {at = "/work/src"; place = src},
+        {at = "/built"; place = kernel},
+        {at = "/recipe"; place = recipe},
+    ]
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {
+            PATH = "/work/bin:{PACKAGE_TOOLS}/bin:/opt/llvm/bin:{PACKAGE_PYTHON}/bin:/bin:/usr/bin"
+            LD_LIBRARY_PATH = "{PACKAGE_TOOLS}/lib"
+            PEIOS_HOSTCC = cc
+            PEIOS_HOSTCXX = "{prefix}g++"
+            HOME = "/tmp"
+            TMPDIR = "/tmp"
+            LC_ALL = "C"
+            TZ = "UTC"
+            PYTHONDONTWRITEBYTECODE = "1"
+            SOURCE_DATE_EPOCH = "1735689600"
+        },
+    )
+    # LLVM's tools by the names `LLVM=-18` gives them, and binutils' by
+    # their usual names, as the Debian image had both. Each binutils name
+    # is a script: Bootlin's wrapper finds a tool beside the name it was run
+    # by.
+    let llvm = (for tool in ["clang", "ld.lld", "llvm-ar", "llvm-nm", "llvm-objcopy", "llvm-objdump", "llvm-readelf", "llvm-strip"] {
+        = "ln -s /opt/llvm/bin/{tool} /work/bin/{tool}-18"
+    }).join("; ")
+    let binutils = (for tool in ["objcopy", "strip", "readelf"] {
+        = "printf '#!/bin/sh\\nexec {prefix}{tool} \"$@\"\\n' > /work/bin/{tool}; chmod +x /work/bin/{tool}"
+    }).join("; ")
+    let ran = box.exec(
+        "{PACKAGE_TOOLS}/bin/bash",
+        "-c",
+        "set -euo pipefail; mkdir -p /tmp /work/bin /output; {llvm}; {binutils}; python3 /recipe/stage-kernel.py",
+    )
+    = box.dir("/output")
+}
+
+# The package `name`, committed from its definition, with the kernel's
+# file trees: a ppk store of it alone, and its `provenance.json`.
+fn kernel_package(
+    name: String,
+    content: Dir = build kernel_content(),
+    writer: File = build ppk_writer(),
+    packages: Dir = dir("peios/packages"),
+    with: Packaging = packaging(),
+) -> Dir {
+    = committed(
+        [
+            "--version", PACKAGE_VERSION, "--data", "/work/packages/data",
+            "--base", "/work/packages/legacy/package.pekit.toml",
+            "--definition", "/work/packages/legacy/{name}.package.pekit.toml", "--kernel", "/built",
+        ],
+        content,
+        writer,
+        packages,
+        with,
+    )
+}
+
+# `kernel-source`: the kernel's source as it builds, the pekit build's own
+# files with it.
+def build kernel_source_package(
+    src: Dir = package_source(),
+    writer: File = build ppk_writer(),
+    packages: Dir = dir("peios/packages"),
+    with: Packaging = packaging(),
+) {
+    = committed(
+        [
+            "--version", PACKAGE_VERSION, "--data", "/work/packages/data",
+            "--base", "/work/packages/legacy/package.pekit.toml", "--source-manifest", "/work/manifest.json",
+        ],
+        src,
+        writer,
+        packages,
+        with,
+    )
+}
+
+# What `kernel-source` holds: the checked source, which has all of
+# `peios/`, and the pekit build's files.
+def package_source() -> Dir {
+    let entries: List<{at: String, place: Dir | File}> = [
+        {at = "."; place = checked_source()},
+        ...(for each in ["workspace.gcsl", "kernel.gcsl", "packages.gcsl", "scripts.gcsl", "style.gcsl", "tests.gcsl", "tools.gcsl", "pekit.lock"] {
+            = {at = each; place = file(each)}
+        }),
+    ]
+    = laid_out(entries)
+}
+
+# `entries`, laid out as one tree.
+#[hermetic]
+fn laid_out(entries: List<{at: String, place: Dir | File}>) -> Dir {
+    = fs.compose(entries)
+}
+
+# `package.py commit` with `args`, `input` at `/built`, and, for a source
+# package, a manifest of `input`'s every file.
+#[hermetic]
+fn committed(args: List<String>, input: Dir, writer: File, packages: Dir, with: Packaging) -> Dir {
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = with.env.root},
+        {at = "/"; place = with.c.runtime},
+        {at = PACKAGE_PYTHON; place = with.python.root},
+        {at = "/work/packages"; place = packages},
+        {at = "/work/ppk"; place = writer},
+        {at = "/built"; place = input},
+    ]
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {PATH = "{PACKAGE_PYTHON}/bin:/bin:/usr/bin"; HOME = "/tmp"; TMPDIR = "/tmp"; PYTHONDONTWRITEBYTECODE = "1"},
+    )
+    let ran = box.exec(
+        "/bin/sh",
+        "-c",
+        "set -e; mkdir -p /tmp /work/out; \
+         cd /built && find . -type f -print0 | python3 -c 'import json, sys; \
+         print(json.dumps([dict(relative=p[2:], path=\"/built/\" + p[2:]) \
+         for p in sorted(sys.stdin.read().split(chr(0))) if p]))' > /work/manifest.json; \
+         cd /work && python3 /work/packages/package.py commit --output /work/out --writer /work/ppk \"$@\"",
+        "commit",
+        ...args,
+    )
+    = box.dir("/work/out")
+}
+
+# The kernel's package family, merged into one store, every blob checked.
+def build packages(
+    stores: List<Dir> = [
+        ...(for each in KERNEL_PACKAGES { = kernel_package(each) }),
+        build kernel_source_package(),
+    ],
+    checker: File = build check_blobs(),
+    packages: Dir = dir("peios/packages"),
+    with: Packaging = packaging(),
+) {
+    = merged_store(stores, checker, packages, with)
+}
+
+#[hermetic]
+fn merged_store(stores: List<Dir>, checker: File, packages: Dir, with: Packaging) -> Dir {
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = with.env.root},
+        {at = "/"; place = with.c.runtime},
+        {at = PACKAGE_PYTHON; place = with.python.root},
+        {at = "/work/packages"; place = packages},
+        {at = "/work/check-blobs"; place = checker},
+        ...(for i in 0..len(stores) { = {at = "/work/stores/{i}"; place = stores[i]} }),
+    ]
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {PATH = "{PACKAGE_PYTHON}/bin:/bin:/usr/bin"; HOME = "/tmp"; TMPDIR = "/tmp"; PYTHONDONTWRITEBYTECODE = "1"},
+    )
+    let stored = (for i in 0..len(stores) { = "--store /work/stores/{i}" }).join(" ")
+    let ran = box.exec(
+        "/bin/sh",
+        "-c",
+        "set -e; mkdir -p /tmp; python3 /work/packages/package.py merge --output /work/out --checker /work/check-blobs {stored}",
+    )
+    = box.dir("/work/out")
+}
+
+# The tree-input test's package: a file, a link to it and a licence,
+# committed from a tree a step made.
+def build fixture_package(
+    writer: File = build ppk_writer(),
+    packages: Dir = dir("peios/packages"),
+    with: Packaging = packaging(),
+) {
+    = committed(
+        [
+            "--version", PACKAGE_VERSION, "--data", "/work/packages/data",
+            "--base", "/work/packages/legacy/package.pekit.toml",
+            "--definition", "/work/packages/tests/fixture.toml", "--tools", "/built",
+        ],
+        fixture_stage(),
+        writer,
+        packages,
+        with,
+    )
+}
+
+# A step's tree, as the fixture's stage makes it.
+#[hermetic]
+fn fixture_stage(env: BuildEnv = toolchain.get(Toolchain::BuildEnv)) -> Dir {
+    let box = fs.compose([{at = "/"; place = env.root}]).sandbox(cwd = "/work")
+    let ran = box.exec(
+        "/bin/sh",
+        "-c",
+        "set -eu; mkdir -p /work/out/root/usr/bin; printf 'fixture payload\\n' > /work/out/root/usr/bin/probe; \
+         chmod 755 /work/out/root/usr/bin/probe; ln -s probe /work/out/root/usr/bin/probe-alias; \
+         printf '{{\"release_ready\":false}}\\n' > /work/out/build.json",
+    )
+    = box.dir("/work/out")
+}

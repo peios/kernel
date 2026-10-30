@@ -22,31 +22,30 @@ rustup toolchain install 1.83.0 --profile minimal --component rustfmt
 rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy
 python3 peios/style.py setup
 
-./peios/bazel test //:style //peios/style:tests
-./peios/bazel run //:format
-./peios/bazel run //:style-review -- HEAD
+python3 peios/style.py check
+python3 peios/style/test_style.py
+pekit run format
+pekit run style_review HEAD
 ```
 
-Select Python 3.14.4 for the setup command. It installs exact, hash-locked wheels
+Select Python 3.14.8 for the setup command. It installs exact, hash-locked wheels
 and binaries in `~/.cache/peios/kernel-style/<lock-identity>`. Set
 `PEIOS_STYLE_CACHE` to relocate that cache. Setup does not install Rust or change
 the default toolchain. Checks verify tools and fail if setup is missing; checks
 never download dependencies or repair source. A check can be run directly with
 `python3 peios/style.py check`; formatting with `python3 peios/style.py format`.
 
-The Bazel test rules inherit only the tool lookup/cache variables they need:
-PATH, HOME, RUSTUP_HOME, CARGO_HOME and PEIOS_STYLE_CACHE. They are deliberately
-local checks, with remote execution and cached test results disabled. This is
-not a hermetic compiler image. The environment allowance is implemented in
-`peios/style/rules.bzl`.
+`pekit test style style_tool` runs the same checks in a sandbox, with the
+tools pekit installs from the same locks (`style.gcsl`), so nothing of the
+host's is used: Python 3.14.8, the locked wheels, shfmt, shellcheck, and
+rustfmt for both pinned Rust toolchains.
 
 ## Scope and gates
 
 `peios/style/scope.json` lists owned roots, individual integration headers, and exclusions
 with reasons. Run `python3 peios/style.py inventory` to inspect the selected
 files. New supported source files under an owned root are discovered automatically.
-When adding an independently owned root or a Bazel subpackage, update both this
-scope and `//:style-sources` so the Bazel runfiles contain it.
+When adding an independently owned root, update this scope.
 
 Included: Peios subsystems under `security/pkm`, `fs/stratafs`, and `net/ntfe`;
 their owned integration/UAPI headers; Peios build/package wrappers; this tooling;
@@ -75,9 +74,9 @@ their normal build commands. No full-kernel clang-tidy policy is introduced.
 
 ## CI
 
-`.github/workflows/style.yml` installs the same pins and runs the same Bazel
-style, command regression, Cargo, C ABI and KMES event-table targets on pushes
-and pull requests.
+`.github/workflows/style.yml` installs the same pins and runs the same style,
+command regression, Cargo, C ABI, KMES event-table, data-generator, KUnit
+runner, and qualification-build checks directly on pushes and pull requests.
 PRs also receive advisory checkpatch output against the merge commit's first
 parent. Actions are pinned to reviewed release commit IDs, credentials are not
 persisted, and the workflow has read-only repository permission.

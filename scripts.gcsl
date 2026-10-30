@@ -1,0 +1,69 @@
+# The kernel's developer commands, which `pekit run` runs by hand: none is
+# a test, since each needs what a step can't have, a booted virtual machine
+# or the checkout itself to change. They are what the Bazel build's
+# `local_command`s and its `kunit` test were. Each runs in the checkout it
+# is run from, with the host's tools, as those did.
+
+# KUnit, booted: the kunit profile's kernel, built, booted in QEMU with KVM
+# where the machine has it, its suite required to pass
+# (`peios/test-kunit.sh`). Opt-in, since it needs QEMU and wants KVM.
+def script kunit() {
+    let kernel = build kernel_kunit()
+    let ran = checkout_run("bash peios/test-kunit.sh \"$1\"", [kernel.file("bzImage").path])
+}
+
+# The owned sources, formatted by the style check's locked tools, which
+# `python3 peios/style.py setup` installs.
+def script format() {
+    let ran = checkout_run("python3 peios/style.py format", [])
+}
+
+# checkpatch's findings on the commits after the one given, advisory.
+def script style_review() {
+    let ran = checkout_run("bash peios/style/review.sh \"$@\"", ^script_session.args)
+}
+
+# The checked-in KMES event table, generated again.
+def script generate_kmes_events() {
+    let ran = checkout_run("python3 peios/gen-kmes-event-table.py", [])
+}
+
+# The checked-in port reservation seed, generated again.
+def script generate_port_seed() {
+    let ran = checkout_run("python3 peios/gen-port-reservations-seed.py", [])
+}
+
+# The qualification runs, each booting a guest to test one subsystem, given
+# the words after the script's name.
+def script qualify_mntns() {
+    let ran = checkout_run("bash peios/qualification/test-mntns.sh \"$@\"", ^script_session.args)
+}
+
+def script qualify_stratafs() {
+    let ran = checkout_run("bash peios/qualification/test-stratafs.sh \"$@\"", ^script_session.args)
+}
+
+def script qualify_stratafs_fuse() {
+    let ran = checkout_run("bash peios/qualification/test-stratafs-fuse.sh \"$@\"", ^script_session.args)
+}
+
+def script qualify_stratafs_dir_bench() {
+    let ran = checkout_run("bash peios/qualification/test-stratafs-dir-bench.sh \"$@\"", ^script_session.args)
+}
+
+def script qualify_modsig() {
+    let ran = checkout_run("bash peios/qualification/test-modsig.sh \"$@\"", ^script_session.args)
+}
+
+def script qualify_fwsig() {
+    let ran = checkout_run("bash peios/qualification/test-fwsig.sh \"$@\"", ^script_session.args)
+}
+
+# `command`, run by bash at the top of the checkout pekit was run in, with
+# `args` as its `$1` and on, given the terminal.
+fn checkout_run(command: String, args: List<String>) -> {} {
+    = exec(
+        ["bash", "-c", "cd \"$(git rev-parse --show-toplevel)\" && {command}", "pekit-run", ...args],
+        interactive = true,
+    )
+}

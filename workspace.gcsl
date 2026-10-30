@@ -1,0 +1,20 @@
+# The Peios kernel's workspace: Kbuild with LLVM 18, Rust 1.83.0 and
+# bindgen, and the host tools it runs, every one pinned (`tools.gcsl`); the
+# gcc library's Bootlin C toolchain and the buildenv library's busybox and
+# make build those tools; the rust library's Rust builds and tests the
+# kernel's Rust cores on the host; the python library's Python runs the
+# kernel's own scripts and their tests.
+import Toolchain::* from "github.com/gcslib/buildenv"
+import Toolchain::* from "github.com/gcslib/gcc"
+import Toolchain::* from "github.com/gcslib/python"
+import Toolchain::* from "github.com/gcslib/rust"
+import Toolchain from toolchain
+
+pekitconf = {
+    toolchains = [
+        Toolchain::C gcc_x86_64,
+        Toolchain::BuildEnv busybox_x86_64,
+        Toolchain::Python python_3_14,
+        Toolchain::Rust rust_1_98,
+    ]
+}

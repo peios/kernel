@@ -2,6 +2,7 @@
 """Prepare kernel package file trees inside the pinned build image."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -22,12 +23,23 @@ def copy(source: Path, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     if source.is_dir():
         shutil.copytree(source, target, dirs_exist_ok=True, symlinks=True)
+        # A frozen input's copies are as writable as a file's copy is.
+        for path in [target, *target.rglob("*")]:
+            if not path.is_symlink():
+                path.chmod(path.stat().st_mode | 0o200)
     else:
         shutil.copy2(source, target, follow_symlinks=False)
         if not target.is_symlink():
             # Bazel freezes build outputs. Copies used for stripping/debugedit
             # must be writable without ever modifying the immutable input.
             target.chmod(0o755 if target.stat().st_mode & 0o111 else 0o644)
+
+
+def host_compiler() -> list[str]:
+    """Kbuild's host compiler, if the build names one, as `build.sh` takes it."""
+    if not os.environ.get("PEIOS_HOSTCC"):
+        return []
+    return [f"HOSTCC={os.environ['PEIOS_HOSTCC']}", f"HOSTCXX={os.environ['PEIOS_HOSTCXX']}"]
 
 
 def extract(source: Path, destination: Path) -> None:
@@ -62,6 +74,7 @@ def main() -> None:
         "O=/work/headers-build",
         "ARCH=x86",
         f"LLVM={settings['llvm']}",
+        *host_compiler(),
         "headers_install",
         f"INSTALL_HDR_PATH={OUTPUT}/headers/usr",
     )

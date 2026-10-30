@@ -18,6 +18,11 @@ pahole-flags-$(call test-ge, $(pahole-ver), 126)  = -j$(JOBS) --btf_features=enc
 
 pahole-flags-$(call test-ge, $(pahole-ver), 130) += --btf_features=attributes
 
+# Peios: parallel BTF encoding orders types as its threads finish, so the
+# same vmlinux gives a different .BTF each time; reproducible_build keeps
+# the threads and makes the output the same.
+pahole-flags-$(call test-ge, $(pahole-ver), 128) += --btf_features=reproducible_build
+
 endif
 
 pahole-flags-$(CONFIG_PAHOLE_HAS_LANG_EXCLUDE)		+= --lang_exclude=rust

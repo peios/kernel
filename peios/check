@@ -1,0 +1,12 @@
+#!/bin/sh
+# The contributor check: the tracked top-level entries each placed in the
+# kernel's source or left out of it on purpose, then every test pekit runs,
+# strictly, which builds the pinned tools and checks the kernel's style,
+# its Rust cores, UAPI headers, generated tables, data generators, KUnit
+# runner and qualification programs.
+set -eu
+
+repo=$(CDPATH="" cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$repo"
+python3 peios/check-entries.py
+pekit test --strict

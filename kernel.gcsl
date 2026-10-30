@@ -1,0 +1,190 @@
+# The kernel, built by Kbuild as `peios/build.sh` builds it, with the
+# pinned toolchain of `tools.gcsl` in place of the Docker image the Bazel
+# build ran it in, and its outputs exported as `peios/runner.py` exports
+# them: `bzImage`, `vmlinux`, `System.map`, `config`, `Module.symvers`,
+# `kernel.release`, the unsigned modules in `modules.tar`, what
+# kernel-devel takes in `kbuild-support.tar`, and `build.json`.
+#
+# Kbuild is one step: its own dependency graph, kept in its `.cmd` files,
+# is what makes a kernel build incremental, and pekit's steps could only
+# copy it. A change to the source builds the kernel again, from nothing,
+# as the Bazel build's `kernel` target did.
+import fs
+import json
+import toolchain
+import Toolchain from toolchain
+import BuildEnv from "github.com/gcslib/buildenv"
+import PythonToolchain from "github.com/gcslib/python"
+
+# Where the step has what it builds with.
+let KERNEL_SRC_IN = "/work/src-in"
+
+let KERNEL_LLVM = "/opt/llvm"
+
+let KERNEL_RUST = "/opt/rust"
+
+let KERNEL_BINDGEN = "/opt/bindgen"
+
+let KERNEL_PYTHON = "/opt/python"
+
+let KERNEL_CC = "/opt/cc"
+
+# Where the host tools are, as `tools.gcsl` builds them for.
+let KERNEL_TOOLS = "/opt/tools"
+
+# The settings the build takes, as the Bazel build's image took them.
+type Settings = {source_date_epoch: Int, localversion: String, rust: String, bindgen: String, llvm: String}
+
+# LLVM's tools that `make LLVM=-18` runs, by the names a Debian install
+# gives them.
+let LLVM_TOOLS = ["clang", "ld.lld", "llvm-ar", "llvm-nm", "llvm-objcopy", "llvm-objdump", "llvm-readelf", "llvm-strip"]
+
+# The kernel's own top-level directories and files, which Kbuild reads:
+# the tree but `peios/`, pekit's files, the Learn documentation in
+# `docs/`, CI and editors' settings. `peios/check` fails if a tracked
+# top-level entry is in none of these lists, so a new one is placed here
+# or left out on purpose.
+let KERNEL_DIRS = [
+    "Documentation", "LICENSES", "arch", "block", "certs", "crypto", "drivers", "fs", "include",
+    "init", "io_uring", "ipc", "kernel", "lib", "mm", "net", "rust", "samples", "scripts",
+    "security", "sound", "tools", "usr", "virt",
+]
+
+let KERNEL_FILES = [
+    ".clang-format", ".cocciconfig", ".get_maintainer.ignore", ".mailmap", ".rustfmt.toml",
+    "COPYING", "CREDITS", "Kbuild", "Kconfig", "MAINTAINERS", "Makefile", "README",
+]
+
+# Of `peios/`, what `peios/build.sh` reads and the export runs, as the
+# Bazel build's recipe had it: a change to another of its scripts builds
+# no kernel.
+let KERNEL_RECIPE = [
+    "peios/build.sh", "peios/build-settings.json", "peios/generate-keys.py", "peios/runner.py",
+    "peios/verify-config.sh",
+]
+
+let KERNEL_RECIPE_DIRS = ["peios/config", "peios/keys"]
+
+# The tracked top-level entries that are no part of the kernel's source.
+let NOT_KERNEL = [
+    ".clippy.toml", ".editorconfig", ".gitattributes", ".github", ".gitignore", ".pylintrc", "docs",
+    "kernel.gcsl", "packages.gcsl", "peios", "pekit.lock", "scripts.gcsl", "style.gcsl", "tests.gcsl", "tools.gcsl",
+    "workspace.gcsl",
+]
+
+# The kernel's source, as Kbuild and `peios/build.sh` read it.
+def kernel_source() -> Dir {
+    = tree([
+        ...(for each in [...KERNEL_DIRS, ...KERNEL_RECIPE_DIRS] { = {at = each; place = dir(each)} }),
+        ...(for each in [...KERNEL_FILES, ...KERNEL_RECIPE] { = {at = each; place = file(each)} }),
+    ])
+}
+
+# The kernel's source with all of `peios/`, its own scripts and their
+# tests, and the Learn documentation, which the reference generators'
+# tests and the source package read.
+def checked_source() -> Dir {
+    = tree([
+        ...(for each in [...KERNEL_DIRS, "peios", "docs"] { = {at = each; place = dir(each)} }),
+        ...(for each in KERNEL_FILES { = {at = each; place = file(each)} }),
+    ])
+}
+
+# `entries`, laid out as one tree.
+#[hermetic]
+fn tree(entries: List<{at: String, place: Dir | File}>) -> Dir {
+    = fs.compose(entries)
+}
+
+def build kernel() {
+    = kbuild("production")
+}
+
+# The kernel KUnit boots: the kunit profile's configuration, its modules
+# built in.
+def build kernel_kunit() {
+    = kbuild("kunit")
+}
+
+# The kernel of `profile`, `production` or `kunit`, from the workspace's
+# source.
+fn kbuild(
+    profile: String,
+    src: Dir = kernel_source(),
+    tools: Dir = build host_tools(),
+    llvm: Dir = build llvm(),
+    rust: Dir = build rust_1_83(),
+    bindgen: Dir = build bindgen(),
+) -> Dir {
+    = kbuild_ran(profile, src, tools, llvm, rust, bindgen)
+}
+
+#[hermetic]
+fn kbuild_ran(
+    profile: String,
+    src: Dir,
+    tools: Dir,
+    llvm: Dir,
+    rust: Dir,
+    bindgen: Dir,
+    c: toolchain.CToolchain = toolchain.get(Toolchain::C),
+    env: BuildEnv = toolchain.get(Toolchain::BuildEnv),
+    python: PythonToolchain = toolchain.get(Toolchain::Python),
+) -> Dir {
+    let settings: Settings = json.decode(src.file("peios/build-settings.json").read())
+    let host = fn(file: File) -> String { "{KERNEL_CC}/{file.path.strip_prefix(c.root.path).strip_prefix("/")}" }
+    let hostcc = host(c.cc)
+    let placed: List<{at: String, place: Dir | File | FileSet}> = [
+        {at = "/"; place = env.root},
+        {at = "/"; place = c.runtime},
+        {at = KERNEL_CC; place = c.root},
+        {at = KERNEL_TOOLS; place = tools},
+        {at = KERNEL_LLVM; place = llvm},
+        {at = KERNEL_RUST; place = rust},
+        {at = KERNEL_BINDGEN; place = bindgen},
+        {at = KERNEL_PYTHON; place = python.root},
+        {at = KERNEL_SRC_IN; place = src},
+    ]
+    let suffixed = (for tool in LLVM_TOOLS { = "ln -s {KERNEL_LLVM}/bin/{tool} /work/llvm/{tool}{settings.llvm}" }).join(" && ")
+    let box = fs.compose(placed).sandbox(
+        cwd = "/work",
+        env = {
+            PATH = "/work/llvm:{KERNEL_TOOLS}/bin:{KERNEL_LLVM}/bin:{KERNEL_RUST}/bin:{KERNEL_BINDGEN}:{KERNEL_PYTHON}/bin:/bin:/usr/bin"
+            LD_LIBRARY_PATH = "{KERNEL_TOOLS}/lib"
+            LIBCLANG_PATH = "{KERNEL_LLVM}/lib"
+            PEIOS_HOSTCC = hostcc
+            PEIOS_HOSTCXX = "{hostcc.strip_suffix("gcc")}g++"
+            HOSTCFLAGS = "-I{KERNEL_TOOLS}/include"
+            # A host program linking libelf finds the zlib libelf needs, and
+            # each has a build ID, as Debian's compilers give one by default,
+            # which packaging splits its debug information by.
+            HOSTLDFLAGS = "-L{KERNEL_TOOLS}/lib -Wl,-rpath-link,{KERNEL_TOOLS}/lib -Wl,-rpath,{KERNEL_TOOLS}/lib -Wl,--build-id=sha1"
+            HOME = "/tmp"
+            TMPDIR = "/tmp"
+            LC_ALL = "C"
+            TZ = "UTC"
+            SOURCE_DATE_EPOCH = "{settings.source_date_epoch}"
+            PEIOS_LOCALVERSION = settings.localversion
+            PEIOS_RUST_VERSION = settings.rust
+            PEIOS_BINDGEN_VERSION = settings.bindgen
+            PEIOS_LLVM = settings.llvm
+        },
+    )
+    # The source's copy and Kbuild's object tree, tens of gigabytes with
+    # debug information, are removed once the outputs are exported, so that
+    # they and the outputs' copy into the store don't need the disk at once.
+    # `build.json`'s input digest is the source's, as the Bazel build's was.
+    let ran = box.exec(
+        "{KERNEL_TOOLS}/bin/bash",
+        "-c",
+        "set -euo pipefail; mkdir -p /tmp /work/llvm /work/artifacts; {suffixed}; \
+         cp -R {KERNEL_SRC_IN} /work/src; chmod -R u+w /work/src; \
+         bash /work/src/peios/build.sh {profile} 8; \
+         cd /work/src/peios && python3 -c 'import json, pathlib, runner; \
+         runner.export(pathlib.Path(\"/work\"), pathlib.Path(\"/work/artifacts\"), \
+         json.loads(pathlib.Path(\"build-settings.json\").read_text()), \"{profile}\", \
+         runner.tree_digest(pathlib.Path(\"{KERNEL_SRC_IN}\")), \"build\")'; \
+         rm -rf /work/out /work/src",
+    )
+    = box.dir("/work/artifacts")
+}

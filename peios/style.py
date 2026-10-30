@@ -21,7 +21,6 @@ IDENTITY = hashlib.sha256(b"".join((CONFIG / name).read_bytes() for name in LOCK
 CACHE = Path(os.environ.get("PEIOS_STYLE_CACHE", Path.home() / ".cache/peios/kernel-style"))
 TOOLS = CACHE / IDENTITY
 RUNTIMES = json.loads((CONFIG / "runtimes.json").read_text())
-WARNINGS = "load,unused-variable,function-docstring"
 
 
 def run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
@@ -112,7 +111,7 @@ def inventory() -> dict[str, list[str]]:
     for prefix in scope["roots"]:
         names.update(str(p.relative_to(ROOT)) for p in (ROOT / prefix).rglob("*") if p.is_file())
     groups: dict[str, list[str]] = {
-        name: [] for name in ("c", "rust", "host-rust", "python", "shell", "bazel")
+        name: [] for name in ("c", "rust", "host-rust", "python", "shell")
     }
     for name in sorted(names):
         if any(name == p or (p.endswith("/") and name.startswith(p)) for p in scope["exclusions"]):
@@ -124,13 +123,8 @@ def inventory() -> dict[str, list[str]]:
             ".rs": "rust",
             ".py": "python",
             ".sh": "shell",
-            ".bzl": "bazel",
         }.get(path.suffix)
-        if name == "peios/bazel":
-            kind = "shell"
-        elif path.name in ("BUILD.bazel", "MODULE.bazel"):
-            kind = "bazel"
-        elif kind == "rust" and name.startswith("peios/"):
+        if kind == "rust" and name.startswith("peios/"):
             kind = "host-rust"
         if kind:
             if not (ROOT / name).is_file():
@@ -171,7 +165,6 @@ def formatted(kind: str, name: str) -> tuple[str, bytes]:
             "-",
         ],
         "shell": [binary("shfmt"), "-i", "4", "-filename", name],
-        "bazel": [binary("buildifier"), "-path", name],
     }
     if kind == "host-rust" and any(
         name.startswith("peios/rust/" + crate + "/")
@@ -216,18 +209,9 @@ def check_or_format(apply: bool) -> int:
             *python,
         ],
         [binary("shellcheck"), *groups["shell"]],
-        [
-            binary("buildifier"),
-            "-mode=check",
-            "-lint=warn",
-            "-warnings=" + WARNINGS,
-            *groups["bazel"],
-        ],
     ]
     for command in commands:
         if command[0] == binary("shellcheck") and not groups["shell"]:
-            continue
-        if command[0] == binary("buildifier") and not groups["bazel"]:
             continue
         if command[0] in (binary("ruff"), binary("mypy")) and not python:
             continue

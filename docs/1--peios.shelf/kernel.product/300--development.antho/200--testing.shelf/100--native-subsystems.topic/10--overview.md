@@ -15,7 +15,7 @@ Kbuild through small wrapper crates. It does not maintain a second copy of
 the implementation. From the kernel root:
 
 ```sh
-./peios/bazel test //:rust-core-tests //:uapi-tests
+pekit test rust_cores rust_clippy uapi
 ```
 
 For a direct host run:

@@ -6,8 +6,6 @@
     "peios/"
   ],
   "files": [
-    "BUILD.bazel",
-    "MODULE.bazel",
     "include/linux/kacs_mntns.h",
     "include/linux/kacs_stratafs.h",
     "include/linux/peios_ntfe.h",

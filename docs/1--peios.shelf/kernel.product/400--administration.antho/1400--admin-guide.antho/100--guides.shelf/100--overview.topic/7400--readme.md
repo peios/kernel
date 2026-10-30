@@ -52,17 +52,17 @@ version patch is not a Peios upgrade procedure.
 
 ## Build prerequisites
 
-Follow the pinned image, Bazel launcher and host requirements in
-[Building Peios](<~kernel/development/start-here/building-peios>). The controlled
-build uses its declared LLVM/Rust toolchain, not whichever GCC happens to be
-installed on the host. Package-tool compilation has separate host requirements.
+Follow the pekit and host requirements in
+[Building Peios](<~kernel/development/start-here/building-peios>). The build
+uses its pinned LLVM and Rust toolchain, not whichever compiler happens to be
+installed on the host.
 
 <a id="rst-build-directory-for-the-kernel"></a>
 
 ## Build directories
 
-Controlled builds use a private source copy and an out-of-tree Kbuild output
-directory. Incremental development builds keep state under `.peios-dev/`.
+Builds use a private source copy and an out-of-tree Kbuild output
+directory, in pekit's sandbox.
 Do not run `make mrproper` in the working checkout as a routine preparation
 step. The build guide describes output locations and provenance reports.
 
@@ -86,8 +86,8 @@ underlying configuration machinery.
 From the kernel repository root:
 
 ```sh
-./peios/bazel build //:kernel
-./peios/bazel test //:kunit
+pekit build kernel
+pekit run kunit
 ```
 
 These are separate build and test actions. Successful compilation does not

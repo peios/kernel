@@ -15,7 +15,7 @@ the PKM revision used for the migration. No PKM checkout is needed.
 
 ```sh
 # From the kernel root: all tests, then selected Clippy correctness checks.
-./peios/bazel test //:rust-core-tests //:uapi-tests
+pekit test rust_cores rust_clippy uapi
 
 # Or work on one crate directly.
 cd peios/rust
@@ -27,8 +27,10 @@ bash check.sh
 The host test toolchain is pinned to Rust 1.98.1 in `peios/rust/rust-toolchain.toml`.
 Install it with rustfmt and Clippy first. This does not change the kernel's
 Rust 1.83.0 build toolchain. The workspace has only local path dependencies;
-Cargo tests are offline after toolchain installation. Bazel places Cargo output
-in its test scratch directory; direct Cargo uses the ignored `peios/rust/target/` directory.
+Cargo tests are offline after toolchain installation. pekit builds the crates
+in its sandbox, with its own pinned Rust 1.98.1, each crate given
+`security/pkm` where its `#[path]` reaches. Direct Cargo uses the ignored
+`peios/rust/target/` directory.
 
 The Cargo workspace tests the userspace allocation implementation. The `kernel`
 configuration is supplied by Kbuild, which has the kernel allocation/runtime

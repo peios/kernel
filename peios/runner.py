@@ -112,6 +112,22 @@ def stage(manifest: Path, state: Path, workspace: Path | None = None) -> str:
     return hashlib.sha256(index.read_bytes()).hexdigest()
 
 
+def tree_digest(root: Path) -> str:
+    """A digest of the tree at `root`: each file's content and mode, each link's target."""
+    current = {}
+    for parent, directories, names in os.walk(root):
+        directories.sort()
+        for name in [*names, *(d for d in directories if (Path(parent) / d).is_symlink())]:
+            path = Path(parent) / name
+            relative = str(path.relative_to(root))
+            if path.is_symlink():
+                current[relative] = "link:" + os.readlink(path)
+            else:
+                mode = 0o755 if path.stat().st_mode & 0o111 else 0o644
+                current[relative] = hashlib.sha256(path.read_bytes()).hexdigest() + ":" + oct(mode)
+    return hashlib.sha256(json.dumps(current, sort_keys=True).encode()).hexdigest()
+
+
 def export(
     state: Path, output: Path, settings: BuildSettings, profile: str, digest: str, mode: str
 ) -> None:

@@ -7,16 +7,18 @@ description: "Build and boot KUnit, preserve serial logs and distinguish complet
 From the kernel repository root:
 
 ```sh
-./peios/bazel test //:kunit
+pekit run kunit
 ```
 
-`./peios/bazel test //:kunit` uses QEMU from the pinned image and the existing PKM runner.
-It uses KVM when `/dev/kvm` is available, otherwise TCG. The test requires
-complete KTAP accounting, passing PKM suites, clean power-down and no kernel
-warning/oops/lockdep failure signatures. Its result is rerun on every test
-invocation. Serial output is retained under
-`bazel-testlogs/kunit/test.outputs/`. Native integration and hardware
-qualification remain additional checks.
+`pekit run kunit` builds the KUnit configuration's kernel with the pinned
+toolchain, then boots it with the existing PKM runner and the host's QEMU,
+`qemu-system-x86_64`. It's a script you run by hand, not a test, because it
+needs QEMU and wants KVM. It uses KVM when `/dev/kvm` is available, otherwise
+TCG. The run requires complete KTAP accounting, passing PKM suites, clean
+power-down and no kernel warning/oops/lockdep failure signatures. The serial
+log is `kunit-qemu.log` beside the image, as the direct runner writes it, or
+where `PKM_KUNIT_LOG` says. Native integration and hardware qualification
+remain additional checks.
 
 The migrated configs, verifier, key generator and KUnit runner come from PKM
 commit `ac4c6eb57ff94821f1eaea2b3bde460777d48f5b`. No dependency on the old PKM
@@ -25,8 +27,7 @@ checkout is needed to run these commands.
 ## Run an existing kernel directly
 
 The direct runner accepts either a `bzImage` or a Kbuild output tree containing
-`arch/x86/boot/bzImage`. It uses host QEMU and `timeout`; this is separate from
-the Bazel test, which supplies its image and output mounts through `peios/runner.py`.
+`arch/x86/boot/bzImage`. It uses host QEMU and `timeout`, as `pekit run kunit` does.
 
 ```sh
 bash peios/test-kunit.sh /path/to/bzImage
@@ -42,8 +43,7 @@ The direct runner supports these environment variables:
 | `PKM_KUNIT_INITRD` | Optional initramfs | None |
 | `PKM_KUNIT_FILTER` | KUnit filter glob | Full configured run |
 
-Set overrides when calling the direct script. The Bazel wrapper does not
-forward arbitrary host `PKM_KUNIT_*` variables into its container.
+Set overrides in the environment of either command.
 
 ## What a pass means
 
@@ -59,5 +59,5 @@ Retain the serial log with the kernel revision and configuration used.
 The host-side parser and runner regression tests can be run without booting:
 
 ```sh
-./peios/bazel test //:kunit-runner-tests
+pekit test kunit_runner
 ```
