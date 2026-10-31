@@ -33,7 +33,6 @@ the object tree holds full debug information.
 pekit build kernel        # production configuration, development keys
 pekit build kernel_kunit  # built-in QEMU/KUnit configuration
 pekit run kunit           # build and boot the KUnit configuration
-pekit build packages      # the kernel's package family
 pekit test                # every host check
 peios/check               # the contributor check
 ```
@@ -76,7 +75,7 @@ pekit prints where each build's outputs are, under `pekit-out/`. The kernel's
 are `bzImage`, `vmlinux`, `System.map`, resolved `config`, `Module.symvers`,
 `kernel.release`, `modules.tar`, `kbuild-support.tar`, and `build.json`. The
 support archive retains generated headers, public trust inputs, and Kbuild
-helper programs for package assembly. The module archive contains raw
+helper programs, for building modules against the kernel. The module archive contains raw
 **unsigned** modules and module lists, preserving their Kbuild paths. It
 isn't an installable package. `build.json` records the settings, the profile,
 and a digest of the source's contents and modes.
@@ -92,8 +91,6 @@ enabled even though this build stage doesn't sign the modules it produces.
 
 ## Next steps
 
-- [Package assembly](<~kernel/development/build-tools/packages>) covers the
-  package family, stores, provenance, and release limits.
 - [KUnit execution](<~kernel/development/native-subsystems/kunit>) explains
   logs, filters, and completion checks.
 - [Guest qualification](<~kernel/development/native-subsystems/guest-qualification>)

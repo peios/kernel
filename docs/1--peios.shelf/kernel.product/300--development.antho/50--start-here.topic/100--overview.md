@@ -26,8 +26,6 @@ and the instructions in the repository you are changing.
 
 - [Building Peios](<~kernel/development/start-here/building-peios>): pinned tools,
   controlled builds, incremental builds and output artifacts.
-- [Package assembly](<~kernel/development/build-tools/packages>): userspace tools,
-  package stores and development provenance.
 - [Style tooling](<~kernel/development/build-tools/style>): formatter and linter
   setup, scope and CI checks.
 - [Data generators](<~kernel/development/build-tools/generators>): event tables,

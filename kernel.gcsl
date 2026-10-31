@@ -68,7 +68,7 @@ let KERNEL_RECIPE_DIRS = ["peios/config", "peios/keys"]
 # The tracked top-level entries that are no part of the kernel's source.
 let NOT_KERNEL = [
     ".clippy.toml", ".editorconfig", ".gitattributes", ".github", ".gitignore", ".pylintrc", "docs",
-    "kernel.gcsl", "packages.gcsl", "peios", "pekit.lock", "scripts.gcsl", "style.gcsl", "tests.gcsl", "tools.gcsl",
+    "kernel.gcsl", "peios", "pekit.lock", "scripts.gcsl", "style.gcsl", "tests.gcsl", "tools.gcsl",
     "workspace.gcsl",
 ]
 

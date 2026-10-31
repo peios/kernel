@@ -1,7 +1,0 @@
-[package]
-name = "dev.peios.test-fixture"
-architecture = "x86_64"
-
-[files]
-"@source:COPYING" = "usr/share/licenses/dev.peios.test-fixture/COPYING"
-"tools:usr/bin/**" = "usr/bin/"

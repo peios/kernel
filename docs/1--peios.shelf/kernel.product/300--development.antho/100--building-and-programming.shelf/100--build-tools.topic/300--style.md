@@ -48,10 +48,9 @@ files. New supported source files under an owned root are discovered automatical
 When adding an independently owned root, update this scope.
 
 Included: Peios subsystems under `security/pkm`, `fs/stratafs`, and `net/ntfe`;
-their owned integration/UAPI headers; Peios build/package wrappers; this tooling;
+their owned integration/UAPI headers; Peios build wrappers; this tooling;
 and the Cargo workspace and tests. Generated constants, event tables, test
-vectors, Unicode tables and ABI types stay generated. The pinned `peios/vendor`
-snapshot retains its source conventions. The separate, active documentation
+vectors, Unicode tables and ABI types stay generated. The separate, active documentation
 migration is temporarily excluded; its style integration is still outstanding.
 
 Blocking checks are formatter stability, Ruff, mypy, ShellCheck and the selected
