@@ -44,8 +44,8 @@ tests: run them by hand.
 
 The kernel step is given the kernel's top-level directories and files, and
 of `peios/` only the build recipe: `build.sh`, `build-settings.json`,
-`generate-keys.py`, `runner.py`, `verify-config.sh`, `config/`, and `keys/`.
-A change to another Peios script builds no kernel. `kernel.gcsl` lists the
+`generate-keys.py`, `runner.py`, `stage-tree.py`, `verify-config.sh`,
+`config/`, and `keys/`. A change to another Peios script builds no kernel. `kernel.gcsl` lists the
 entries.
 
 The step copies the source into its sandbox and runs `peios/build.sh` with
@@ -61,16 +61,19 @@ After a change, the step rebuilds only what the change reaches. It keeps
 the source copy and Kbuild's object tree in its scratch directory between
 builds, one for each profile. It copies in only the files whose content
 changed, so Kbuild sees only those as new. The object tree is wiped first
-if the toolchain, `peios/build.sh`, its settings, the configuration or the
-keys changed.
+if the toolchain, `peios/build.sh`, its settings, the configuration, or the
+keys changed. A build that fails keeps the object tree, so fixing the error
+rebuilds only what's left. A build that's killed loses it, because a killed
+compiler can leave a half-written object, and the next build starts from
+nothing.
 
 `pekit build --strict` builds with nothing of the host's, from an empty
 scratch directory, so from nothing. Both kinds of build use the same paths,
 so they give the same outputs. `--check-reproducible` builds each step
 twice and compares the outputs. `bash peios/test-incremental.sh` proves
-the incremental build. It changes a file in a temporary worktree, rebuilds
-incrementally, and compares every output with a strict build of the same
-tree.
+the incremental build. In a temporary worktree, it breaks a file and requires
+the build to fail. It then changes the file, rebuilds incrementally, and
+compares every output with a strict build of the same tree.
 
 The kept source and object tree take about 24 GB for each profile, and
 pekit counts them in its store's size. Its default limit of 100 GiB leaves

@@ -197,7 +197,10 @@ fn kbuild_ran(
     # The object tree is wiped unless what built it is what builds it now:
     # the parts above, and the recipe's files, `peios/build.sh`, its
     # settings, configuration and keys. Then the source is staged by
-    # content and Kbuild builds what changed. `build.json`'s input digest is
+    # content and Kbuild builds what changed. A build that fails leaves a
+    # tree the next can build on, since `.DELETE_ON_ERROR` removes what its
+    # commands left half made. One killed can't: a signal's status, or a
+    # record never written, wipes the tree. `build.json`'s input digest is
     # the source's, as the Bazel build's was.
     let ran = box.exec(
         "{KERNEL_TOOLS}/bin/bash",
@@ -209,8 +212,9 @@ fn kbuild_ran(
              rm -rf {KERNEL_SCRATCH}/out {KERNEL_SCRATCH}/src {KERNEL_KEPT}; fi; \
          python3 {KERNEL_SRC_IN}/peios/stage-tree.py {KERNEL_SRC_IN} {KERNEL_SCRATCH}/src {owned}; \
          rm -f {KERNEL_KEPT}; \
-         bash {KERNEL_SCRATCH}/src/peios/build.sh {profile} $(nproc); \
-         printf '%s' \"$wanted\" > {KERNEL_KEPT}; \
+         status=0; bash {KERNEL_SCRATCH}/src/peios/build.sh {profile} $(nproc) || status=$?; \
+         if [ $status -lt 128 ]; then printf '%s' \"$wanted\" > {KERNEL_KEPT}; fi; \
+         [ $status -eq 0 ] || exit $status; \
          cd {KERNEL_SCRATCH}/src/peios && python3 -c 'import json, pathlib, runner; \
          runner.export(pathlib.Path(\"{KERNEL_SCRATCH}\"), pathlib.Path(\"/work/artifacts\"), \
          json.loads(pathlib.Path(\"build-settings.json\").read_text()), \"{profile}\", \
