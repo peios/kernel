@@ -73,9 +73,10 @@ incrementally, and compares every output with a strict build of the same
 tree.
 
 The kept source and object tree take about 24 GB for each profile, and
-pekit counts them in its store's size. Its default limit, 50 GiB, would
-evict them after most builds. Give it room, with `PEKIT_CACHE_LIMIT=150G`
-say, to keep them. `pekit clean --cache` removes them with the store.
+pekit counts them in its store's size. Its default limit of 100 GiB leaves
+room for both profiles. If they're evicted, give the store more, with
+`PEKIT_CACHE_LIMIT=150G` say. `pekit clean --cache` removes them with the
+store.
 
 `peios/build-settings.json` gives the build its settings. `source_date_epoch`
 and `localversion` are explicit inputs; no current clock or Git state is
