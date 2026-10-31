@@ -55,11 +55,27 @@ generated header or `.config` is written into your source tree. The
 configuration invariant checker is retained from PKM, including the ML-DSA,
 lockdown, LSM, and firmware policy checks.
 
-The kernel is one step: Kbuild's own dependency graph makes a kernel build
-incremental, and a change to the source builds the kernel again from
-nothing. pekit finds an unchanged kernel in its store. `pekit build
---strict` builds with nothing of the host's, and `--check-reproducible`
-builds each step twice and compares the outputs.
+The kernel is one step, because Kbuild's own dependency graph is what makes
+a kernel build incremental. pekit finds an unchanged kernel in its store.
+After a change, the step rebuilds only what the change reaches. It keeps
+the source copy and Kbuild's object tree in its scratch directory between
+builds, one for each profile. It copies in only the files whose content
+changed, so Kbuild sees only those as new. The object tree is wiped first
+if the toolchain, `peios/build.sh`, its settings, the configuration or the
+keys changed.
+
+`pekit build --strict` builds with nothing of the host's, from an empty
+scratch directory, so from nothing. Both kinds of build use the same paths,
+so they give the same outputs. `--check-reproducible` builds each step
+twice and compares the outputs. `bash peios/test-incremental.sh` proves
+the incremental build. It changes a file in a temporary worktree, rebuilds
+incrementally, and compares every output with a strict build of the same
+tree.
+
+The kept source and object tree take about 24 GB for each profile, and
+pekit counts them in its store's size. Its default limit, 50 GiB, would
+evict them after most builds. Give it room, with `PEKIT_CACHE_LIMIT=150G`
+say, to keep them. `pekit clean --cache` removes them with the store.
 
 `peios/build-settings.json` gives the build its settings. `source_date_epoch`
 and `localversion` are explicit inputs; no current clock or Git state is
