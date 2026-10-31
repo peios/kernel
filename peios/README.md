@@ -18,10 +18,6 @@ See [Commands](../docs/1--peios.shelf/kernel.product/300--development.antho/50--
 
 See [Outputs and trust material](../docs/1--peios.shelf/kernel.product/300--development.antho/50--start-here.topic/200--building-peios.md).
 
-## Packages
-
-See [Packages](../docs/1--peios.shelf/kernel.product/300--development.antho/100--building-and-programming.shelf/100--build-tools.topic/100--packages.md).
-
 ## Tests
 
 See [Tests](../docs/1--peios.shelf/kernel.product/300--development.antho/200--testing.shelf/100--native-subsystems.topic/50--kunit.md).

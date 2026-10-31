@@ -7,8 +7,14 @@
 #
 # Kbuild is one step: its own dependency graph, kept in its `.cmd` files,
 # is what makes a kernel build incremental, and pekit's steps could only
-# copy it. A change to the source builds the kernel again, from nothing,
-# as the Bazel build's `kernel` target did.
+# copy it. So the step keeps Kbuild's object tree in its scratch directory
+# (`#[scratch]`), as the Bazel build's `kernel-dev` and `runner.py dev`
+# kept theirs: the source is staged there by content (`stage-tree.py`), so
+# only what changed is newer than what Kbuild built from it, and a change
+# rebuilds only what it reaches. The tree is wiped first when what builds
+# it changes, the toolchain or the recipe (`KERNEL_KEPT`). A strict build's
+# scratch directory is empty, so it builds from nothing, at the same paths,
+# which `peios/build.sh` maps out of the outputs either way.
 import fs
 import json
 import toolchain
@@ -31,6 +37,16 @@ let KERNEL_CC = "/opt/cc"
 
 # Where the host tools are, as `tools.gcsl` builds them for.
 let KERNEL_TOOLS = "/opt/tools"
+
+# Where the step keeps the source and Kbuild's object tree between runs,
+# and the record of what built them.
+let KERNEL_SCRATCH = "/pekit-scratch"
+
+let KERNEL_KEPT = "/pekit-scratch/built-by"
+
+# The files `peios/build.sh` writes into the source itself, which staging
+# leaves to it.
+let KERNEL_OWNED = ["security/pkm/kacs/builtin_signing_keys.h", "certs/peios-modsig.pem"]
 
 # The settings the build takes, as the Bazel build's image took them.
 type Settings = {source_date_epoch: Int, localversion: String, rust: String, bindgen: String, llvm: String}
@@ -60,7 +76,7 @@ let KERNEL_FILES = [
 # no kernel.
 let KERNEL_RECIPE = [
     "peios/build.sh", "peios/build-settings.json", "peios/generate-keys.py", "peios/runner.py",
-    "peios/verify-config.sh",
+    "peios/stage-tree.py", "peios/verify-config.sh",
 ]
 
 let KERNEL_RECIPE_DIRS = ["peios/config", "peios/keys"]
@@ -68,7 +84,7 @@ let KERNEL_RECIPE_DIRS = ["peios/config", "peios/keys"]
 # The tracked top-level entries that are no part of the kernel's source.
 let NOT_KERNEL = [
     ".clippy.toml", ".editorconfig", ".gitattributes", ".github", ".gitignore", ".pylintrc", "docs",
-    "kernel.gcsl", "packages.gcsl", "peios", "pekit.lock", "scripts.gcsl", "style.gcsl", "tests.gcsl", "tools.gcsl",
+    "kernel.gcsl", "peios", "pekit.lock", "scripts.gcsl", "style.gcsl", "tests.gcsl", "tools.gcsl",
     "workspace.gcsl",
 ]
 
@@ -119,6 +135,7 @@ fn kbuild(
     = kbuild_ran(profile, src, tools, llvm, rust, bindgen)
 }
 
+#[scratch]
 #[hermetic]
 fn kbuild_ran(
     profile: String,
@@ -146,6 +163,11 @@ fn kbuild_ran(
         {at = KERNEL_SRC_IN; place = src},
     ]
     let suffixed = (for tool in LLVM_TOOLS { = "ln -s {KERNEL_LLVM}/bin/{tool} /work/llvm/{tool}{settings.llvm}" }).join(" && ")
+    # What builds the object tree, by where pekit placed each part, which
+    # changes whenever what made it does, and the profile: a change to any
+    # wipes the tree. The recipe's own files are added in the step.
+    let built_by = [profile, tools.path, llvm.path, rust.path, bindgen.path, c.root.path, env.root.path, python.root.path].join(" ")
+    let owned = (for each in KERNEL_OWNED { = "--owned {each}" }).join(" ")
     let box = fs.compose(placed).sandbox(
         cwd = "/work",
         env = {
@@ -168,23 +190,31 @@ fn kbuild_ran(
             PEIOS_RUST_VERSION = settings.rust
             PEIOS_BINDGEN_VERSION = settings.bindgen
             PEIOS_LLVM = settings.llvm
+            PEIOS_WORK = KERNEL_SCRATCH
+            PEIOS_BUILT_BY = built_by
         },
     )
-    # The source's copy and Kbuild's object tree, tens of gigabytes with
-    # debug information, are removed once the outputs are exported, so that
-    # they and the outputs' copy into the store don't need the disk at once.
-    # `build.json`'s input digest is the source's, as the Bazel build's was.
+    # The object tree is wiped unless what built it is what builds it now:
+    # the parts above, and the recipe's files, `peios/build.sh`, its
+    # settings, configuration and keys. Then the source is staged by
+    # content and Kbuild builds what changed. `build.json`'s input digest is
+    # the source's, as the Bazel build's was.
     let ran = box.exec(
         "{KERNEL_TOOLS}/bin/bash",
         "-c",
         "set -euo pipefail; mkdir -p /tmp /work/llvm /work/artifacts; {suffixed}; \
-         cp -R {KERNEL_SRC_IN} /work/src; chmod -R u+w /work/src; \
-         bash /work/src/peios/build.sh {profile} 8; \
-         cd /work/src/peios && python3 -c 'import json, pathlib, runner; \
-         runner.export(pathlib.Path(\"/work\"), pathlib.Path(\"/work/artifacts\"), \
+         recipe=$(cd {KERNEL_SRC_IN} && find peios/build.sh peios/build-settings.json peios/config peios/keys -type f | sort | xargs sha256sum | sha256sum); \
+         wanted=\"$PEIOS_BUILT_BY $recipe\"; \
+         if [ \"$(cat {KERNEL_KEPT} 2>/dev/null)\" != \"$wanted\" ]; then \
+             rm -rf {KERNEL_SCRATCH}/out {KERNEL_SCRATCH}/src {KERNEL_KEPT}; fi; \
+         python3 {KERNEL_SRC_IN}/peios/stage-tree.py {KERNEL_SRC_IN} {KERNEL_SCRATCH}/src {owned}; \
+         rm -f {KERNEL_KEPT}; \
+         bash {KERNEL_SCRATCH}/src/peios/build.sh {profile} $(nproc); \
+         printf '%s' \"$wanted\" > {KERNEL_KEPT}; \
+         cd {KERNEL_SCRATCH}/src/peios && python3 -c 'import json, pathlib, runner; \
+         runner.export(pathlib.Path(\"{KERNEL_SCRATCH}\"), pathlib.Path(\"/work/artifacts\"), \
          json.loads(pathlib.Path(\"build-settings.json\").read_text()), \"{profile}\", \
-         runner.tree_digest(pathlib.Path(\"{KERNEL_SRC_IN}\")), \"build\")'; \
-         rm -rf /work/out /work/src",
+         runner.tree_digest(pathlib.Path(\"{KERNEL_SRC_IN}\")), \"build\")'",
     )
     = box.dir("/work/artifacts")
 }

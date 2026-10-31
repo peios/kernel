@@ -58,41 +58,6 @@ def test style(with: Checked = checking()) {
     = checked("python3 peios/style.py check", with)
 }
 
-# Package assembly's rules, on the definitions' own examples.
-def test package_assembly(with: Checked = checking()) {
-    = checked("python3 peios/packages/test_assembly.py", with)
-}
-
-# Staging's helpers.
-def test package_stage(with: Checked = checking()) {
-    = checked("python3 peios/packages/test_stage.py", with)
-}
-
-# Committing and merging packages with the vendored ppk writer, the
-# store's every blob checked.
-def test package_store(with: Checked = checking(), writer: File = build ppk_writer(), checker: File = build check_blobs()) {
-    = checked(
-        "PPK_WRITER=/work/ppk PPK_CHECKER=/work/check-blobs python3 peios/packages/test_store.py",
-        with,
-        given = [{at = "/work/ppk"; place = writer}, {at = "/work/check-blobs"; place = checker}],
-    )
-}
-
-# A package committed from a tree another step made keeps its files as
-# blobs and its links as links.
-def test package_tree_input(with: Checked = checking(), fixture: Dir = build fixture_package()) {
-    = checked(
-        "python3 peios/packages/tests/test_tree_input.py",
-        with,
-        given = [{at = "/work/src/peios/packages/tests/fixture.ppk"; place = fixture}],
-    )
-}
-
-# The vendored ppk writer's own test of committing a package.
-def test ppk_commit(tests: List<rust.RustTest> = rust.tests(rust.workspace(dir("peios/vendor/ppk"), rust.vendored(file("peios/vendor/ppk/Cargo.lock"))), "ppk")) {
-    let each = for test in tests { = rust.run_test(test) }
-}
-
 # The generators of the kernel's reference documentation.
 def test reference_generators(with: Checked = checking()) {
     = checked("python3 tools/docs/peios-reference/test_generate.py", with)
