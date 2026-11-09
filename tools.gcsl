@@ -1,10 +1,11 @@
 # The kernel's build toolchain, every part pinned and none of it the
 # host's: LLVM 18's release for the kernel's C, Rust 1.83.0 and bindgen
 # 0.65.1 for its Rust, and the host tools Kbuild runs, each built from its
-# release, whose signature was checked when it was pinned, with the gcc
-# library's Bootlin C toolchain and the buildenv library's busybox and
-# make. They are what `peios/Containerfile` installed from Debian for the
-# Bazel build.
+# release, whose signature was checked when it was pinned, with the
+# registered C toolchain, this workspace's the gcc library's Bootlin one,
+# and the buildenv library's busybox and make, or the tools of the
+# toolchain's own root where it has them, as a Peios build root does. They
+# are what `peios/Containerfile` installed from Debian for the Bazel build.
 #
 # GNU's releases come from kernel.org's mirror of ftp.gnu.org, which is
 # often slow to answer; the SHA-256 pins make the copy the same.
@@ -18,6 +19,7 @@ import unpack from archive
 import toolchain
 import Toolchain from toolchain
 import BuildEnv from "github.com/gcslib/buildenv"
+import base from "github.com/gcslib/buildenv"
 import "github.com/gcslib/rust"
 
 # Where every step has the host tools, the C toolchain and a source.
@@ -69,8 +71,7 @@ fn tool(
         = "printf '#!/bin/sh\\nexec {prefix}{pair[1]} \"$@\"\\n' > /work/bin/{pair[0]} && chmod +x /work/bin/{pair[0]}"
     }).join("; ")
     let placed: List<{at: String, place: Dir | File | FileSet}> = [
-        {at = "/"; place = env.root},
-        {at = "/"; place = c.runtime},
+        ...base(env, c.runtime),
         {at = TOOLS_CC; place = c.root},
         {at = TOOLS_SRC_IN; place = src},
         ...(for each in deps { = {at = TOOLS; place = each} }),
