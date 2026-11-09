@@ -30,8 +30,8 @@
       "path": "github.com/gcslib/buildenv",
       "git": "https://github.com/gcslib/buildenv",
       "dir": "",
-      "commit": "79dad06c0f89458f405695ef05f20956c633f7be",
-      "tree": "5c98902139af8ae9477077eb39b7f2c423f7587385b0ccd17a663666cf8f330f"
+      "commit": "bd4d60f92889d9833c33f54893d49fb944bfbb4a",
+      "tree": "715056fba02858f58716fb68b9a2a62799cf169f498ba7a7132de64d68779b47"
     },
     {
       "path": "github.com/gcslib/gcc",

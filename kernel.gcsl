@@ -20,6 +20,8 @@ import json
 import toolchain
 import Toolchain from toolchain
 import BuildEnv from "github.com/gcslib/buildenv"
+import base from "github.com/gcslib/buildenv"
+import bin_path from "github.com/gcslib/buildenv"
 import PythonToolchain from "github.com/gcslib/python"
 
 # Where the step has what it builds with.
@@ -152,8 +154,7 @@ fn kbuild_ran(
     let host = fn(file: File) -> String { "{KERNEL_CC}/{file.path.strip_prefix(c.root.path).strip_prefix("/")}" }
     let hostcc = host(c.cc)
     let placed: List<{at: String, place: Dir | File | FileSet}> = [
-        {at = "/"; place = env.root},
-        {at = "/"; place = c.runtime},
+        ...base(env, c.runtime),
         {at = KERNEL_CC; place = c.root},
         {at = KERNEL_TOOLS; place = tools},
         {at = KERNEL_LLVM; place = llvm},
@@ -171,7 +172,7 @@ fn kbuild_ran(
     let box = fs.compose(placed).sandbox(
         cwd = "/work",
         env = {
-            PATH = "/work/llvm:{KERNEL_TOOLS}/bin:{KERNEL_LLVM}/bin:{KERNEL_RUST}/bin:{KERNEL_BINDGEN}:{KERNEL_PYTHON}/bin:/bin:/usr/bin"
+            PATH = "/work/llvm:{KERNEL_TOOLS}/bin:{KERNEL_LLVM}/bin:{KERNEL_RUST}/bin:{KERNEL_BINDGEN}:{KERNEL_PYTHON}/bin:{bin_path(c.runtime)}"
             LD_LIBRARY_PATH = "{KERNEL_TOOLS}/lib"
             LIBCLANG_PATH = "{KERNEL_LLVM}/lib"
             PEIOS_HOSTCC = hostcc

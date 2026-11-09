@@ -7,6 +7,8 @@ import fs
 import toolchain
 import Toolchain from toolchain
 import BuildEnv from "github.com/gcslib/buildenv"
+import base from "github.com/gcslib/buildenv"
+import bin_path from "github.com/gcslib/buildenv"
 import PythonToolchain from "github.com/gcslib/python"
 import "github.com/gcslib/rust"
 
@@ -131,8 +133,7 @@ fn checked(command: String, with: Checked, given: List<{at: String, place: Dir |
     let c = with.c
     let cc = "{CHECK_CC}/{c.cc.path.strip_prefix(c.root.path).strip_prefix("/")}"
     let placed: List<{at: String, place: Dir | File | FileSet}> = [
-        {at = "/"; place = with.env.root},
-        {at = "/"; place = c.runtime},
+        ...base(with.env, c.runtime),
         {at = CHECK_CC; place = c.root},
         {at = CHECK_TOOLS; place = with.tools},
         {at = CHECK_PYTHON; place = with.python.root},
@@ -144,7 +145,7 @@ fn checked(command: String, with: Checked, given: List<{at: String, place: Dir |
     let box = fs.compose(placed).sandbox(
         cwd = "/work",
         env = {
-            PATH = "/work/bin:{CHECK_TOOLS}/bin:{CHECK_PYTHON}/bin:/opt/rustfmt/bin:/bin:/usr/bin"
+            PATH = "/work/bin:{CHECK_TOOLS}/bin:{CHECK_PYTHON}/bin:/opt/rustfmt/bin:{bin_path(c.runtime)}"
             PEIOS_STYLE_CACHE = "/opt/style-cache"
             LD_LIBRARY_PATH = "{CHECK_TOOLS}/lib"
             CC = "/work/bin/cc"
