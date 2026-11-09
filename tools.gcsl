@@ -243,8 +243,10 @@ def build pahole() {
     let src = release("https://fedorapeople.org/~acme/dwarves/dwarves-1.28.tar.xz", "a4c1a3c16c7d41f27eba8323e05b59fe33581832d5c50ef8390fa102d75a16e3")
     = tool(
         src,
-        # Its libbpf's `-Werror` meets the conversion elfutils' does.
-        "export CFLAGS='-O2 -std=gnu17 -Wno-error=discarded-qualifiers'; mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_INSTALL_LIBDIR=lib -D__LIB=lib -DBUILD_SHARED_LIBS=OFF .. && make -j8 && make install DESTDIR=$DESTDIR",
+        # Its libbpf's `-Werror` meets the conversion elfutils' does, and
+        # GCC 16's stricter `-Wunused-but-set-variable` meets a variable
+        # pahole's BTF encoder sets and never reads.
+        "export CFLAGS='-O2 -std=gnu17 -Wno-error=discarded-qualifiers -Wno-error=unused-but-set-variable'; mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_INSTALL_LIBDIR=lib -D__LIB=lib -DBUILD_SHARED_LIBS=OFF .. && make -j8 && make install DESTDIR=$DESTDIR",
         deps = [build cmake(), build elfutils(), build zlib()],
     )
 }
