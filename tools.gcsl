@@ -20,6 +20,8 @@ import toolchain
 import Toolchain from toolchain
 import BuildEnv from "github.com/gcslib/buildenv"
 import base from "github.com/gcslib/buildenv"
+import bin_path from "github.com/gcslib/buildenv"
+import has_tools from "github.com/gcslib/buildenv"
 import "github.com/gcslib/rust"
 
 # Where every step has the host tools, the C toolchain and a source.
@@ -76,6 +78,11 @@ fn tool(
         {at = TOOLS_SRC_IN; place = src},
         ...(for each in deps { = {at = TOOLS; place = each} }),
     ]
+    # The toolchain's own `bin`, Bootlin's prefixed tools, unless its root
+    # has tools of its own: then that is the root's `/usr/bin`, which
+    # `bin_path` puts after GNU coreutils' commands, and `/work/bin` has the
+    # compiler's names already.
+    let own_bin = if has_tools(c.runtime) { "" } else { "{TOOLS_CC}/bin:" }
     let box = fs.compose(placed).sandbox(
         cwd = "/work",
         env = {
@@ -94,7 +101,7 @@ fn tool(
             LDFLAGS = "-L{TOOLS}/lib -Wl,-rpath-link,{TOOLS}/lib -Wl,-rpath,{TOOLS}/lib"
             LD_LIBRARY_PATH = "{TOOLS}/lib"
             PKG_CONFIG_PATH = "{TOOLS}/lib/pkgconfig"
-            PATH = "{TOOLS}/bin:/work/bin:{TOOLS_CC}/bin:/bin:/usr/bin"
+            PATH = "{TOOLS}/bin:/work/bin:{own_bin}{bin_path(c.runtime)}"
             PREFIX = TOOLS
             DESTDIR = TOOLS_DEST
             # What a compile stamps of its time, `__DATE__` say, is this.
