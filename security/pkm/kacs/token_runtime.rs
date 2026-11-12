@@ -3278,15 +3278,19 @@ fn build_explicit_acl_bytes(
 
     for ace in creator_acl.entries() {
         let ace = ace.map_err(|_| -EINVAL)?;
-        // Substituted: an explicit DACL supplied at create time names
-        // CREATOR OWNER meaning "me", and there is no inheritance here for a
-        // rule to be carried onward by.
+        // An ACE that applies to the new object names CREATOR OWNER meaning
+        // "me", so it is substituted and its generic rights mapped. An
+        // inherit-only ACE doesn't apply here: it is a rule for the objects
+        // created beneath, kept as written so each resolves it against its
+        // own creator (PCDS §5.6). Resolving it here would hand the creator
+        // of this directory everything later made inside it.
+        let applies = (ace.ace_flags() & INHERIT_ONLY_ACE) == 0;
         let ace_bytes = build_rewritten_file_ace_bytes(
             ace,
             ace.ace_flags() & !INHERITED_ACE,
             owner_sid,
             group_sid,
-            true,
+            applies,
         )?;
         explicit_aces.push(ace_bytes).map_err(|_| -ENOMEM)?;
     }
