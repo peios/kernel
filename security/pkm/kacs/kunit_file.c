@@ -9328,8 +9328,8 @@ static void pkm_kunit_build_created_dir_sd_creator_dacl_keeps_inherit_only_rule(
 							&parent_sd_len);
 	creator_sd = kacs_rust_kunit_create_file_sd(subject_token,
 						    PKM_KUNIT_FILE_READ_DATA, 0,
-						    PKM_KUNIT_FILE_WRITE_DATA, 0,
-						    &creator_sd_len);
+						    PKM_KUNIT_FILE_WRITE_DATA,
+						    0, &creator_sd_len);
 	KUNIT_ASSERT_NOT_NULL(test, parent_sd);
 	KUNIT_ASSERT_NOT_NULL(test, creator_sd);
 	/* [0] the rule: CREATOR OWNER, generic, inheritable and inherit-only. */
@@ -9359,12 +9359,12 @@ static void pkm_kunit_build_created_dir_sd_creator_dacl_keeps_inherit_only_rule(
 	KUNIT_ASSERT_NOT_NULL(test, child_sd);
 
 	/* The rule is kept as written: placeholder and generic mask intact. */
-	pkm_kunit_expect_dacl_ace_header(test, child_sd, child_sd_len, 0,
-					 PKM_KUNIT_ACCESS_ALLOWED_ACE_TYPE,
-					 PKM_KUNIT_OBJECT_INHERIT_ACE |
-						 PKM_KUNIT_CONTAINER_INHERIT_ACE |
-						 PKM_KUNIT_INHERIT_ONLY_ACE,
-					 0x10000000U);
+	pkm_kunit_expect_dacl_ace_header(
+		test, child_sd, child_sd_len, 0,
+		PKM_KUNIT_ACCESS_ALLOWED_ACE_TYPE,
+		PKM_KUNIT_OBJECT_INHERIT_ACE | PKM_KUNIT_CONTAINER_INHERIT_ACE |
+			PKM_KUNIT_INHERIT_ONLY_ACE,
+		0x10000000U);
 	rule_ace = pkm_kunit_dacl_ace_const(child_sd, child_sd_len, 0);
 	KUNIT_ASSERT_NOT_NULL(test, rule_ace);
 	pkm_kunit_expect_bytes_eq(test, rule_ace + 8,
