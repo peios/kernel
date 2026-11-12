@@ -9299,6 +9299,96 @@ static void pkm_kunit_build_created_dir_sd_carries_the_creator_rule_onward(
 	kacs_rust_token_drop(subject_token);
 }
 
+/*
+ * A directory created with an explicit DACL keeps an inherit-only CREATOR
+ * OWNER ACE as written: it is a rule for what is made inside, not for the
+ * directory. Only an ACE that applies to the directory itself is resolved.
+ *
+ * Resolving the rule at creation would give the directory's creator -- SYSTEM
+ * for a skeleton laid out at boot -- every file anyone later makes in it, and
+ * nobody else would own their own files there.
+ */
+static void pkm_kunit_build_created_dir_sd_creator_dacl_keeps_inherit_only_rule(
+	struct kunit *test)
+{
+	const void *subject_token;
+	const u8 *parent_sd;
+	const u8 *creator_sd;
+	const u8 *child_sd = NULL;
+	const u8 *rule_ace;
+	const u8 *applied_ace;
+	size_t parent_sd_len = 0;
+	size_t creator_sd_len = 0;
+	size_t child_sd_len = 0;
+
+	subject_token = kacs_rust_kunit_create_local_administrator_token();
+	KUNIT_ASSERT_NOT_NULL(test, subject_token);
+
+	parent_sd = pkm_kunit_create_query_only_file_sd(subject_token,
+							&parent_sd_len);
+	creator_sd = kacs_rust_kunit_create_file_sd(subject_token,
+						    PKM_KUNIT_FILE_READ_DATA, 0,
+						    PKM_KUNIT_FILE_WRITE_DATA,
+						    0, &creator_sd_len);
+	KUNIT_ASSERT_NOT_NULL(test, parent_sd);
+	KUNIT_ASSERT_NOT_NULL(test, creator_sd);
+	/* [0] the rule: CREATOR OWNER, generic, inheritable and inherit-only. */
+	pkm_kunit_set_dacl_ace_header((u8 *)creator_sd, creator_sd_len, 0,
+				      PKM_KUNIT_ACCESS_ALLOWED_ACE_TYPE,
+				      PKM_KUNIT_OBJECT_INHERIT_ACE |
+					      PKM_KUNIT_CONTAINER_INHERIT_ACE |
+					      PKM_KUNIT_INHERIT_ONLY_ACE,
+				      0x10000000U /* GENERIC_ALL */);
+	pkm_kunit_set_dacl_ace_sid(test, (u8 *)creator_sd, creator_sd_len, 0,
+				   pkm_kunit_creator_owner_sid,
+				   sizeof(pkm_kunit_creator_owner_sid));
+	/* [1] CREATOR OWNER applying to the directory itself. */
+	pkm_kunit_set_dacl_ace_header((u8 *)creator_sd, creator_sd_len, 1,
+				      PKM_KUNIT_ACCESS_ALLOWED_ACE_TYPE, 0,
+				      PKM_KUNIT_FILE_WRITE_DATA);
+	pkm_kunit_set_dacl_ace_sid(test, (u8 *)creator_sd, creator_sd_len, 1,
+				   pkm_kunit_creator_owner_sid,
+				   sizeof(pkm_kunit_creator_owner_sid));
+
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_build_created_file_sd(
+				subject_token, parent_sd, parent_sd_len,
+				creator_sd, creator_sd_len, 1, &child_sd,
+				&child_sd_len),
+			0);
+	KUNIT_ASSERT_NOT_NULL(test, child_sd);
+
+	/* The rule is kept as written: placeholder and generic mask intact. */
+	pkm_kunit_expect_dacl_ace_header(
+		test, child_sd, child_sd_len, 0,
+		PKM_KUNIT_ACCESS_ALLOWED_ACE_TYPE,
+		PKM_KUNIT_OBJECT_INHERIT_ACE | PKM_KUNIT_CONTAINER_INHERIT_ACE |
+			PKM_KUNIT_INHERIT_ONLY_ACE,
+		0x10000000U);
+	rule_ace = pkm_kunit_dacl_ace_const(child_sd, child_sd_len, 0);
+	KUNIT_ASSERT_NOT_NULL(test, rule_ace);
+	pkm_kunit_expect_bytes_eq(test, rule_ace + 8,
+				  sizeof(pkm_kunit_creator_owner_sid),
+				  pkm_kunit_creator_owner_sid,
+				  sizeof(pkm_kunit_creator_owner_sid));
+
+	/* The applying ACE resolves to the directory's owner. */
+	pkm_kunit_expect_dacl_ace_header(test, child_sd, child_sd_len, 1,
+					 PKM_KUNIT_ACCESS_ALLOWED_ACE_TYPE, 0,
+					 PKM_KUNIT_FILE_WRITE_DATA);
+	applied_ace = pkm_kunit_dacl_ace_const(child_sd, child_sd_len, 1);
+	KUNIT_ASSERT_NOT_NULL(test, applied_ace);
+	pkm_kunit_expect_bytes_eq(test, applied_ace + 8,
+				  sizeof(pkm_kunit_local_service_sid),
+				  pkm_kunit_local_service_sid,
+				  sizeof(pkm_kunit_local_service_sid));
+
+	pkm_kacs_free((void *)child_sd);
+	pkm_kacs_free((void *)creator_sd);
+	pkm_kacs_free((void *)parent_sd);
+	kacs_rust_token_drop(subject_token);
+}
+
 static void
 pkm_kunit_build_created_file_sd_substitutes_creator_sids(struct kunit *test)
 {
@@ -11159,6 +11249,8 @@ static struct kunit_case pkm_kunit_file_cases[] = {
 	KUNIT_CASE(pkm_kunit_build_created_file_sd_substitutes_creator_sids),
 	KUNIT_CASE(
 		pkm_kunit_build_created_dir_sd_carries_the_creator_rule_onward),
+	KUNIT_CASE(
+		pkm_kunit_build_created_dir_sd_creator_dacl_keeps_inherit_only_rule),
 	KUNIT_CASE(
 		pkm_kunit_build_created_file_sd_creator_without_dacl_inherits_parent),
 	KUNIT_CASE(
