@@ -31,15 +31,17 @@ let WHEELS = [
 
 def build style_tools(
     wheels: List<{at: String, place: Dir | File}> = for each in WHEELS {
-        = {at = "/work/wheels/{each[1]}"; place = fetch("https://files.pythonhosted.org/packages/{each[0]}/{each[1]}", sha256 = each[2])}
+        = {at = "/work/wheels/{each[1]}"; place = fetch("https://files.pythonhosted.org/packages/{each[0]}/{each[1]}", sha256 = each[2], tool = true)}
     },
     shfmt: File = fetch(
         "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64",
         sha256 = "76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf",
+        tool = true,
     ),
     shellcheck: Dir = unpack(fetch(
         "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.gz",
         sha256 = "b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6",
+        tool = true,
     )),
     config: Dir = dir("peios/style"),
     script: File = file("peios/style.py"),
@@ -96,6 +98,7 @@ def build rustfmt(
     rustfmt_1_98: Dir = unpack(fetch(
         "https://static.rust-lang.org/dist/rustfmt-1.98.1-x86_64-unknown-linux-gnu.tar.xz",
         sha256 = "b29a1addcbf2aa8f5785075605700e63cbe131b08c8334b50c09cfca8bbc51dc",
+        tool = true,
     )).dir("rustfmt-1.98.1-x86_64-unknown-linux-gnu/rustfmt-preview"),
     rust: RustToolchain = toolchain.get(Toolchain::Rust),
 ) {

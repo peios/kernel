@@ -10,6 +10,10 @@
 # GNU's releases come from kernel.org's mirror of ftp.gnu.org, which is
 # often slow to answer; the SHA-256 pins make the copy the same.
 #
+# All of it is a tool, not source of the kernel, so each fetch is marked
+# `tool = true`, and bindgen's crates are vendored in `^making_tool` (see
+# the prelude's `fetch`).
+#
 # Each host tool is built for `/opt/tools` and installed into the
 # directory it gives, which every step that uses the tools places at
 # `/opt/tools` again, so the paths a tool keeps of itself, bison's
@@ -131,7 +135,7 @@ fn configured(args: String) -> String {
 # A release's source, from `url` pinned by `sha256`, its one top
 # directory's contents.
 fn release(url: String, sha256: String) -> Dir {
-    = unpack(fetch(url, sha256 = sha256), strip = 1)
+    = unpack(fetch(url, sha256 = sha256, tool = true), strip = 1)
 }
 
 def build m4() {
@@ -313,7 +317,7 @@ def build llvm() {
 # The component `component` of Rust 1.83.0's part `name`, pinned by
 # `sha256`.
 fn rust_part(name: String, component: String, sha256: String) -> Dir {
-    = unpack(fetch("https://static.rust-lang.org/dist/{name}.tar.xz", sha256 = sha256)).dir("{name}/{component}")
+    = unpack(fetch("https://static.rust-lang.org/dist/{name}.tar.xz", sha256 = sha256, tool = true)).dir("{name}/{component}")
 }
 
 # Rust 1.83.0, as the Bazel build's image had it: rustc, the standard
@@ -344,8 +348,13 @@ fn rust_install(rustc: Dir, std: Dir, src: Dir, rustfmt: Dir) -> Dir {
 # it, by the rust library's pinned Rust. It loads libclang when it runs.
 def build bindgen() {
     let src = unpack(
-        fetch("https://static.crates.io/crates/bindgen-cli/bindgen-cli-0.65.1.crate", sha256 = "33373a4e0ec8b6fa2654e0c941ad16631b0d564cfd20e7e4b3db4c5b28f4a237"),
+        fetch(
+            "https://static.crates.io/crates/bindgen-cli/bindgen-cli-0.65.1.crate",
+            sha256 = "33373a4e0ec8b6fa2654e0c941ad16631b0d564cfd20e7e4b3db4c5b28f4a237",
+            tool = true,
+        ),
         strip = 1,
     )
-    = rust.cargo_build(src, rust.vendored(src.file("Cargo.lock")), bins = ["bindgen"], target = "x86_64-unknown-linux-gnu")
+    let vendor = rust.vendored(src.file("Cargo.lock")) with { making_tool = true }
+    = rust.cargo_build(src, vendor, bins = ["bindgen"], target = "x86_64-unknown-linux-gnu")
 }
