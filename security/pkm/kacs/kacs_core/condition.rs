@@ -591,20 +591,14 @@ fn parse_attribute_name(bytes: &[u8], offset: &mut usize) -> Option<String> {
 }
 
 pub(crate) fn claim_names_equal(left: &str, right: &str) -> bool {
-    fold_string(left)
-        .zip(fold_string(right))
-        .is_some_and(|(left, right)| left == right)
+    crate::claim_name::names_equal(left, right)
 }
 
 fn lookup_attribute(namespace: &[ClaimAttribute], name: &str, for_allow: bool) -> OperandValue {
-    let Some(folded_name) = fold_string(name) else {
-        return attribute_null();
-    };
-    let Some(attribute) = namespace.iter().find(|attribute| {
-        fold_string(&attribute.name)
-            .as_ref()
-            .is_some_and(|folded| folded == &folded_name)
-    }) else {
+    let Some(attribute) = namespace
+        .iter()
+        .find(|attribute| claim_names_equal(&attribute.name, name))
+    else {
         return attribute_null();
     };
 

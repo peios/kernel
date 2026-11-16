@@ -22,6 +22,8 @@ pub mod audit;
 pub mod caap;
 /// Claim attribute parsing and in-memory representations.
 pub mod claims;
+/// Allocation-free claim-name equivalence shared with authentication clients.
+pub mod claim_name;
 /// Conditional ACE bytecode evaluation.
 pub mod condition;
 /// DACL evaluation for scalar and object-tree modes.
