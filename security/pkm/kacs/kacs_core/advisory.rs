@@ -192,7 +192,11 @@ pub fn check_subject(
             }
         }
     }
-    if relevant & (READ_CONTROL | WRITE_DAC) != 0 {
+    // The shared DACL walk can return implicit owner rights from GenericAll
+    // even when those bits were not explicitly requested. Their resulting
+    // grant mask must not depend on a placeholder user for omitted facts.
+    let implicit_owner_rights = mapping.map_mask(crate::GENERIC_ALL)? & (READ_CONTROL | WRITE_DAC);
+    if (relevant | implicit_owner_rights) & (READ_CONTROL | WRITE_DAC) != 0 {
         if subject.user.is_none() {
             missing |= MISSING_USER;
         }

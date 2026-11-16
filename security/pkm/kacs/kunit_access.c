@@ -73,6 +73,12 @@ subject_query_failed_audit(void *ctx,
 static void
 pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 {
+	static const u8 context[] = {
+		0x82, 0xa4, 'k', 'i',  'n',  'd', 0xa7, 'n', 'e', 't',	'w',
+		'o',  'r',  'k', 0xa7, 'n',  'e', 't',	'w', 'o', 'r',	'k',
+		0x82, 0xa2, 'i', 'd',  0xa4, 'h', 'o',	'm', 'e', 0xa4, 's',
+		's',  'i',  'd', 0xa4, 'T',  'e', 's',	't',
+	};
 	const char *event = "kacs.audit.subject.checked";
 	u8 sd[sizeof(pkm_kunit_system_read_audit_sd)];
 	u8 wire[512], result[12];
@@ -81,7 +87,7 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 	struct pkm_kmes_kunit_snapshot snapshot = {};
 	struct pkm_kunit_kmes_event_view view = {};
 	struct pkm_kunit_msgpack_view root, actor, token, supplied, fields,
-		attestation;
+		attestation, object, network;
 	struct subject_query_memory memory = { .request = wire };
 	struct pkm_kacs_usercopy_ops ops = {
 		.ctx = &memory,
@@ -105,7 +111,7 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 		wire, pkm_kunit_anonymous_sid, sizeof(pkm_kunit_anonymous_sid),
 		sd, sizeof(sd));
 	pkm_kunit_write_u32(wire, 8, 0);
-	pkm_kunit_add_region(&memory.mem, 0x1000, wire, memory.len);
+	pkm_kunit_add_region(&memory.mem, 0x1000, wire, sizeof(wire));
 	pkm_kunit_add_region(&memory.mem, 0x3000, result, sizeof(result));
 	pkm_kunit_reset_kmes();
 	KUNIT_ASSERT_EQ(test,
@@ -151,6 +157,38 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 				  test, &fields, "attestation", &attestation));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bool_key(
 					test, &attestation, "userspace", true));
+
+	/* Generic descriptive context is copied without selecting any policy. */
+	pkm_kunit_write_u32(wire, 144, memory.len);
+	pkm_kunit_write_u32(wire, 148, sizeof(context));
+	memcpy(wire + memory.len, context, sizeof(context));
+	memory.len += sizeof(context);
+	pkm_kunit_write_u32(wire, 4, memory.len);
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x3000),
+			0L);
+	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 0), 1U);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kmes_kunit_copy_latest_matching_event(
+				KMES_ORIGIN_KACS, event, strlen(event), buffer,
+				PKM_KUNIT_KMES_CAPTURE_BYTES, &written,
+				&snapshot),
+			0);
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_kunit_parse_kmes_event(buffer, written, &view));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
+					test, &view, &root, 8));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &root, "object", &object));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
+					test, &object, "kind", "network"));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &object, "network", &network));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(test, &network,
+								 "id", "home"));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
+					test, &network, "ssid", "Test"));
 
 	memset(result, 0x5a, sizeof(result));
 	KUNIT_EXPECT_EQ(test,

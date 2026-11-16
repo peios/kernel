@@ -96,6 +96,21 @@ fn known_empty_and_unknown_groups_are_distinct() {
 }
 
 #[test]
+fn implicit_owner_grant_never_uses_an_unknown_user_placeholder() {
+    let descriptor = sd(&[]);
+    let mut unknown = base(&descriptor, &[]);
+    put(&mut unknown, 16, 0);
+    put(&mut unknown, 32, READ_CONTROL);
+    assert_eq!(check(&unknown, false).missing, MISSING_USER);
+    assert_eq!(check(&unknown, false).granted, 0);
+    let mut known = base(&descriptor, &user());
+    put(&mut known, 16, 0);
+    put(&mut known, 32, READ_CONTROL);
+    assert_eq!(check(&known, false).decision, AdvisoryDecision::Granted);
+    assert_eq!(check(&known, false).granted, READ_CONTROL);
+}
+
+#[test]
 fn every_truncation_and_noncanonical_section_is_rejected() {
     let b = base(&sd(&[]), &user());
     for len in 0..b.len() {
