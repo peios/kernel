@@ -3061,102 +3061,112 @@
         },
         {
           "index": 13,
+          "heading": "struct kacs_subject_request",
+          "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md"
+        },
+        {
+          "index": 14,
+          "heading": "struct kacs_subject_result",
+          "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md"
+        },
+        {
+          "index": 15,
           "heading": "struct kacs_access_check_args",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "2effab16e4c2297c9f5eaaa202345565c05b6ea0336f0d8e57d874afe376edac"
         },
         {
-          "index": 14,
+          "index": 16,
           "heading": "struct kacs_object_type_entry",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "575daafa7aebddbe9423846b7570e93cdbb8f4a746d0f3c6774a3efcd9cdc879"
         },
         {
-          "index": 15,
+          "index": 17,
           "heading": "struct kacs_node_result",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "0184b73a93ee14b1da5a5c400c5bd513b6ca904d0a4ceea59c5d09316bf075ac"
         },
         {
-          "index": 16,
+          "index": 18,
           "heading": "struct kacs_open_how",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/500--generated-file-and-mount-abi.md",
           "sha256": "be8844141b86fe11f99f77cf2714f4dd9691d4b4d6d213abc7fda0b453bc276f"
         },
         {
-          "index": 17,
+          "index": 19,
           "heading": "struct kacs_mount_policy_args",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/500--generated-file-and-mount-abi.md",
           "sha256": "06eb6e745272a8d0e035ea0817e2eb6df72dea6e6deadc6346efc6b7393fac65"
         },
         {
-          "index": 18,
+          "index": 20,
           "heading": "struct kacs_generic_mapping",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "8a60a2764bc223f593d0539d59d48f487ee39de400733ca6171fc4f7a4c1343a"
         },
         {
-          "index": 19,
+          "index": 21,
           "heading": "Token constants",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/300--generated-token-and-session-abi.md",
           "sha256": "9190d525c6a379913b1e5a35d6b07eaeba334afc19ca7f6aaab7d43e65f0ec78"
         },
         {
-          "index": 20,
+          "index": 22,
           "heading": "socket.h",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/600--generated-socket-and-ipc-abi.md",
           "sha256": "c62db306694041d5772cc7f65ab1d04ba4310323a567a5830869daeff1e59974"
         },
         {
-          "index": 21,
+          "index": 23,
           "heading": "ipc.h",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/600--generated-socket-and-ipc-abi.md",
           "sha256": "74ff60728ccd035bd2bfe22462ceabecc2f84c7de55644f8f1007d73efcb9016"
         },
         {
-          "index": 22,
+          "index": 24,
           "heading": "mntns.h",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/500--generated-file-and-mount-abi.md",
           "sha256": "bd68ba901a2a61aa0256118ab0234f3db08b7755f9fbcde12bd636d9edb2c757"
         },
         {
-          "index": 23,
+          "index": 25,
           "heading": "AccessCheck constants",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "f2a6cd99df1970fbd8f6076f9a9da7023513aed93a16492055429b75c94e4dd6"
         },
         {
-          "index": 24,
+          "index": 26,
           "heading": "File and open constants",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/500--generated-file-and-mount-abi.md",
           "sha256": "49f83a504f03f228499061fb7ad8cf12b188fe0be7c10d542bc4a3e9189d2762"
         },
         {
-          "index": 25,
+          "index": 27,
           "heading": "Process access rights",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/700--generated-process-and-psb-abi.md",
           "sha256": "91a7d442552ceccf64aeedc3639b64105b1b3e60b3865780dc03fee6d4c62e43"
         },
         {
-          "index": 26,
+          "index": 28,
           "heading": "Process mitigation bits",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/700--generated-process-and-psb-abi.md",
           "sha256": "9e2130c4d13e8ea6baeeb0f36983387aee639cd445584b532cdfaa6fbce3301a"
         },
         {
-          "index": 27,
+          "index": 29,
           "heading": "Security descriptor constants",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "0ebc5c109ec117369745b9e8b429e390602bb8e9176cc0298d2a0716e7e03719"
         },
         {
-          "index": 28,
+          "index": 30,
           "heading": "SID constants",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md",
           "sha256": "c79eb9082c348d5a7b72235228853b4ae8a2715e1710a7a13f4ea166f41fcff7"
         },
         {
-          "index": 29,
+          "index": 31,
           "heading": "Tracepoint diagnostic codes",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/800--generated-diagnostic-constants.md",
           "sha256": "04fe6c0213f99b409ceaad9f04a829926f8d0cc7ecac0e4c2dc661f55c7e65ef"
@@ -9532,36 +9542,6 @@
       "fragment": "trm-3-a-2-10",
       "title": "struct kacs_get_linked_token_args"
     },
-    "3.A.2.11": {
-      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-11",
-      "title": "struct kacs_access_check_args"
-    },
-    "3.A.2.12": {
-      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-12",
-      "title": "struct kacs_object_type_entry"
-    },
-    "3.A.2.13": {
-      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-13",
-      "title": "struct kacs_node_result"
-    },
-    "3.A.2.14": {
-      "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi",
-      "fragment": "trm-3-a-2-14",
-      "title": "struct kacs_open_how"
-    },
-    "3.A.2.15": {
-      "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi",
-      "fragment": "trm-3-a-2-15",
-      "title": "struct kacs_mount_policy_args"
-    },
-    "3.A.2.16": {
-      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-16",
-      "title": "struct kacs_generic_mapping"
-    },
     "3.A.3": {
       "reference": "kernel/userspace/native/kacs/generated-token-and-session-abi",
       "fragment": "trm-3-a-3",
@@ -12531,6 +12511,46 @@
       "reference": "kernel/internals/ntfe/overview",
       "fragment": "trm-6-b-8",
       "title": "Build configuration"
+    },
+    "3.A.2.13": {
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "trm-3-a-2-13",
+      "title": "struct kacs_access_check_args"
+    },
+    "3.A.2.14": {
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "trm-3-a-2-14",
+      "title": "struct kacs_object_type_entry"
+    },
+    "3.A.2.15": {
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "trm-3-a-2-15",
+      "title": "struct kacs_node_result"
+    },
+    "3.A.2.16": {
+      "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi",
+      "fragment": "trm-3-a-2-16",
+      "title": "struct kacs_open_how"
+    },
+    "3.A.2.17": {
+      "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi",
+      "fragment": "trm-3-a-2-17",
+      "title": "struct kacs_mount_policy_args"
+    },
+    "3.A.2.18": {
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "trm-3-a-2-18",
+      "title": "struct kacs_generic_mapping"
+    },
+    "3.A.2.11": {
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "trm-3-a-2-11",
+      "title": "struct kacs_subject_request"
+    },
+    "3.A.2.12": {
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "trm-3-a-2-12",
+      "title": "struct kacs_subject_result"
     }
   },
   "claims": {
@@ -18883,6 +18903,16 @@
       "source": "3--kacs/a1--kacs-abi.md",
       "reference": "kernel/userspace/native/kacs/generated-token-and-session-abi",
       "fragment": "cite-kacs-abi.struct-kacs-get-linked-token-args"
+    },
+    "kacs-abi.struct-kacs-subject-request": {
+      "source": "3--kacs/a1--kacs-abi.md",
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "cite-kacs-abi.struct-kacs-subject-request"
+    },
+    "kacs-abi.struct-kacs-subject-result": {
+      "source": "3--kacs/a1--kacs-abi.md",
+      "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
+      "fragment": "cite-kacs-abi.struct-kacs-subject-result"
     },
     "kacs-abi.struct-kacs-access-check-args": {
       "source": "3--kacs/a1--kacs-abi.md",
@@ -30128,32 +30158,32 @@
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#struct-kacs-access-check-args": {
       "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-11",
+      "fragment": "trm-3-a-2-13",
       "title": "struct kacs_access_check_args"
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#struct-kacs-object-type-entry": {
       "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-12",
+      "fragment": "trm-3-a-2-14",
       "title": "struct kacs_object_type_entry"
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#struct-kacs-node-result": {
       "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-13",
+      "fragment": "trm-3-a-2-15",
       "title": "struct kacs_node_result"
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#struct-kacs-open-how": {
       "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi",
-      "fragment": "trm-3-a-2-14",
+      "fragment": "trm-3-a-2-16",
       "title": "struct kacs_open_how"
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#struct-kacs-mount-policy-args": {
       "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi",
-      "fragment": "trm-3-a-2-15",
+      "fragment": "trm-3-a-2-17",
       "title": "struct kacs_mount_policy_args"
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#struct-kacs-generic-mapping": {
       "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
-      "fragment": "trm-3-a-2-16",
+      "fragment": "trm-3-a-2-18",
       "title": "struct kacs_generic_mapping"
     },
     "peios/advanced-peios/peios-kernel/kacs/kacs-abi#token-constants": {
@@ -32633,7 +32663,7 @@
         10,
         11,
         12,
-        19
+        21
       ],
       "reference": "kernel/userspace/native/kacs/generated-token-and-session-abi"
     },
@@ -32647,10 +32677,12 @@
         13,
         14,
         15,
-        18,
-        23,
-        27,
-        28
+        16,
+        17,
+        20,
+        25,
+        29,
+        30
       ],
       "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi"
     },
@@ -32661,10 +32693,10 @@
       "generator": "kacs-abi",
       "source": "3--kacs/a1--kacs-abi.md",
       "sections": [
-        16,
-        17,
-        22,
-        24
+        18,
+        19,
+        24,
+        26
       ],
       "reference": "kernel/userspace/native/kacs/generated-file-and-mount-abi"
     },
@@ -32675,8 +32707,8 @@
       "generator": "kacs-abi",
       "source": "3--kacs/a1--kacs-abi.md",
       "sections": [
-        20,
-        21
+        22,
+        23
       ],
       "reference": "kernel/userspace/native/kacs/generated-socket-and-ipc-abi"
     },
@@ -32687,8 +32719,8 @@
       "generator": "kacs-abi",
       "source": "3--kacs/a1--kacs-abi.md",
       "sections": [
-        25,
-        26
+        27,
+        28
       ],
       "reference": "kernel/userspace/native/kacs/generated-process-and-psb-abi"
     },
@@ -32699,7 +32731,7 @@
       "generator": "kacs-abi",
       "source": "3--kacs/a1--kacs-abi.md",
       "sections": [
-        29
+        31
       ],
       "reference": "kernel/userspace/native/kacs/generated-diagnostic-constants"
     },
@@ -32991,9 +33023,9 @@
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/800--generated-watch-abi.md": "d53a8c25640524f6a667f6088e88899d41c887b4c1a79ee5c4cd3296bb0d5d2a",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/700--generated-key-and-security-abi.md": "5980f9f154f8855331db461a348b72851158982b6b13a1a6c8ef9831ccd5a662",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/1200--token-query-semantics.md": "2453f294f58336788806b1c2527bb2791c95ee6a50d54a4bfd2e3b02a5ea6301",
-    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md": "d57c43f57ffed76bf826a3f65a934bbbf279037d04320865f8af0fc571788ad6",
+    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md": "bf98b926c484e44ee2929ce4e250222e4d3bdc6c1239240760b91f0fd82e7f21",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/600--generated-socket-and-ipc-abi.md": "65699edfa30abfec8919c2ce5a7ffbb5565977edf9b08e85167a9f79473b81c2",
-    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/200--generated-syscall-index.md": "bbbe11bb580e4a98148c0c090d97e6af1ace58d4807bf67d7d4c57423b0ba9eb",
+    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/200--generated-syscall-index.md": "d674ab8dedfdeb80e71d0fb0dfb9242b74666016a76ec7f7dcb722565981a3d5",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/1300--socket-abi-compatibility.md": "289d6c9719e6fc6b98882695c2de2d6a7392c0bd854ca103ebb8cd87073cf30e",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/800--generated-diagnostic-constants.md": "540aceda70a4f84c3a5886cbcf68e0b06c898c5d4312622afc95253d02402bd5",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/10--overview.md": "e0f207b97fe5db9b34fa33f372dd4e7492cbc9c5c36298f841306488447cc64b",
@@ -33003,7 +33035,7 @@
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/1000--abi-status-and-naming-differences.md": "4f24986bc76f235d4d7181bf33326032ecbd0e700986905e96beb704b1f3f567",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/900--ms-dtyp-compatibility-and-divergences.md": "2a82f53800aa3ee56124fc77ec56171bbf7c87077111b06c35a8aae5e602d7c2",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/1100--descriptor-and-ace-semantics.md": "c7ed3c739c16cc0f6c9947cf0ffdea63b2445972eefacda40bca40ec7c013622",
-    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/500--generated-file-and-mount-abi.md": "2a3b31168aef03bbb8616c07577e9c07be5549c025a09d34f99a2da015a6f203",
+    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/500--generated-file-and-mount-abi.md": "71f602573cfe1e07fe35d64d734e562636d45845a2fe1fac64d44cbe7891c73d",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/200--kmes.topic/300--abi-semantics-and-limits.md": "87b3de9051fef95979da3feaab90b34c399443b6773b8e15a7dc064b936c870a",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/200--kmes.topic/10--overview.md": "4e50ed51ae28f0ad2a83f2e3a49c46f923d468bdb3c25e80c2fe5b326a3ad555",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/200--kmes.topic/200--generated-abi-tables.md": "bea60819b23bdd31da11b84695634931bdeba03f6236dce533511d731489e42a",

@@ -183,15 +183,18 @@ int pkm_kacs_subject_caller_may_audit(void)
 			       caller, KACS_SE_AUDIT_PRIVILEGE))
 		return 0;
 	return kacs_rust_token_mark_privileges_used(caller,
-					    KACS_SE_AUDIT_PRIVILEGE) ? 1 : -EIO;
+						    KACS_SE_AUDIT_PRIVILEGE) ?
+		       1 :
+		       -EIO;
 }
 
-extern long kacs_rust_access_check_subject(
-	const struct pkm_kacs_usercopy_ops *ops, u64 request_ptr,
-	size_t request_len, u64 result_ptr);
+extern long
+kacs_rust_access_check_subject(const struct pkm_kacs_usercopy_ops *ops,
+			       u64 request_ptr, size_t request_len,
+			       u64 result_ptr);
 
-SYSCALL_DEFINE3(kacs_access_check_subject, const void __user *, request,
-		size_t, request_len, void __user *, result)
+SYSCALL_DEFINE3(kacs_access_check_subject, const void __user *, request, size_t,
+		request_len, void __user *, result)
 {
 	const struct pkm_kacs_usercopy_ops ops = {
 		.read_bytes = pkm_kacs_read_user,
@@ -199,7 +202,8 @@ SYSCALL_DEFINE3(kacs_access_check_subject, const void __user *, request,
 	};
 
 	return kacs_rust_access_check_subject(&ops, (u64)(uintptr_t)request,
-					     request_len, (u64)(uintptr_t)result);
+					      request_len,
+					      (u64)(uintptr_t)result);
 }
 
 static long

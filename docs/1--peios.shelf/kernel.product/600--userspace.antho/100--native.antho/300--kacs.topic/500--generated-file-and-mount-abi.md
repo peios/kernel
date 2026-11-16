@@ -4,7 +4,7 @@ description: "Generated file and mount ABI: behaviour and implementation of the 
 type: reference
 ---
 
-<a id="trm-3-a-2-14"></a>
+<a id="trm-3-a-2-16"></a>
 
 ## `struct kacs_open_how` <a id="cite-kacs-abi.struct-kacs-open-how"></a>
 
@@ -20,7 +20,7 @@ Total size 32 bytes.
 | 24 | 4 | `__u32` | `sd_len` |
 | 28 | 4 | `__u32` | `__pad` |
 
-<a id="trm-3-a-2-15"></a>
+<a id="trm-3-a-2-17"></a>
 
 ## `struct kacs_mount_policy_args` <a id="cite-kacs-abi.struct-kacs-mount-policy-args"></a>
 

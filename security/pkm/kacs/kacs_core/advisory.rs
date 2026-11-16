@@ -354,6 +354,9 @@ pub fn audit_subject<'a>(
     granted: u32,
     audit_context: Option<&[u8]>,
 ) -> KacsResult<crate::audit::EvaluateSaclState<'a>> {
+    if object_tree.map_or(node != 0, |tree| node >= tree.len()) {
+        return Err(KacsError::InvalidAbiInput("advisory audit object node"));
+    }
     let Some(sacl) = sd.sacl() else {
         return Ok(crate::audit::EvaluateSaclState::default());
     };

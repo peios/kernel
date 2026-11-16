@@ -28,9 +28,10 @@ static bool subject_query_write(void *ctx, u64 ptr, const void *src, size_t len)
 	return pkm_kunit_mem_write(&memory->mem, ptr, src, len);
 }
 
-static size_t subject_query_request(u8 *wire, const u8 *sid, size_t sid_len)
+static size_t subject_query_request_with_sd(u8 *wire, const u8 *sid,
+					    size_t sid_len, const u8 *sd,
+					    size_t sd_len)
 {
-	size_t sd_len = sizeof(pkm_kunit_system_read_sd);
 	size_t len = KACS_SUBJECT_HEADER_BYTES + sd_len + sid_len;
 
 	memset(wire, 0, len);
@@ -43,16 +44,139 @@ static size_t subject_query_request(u8 *wire, const u8 *sid, size_t sid_len)
 	pkm_kunit_write_u32(wire, 32, KACS_ACCESS_READ_CONTROL);
 	pkm_kunit_write_u32(wire, 48, KACS_SUBJECT_HEADER_BYTES);
 	pkm_kunit_write_u32(wire, 52, sd_len);
-	memcpy(wire + KACS_SUBJECT_HEADER_BYTES, pkm_kunit_system_read_sd, sd_len);
+	memcpy(wire + KACS_SUBJECT_HEADER_BYTES, sd, sd_len);
 	if (sid_len) {
-		pkm_kunit_write_u32(wire, 56, KACS_SUBJECT_HEADER_BYTES + sd_len);
+		pkm_kunit_write_u32(wire, 56,
+				    KACS_SUBJECT_HEADER_BYTES + sd_len);
 		pkm_kunit_write_u32(wire, 60, sid_len);
 		memcpy(wire + KACS_SUBJECT_HEADER_BYTES + sd_len, sid, sid_len);
 	}
 	return len;
 }
 
-static void pkm_kunit_subject_query_copies_once_and_ignores_caller(struct kunit *test)
+static size_t subject_query_request(u8 *wire, const u8 *sid, size_t sid_len)
+{
+	return subject_query_request_with_sd(wire, sid, sid_len,
+					     pkm_kunit_system_read_sd,
+					     sizeof(pkm_kunit_system_read_sd));
+}
+
+static bool
+subject_query_failed_audit(void *ctx,
+			   const struct pkm_kacs_audit_event_view *event)
+{
+	(void)ctx;
+	(void)event;
+	return false;
+}
+
+static void
+pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
+{
+	const char *event = "kacs.audit.subject.checked";
+	u8 sd[sizeof(pkm_kunit_system_read_audit_sd)];
+	u8 wire[512], result[12];
+	u8 *buffer;
+	size_t written = 0;
+	struct pkm_kmes_kunit_snapshot snapshot = {};
+	struct pkm_kunit_kmes_event_view view = {};
+	struct pkm_kunit_msgpack_view root, actor, token, supplied, fields,
+		attestation;
+	struct subject_query_memory memory = { .request = wire };
+	struct pkm_kacs_usercopy_ops ops = {
+		.ctx = &memory,
+		.read_bytes = subject_query_read,
+		.write_bytes = subject_query_write,
+	};
+	struct pkm_kacs_event_sink_ops failed_sink = {
+		.on_audit_event = subject_query_failed_audit,
+	};
+
+	buffer = kunit_kzalloc(test, PKM_KUNIT_KMES_CAPTURE_BYTES, GFP_KERNEL);
+	KUNIT_ASSERT_NOT_NULL(test, buffer);
+	KUNIT_ASSERT_EQ(test, pkm_kacs_subject_caller_may_audit(), 1);
+	memcpy(sd, pkm_kunit_system_read_audit_sd, sizeof(sd));
+	/* Owner stays SYSTEM; DACL and SACL trustees become Anonymous. */
+	memcpy(sd + pkm_kunit_read_u32(sd, 12) + 16, pkm_kunit_anonymous_sid,
+	       12);
+	memcpy(sd + pkm_kunit_read_u32(sd, 16) + 16, pkm_kunit_anonymous_sid,
+	       12);
+	memory.len = subject_query_request_with_sd(
+		wire, pkm_kunit_anonymous_sid, sizeof(pkm_kunit_anonymous_sid),
+		sd, sizeof(sd));
+	pkm_kunit_write_u32(wire, 8, 0);
+	pkm_kunit_add_region(&memory.mem, 0x1000, wire, memory.len);
+	pkm_kunit_add_region(&memory.mem, 0x3000, result, sizeof(result));
+	pkm_kunit_reset_kmes();
+	KUNIT_ASSERT_EQ(test,
+			pkm_kmes_kunit_set_process_override(
+				4106, PKM_KUNIT_KMES_PROCESS_NAME,
+				PKM_KUNIT_KMES_PROCESS_PATH),
+			0);
+	/* Bad output cannot silence the requested completed-check audit. */
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x9999),
+			(long)-EFAULT);
+	KUNIT_ASSERT_EQ(test,
+			pkm_kmes_kunit_copy_latest_matching_event(
+				KMES_ORIGIN_KACS, event, strlen(event), buffer,
+				PKM_KUNIT_KMES_CAPTURE_BYTES, &written,
+				&snapshot),
+			0);
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_kunit_parse_kmes_event(buffer, written, &view));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
+					test, &view, &root, 7));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &root, "subject", &actor));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &actor, "token", &token));
+	KUNIT_EXPECT_TRUE(test,
+			  pkm_kunit_msgpack_expect_bin_key(
+				  test, &token, "sid", pkm_kunit_system_sid,
+				  sizeof(pkm_kunit_system_sid)));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &root, "supplied", &supplied));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bin_key(
+					test, &supplied, "sid",
+					pkm_kunit_anonymous_sid,
+					sizeof(pkm_kunit_anonymous_sid)));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_absent_key(
+					test, &supplied, "token"));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &root, "fields", &fields));
+	KUNIT_ASSERT_TRUE(test,
+			  pkm_kunit_msgpack_require_map_key(
+				  test, &fields, "attestation", &attestation));
+	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bool_key(
+					test, &attestation, "userspace", true));
+
+	memset(result, 0x5a, sizeof(result));
+	KUNIT_EXPECT_EQ(test,
+			kacs_rust_access_check_subject_with_sink(
+				&ops, 0x1000, memory.len, 0x3000, &failed_sink),
+			(long)-EIO);
+	KUNIT_EXPECT_EQ(test, result[0], (u8)0x5a);
+
+	pkm_kunit_reset_kmes();
+	pkm_kunit_write_u32(wire, 8, KACS_SUBJECT_NO_AUDIT);
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x3000),
+			0L);
+	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 0), 1U);
+	KUNIT_EXPECT_EQ(test,
+			pkm_kmes_kunit_copy_latest_matching_event(
+				KMES_ORIGIN_KACS, event, strlen(event), buffer,
+				PKM_KUNIT_KMES_CAPTURE_BYTES, &written,
+				&snapshot),
+			-ENOENT);
+	pkm_kunit_reset_kmes();
+}
+
+static void
+pkm_kunit_subject_query_copies_once_and_ignores_caller(struct kunit *test)
 {
 	u8 wire[512];
 	u8 result[12];
@@ -73,21 +197,26 @@ static void pkm_kunit_subject_query_copies_once_and_ignores_caller(struct kunit 
 	KUNIT_ASSERT_EQ(test, ret, 0L);
 	KUNIT_EXPECT_EQ(test, memory.reads, 1U);
 	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 0), 1U);
-	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 4), KACS_ACCESS_READ_CONTROL);
+	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 4),
+			KACS_ACCESS_READ_CONTROL);
 	KUNIT_EXPECT_EQ(test, wire[0], (u8)0);
 
 	/* Same real caller, supplied Anonymous: no inherited SYSTEM grant. */
 	memory.destroy_after_copy = false;
 	memory.len = subject_query_request(wire, pkm_kunit_anonymous_sid,
 					   sizeof(pkm_kunit_anonymous_sid));
-	KUNIT_ASSERT_EQ(test, kacs_rust_access_check_subject(&ops, 0x1000,
-							 memory.len, 0x3000), 0L);
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x3000),
+			0L);
 	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 0), 0U);
 
 	/* Omitted user remains unknown, rather than becoming the real caller. */
 	memory.len = subject_query_request(wire, NULL, 0);
-	KUNIT_ASSERT_EQ(test, kacs_rust_access_check_subject(&ops, 0x1000,
-							 memory.len, 0x3000), 0L);
+	KUNIT_ASSERT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x3000),
+			0L);
 	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 0), 2U);
 	KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 4), 0U);
 	KUNIT_EXPECT_NE(test, pkm_kunit_read_u32(result, 8) & 1, 0U);
@@ -108,17 +237,26 @@ static void pkm_kunit_subject_query_faults_and_invalid_flags(struct kunit *test)
 					   sizeof(pkm_kunit_system_sid));
 	pkm_kunit_add_region(&memory.mem, 0x1000, wire, memory.len);
 	pkm_kunit_add_region(&memory.mem, 0x3000, result, sizeof(result));
-	KUNIT_EXPECT_EQ(test, kacs_rust_access_check_subject(&ops, 0x9999,
-							 memory.len, 0x3000), (long)-EFAULT);
-	KUNIT_EXPECT_EQ(test, kacs_rust_access_check_subject(&ops, 0x1000,
-							 memory.len, 0x9999), (long)-EFAULT);
+	KUNIT_EXPECT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x9999, memory.len,
+						       0x3000),
+			(long)-EFAULT);
+	KUNIT_EXPECT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x9999),
+			(long)-EFAULT);
 	pkm_kunit_write_u32(wire, 8, 2);
 	memset(result, 0x5a, sizeof(result));
-	KUNIT_EXPECT_EQ(test, kacs_rust_access_check_subject(&ops, 0x1000,
-							 memory.len, 0x3000), (long)-EINVAL);
+	KUNIT_EXPECT_EQ(test,
+			kacs_rust_access_check_subject(&ops, 0x1000, memory.len,
+						       0x3000),
+			(long)-EINVAL);
 	KUNIT_EXPECT_EQ(test, result[0], (u8)0x5a);
-	KUNIT_EXPECT_EQ(test, kacs_rust_access_check_subject(&ops, 0x1000,
-					 KACS_SUBJECT_MAX_BYTES + 1, 0x3000), (long)-EINVAL);
+	KUNIT_EXPECT_EQ(test,
+			kacs_rust_access_check_subject(
+				&ops, 0x1000, KACS_SUBJECT_MAX_BYTES + 1,
+				0x3000),
+			(long)-EINVAL);
 }
 
 static void pkm_kunit_access_mask_constants_match_spec(struct kunit *test)
@@ -2199,6 +2337,42 @@ pkm_kunit_access_check_sacl_audit_needs_audit_privilege(struct kunit *test)
 					granted, true, "policy", NULL, 0, NULL,
 					true));
 
+	/* The supplied-subject query uses that same actual caller gate, and
+	 * must not apply this caller's OBJECT_ACCESS policy to an invented token.
+	 */
+	{
+		u8 wire[512], result[12];
+		struct subject_query_memory memory = { .request = wire };
+		struct pkm_kacs_usercopy_ops ops = {
+			.ctx = &memory,
+			.read_bytes = subject_query_read,
+			.write_bytes = subject_query_write,
+		};
+		const char *type = "kacs.audit.subject.checked";
+
+		memory.len = subject_query_request_with_sd(
+			wire, pkm_kunit_system_sid,
+			sizeof(pkm_kunit_system_sid),
+			pkm_kunit_system_read_audit_sd,
+			sizeof(pkm_kunit_system_read_audit_sd));
+		pkm_kunit_write_u32(wire, 8, 0);
+		pkm_kunit_add_region(&memory.mem, 0x1000, wire, memory.len);
+		pkm_kunit_add_region(&memory.mem, 0x3000, result,
+				     sizeof(result));
+		pkm_kunit_reset_kmes();
+		KUNIT_EXPECT_EQ(test,
+				kacs_rust_access_check_subject(
+					&ops, 0x1000, memory.len, 0x3000),
+				0L);
+		KUNIT_EXPECT_EQ(test, pkm_kunit_read_u32(result, 0), 1U);
+		KUNIT_EXPECT_EQ(test,
+				pkm_kmes_kunit_copy_latest_matching_event(
+					KMES_ORIGIN_KACS, type, strlen(type),
+					buffer, PKM_KUNIT_KMES_CAPTURE_BYTES,
+					&written, &snapshot),
+				-ENOENT);
+	}
+
 	KUNIT_EXPECT_EQ(test, pkm_kacs_revert_impersonation(), 0);
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)fd), 0);
 	pkm_kunit_reset_kmes();
@@ -3372,6 +3546,7 @@ pkm_kunit_caap_cache_malformed_replace_keeps_old_policy(struct kunit *test)
 }
 
 static struct kunit_case pkm_kunit_access_cases[] = {
+	KUNIT_CASE(pkm_kunit_subject_query_audit_provenance_and_copyout),
 	KUNIT_CASE(pkm_kunit_subject_query_copies_once_and_ignores_caller),
 	KUNIT_CASE(pkm_kunit_subject_query_faults_and_invalid_flags),
 	KUNIT_CASE(pkm_kunit_access_mask_constants_match_spec),

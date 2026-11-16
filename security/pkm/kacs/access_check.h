@@ -127,8 +127,12 @@ int pkm_kacs_current_pip_context(u32 *pip_type, u32 *pip_trust);
 
 int pkm_kacs_subject_caller_may_audit(void);
 long kacs_rust_access_check_subject(const struct pkm_kacs_usercopy_ops *ops,
-				  u64 request_ptr, size_t request_len,
-				  u64 result_ptr);
+				    u64 request_ptr, size_t request_len,
+				    u64 result_ptr);
+long kacs_rust_access_check_subject_with_sink(
+	const struct pkm_kacs_usercopy_ops *ops, u64 request_ptr,
+	size_t request_len, u64 result_ptr,
+	const struct pkm_kacs_event_sink_ops *event_sinks);
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 void pkm_kacs_kunit_set_current_pip_context(u32 pip_type, u32 pip_trust);

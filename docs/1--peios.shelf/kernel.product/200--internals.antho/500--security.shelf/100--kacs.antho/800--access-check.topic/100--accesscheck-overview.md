@@ -50,6 +50,31 @@ contributed bits survive on *any* node's final granted mask.
 Both variants share one evaluation pipeline. Only the collection of
 results differs.
 
+## A supplied subject without a token
+
+The separate kacs_access_check_subject query evaluates caller-supplied SID,
+group and typed-claim facts without creating, adopting or impersonating a
+token. It reuses the DACL, conditional and object-ACE evaluators. Omitted
+facts stay unknown; known-empty collections and explicit claim absences
+are distinct. No access fact is inherited from the caller. Explicit integrity,
+trust, scoped-policy and privilege requirements return missing execution
+context rather than acquiring the caller's authority.
+
+Syscall 1028 accepts a versioned request buffer and writes a granted, denied
+or missing-context result. Missing context carries no provisional grant.
+The kernel copies and validates one bounded buffer; internal offsets replace
+nested userspace pointers. The UAPI access header specifies layout and limits.
+Malformed or excessive inputs fail the entire query without truncating facts.
+
+Matching SACL audit ACEs require enabled SeAuditPrivilege on the actual
+caller. NO_AUDIT suppresses this query's records; it does not bypass mandatory
+SACL labels. Audit-only missing facts matter only while auditing is active.
+Records use kacs.audit.subject.checked: subject is the real caller and
+supplied.sid is a hypothetical assertion. An optional generic AuditContext
+labels the guarded object without influencing policy. Detected audit
+preparation or submission errors fail the query. Records are submitted before
+result writeback, so a bad output pointer cannot silence requested auditing.
+
 <a id="trm-3-8-1-2"></a>
 
 ## The three state values

@@ -46,6 +46,7 @@ constant.
 | 1025 | `SYS_KACS_SET_CAAP` | `SYS_kacs_set_caap` | `kacs_set_caap(const void __user *policy_sid, u32 policy_sid_len, const void __user *spec, u32 spec_len)` |
 | 1026 | `SYS_KACS_GET_MOUNT_POLICY` | `SYS_kacs_get_mount_policy` | `kacs_get_mount_policy(int fd, struct kacs_mount_policy_args __user *uargs, size_t argsize)` |
 | 1027 | `SYS_KACS_SET_MOUNT_POLICY` | `SYS_kacs_set_mount_policy` | `kacs_set_mount_policy(int fd, struct kacs_mount_policy_args __user *uargs, size_t argsize)` |
+| 1028 | `SYS_KACS_ACCESS_CHECK_SUBJECT` | `SYS_kacs_access_check_subject` | `kacs_access_check_subject(const void __user *request, size_t request_len, void __user *result)` |
 
 `uapi/pkm/syscall.h` also registers the KMES and LCS numbers,
 1090–1102, documented in their own chapters. <a id="cite-kacs-abi.sibling-syscall-range"></a>

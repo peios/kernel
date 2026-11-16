@@ -228,3 +228,44 @@ fn suppression_never_bypasses_integrity_or_scoped_policy_labels() {
         }
     }
 }
+
+#[test]
+fn repeated_offsets_cannot_expand_subject_or_resource_claims_without_bound() {
+    let mut entry = vec![0; 8192];
+    put(&mut entry, 0, 4112); // name
+    entry[4..6].copy_from_slice(&3u16.to_le_bytes()); // UTF-16 string values
+    put(&mut entry, 12, 1024);
+    for i in 0..1024 {
+        put(&mut entry, 16 + i * 4, 4116);
+    }
+    entry[4112] = b'x';
+    put(&mut entry, 4116, 4120);
+    for i in 0..2000 {
+        entry[4120 + i * 2] = b'q';
+    }
+    // Individually valid typed data, but its aliased string offsets would
+    // repeatedly allocate the same long value when fully decoded.
+    kacs_core::claims::validate_claim_attribute_entry(&entry).unwrap();
+    let resource_sd = sd(&[resource_attribute_ace(0, &entry)]);
+    assert!(parse_subject_request(&base(&resource_sd, &user())).is_err());
+    let plain_sd = sd(&[]);
+    let user = user();
+    let mut claims = (entry.len() as u32).to_le_bytes().to_vec();
+    claims.extend(entry);
+    let b = wire([
+        &plain_sd,
+        &user,
+        &[],
+        &[],
+        &claims,
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+    ]);
+    assert!(parse_subject_request(&b).is_err());
+}

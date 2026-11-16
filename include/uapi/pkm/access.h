@@ -45,7 +45,8 @@
  * Unknown flags/bits, nonzero reserved fields, gaps/overlap/trailing bytes,
  * invalid or excessive collections fail the entire request. No truncation.
  * Typed claims are at most 64 KiB per namespace, 1024 values per attribute;
- * the sum of entry_bytes * max(value_count, 1) is at most 1 MiB, bounding
+ * the sum of entry_bytes * max(value_count, 1), including SD resource claims,
+ * is at most 1 MiB, bounding
  * repeated-offset decoding before allocation. Absent names are 1..255 UTF8
  * bytes; each collection has at most 1024 items.
  */

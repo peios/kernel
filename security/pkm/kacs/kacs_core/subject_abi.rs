@@ -9,11 +9,11 @@ use crate::object_tree::{ObjectTypeList, ObjectTypeNode};
 use crate::pkm_alloc::Vec;
 use crate::{GenericMapping, SecurityDescriptor, Sid, SidAndAttributes};
 
-pub const VERSION: u32 = 1;
-pub const HEADER_BYTES: usize = 152;
-pub const MAX_BYTES: usize = 1024 * 1024;
-pub const MAX_ITEMS: usize = 1024;
-pub const NO_AUDIT: u32 = 1;
+pub const VERSION: u32 = crate::peios_uapi::KACS_SUBJECT_VERSION;
+pub const HEADER_BYTES: usize = crate::peios_uapi::KACS_SUBJECT_HEADER_BYTES as usize;
+pub const MAX_BYTES: usize = crate::peios_uapi::KACS_SUBJECT_MAX_BYTES as usize;
+pub const MAX_ITEMS: usize = crate::peios_uapi::KACS_SUBJECT_MAX_ITEMS as usize;
+pub const NO_AUDIT: u32 = crate::peios_uapi::KACS_SUBJECT_NO_AUDIT;
 const INVALID: KacsError = KacsError::InvalidAbiInput("supplied-subject request");
 
 /// Parsed request borrowing only its owned ingress buffer. Collection storage
@@ -129,20 +129,28 @@ fn claims(bytes: &[u8], budget: &mut usize) -> KacsResult<Vec<ClaimAttribute>> {
     }
     let mut out = Vec::new();
     entries(bytes, |entry| {
-        // Bound allocation before invoking the shared typed-claim parser.
-        let count = u32_at(entry, 12)? as usize;
-        if count > MAX_ITEMS || entry.get(6..8) != Some(&[0, 0]) || u32_at(entry, 8)? & !0x16 != 0 {
-            return Err(INVALID);
-        }
-        // Repeated offsets may otherwise expand a small untrusted entry into
-        // gigabytes of decoded strings. This conservative aggregate work bound
-        // is checked before any typed value is allocated, across all namespaces.
-        let cost = entry.len().checked_mul(count.max(1)).ok_or(INVALID)?;
-        *budget = budget.checked_sub(cost).ok_or(INVALID)?;
+        charge_claim(entry, budget)?;
         out.push(parse_claim_attribute_entry(entry)?)?;
         Ok(())
     })?;
     Ok(out)
+}
+
+fn charge_claim(entry: &[u8], budget: &mut usize) -> KacsResult<()> {
+    let count = u32_at(entry, 12)? as usize;
+    if count > MAX_ITEMS
+        || entry.len() > 65536
+        || entry.get(6..8) != Some(&[0, 0])
+        || u32_at(entry, 8)? & !0x16 != 0
+    {
+        return Err(INVALID);
+    }
+    // Repeated offsets may otherwise expand a small untrusted entry into
+    // gigabytes of decoded strings. Charge before any typed value allocation,
+    // across subject namespaces AND descriptor resource attributes.
+    let cost = entry.len().checked_mul(count.max(1)).ok_or(INVALID)?;
+    *budget = budget.checked_sub(cost).ok_or(INVALID)?;
+    Ok(())
 }
 
 fn absent(bytes: &[u8]) -> KacsResult<Vec<&str>> {
@@ -234,6 +242,16 @@ pub fn parse_subject_request(bytes: &[u8]) -> KacsResult<SubjectRequest<'_>> {
         Some(sections[12])
     };
     let mut decode_budget = MAX_BYTES;
+    if let Some(sacl) = sd.sacl() {
+        for ace in sacl.entries() {
+            if let crate::ace::AceKind::ResourceAttribute {
+                application_data, ..
+            } = ace?.kind()
+            {
+                charge_claim(application_data, &mut decode_budget)?;
+            }
+        }
+    }
     let request = SubjectRequest {
         flags: u32_at(bytes, 8)?,
         desired: u32_at(bytes, 16)?,

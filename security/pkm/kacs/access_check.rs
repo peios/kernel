@@ -58,6 +58,25 @@ pub extern "C" fn kacs_rust_access_check_subject(
     request_len: usize,
     result_ptr: u64,
 ) -> c_long {
+    kacs_rust_access_check_subject_with_sink(
+        ops,
+        request_ptr,
+        request_len,
+        result_ptr,
+        core::ptr::null(),
+    )
+}
+
+/// Kernel-only callback seam, matching the ordinary AccessCheck ingress tests.
+/// Production supplies no sink and uses the distinct supplied-subject KMES type.
+#[no_mangle]
+pub extern "C" fn kacs_rust_access_check_subject_with_sink(
+    ops: *const PkmKacsUsercopyOps,
+    request_ptr: u64,
+    request_len: usize,
+    result_ptr: u64,
+    event_sinks: *const PkmKacsEventSinkOps,
+) -> c_long {
     let run = || -> Result<c_long, c_long> {
         use crate::advisory::{audit_subject, check_subject, AdvisoryDecision};
         use crate::subject_abi::{parse_subject_request, HEADER_BYTES, MAX_BYTES, NO_AUDIT};
@@ -133,6 +152,24 @@ pub extern "C" fn kacs_rust_access_check_subject(
                     pip,
                     &[],
                     |resolved| {
+                        if !event_sinks.is_null() {
+                            let target = AuditTarget {
+                                subject_ids: crate::token_runtime::audit_subject_ids(caller),
+                                object: AuditObject::from_audit_context(request.audit_context)?,
+                                asserted: true,
+                                sacl_audit_suppressed: false,
+                                denials: AccessDenials::default(),
+                            };
+                            return emit_events(
+                                event_sinks,
+                                &owned,
+                                &[],
+                                &[],
+                                resolved,
+                                pip,
+                                &target,
+                            );
+                        }
                         crate::kmes_payload::emit_subject_check_events_to_kmes(
                             &owned,
                             resolved.token,

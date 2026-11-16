@@ -6,6 +6,40 @@ type: reference
 
 <a id="trm-3-a-2-11"></a>
 
+## `struct kacs_subject_request` <a id="cite-kacs-abi.struct-kacs-subject-request"></a>
+
+Total size 152 bytes.
+
+| Offset | Size | Type | Field |
+|---:|---:|---|---|
+| 0 | 4 | `__u32` | `version` |
+| 4 | 4 | `__u32` | `total_bytes` |
+| 8 | 4 | `__u32` | `flags` |
+| 12 | 4 | `__u32` | `known_groups` |
+| 16 | 4 | `__u32` | `desired_access` |
+| 20 | 4 | `__u32` | `mapping_read` |
+| 24 | 4 | `__u32` | `mapping_write` |
+| 28 | 4 | `__u32` | `mapping_execute` |
+| 32 | 4 | `__u32` | `mapping_all` |
+| 36 | 4 | `__u32` | `object_index` |
+| 40 | 4 | `__u32` | `complete_claims` |
+| 44 | 4 | `__u32` | `reserved` |
+| 48 | 104 | `__u32``[26]` | `sections` |
+
+<a id="trm-3-a-2-12"></a>
+
+## `struct kacs_subject_result` <a id="cite-kacs-abi.struct-kacs-subject-result"></a>
+
+Total size 12 bytes.
+
+| Offset | Size | Type | Field |
+|---:|---:|---|---|
+| 0 | 4 | `__u32` | `decision` |
+| 4 | 4 | `__u32` | `granted` |
+| 8 | 4 | `__u32` | `missing` |
+
+<a id="trm-3-a-2-13"></a>
+
 ## `struct kacs_access_check_args` <a id="cite-kacs-abi.struct-kacs-access-check-args"></a>
 
 Total size 136 bytes.
@@ -39,7 +73,7 @@ Total size 136 bytes.
 | 120 | 8 | `__u64` | `continuous_audit_out_ptr` |
 | 128 | 8 | `__u64` | `staging_mismatch_out_ptr` |
 
-<a id="trm-3-a-2-12"></a>
+<a id="trm-3-a-2-14"></a>
 
 ## `struct kacs_object_type_entry` <a id="cite-kacs-abi.struct-kacs-object-type-entry"></a>
 
@@ -51,7 +85,7 @@ Total size 20 bytes.
 | 2 | 2 | `__u16` | `_reserved` |
 | 4 | 16 | `__u8``[16]` | `guid` |
 
-<a id="trm-3-a-2-13"></a>
+<a id="trm-3-a-2-15"></a>
 
 ## `struct kacs_node_result` <a id="cite-kacs-abi.struct-kacs-node-result"></a>
 
@@ -62,7 +96,7 @@ Total size 8 bytes.
 | 0 | 4 | `__u32` | `granted` |
 | 4 | 4 | `__s32` | `status` |
 
-<a id="trm-3-a-2-16"></a>
+<a id="trm-3-a-2-18"></a>
 
 ## `struct kacs_generic_mapping` <a id="cite-kacs-abi.struct-kacs-generic-mapping"></a>
 
@@ -116,6 +150,34 @@ From `uapi/pkm/access.h`.
 | Constant | Value |
 |---|---|
 | `KACS_ACCESS_CHECK_MAX_OBJECT_TYPE_COUNT` | `1024` |
+
+*Supplied-subject query, syscall 1028.*
+
+No token is created or adopted. One LE buffer contains this 152-byte
+header followed by packed sections in table order. Each pair is {offset,
+byte_length}; empty sections use {0,0}. Sections: SD, user SID, groups,
+device groups, user/device/local claims, user/device/local known-absent
+names, SELF SID, object tree, audit context. Groups use repeated {u32
+sid_len, SID bytes, u32 attributes}; claims use repeated {u32 entry_len,
+typed claim entry}; absent names use {u32 len, UTF8}. Known bits 0/1
+distinguish known-empty user/device groups from unknown. Coverage bits
+0/1/2 mark complete user/device/local claim sets; otherwise omitted
+claim names remain unknown unless listed explicitly as absent. Unknown
+flags/bits, nonzero reserved fields, gaps/overlap/trailing bytes,
+invalid or excessive collections fail the entire request. No truncation.
+Typed claims are at most 64 KiB per namespace, 1024 values per
+attribute; the sum of entry_bytes * max(value_count, 1), including SD
+resource claims, is at most 1 MiB, bounding repeated-offset decoding
+before allocation. Absent names are 1..255 UTF8 bytes; each collection
+has at most 1024 items.
+
+| Constant | Value |
+|---|---|
+| `KACS_SUBJECT_VERSION` | `1` |
+| `KACS_SUBJECT_HEADER_BYTES` | `152` |
+| `KACS_SUBJECT_MAX_BYTES` | `0x100000` (1048576) |
+| `KACS_SUBJECT_MAX_ITEMS` | `1024` |
+| `KACS_SUBJECT_NO_AUDIT` | `1` |
 
 Claim value types — the discriminant of one attribute in the @Local
 claims array (local_claims_ptr). <a id="cite-kacs-abi.claim-value-types"></a>
