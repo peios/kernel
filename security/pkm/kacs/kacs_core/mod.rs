@@ -14,6 +14,8 @@ pub mod access_mask;
 pub mod ace;
 /// ACL parsing and entry iteration.
 pub mod acl;
+/// Advisory identity checks with explicitly incomplete supplied information.
+pub mod advisory;
 /// SACL audit/alarm evaluation helpers.
 pub mod audit;
 /// Central Access Policy parsing, cache, and evaluation.

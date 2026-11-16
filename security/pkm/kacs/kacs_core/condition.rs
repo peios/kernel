@@ -265,6 +265,15 @@ pub fn evaluate_conditional_expression(
 }
 
 pub(crate) fn validate_conditional_expression_structure(bytes: &[u8]) -> bool {
+    visit_conditional_dependencies(bytes, |_, _| {})
+}
+
+/// Walk references using the same bounded parser as structural validation.
+/// Membership opcodes have no name; claim references carry a decoded name.
+pub(crate) fn visit_conditional_dependencies(
+    bytes: &[u8],
+    mut visit: impl FnMut(u8, Option<&str>),
+) -> bool {
     #[derive(Clone, Copy, Eq, PartialEq)]
     enum StructuralEntry {
         Value,
@@ -356,6 +365,9 @@ pub(crate) fn validate_conditional_expression_structure(bytes: &[u8]) -> bool {
                 }
             }
             0x87 | 0x89..=0x8d | 0x90..=0x93 => {
+                if matches!(token_type, 0x89..=0x8c | 0x90..=0x93) {
+                    visit(token_type, None);
+                }
                 if !pop_kind(&mut stack, StructuralEntry::Value) {
                     return false;
                 }
@@ -380,9 +392,10 @@ pub(crate) fn validate_conditional_expression_structure(bytes: &[u8]) -> bool {
                 }
             }
             0xf8..=0xfb => {
-                if parse_attribute_ref(bytes, &mut offset, &[], false).is_none() {
+                let Some(name) = parse_attribute_name(bytes, &mut offset) else {
                     return false;
-                }
+                };
+                visit(token_type, Some(&name));
                 if stack.push(StructuralEntry::Value).is_err() {
                     return false;
                 }
@@ -563,14 +576,24 @@ fn parse_attribute_ref(
     namespace: &[ClaimAttribute],
     for_allow: bool,
 ) -> Option<StackEntry> {
+    let name = parse_attribute_name(bytes, offset)?;
+    let value = lookup_attribute(namespace, &name, for_allow);
+    Some(StackEntry::Value(value))
+}
+
+fn parse_attribute_name(bytes: &[u8], offset: &mut usize) -> Option<String> {
     let len = read_u32(bytes, offset)? as usize;
     if has_odd_byte_len(len) {
         return None;
     }
     let raw = read_slice(bytes, offset, len)?;
-    let name = decode_utf16_string(raw)?;
-    let value = lookup_attribute(namespace, &name, for_allow);
-    Some(StackEntry::Value(value))
+    decode_utf16_string(raw)
+}
+
+pub(crate) fn claim_names_equal(left: &str, right: &str) -> bool {
+    fold_string(left)
+        .zip(fold_string(right))
+        .is_some_and(|(left, right)| left == right)
 }
 
 fn lookup_attribute(namespace: &[ClaimAttribute], name: &str, for_allow: bool) -> OperandValue {
