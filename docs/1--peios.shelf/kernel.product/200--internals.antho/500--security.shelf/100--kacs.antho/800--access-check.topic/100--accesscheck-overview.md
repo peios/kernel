@@ -70,7 +70,7 @@ Matching SACL audit ACEs require enabled `SeAuditPrivilege` on the actual
 caller. `KACS_SUBJECT_NO_AUDIT` suppresses this query's records; it does not bypass mandatory
 SACL labels. Audit-only missing facts matter only while auditing is active.
 Records use `kacs.audit.subject.checked`: `subject` is the real caller and
-`supplied.sid` is a hypothetical assertion. An optional generic `AuditContext`
+`source.supplied-subject.sid` is a hypothetical assertion. An optional generic `AuditContext`
 labels the guarded object without influencing policy. Detected audit
 preparation or submission errors fail the query. Records are submitted before
 result writeback, so a bad output pointer cannot silence requested auditing.

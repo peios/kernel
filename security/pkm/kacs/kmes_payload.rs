@@ -787,7 +787,9 @@ fn encode_access_payload(
     maps.write_tail(&mut writer)?;
 
     if let Some(user) = supplied {
-        writer.write_key(b"supplied")?;
+        writer.write_key(b"source")?;
+        writer.write_map_len(1)?;
+        writer.write_key(b"supplied-subject")?;
         writer.write_map_len(usize::from(user.is_some()))?;
         if let Some(user) = user {
             writer.write_key(b"sid")?;
@@ -1733,7 +1735,8 @@ pub(crate) fn emit_access_check_events_to_kmes(
 }
 
 /// This distinct event type keeps the authenticated caller under `subject`
-/// and the hypothetical identity under `supplied`, never a fake token map.
+/// and the hypothetical identity under `source.supplied-subject`, never a
+/// fake token map. This uses PGSS's source role for caller-supplied data.
 pub(crate) fn emit_subject_check_events_to_kmes(
     events: &[OwnedAuditEvent],
     caller: &AccessCheckToken<'_>,

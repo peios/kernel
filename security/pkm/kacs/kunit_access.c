@@ -86,8 +86,8 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 	size_t written = 0;
 	struct pkm_kmes_kunit_snapshot snapshot = {};
 	struct pkm_kunit_kmes_event_view view = {};
-	struct pkm_kunit_msgpack_view root, actor, token, supplied, fields,
-		attestation, object, network;
+	struct pkm_kunit_msgpack_view root, actor, token, source, supplied,
+		fields, attestation, object, network;
 	struct subject_query_memory memory = { .request = wire };
 	struct pkm_kacs_usercopy_ops ops = {
 		.ctx = &memory,
@@ -143,7 +143,10 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 				  test, &token, "sid", pkm_kunit_system_sid,
 				  sizeof(pkm_kunit_system_sid)));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &root, "supplied", &supplied));
+					test, &root, "source", &source));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+					test, &source, "supplied-subject",
+					&supplied));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bin_key(
 					test, &supplied, "sid",
 					pkm_kunit_anonymous_sid,
