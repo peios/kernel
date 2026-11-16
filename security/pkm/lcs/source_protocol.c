@@ -681,6 +681,7 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 	u8 *frame;
 	long caller_errno = 0;
 	long ret;
+	bool publishing = false;
 
 	if (!file || !ops || !ops->read)
 		return -EINVAL;
@@ -712,6 +713,10 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 		goto out_free;
 	}
 
+	publishing = pkm_lcs_rsi_publishes(
+		get_unaligned_le16(frame + RSI_RESPONSE_OP_CODE_OFFSET) & ~RSI_RESPONSE_BIT);
+	if (publishing)
+		pkm_lcs_publication_begin();
 	ret = pkm_lcs_source_accept_response_file(file, frame, count, result);
 	if (ret) {
 		if (ret == -EINVAL)
@@ -749,6 +754,8 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 		ret = (ssize_t)count;
 
 out_free:
+	if (publishing)
+		pkm_lcs_publication_end();
 	pkm_lcs_source_late_effect_destroy(&result->late_effect);
 	kfree(frame);
 	return ret;

@@ -83,13 +83,15 @@ pub fn registry_ioctl_access_requirement(
         REG_IOC_ENUM_SUBKEYS => Ok(RegistryIoctlAccessRequirement::KeyGrantedMask(
             KEY_ENUMERATE_SUB_KEYS,
         )),
-        REG_IOC_QUERY_KEY_INFO => Ok(RegistryIoctlAccessRequirement::KeyGrantedMask(READ_CONTROL)),
+        REG_IOC_QUERY_KEY_INFO | super::constants::REG_IOC_QUERY_KEY_INFO_TRANSACTED => {
+            Ok(RegistryIoctlAccessRequirement::KeyGrantedMask(READ_CONTROL))
+        }
         REG_IOC_DELETE_KEY | REG_IOC_HIDE_KEY => {
             Ok(RegistryIoctlAccessRequirement::KeyGrantedMask(DELETE))
         }
-        REG_IOC_GET_SECURITY => Ok(RegistryIoctlAccessRequirement::KeySecurityInfo(
-            RegistrySecurityOperation::Get,
-        )),
+        REG_IOC_GET_SECURITY | super::constants::REG_IOC_GET_SECURITY_TRANSACTED => Ok(
+            RegistryIoctlAccessRequirement::KeySecurityInfo(RegistrySecurityOperation::Get),
+        ),
         REG_IOC_SET_SECURITY => Ok(RegistryIoctlAccessRequirement::KeySecurityInfo(
             RegistrySecurityOperation::Set,
         )),

@@ -1,15 +1,15 @@
 use lcs_core::{
-    ACCESS_SYSTEM_SECURITY, DACL_SECURITY_INFORMATION, DELETE, GROUP_SECURITY_INFORMATION,
-    KEY_ENUMERATE_SUB_KEYS, KEY_NOTIFY, KEY_QUERY_VALUE, KEY_SET_VALUE, LcsError,
-    OWNER_SECURITY_INFORMATION, READ_CONTROL, REG_IOC_BACKUP, REG_IOC_BLANKET_TOMBSTONE,
-    REG_IOC_COMMIT, REG_IOC_DELETE_KEY, REG_IOC_DELETE_VALUE, REG_IOC_ENUM_SUBKEYS,
-    REG_IOC_ENUM_VALUES, REG_IOC_FLUSH, REG_IOC_GET_SECURITY, REG_IOC_HIDE_KEY, REG_IOC_NOTIFY,
-    REG_IOC_QUERY_KEY_INFO, REG_IOC_QUERY_VALUE, REG_IOC_QUERY_VALUES_BATCH, REG_IOC_RESTORE,
-    REG_IOC_SET_SECURITY, REG_IOC_SET_VALUE, REG_IOC_TXN_STATUS, RegistryIoctlAccessRequirement,
-    RegistryIoctlPrivilege, RegistrySecurityOperation, SACL_SECURITY_INFORMATION, WRITE_DAC,
-    WRITE_OWNER, registry_ioctl_access_requirement, registry_ioctl_fixed_granted_mask_allows,
+    registry_ioctl_access_requirement, registry_ioctl_fixed_granted_mask_allows,
     registry_security_info_granted_mask_allows, registry_security_info_required_access,
-    validate_registry_security_info,
+    validate_registry_security_info, LcsError, RegistryIoctlAccessRequirement,
+    RegistryIoctlPrivilege, RegistrySecurityOperation, ACCESS_SYSTEM_SECURITY,
+    DACL_SECURITY_INFORMATION, DELETE, GROUP_SECURITY_INFORMATION, KEY_ENUMERATE_SUB_KEYS,
+    KEY_NOTIFY, KEY_QUERY_VALUE, KEY_SET_VALUE, OWNER_SECURITY_INFORMATION, READ_CONTROL,
+    REG_IOC_BACKUP, REG_IOC_BLANKET_TOMBSTONE, REG_IOC_COMMIT, REG_IOC_DELETE_KEY,
+    REG_IOC_DELETE_VALUE, REG_IOC_ENUM_SUBKEYS, REG_IOC_ENUM_VALUES, REG_IOC_FLUSH,
+    REG_IOC_GET_SECURITY, REG_IOC_HIDE_KEY, REG_IOC_NOTIFY, REG_IOC_QUERY_KEY_INFO,
+    REG_IOC_QUERY_VALUE, REG_IOC_QUERY_VALUES_BATCH, REG_IOC_RESTORE, REG_IOC_SET_SECURITY,
+    REG_IOC_SET_VALUE, REG_IOC_TXN_STATUS, SACL_SECURITY_INFORMATION, WRITE_DAC, WRITE_OWNER,
 };
 
 #[test]
@@ -23,6 +23,7 @@ fn fixed_key_fd_ioctl_requirements_match_psd_005_table() {
         (REG_IOC_ENUM_VALUES, KEY_QUERY_VALUE),
         (REG_IOC_ENUM_SUBKEYS, KEY_ENUMERATE_SUB_KEYS),
         (REG_IOC_QUERY_KEY_INFO, READ_CONTROL),
+        (lcs_core::REG_IOC_QUERY_KEY_INFO_TRANSACTED, READ_CONTROL),
         (REG_IOC_DELETE_KEY, DELETE),
         (REG_IOC_HIDE_KEY, DELETE),
         (REG_IOC_NOTIFY, KEY_NOTIFY),
@@ -217,8 +218,8 @@ fn set_security_rights_are_derived_from_requested_components() {
 #[test]
 fn unknown_registry_ioctl_numbers_fail_closed() {
     assert_eq!(
-        registry_ioctl_access_requirement(18),
-        Err(LcsError::UnknownRegistryIoctl(18))
+        registry_ioctl_access_requirement(20),
+        Err(LcsError::UnknownRegistryIoctl(20))
     );
     assert_eq!(
         registry_ioctl_fixed_granted_mask_allows(u32::MAX, u8::MAX),

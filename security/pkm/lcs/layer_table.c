@@ -4,6 +4,7 @@
  */
 
 #include <linux/errno.h>
+#include <linux/file.h>
 #include <linux/jhash.h>
 #include <linux/kernel.h>
 #include <linux/lockdep.h>
@@ -11,6 +12,7 @@
 #include <linux/overflow.h>
 #include <linux/slab.h>
 #include <linux/string.h>
+#include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 
 #include "../kacs/token_runtime.h"
@@ -51,6 +53,80 @@ struct pkm_lcs_base_layer_metadata_entry {
  * -- so a value anywhere in the configurable range binds (PEI-759).
  */
 static DEFINE_MUTEX(pkm_lcs_layer_table_lock);
+static u64 pkm_lcs_layer_revision = 1;
+
+/* Includes pending source mutations and their kernel-side completion effects.
+ * Readers use an optimistic capture; no writer waits for a read transaction. */
+static DEFINE_SPINLOCK(pkm_lcs_publication_lock);
+static u64 pkm_lcs_publication_epoch;
+static u64 pkm_lcs_publication_active;
+
+void pkm_lcs_publication_begin(void)
+{
+	spin_lock_bh(&pkm_lcs_publication_lock);
+	pkm_lcs_publication_epoch++;
+	pkm_lcs_publication_active++;
+	spin_unlock_bh(&pkm_lcs_publication_lock);
+}
+
+void pkm_lcs_publication_end(void)
+{
+	spin_lock_bh(&pkm_lcs_publication_lock);
+	if (!WARN_ON_ONCE(!pkm_lcs_publication_active))
+		pkm_lcs_publication_active--;
+	spin_unlock_bh(&pkm_lcs_publication_lock);
+}
+
+long pkm_lcs_publication_capture_start(u64 *epoch)
+{
+	long ret;
+
+	spin_lock_bh(&pkm_lcs_publication_lock);
+	*epoch = pkm_lcs_publication_epoch;
+	ret = pkm_lcs_publication_active ? -EAGAIN : 0;
+	spin_unlock_bh(&pkm_lcs_publication_lock);
+	return ret;
+}
+
+bool pkm_lcs_publication_capture_valid(u64 epoch)
+{
+	bool valid;
+
+	spin_lock_bh(&pkm_lcs_publication_lock);
+	valid = !pkm_lcs_publication_active && epoch == pkm_lcs_publication_epoch;
+	spin_unlock_bh(&pkm_lcs_publication_lock);
+	return valid;
+}
+
+bool pkm_lcs_rsi_publishes(u16 op_code)
+{
+	switch (op_code) {
+	case RSI_CREATE_ENTRY:
+	case RSI_HIDE_ENTRY:
+	case RSI_DELETE_ENTRY:
+	case RSI_CREATE_KEY:
+	case RSI_WRITE_KEY:
+	case RSI_DROP_KEY:
+	case RSI_SET_VALUE:
+	case RSI_DELETE_VALUE_ENTRY:
+	case RSI_SET_BLANKET_TOMBSTONE:
+	case RSI_COMMIT_TRANSACTION:
+	case RSI_DELETE_LAYER:
+		return true;
+	default:
+		return false;
+	}
+}
+
+u64 pkm_lcs_layer_table_revision(void)
+{
+	u64 revision;
+
+	mutex_lock(&pkm_lcs_layer_table_lock);
+	revision = pkm_lcs_layer_revision;
+	mutex_unlock(&pkm_lcs_layer_table_lock);
+	return revision;
+}
 static struct pkm_lcs_layer_table_entry *pkm_lcs_layer_table;
 static u32 pkm_lcs_layer_table_capacity;
 static struct pkm_lcs_base_layer_metadata_entry pkm_lcs_base_layer_metadata;
@@ -400,6 +476,17 @@ long pkm_lcs_private_credentials_acquire_for_token(
 	ret = pkm_lcs_validate_private_layer_authority(token, snapshot, limits);
 	if (ret)
 		return ret;
+	if (snapshot && snapshot->transaction_file) {
+		struct pkm_lcs_layer_snapshot current = {};
+
+		ret = pkm_lcs_source_layer_snapshot_acquire(&current);
+		if (ret)
+			return ret;
+		ret = pkm_lcs_validate_private_layer_authority(token, &current, limits);
+		pkm_lcs_source_layer_snapshot_release(&current);
+		if (ret)
+			return ret;
+	}
 
 	if (scope_count) {
 		view->scope_guids = kcalloc(
@@ -513,7 +600,7 @@ static long pkm_lcs_source_layer_snapshot_copy_full(
 	u32 max_metadata, u8 *metadata_sd_buf, size_t metadata_sd_buf_len,
 	u32 *count_out, bool *base_metadata_present_out,
 	const u8 **base_metadata_sd_out, size_t *base_metadata_sd_len_out,
-	u32 *metadata_count_out)
+	u32 *metadata_count_out, u64 *revision_out)
 {
 	size_t name_offset = 0;
 	size_t metadata_sd_offset = 0;
@@ -610,6 +697,7 @@ static long pkm_lcs_source_layer_snapshot_copy_full(
 		metadata[metadata_written]._pad = 0;
 		metadata_written++;
 	}
+	*revision_out = pkm_lcs_layer_revision;
 	mutex_unlock(&pkm_lcs_layer_table_lock);
 
 	*count_out = written;
@@ -685,7 +773,8 @@ long pkm_lcs_source_layer_snapshot_acquire(
 			layers, count, names, name_bytes, metadata,
 			metadata_count, metadata_sds, metadata_sd_bytes,
 			&written, &base_metadata_present, &base_metadata_sd,
-			&base_metadata_sd_len, &metadata_written);
+			&base_metadata_sd_len, &metadata_written,
+			&snapshot->revision);
 		if (!ret) {
 			snapshot->layers = layers;
 			snapshot->layer_count = written;
@@ -727,6 +816,11 @@ void pkm_lcs_source_layer_snapshot_release(
 {
 	if (!snapshot)
 		return;
+	if (snapshot->transaction_file) {
+		fput(snapshot->transaction_file);
+		memset(snapshot, 0, sizeof(*snapshot));
+		return;
+	}
 
 	kvfree(snapshot->owned_metadata_sds);
 	kvfree(snapshot->owned_metadata);
@@ -964,6 +1058,7 @@ long pkm_lcs_layer_table_publish_with_result_with_limits(
 	target->metadata_sd_len = metadata_sd_len;
 	target->owner_sid = owner_sid_copy;
 	target->owner_sid_len = owner_sid_len;
+	pkm_lcs_layer_revision++;
 	if (result) {
 		result->existed_before = existed_before;
 		result->effective_changed = effective_changed;
@@ -1042,6 +1137,7 @@ long pkm_lcs_base_layer_metadata_publish(
 	       RSI_GUID_SIZE);
 	pkm_lcs_base_layer_metadata.metadata_sd = metadata_sd_copy;
 	pkm_lcs_base_layer_metadata.metadata_sd_len = metadata_sd_len;
+	pkm_lcs_layer_revision++;
 	mutex_unlock(&pkm_lcs_layer_table_lock);
 	return 0;
 }
@@ -1085,6 +1181,7 @@ long pkm_lcs_layer_table_remove_with_limits(
 			continue;
 
 		pkm_lcs_layer_table_entry_destroy(&pkm_lcs_layer_table[i]);
+		pkm_lcs_layer_revision++;
 		removed = true;
 		if (removed_out)
 			*removed_out = true;

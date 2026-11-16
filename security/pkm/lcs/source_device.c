@@ -112,6 +112,8 @@ pkm_lcs_source_in_flight_destroy_locked(struct pkm_lcs_source_fd *source_fd)
 								-EIO, &result);
 		}
 		list_del(&record->link);
+		if (record->publication_pending)
+			pkm_lcs_publication_end();
 		pkm_lcs_source_late_effect_destroy(&record->late_effect);
 		kfree(record);
 	}
@@ -308,6 +310,9 @@ long pkm_lcs_source_in_flight_insert_locked(
 		WRITE_ONCE(waiter->detached, false);
 	}
 	list_add_tail(&record->link, &source_fd->in_flight_requests);
+	record->publication_pending = pkm_lcs_rsi_publishes(op_code);
+	if (record->publication_pending)
+		pkm_lcs_publication_begin();
 	source_fd->in_flight_request_count++;
 	trace_lcs_in_flight(source_fd->source_id, request_id,
 			    source_fd->in_flight_request_count, LCS_IF_INSERT,
@@ -384,6 +389,8 @@ void pkm_lcs_source_in_flight_release_locked(
 		return;
 
 	list_del(&record->link);
+	if (record->publication_pending)
+		pkm_lcs_publication_end();
 	pkm_lcs_source_late_effect_destroy(&record->late_effect);
 	{
 		u64 released_request_id = record->request_id;

@@ -3,7 +3,8 @@
  * LCS transaction-fd carrier.
  *
  * reg_begin_transaction() is source-agnostic: the fd holds a monotonic
- * transaction ID and remains unbound until a later mutating operation.
+ * transaction ID. Write transactions bind on the first mutation; read-only
+ * transactions pin their source/hive and layer view on the first read.
  */
 
 #include <linux/anon_inodes.h>
@@ -46,6 +47,9 @@ extern int lcs_rust_layer_name_casefold_eq(
 	const struct pkm_lcs_runtime_limits *limits, u8 *equal_out);
 
 struct pkm_lcs_transaction_fd {
+	bool read_only;
+	struct pkm_lcs_layer_snapshot read_layers;
+	u64 read_generation;
 	u64 transaction_id;
 	u64 next_operation_index;
 	u32 state;
@@ -208,6 +212,13 @@ static const char *const pkm_lcs_transaction_layer_metadata_prefix[] = {
 };
 
 static const struct file_operations pkm_lcs_transaction_fd_fops;
+static long pkm_lcs_transaction_counter_release(
+	const struct pkm_lcs_transaction_fd *txn, u32 source_id, u32 *count)
+{
+	if (txn->read_only)
+		return pkm_lcs_source_read_only_transaction_release(source_id, count);
+	return pkm_lcs_source_bound_transaction_release(source_id, count);
+}
 static long pkm_lcs_transaction_fd_complete_first_bind_from_state(
 	struct pkm_lcs_transaction_fd *txn, u64 transaction_id, u32 source_id,
 	const u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES]);
@@ -750,6 +761,7 @@ static void pkm_lcs_transaction_fd_destroy(struct pkm_lcs_transaction_fd *txn)
 	pkm_lcs_source_transaction_put(txn->transaction_id);
 	pkm_lcs_transaction_log_clear(txn);
 	pkm_lcs_audit_caller_snapshot_destroy(&txn->audit_caller);
+	pkm_lcs_source_layer_snapshot_release(&txn->read_layers);
 	kfree(txn);
 }
 
@@ -1523,7 +1535,7 @@ static void pkm_lcs_transaction_fd_timeout_work(struct work_struct *work)
 	if (cleanup) {
 		(void)pkm_lcs_source_dispatch_abort_transaction_request(
 			source_id, transaction_id, NULL);
-		(void)pkm_lcs_source_bound_transaction_release(source_id,
+		(void)pkm_lcs_transaction_counter_release(txn, source_id,
 							       &count);
 		pkm_lcs_transaction_log_clear(txn);
 		audit = txn->audit_pending;
@@ -1620,7 +1632,7 @@ static int pkm_lcs_transaction_fd_release(struct inode *inode,
 		(void)pkm_lcs_source_dispatch_abort_transaction_request(
 			source_id, transaction_id, NULL);
 	if (release_counter)
-		(void)pkm_lcs_source_bound_transaction_release(source_id,
+		(void)pkm_lcs_transaction_counter_release(txn, source_id,
 							       &count);
 	if (wake)
 		wake_up_all(&txn->wait);
@@ -3041,8 +3053,8 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 			if (!apply_ret) {
 				apply_layer_delete_effects = true;
 				if (release_counter)
-					(void)pkm_lcs_source_bound_transaction_release(
-						source_id, &count);
+					(void)pkm_lcs_transaction_counter_release(
+						txn, source_id, &count);
 				if (final_state != REG_TXN_ACTIVE_BOUND)
 					ret = -ETIMEDOUT;
 				goto out_unlock;
@@ -3077,7 +3089,7 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 	apply_layer_delete_effects = true;
 
 	if (release_counter)
-		(void)pkm_lcs_source_bound_transaction_release(source_id,
+		(void)pkm_lcs_transaction_counter_release(txn, source_id,
 							       &count);
 	if (final_state == REG_TXN_COMMITTED)
 		ret = 0;
@@ -3113,10 +3125,14 @@ static long
 pkm_lcs_transaction_fd_commit_from_state(struct pkm_lcs_transaction_fd *txn)
 {
 	struct pkm_lcs_runtime_limits limits;
+	long ret;
 
 	pkm_lcs_transaction_runtime_limits_snapshot_or_default(&limits);
-	return pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
+	pkm_lcs_publication_begin();
+	ret = pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 		txn, &limits, limits.request_timeout_ms);
+	pkm_lcs_publication_end();
+	return ret;
 }
 
 static __poll_t pkm_lcs_transaction_fd_poll(struct file *file,
@@ -3183,7 +3199,7 @@ static const struct file_operations pkm_lcs_transaction_fd_fops = {
 	.llseek = noop_llseek,
 };
 
-long pkm_lcs_transaction_fd_publish(u32 timeout_ms)
+static long pkm_lcs_transaction_fd_publish_mode(u32 timeout_ms, bool read_only)
 {
 	struct pkm_lcs_transaction_fd *txn;
 	long ret;
@@ -3205,6 +3221,7 @@ long pkm_lcs_transaction_fd_publish(u32 timeout_ms)
 		goto out_free;
 
 	txn->state = REG_TXN_ACTIVE_UNBOUND;
+	txn->read_only = read_only;
 	txn->next_operation_index = 1;
 	txn->mutation_log_capacity =
 		PKM_LCS_TRANSACTION_MUTATION_LOG_CAPACITY_DEFAULT;
@@ -3236,6 +3253,16 @@ out_unregister:
 out_free:
 	kfree(txn);
 	return ret;
+}
+
+long pkm_lcs_transaction_fd_publish(u32 timeout_ms)
+{
+	return pkm_lcs_transaction_fd_publish_mode(timeout_ms, false);
+}
+
+long pkm_lcs_transaction_fd_publish_read_only(u32 timeout_ms)
+{
+	return pkm_lcs_transaction_fd_publish_mode(timeout_ms, true);
 }
 
 static long pkm_lcs_transaction_fd_get(int fd, struct fd *held,
@@ -3792,7 +3819,7 @@ long pkm_lcs_transaction_fd_handle_late_commit_response(
 	mutex_unlock(&pkm_lcs_transaction_registry_lock);
 
 	if (!ret && release_counter)
-		(void)pkm_lcs_source_bound_transaction_release(source_id,
+		(void)pkm_lcs_transaction_counter_release(txn, source_id,
 							       &count);
 	if (destroy_txn)
 		pkm_lcs_transaction_fd_destroy(destroy_txn);
@@ -3869,6 +3896,142 @@ static long pkm_lcs_transaction_fd_prepare_read_context_from_state(
 	return ret;
 }
 
+long pkm_lcs_transaction_fd_read_only(int fd)
+{
+	struct pkm_lcs_transaction_fd *txn;
+	struct fd held;
+	long ret;
+
+	ret = pkm_lcs_transaction_fd_get(fd, &held, &txn);
+	if (ret)
+		return ret;
+	ret = txn->read_only;
+	fdput(held);
+	return ret;
+}
+
+long pkm_lcs_transaction_fd_read_generation(int fd, u64 *generation)
+{
+	struct pkm_lcs_transaction_fd *txn;
+	struct fd held;
+	long ret;
+
+	if (fd == -1)
+		return 0;
+	ret = pkm_lcs_transaction_fd_get(fd, &held, &txn);
+	if (ret)
+		return ret;
+	mutex_lock(&txn->bind_lock);
+	if (txn->read_only)
+		*generation = txn->read_generation;
+	mutex_unlock(&txn->bind_lock);
+	fdput(held);
+	return 0;
+}
+
+long pkm_lcs_transaction_layer_snapshot_acquire(
+	int txn_fd, struct pkm_lcs_layer_snapshot *snapshot)
+{
+	struct pkm_lcs_transaction_fd *txn;
+	struct fd held;
+	long ret;
+
+	if (!snapshot || txn_fd < -1)
+		return -EINVAL;
+	if (txn_fd == -1)
+		return pkm_lcs_source_layer_snapshot_acquire(snapshot);
+	ret = pkm_lcs_transaction_fd_get(txn_fd, &held, &txn);
+	if (ret)
+		return ret;
+	if (!txn->read_only) {
+		fdput(held);
+		return pkm_lcs_source_layer_snapshot_acquire(snapshot);
+	}
+	mutex_lock(&txn->bind_lock);
+	if (!pkm_lcs_transaction_state_active(READ_ONCE(txn->state))) {
+		ret = txn->state == REG_TXN_TIMED_OUT ? -ETIMEDOUT :
+			txn->state == REG_TXN_SOURCE_DOWN ? -EIO : -EINVAL;
+		goto out;
+	}
+	if (!txn->read_layers.layers) {
+		ret = pkm_lcs_source_layer_snapshot_acquire(&txn->read_layers);
+		if (ret)
+			goto out;
+	}
+	*snapshot = txn->read_layers;
+	snapshot->transaction_file = get_file(fd_file(held));
+	ret = 0;
+out:
+	mutex_unlock(&txn->bind_lock);
+	fdput(held);
+	return ret;
+}
+
+/* bind_lock serializes concurrent first reads, commit and timeout cleanup. */
+static long pkm_lcs_transaction_fd_bind_read_only(
+	struct pkm_lcs_transaction_fd *txn, u32 source_id,
+	const u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES])
+{
+	struct pkm_lcs_source_response_frame frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_read_key_result root = {};
+	struct pkm_lcs_runtime_limits limits;
+	u64 capture_epoch;
+	u32 count;
+	long ret;
+
+	if (READ_ONCE(txn->state) != REG_TXN_ACTIVE_UNBOUND)
+		return 0;
+	ret = pkm_lcs_publication_capture_start(&capture_epoch);
+	if (ret)
+		return ret;
+	pkm_lcs_runtime_limits_snapshot_or_default(&limits);
+	if (!txn->read_layers.layers) {
+		ret = pkm_lcs_source_layer_snapshot_acquire(&txn->read_layers);
+		if (ret)
+			return ret;
+	}
+	ret = pkm_lcs_source_read_only_transaction_acquire_with_limits(
+		source_id, &limits, &count);
+	if (ret)
+		return ret;
+	ret = pkm_lcs_source_begin_transaction_round_trip(
+		source_id, txn->transaction_id, RSI_TXN_READ_ONLY, NULL, NULL);
+	if (ret)
+		goto release;
+	/* BEGIN alone is deferred. READ_KEY pins both stores before returning. */
+	ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
+		source_id, txn->transaction_id, root_guid, &limits,
+		limits.request_timeout_ms, &frame, &response, NULL);
+	if (!ret)
+		ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
+			frame.data, frame.len, response.request_id, &limits, &root);
+	pkm_lcs_source_response_frame_destroy(&frame);
+	if (!ret)
+		ret = pkm_lcs_source_hive_generation_snapshot(source_id, root_guid,
+							   &txn->read_generation);
+	if (!ret && (txn->read_layers.revision != pkm_lcs_layer_table_revision() ||
+		     !pkm_lcs_publication_capture_valid(capture_epoch)))
+		ret = -EAGAIN;
+	if (!ret)
+		ret = pkm_lcs_transaction_fd_complete_first_bind_from_state(
+			txn, txn->transaction_id, source_id, root_guid);
+	if (!ret)
+		return 0;
+	(void)pkm_lcs_source_dispatch_abort_transaction_request(
+		source_id, txn->transaction_id, NULL);
+release:
+	(void)pkm_lcs_source_read_only_transaction_release(source_id, &count);
+	/* A failed pin must never be silently retried as an ordinary read. */
+	spin_lock_bh(&txn->lock);
+	if (txn->state == REG_TXN_ACTIVE_UNBOUND)
+		txn->state = REG_TXN_ABORTED;
+	spin_unlock_bh(&txn->lock);
+	pkm_lcs_source_transaction_end(txn->transaction_id);
+	wake_up_all(&txn->wait);
+	return ret;
+}
+
 long pkm_lcs_transaction_fd_prepare_read_context(
 	int fd, u32 source_id,
 	const u8 root_guid[PKM_LCS_TRANSACTION_HIVE_ROOT_GUID_BYTES],
@@ -3888,8 +4051,17 @@ long pkm_lcs_transaction_fd_prepare_read_context(
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_transaction_fd_prepare_read_context_from_state(
-		txn, source_id, root_guid, out);
+	if (txn->read_only) {
+		mutex_lock(&txn->bind_lock);
+		ret = pkm_lcs_transaction_fd_bind_read_only(txn, source_id, root_guid);
+		if (!ret)
+			ret = pkm_lcs_transaction_fd_prepare_read_context_from_state(
+				txn, source_id, root_guid, out);
+		mutex_unlock(&txn->bind_lock);
+	} else {
+		ret = pkm_lcs_transaction_fd_prepare_read_context_from_state(
+			txn, source_id, root_guid, out);
+	}
 	fdput(held);
 	return ret;
 }
@@ -3905,6 +4077,8 @@ static long pkm_lcs_transaction_fd_prepare_mutation_binding_from_state(
 	if (!txn || !out || !source_id ||
 	    !pkm_lcs_transaction_root_guid_valid(root_guid))
 		return -EINVAL;
+	if (txn->read_only)
+		return -EROFS;
 	memset(out, 0, sizeof(*out));
 
 	spin_lock_bh(&txn->lock);
@@ -5014,4 +5188,10 @@ long pkm_lcs_reg_begin_transaction(void)
 SYSCALL_DEFINE0(reg_begin_transaction)
 {
 	return pkm_lcs_reg_begin_transaction();
+}
+
+SYSCALL_DEFINE0(reg_begin_read_transaction)
+{
+	return pkm_lcs_transaction_fd_publish_read_only(
+		pkm_lcs_runtime_transaction_timeout_ms());
 }

@@ -1595,6 +1595,71 @@ pkm_lcs_kunit_transaction_binding_rejects_bad_inputs(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, close_fd((unsigned int)fd), 0);
 }
 
+static void pkm_lcs_kunit_read_only_rejects_writes(struct kunit *test)
+{
+	static const u8 root[16] = { 0x55 };
+	struct pkm_lcs_transaction_binding_plan plan = {};
+	struct reg_txn_status_args status = {};
+	long fd = pkm_lcs_transaction_fd_publish_read_only(30000);
+
+	KUNIT_ASSERT_GE(test, fd, 0L);
+	KUNIT_EXPECT_EQ(test, pkm_lcs_transaction_fd_read_only(fd), 1L);
+	KUNIT_EXPECT_EQ(test, pkm_lcs_transaction_fd_prepare_mutation_binding(
+		fd, 1, root, &plan), (long)-EROFS);
+	KUNIT_EXPECT_EQ(test, pkm_lcs_transaction_fd_bind_for_mutation(
+		fd, 1, root, &plan), (long)-EROFS);
+	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_fd_status(fd, &status), 0L);
+	KUNIT_EXPECT_EQ(test, status.state, REG_TXN_ACTIVE_UNBOUND);
+	KUNIT_EXPECT_EQ(test, close_fd(fd), 0);
+}
+
+static void pkm_lcs_kunit_read_only_layer_view_lifetime(struct kunit *test)
+{
+	static const u8 guid[16] = { 0x55 };
+	struct pkm_lcs_layer_snapshot first = {}, second = {}, live = {};
+	long fd;
+
+	pkm_lcs_kunit_reset_layer_table();
+	fd = pkm_lcs_transaction_fd_publish_read_only(30000);
+	KUNIT_ASSERT_GE(test, fd, 0L);
+	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_layer_snapshot_acquire(fd, &first), 0L);
+	KUNIT_EXPECT_EQ(test, first.layer_count, 1U);
+	KUNIT_ASSERT_EQ(test, pkm_lcs_layer_table_publish("Later", 5, 7, 1, guid,
+		pkm_lcs_kunit_owner_only_sd, sizeof(pkm_lcs_kunit_owner_only_sd),
+		pkm_lcs_kunit_system_sid, sizeof(pkm_lcs_kunit_system_sid)), 0L);
+	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_layer_snapshot_acquire(fd, &second), 0L);
+	KUNIT_ASSERT_EQ(test, pkm_lcs_source_layer_snapshot_acquire(&live), 0L);
+	KUNIT_EXPECT_EQ(test, second.layer_count, 1U);
+	KUNIT_EXPECT_EQ(test, live.layer_count, 2U);
+	KUNIT_EXPECT_NE(test, first.revision, live.revision);
+	KUNIT_EXPECT_EQ(test, close_fd(fd), 0);
+	/* Borrowers keep the immutable view alive after the fd table drops it. */
+	KUNIT_EXPECT_STREQ(test, second.layers[0].name, "base");
+	pkm_lcs_source_layer_snapshot_release(&first);
+	pkm_lcs_source_layer_snapshot_release(&second);
+	pkm_lcs_source_layer_snapshot_release(&live);
+	pkm_lcs_kunit_reset_layer_table();
+}
+
+static void pkm_lcs_kunit_read_capture_publication_fence(struct kunit *test)
+{
+	u64 before, during, after;
+
+	KUNIT_ASSERT_EQ(test, pkm_lcs_publication_capture_start(&before), 0L);
+	KUNIT_EXPECT_TRUE(test, pkm_lcs_publication_capture_valid(before));
+	pkm_lcs_publication_begin();
+	KUNIT_EXPECT_EQ(test, pkm_lcs_publication_capture_start(&during), (long)-EAGAIN);
+	KUNIT_EXPECT_FALSE(test, pkm_lcs_publication_capture_valid(before));
+	pkm_lcs_publication_begin();
+	pkm_lcs_publication_end();
+	KUNIT_EXPECT_FALSE(test, pkm_lcs_publication_capture_valid(before));
+	pkm_lcs_publication_end();
+	KUNIT_ASSERT_EQ(test, pkm_lcs_publication_capture_start(&after), 0L);
+	KUNIT_EXPECT_NE(test, before, after);
+	KUNIT_EXPECT_FALSE(test, pkm_lcs_publication_capture_valid(before));
+	KUNIT_EXPECT_TRUE(test, pkm_lcs_publication_capture_valid(after));
+}
+
 static void
 pkm_lcs_kunit_transaction_read_context_active_states(struct kunit *test)
 {
@@ -5459,6 +5524,9 @@ static struct kunit_case pkm_lcs_kunit_transaction_cases[] = {
 	KUNIT_CASE(pkm_lcs_kunit_transaction_binding_terminal_failures),
 	KUNIT_CASE(pkm_lcs_kunit_transaction_binding_rejects_bad_inputs),
 	KUNIT_CASE(pkm_lcs_kunit_transaction_read_context_active_states),
+	KUNIT_CASE(pkm_lcs_kunit_read_only_rejects_writes),
+	KUNIT_CASE(pkm_lcs_kunit_read_only_layer_view_lifetime),
+	KUNIT_CASE(pkm_lcs_kunit_read_capture_publication_fence),
 	KUNIT_CASE(pkm_lcs_kunit_transaction_read_context_terminal_failures),
 	KUNIT_CASE(pkm_lcs_kunit_transaction_read_context_rejects_bad_inputs),
 	KUNIT_CASE(pkm_lcs_kunit_late_begin_success_enqueues_abort_cleanup),

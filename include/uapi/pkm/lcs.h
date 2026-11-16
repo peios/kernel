@@ -40,6 +40,8 @@
 #define REG_IOC_RESTORE_NR 15U
 #define REG_IOC_COMMIT_NR 16U
 #define REG_IOC_TXN_STATUS_NR 17U
+#define REG_IOC_QUERY_KEY_INFO_TRANSACTED_NR 18U
+#define REG_IOC_GET_SECURITY_TRANSACTED_NR 19U
 
 struct reg_create_key_args {
 	__s32 parent_fd;
@@ -171,6 +173,14 @@ struct reg_get_security_args {
 	__u32 sd_len;
 	__u64 sd_ptr;
 };
+
+/* args_ptr points to the ordinary info/security argument structure. */
+struct reg_read_transacted_args {
+	__u64 args_ptr;
+	__s32 txn_fd;
+	__u32 _pad;
+};
+#define REG_READ_TRANSACTED_ARGS_SIZE 16U
 
 struct reg_set_security_args {
 	__u32 security_info;
@@ -327,6 +337,13 @@ struct reg_src_hive_entry {
 #define REG_IOC_COMMIT _IO(REG_IOC_TYPE, REG_IOC_COMMIT_NR)
 #define REG_IOC_TXN_STATUS \
 	_IOR(REG_IOC_TYPE, REG_IOC_TXN_STATUS_NR, struct reg_txn_status_args)
+
+#define REG_IOC_QUERY_KEY_INFO_TRANSACTED \
+	_IOWR(REG_IOC_TYPE, REG_IOC_QUERY_KEY_INFO_TRANSACTED_NR, \
+	      struct reg_read_transacted_args)
+#define REG_IOC_GET_SECURITY_TRANSACTED \
+	_IOWR(REG_IOC_TYPE, REG_IOC_GET_SECURITY_TRANSACTED_NR, \
+	      struct reg_read_transacted_args)
 
 /* Transaction state codes. */
 #define REG_TXN_ACTIVE_UNBOUND 0U

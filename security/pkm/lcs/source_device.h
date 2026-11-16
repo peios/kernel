@@ -113,6 +113,7 @@ struct pkm_lcs_source_in_flight_request {
 	bool response_accepted;
 	bool key_guid_present;
 	bool waiter_was_attached;
+	bool publication_pending;
 	u64 request_id;
 	u64 txn_id;
 	u16 op_code;
@@ -573,6 +574,9 @@ struct pkm_lcs_layer_table_publish_result {
 };
 
 struct pkm_lcs_layer_snapshot {
+	/* A borrowed immutable transaction view keeps its owning fd alive. */
+	struct file *transaction_file;
+	u64 revision;
 	const struct pkm_lcs_rsi_layer_view *layers;
 	u32 layer_count;
 	bool base_metadata_present;
@@ -585,6 +589,19 @@ struct pkm_lcs_layer_snapshot {
 	struct pkm_lcs_layer_metadata_sd_view *owned_metadata;
 	u8 *owned_metadata_sds;
 };
+
+long pkm_lcs_transaction_layer_snapshot_acquire(
+	int txn_fd, struct pkm_lcs_layer_snapshot *snapshot);
+long pkm_lcs_reg_open_key_transacted_for_token(
+	const void *token, const struct pkm_lcs_usercopy_ops *ops,
+	int parent_fd, const char __user *path, u32 desired_access,
+	u32 flags, int txn_fd);
+u64 pkm_lcs_layer_table_revision(void);
+void pkm_lcs_publication_begin(void);
+void pkm_lcs_publication_end(void);
+long pkm_lcs_publication_capture_start(u64 *epoch);
+bool pkm_lcs_publication_capture_valid(u64 epoch);
+bool pkm_lcs_rsi_publishes(u16 op_code);
 
 struct pkm_lcs_path_component_view {
 	const char *name;

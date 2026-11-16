@@ -2022,16 +2022,20 @@ static long pkm_lcs_key_fd_publish_value_watch_event_bytes(
 	return offset == events->len ? 0 : -EIO;
 }
 
+static long pkm_lcs_key_fd_query_value_prepare_read_context(
+	const struct pkm_lcs_key_fd *key_fd, int txn_fd, u64 *txn_id_out);
+
 static long
-pkm_lcs_key_fd_get_security_from_args(struct pkm_lcs_key_fd *key_fd,
+pkm_lcs_key_fd_get_security_transacted(struct pkm_lcs_key_fd *key_fd,
 				      const struct pkm_lcs_usercopy_ops *ops,
-				      struct reg_get_security_args *args)
+				      struct reg_get_security_args *args, int txn_fd)
 {
 	struct pkm_lcs_get_security_result result = {};
 	struct pkm_lcs_source_response_frame existing_frame = {};
 	const u8 *existing_sd = NULL;
 	size_t existing_sd_len = 0;
 	size_t provided_len;
+	u64 txn_id = 0;
 	long ret;
 
 	if (!key_fd || !args)
@@ -2055,7 +2059,10 @@ pkm_lcs_key_fd_get_security_from_args(struct pkm_lcs_key_fd *key_fd,
 	if (ret)
 		return ret;
 
-	ret = pkm_lcs_key_fd_read_existing_sd(key_fd, 0, NULL, &existing_frame,
+	ret = pkm_lcs_key_fd_query_value_prepare_read_context(key_fd, txn_fd, &txn_id);
+	if (ret)
+		return ret;
+	ret = pkm_lcs_key_fd_read_existing_sd(key_fd, txn_id, NULL, &existing_frame,
 					      &existing_sd, &existing_sd_len,
 					      NULL);
 	if (ret)
@@ -2088,6 +2095,13 @@ out_existing:
 	return ret;
 }
 
+static long pkm_lcs_key_fd_get_security_from_args(
+	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
+	struct reg_get_security_args *args)
+{
+	return pkm_lcs_key_fd_get_security_transacted(key_fd, ops, args, -1);
+}
+
 static const char *pkm_lcs_key_fd_leaf_name(const struct pkm_lcs_key_fd *key_fd,
 					    size_t *name_len)
 {
@@ -2111,9 +2125,9 @@ static long pkm_lcs_key_fd_value_name_casefold_equal_with_limits(
 	const struct pkm_lcs_runtime_limits *limits, bool *equal);
 
 static long
-pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
+pkm_lcs_key_fd_query_key_info_transacted(struct pkm_lcs_key_fd *key_fd,
 					const struct pkm_lcs_usercopy_ops *ops,
-					struct reg_query_key_info_args *args)
+					struct reg_query_key_info_args *args, int txn_fd)
 {
 	struct pkm_lcs_private_credential_view private_view = {};
 	struct pkm_lcs_layer_snapshot layer_snapshot = {};
@@ -2133,6 +2147,7 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 	bool name_matches;
 	size_t key_name_len;
 	u64 hive_generation = 0;
+	u64 txn_id = 0;
 	u64 next_sequence = 0;
 	u64 name_ptr;
 	u32 provided_len;
@@ -2156,6 +2171,9 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 		key_fd->granted_access, REG_IOC_QUERY_KEY_INFO_NR);
 	if (ret)
 		return ret;
+	ret = pkm_lcs_key_fd_query_value_prepare_read_context(key_fd, txn_fd, &txn_id);
+	if (ret)
+		return ret;
 
 	key_name = pkm_lcs_key_fd_leaf_name(key_fd, &key_name_len);
 	if (!key_name || key_name_len > U32_MAX)
@@ -2167,7 +2185,7 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 	ret = pkm_lcs_source_next_sequence_snapshot(&next_sequence);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_source_layer_snapshot_acquire(&layer_snapshot);
+	ret = pkm_lcs_transaction_layer_snapshot_acquire(txn_fd, &layer_snapshot);
 	if (ret)
 		return ret;
 	ret = pkm_lcs_private_credentials_acquire_for_token(
@@ -2181,7 +2199,7 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 	pkm_lcs_source_response_frame_init(&values_frame);
 
 	ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, 0, key_fd->key_guid, &limits,
+		key_fd->source_id, txn_id, key_fd->key_guid, &limits,
 		limits.request_timeout_ms, &read_frame, &read_response, NULL);
 	if (ret)
 		goto out_frames;
@@ -2250,7 +2268,7 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 	}
 
 	ret = pkm_lcs_source_enum_children_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, 0, key_fd->key_guid, &limits,
+		key_fd->source_id, txn_id, key_fd->key_guid, &limits,
 		limits.request_timeout_ms, &enum_frame, &enum_response, NULL);
 	if (ret)
 		goto out_frames;
@@ -2264,7 +2282,7 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 		goto out_frames;
 
 	ret = pkm_lcs_source_query_values_round_trip_retaining_frame_timeout_with_limits(
-		key_fd->source_id, 0, key_fd->key_guid, "", 0, true, &limits,
+		key_fd->source_id, txn_id, key_fd->key_guid, "", 0, true, &limits,
 		limits.request_timeout_ms, &values_frame, &values_response,
 		NULL);
 	if (ret)
@@ -2280,6 +2298,9 @@ pkm_lcs_key_fd_query_key_info_from_args(struct pkm_lcs_key_fd *key_fd,
 
 	ret = pkm_lcs_source_hive_generation_snapshot(
 		key_fd->source_id, key_fd->ancestor_guids[0], &hive_generation);
+	if (ret)
+		goto out_frames;
+	ret = pkm_lcs_transaction_fd_read_generation(txn_fd, &hive_generation);
 	if (ret)
 		goto out_frames;
 
@@ -2318,6 +2339,13 @@ out_frames:
 	pkm_lcs_private_credentials_release(&private_view);
 	pkm_lcs_source_layer_snapshot_release(&layer_snapshot);
 	return ret;
+}
+
+static long pkm_lcs_key_fd_query_key_info_from_args(
+	struct pkm_lcs_key_fd *key_fd, const struct pkm_lcs_usercopy_ops *ops,
+	struct reg_query_key_info_args *args)
+{
+	return pkm_lcs_key_fd_query_key_info_transacted(key_fd, ops, args, -1);
 }
 
 static long
@@ -2459,7 +2487,7 @@ pkm_lcs_key_fd_query_value_from_args(struct pkm_lcs_key_fd *key_fd,
 	ret = pkm_lcs_source_next_sequence_snapshot(&next_sequence);
 	if (ret)
 		goto out_name;
-	ret = pkm_lcs_source_layer_snapshot_acquire(&layer_snapshot);
+	ret = pkm_lcs_transaction_layer_snapshot_acquire(txn_fd, &layer_snapshot);
 	if (ret)
 		goto out_name;
 	ret = pkm_lcs_private_credentials_acquire_for_token(
@@ -4203,7 +4231,7 @@ static long pkm_lcs_key_fd_query_values_batch_from_args(
 	ret = pkm_lcs_source_next_sequence_snapshot(&next_sequence);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_source_layer_snapshot_acquire(&layer_snapshot);
+	ret = pkm_lcs_transaction_layer_snapshot_acquire(txn_fd, &layer_snapshot);
 	if (ret)
 		return ret;
 	ret = pkm_lcs_private_credentials_acquire_for_token(
@@ -4351,7 +4379,7 @@ pkm_lcs_key_fd_enum_value_from_args(struct pkm_lcs_key_fd *key_fd,
 	ret = pkm_lcs_source_next_sequence_snapshot(&next_sequence);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_source_layer_snapshot_acquire(&layer_snapshot);
+	ret = pkm_lcs_transaction_layer_snapshot_acquire(txn_fd, &layer_snapshot);
 	if (ret)
 		return ret;
 	ret = pkm_lcs_private_credentials_acquire_for_token(
@@ -4563,7 +4591,7 @@ pkm_lcs_key_fd_enum_subkey_from_args(struct pkm_lcs_key_fd *key_fd,
 	ret = pkm_lcs_source_next_sequence_snapshot(&next_sequence);
 	if (ret)
 		return ret;
-	ret = pkm_lcs_source_layer_snapshot_acquire(&layer_snapshot);
+	ret = pkm_lcs_transaction_layer_snapshot_acquire(txn_fd, &layer_snapshot);
 	if (ret)
 		return ret;
 	ret = pkm_lcs_private_credentials_acquire_for_token(
@@ -11233,6 +11261,7 @@ static long pkm_lcs_key_fd_ioctl_dispatch(struct file *file, unsigned int cmd,
 	struct reg_enum_value_args enum_value_args;
 	struct reg_query_values_batch_args query_values_batch_args;
 	struct reg_query_key_info_args query_key_info_args;
+	struct reg_read_transacted_args transacted;
 	struct reg_query_value_args query_value_args;
 	struct reg_backup_args backup_args;
 	struct reg_restore_args restore_args;
@@ -11251,6 +11280,42 @@ static long pkm_lcs_key_fd_ioctl_dispatch(struct file *file, unsigned int cmd,
 		return -EINVAL;
 
 	switch (cmd) {
+	case REG_IOC_QUERY_KEY_INFO_TRANSACTED:
+		if (copy_from_user(&transacted, (void __user *)arg,
+				   sizeof(transacted)))
+			return -EFAULT;
+		if (transacted._pad || transacted.txn_fd < 0)
+			return -EINVAL;
+		if (copy_from_user(&query_key_info_args,
+			(void __user *)(unsigned long)transacted.args_ptr,
+			sizeof(query_key_info_args)))
+			return -EFAULT;
+		ret = pkm_lcs_key_fd_query_key_info_transacted(
+			key_fd, &pkm_lcs_key_fd_default_usercopy_ops,
+			&query_key_info_args, transacted.txn_fd);
+		if ((ret == 0 || ret == -ERANGE) &&
+		    copy_to_user((void __user *)(unsigned long)transacted.args_ptr,
+			&query_key_info_args, sizeof(query_key_info_args)))
+			return -EFAULT;
+		return ret;
+	case REG_IOC_GET_SECURITY_TRANSACTED:
+		if (copy_from_user(&transacted, (void __user *)arg,
+				   sizeof(transacted)))
+			return -EFAULT;
+		if (transacted._pad || transacted.txn_fd < 0)
+			return -EINVAL;
+		if (copy_from_user(&get_security_args,
+			(void __user *)(unsigned long)transacted.args_ptr,
+			sizeof(get_security_args)))
+			return -EFAULT;
+		ret = pkm_lcs_key_fd_get_security_transacted(
+			key_fd, &pkm_lcs_key_fd_default_usercopy_ops,
+			&get_security_args, transacted.txn_fd);
+		if ((ret == 0 || ret == -ERANGE) &&
+		    copy_to_user((void __user *)(unsigned long)transacted.args_ptr,
+			&get_security_args, sizeof(get_security_args)))
+			return -EFAULT;
+		return ret;
 	case REG_IOC_SET_VALUE:
 		if (!arg)
 			return -EFAULT;
@@ -11425,7 +11490,27 @@ static long pkm_lcs_key_fd_ioctl(struct file *file, unsigned int cmd,
 				 unsigned long arg)
 {
 	struct pkm_lcs_key_fd *key_fd = file ? file->private_data : NULL;
-	long ret = pkm_lcs_key_fd_ioctl_dispatch(file, cmd, arg);
+	bool publishing;
+	long ret;
+
+	switch (cmd) {
+	case REG_IOC_SET_VALUE:
+	case REG_IOC_DELETE_VALUE:
+	case REG_IOC_BLANKET_TOMBSTONE:
+	case REG_IOC_DELETE_KEY:
+	case REG_IOC_HIDE_KEY:
+	case REG_IOC_SET_SECURITY:
+	case REG_IOC_RESTORE:
+		publishing = true;
+		break;
+	default:
+		publishing = false;
+	}
+	if (publishing)
+		pkm_lcs_publication_begin();
+	ret = pkm_lcs_key_fd_ioctl_dispatch(file, cmd, arg);
+	if (publishing)
+		pkm_lcs_publication_end();
 
 	if (key_fd)
 		trace_lcs_key_ioctl(key_fd->source_id,

@@ -11,6 +11,7 @@
 
 #include "../kacs/token_runtime.h"
 #include "source_internal.h"
+#include "transaction_fd.h"
 
 long pkm_lcs_publish_open_key_for_token(
 	const void *token, u32 source_id, const u8 key_guid[RSI_GUID_SIZE],
@@ -55,6 +56,50 @@ long pkm_lcs_publish_open_key_for_token(
 	return pkm_lcs_key_fd_publish(&publish);
 }
 
+static long pkm_lcs_publish_snapshot_open(
+	const void *token, const struct pkm_lcs_resolved_key_path *resolved,
+	u32 desired_access, int txn_fd,
+	const struct pkm_lcs_runtime_limits *limits)
+{
+	struct pkm_lcs_source_response_frame current_frame = {};
+	struct pkm_lcs_source_response_result response = {};
+	struct pkm_lcs_rsi_read_key_result current_key = {};
+	const u8 *sd = resolved->final_frame.data + resolved->final_sd_offset;
+	size_t sd_len = resolved->final_sd_len;
+	long ret;
+
+	ret = txn_fd < 0 ? 0 : pkm_lcs_transaction_fd_read_only(txn_fd);
+	if (ret < 0)
+		return ret;
+	if (ret) {
+		/* Resolve historical names, authorize the same GUID as it exists now. */
+		ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
+			resolved->source_id, 0, resolved->key_guid, limits,
+			limits->request_timeout_ms, &current_frame, &response, NULL);
+		if (ret)
+			goto out;
+		ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
+			current_frame.data, current_frame.len, response.request_id,
+			limits, &current_key);
+		if (ret)
+			goto out;
+		if (!current_key.sd_len || current_key.sd_offset > current_frame.len ||
+		    current_key.sd_len > current_frame.len - current_key.sd_offset) {
+			ret = -EIO;
+			goto out;
+		}
+		sd = current_frame.data + current_key.sd_offset;
+		sd_len = current_key.sd_len;
+	}
+	ret = pkm_lcs_publish_open_key_for_token(
+		token, resolved->source_id, resolved->key_guid, sd, sd_len,
+		desired_access, (const char *const *)resolved->resolved_path,
+		resolved->ancestor_guids, resolved->component_count, limits);
+out:
+	pkm_lcs_source_response_frame_destroy(&current_frame);
+	return ret;
+}
+
 long pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
 	const void *token, const struct pkm_lcs_syscall_path_copy *copy,
 	u32 desired_access, u32 flags, const u8 (*scope_guids)[16],
@@ -67,7 +112,6 @@ long pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
 	struct pkm_lcs_resolved_key_path resolved = {};
 	struct pkm_lcs_hive_route_result route = {};
 	struct pkm_lcs_runtime_limits limits;
-	const u8 *final_sd;
 	long ret;
 
 	if (!token)
@@ -107,12 +151,8 @@ long pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
 		goto out_resolved;
 	}
 
-	final_sd = resolved.final_frame.data + resolved.final_sd_offset;
-	ret = pkm_lcs_publish_open_key_for_token(
-		token, resolved.source_id, resolved.key_guid, final_sd,
-		resolved.final_sd_len, desired_access,
-		(const char *const *)resolved.resolved_path,
-		resolved.ancestor_guids, resolved.component_count, &limits);
+	ret = pkm_lcs_publish_snapshot_open(token, &resolved, desired_access,
+					    txn_fd, &limits);
 
 out_resolved:
 	pkm_lcs_resolved_key_path_destroy(&resolved);
@@ -133,7 +173,6 @@ long pkm_lcs_open_copied_relative_path_after_preflight(
 	struct pkm_lcs_path_validation_result path = {};
 	struct pkm_lcs_resolved_key_path resolved = {};
 	struct pkm_lcs_runtime_limits limits;
-	const u8 *final_sd;
 	long ret;
 
 	if (!token)
@@ -182,12 +221,8 @@ long pkm_lcs_open_copied_relative_path_after_preflight(
 		goto out_resolved;
 	}
 
-	final_sd = resolved.final_frame.data + resolved.final_sd_offset;
-	ret = pkm_lcs_publish_open_key_for_token(
-		token, resolved.source_id, resolved.key_guid, final_sd,
-		resolved.final_sd_len, desired_access,
-		(const char *const *)resolved.resolved_path,
-		resolved.ancestor_guids, resolved.component_count, &limits);
+	ret = pkm_lcs_publish_snapshot_open(token, &resolved, desired_access,
+					    txn_fd, &limits);
 
 out_resolved:
 	pkm_lcs_resolved_key_path_destroy(&resolved);
@@ -530,4 +565,61 @@ SYSCALL_DEFINE4(reg_open_key, int, parent_fd, const char __user *, path, u32,
 {
 	return pkm_lcs_reg_open_key_as_current(NULL, parent_fd, path,
 					       desired_access, flags);
+}
+
+long pkm_lcs_reg_open_key_transacted_for_token(
+	const void *token, const struct pkm_lcs_usercopy_ops *ops,
+	int parent_fd, const char __user *path, u32 desired_access,
+	u32 flags, int txn_fd)
+{
+	struct pkm_lcs_private_credential_view private_view = {};
+	struct pkm_lcs_layer_snapshot layers = {};
+	struct pkm_lcs_syscall_path_copy copy = {};
+	struct pkm_lcs_open_preflight_plan preflight = {};
+	struct pkm_lcs_runtime_limits limits;
+	long ret;
+
+	if (!token)
+		return -EACCES;
+	if (txn_fd < 0)
+		return -EINVAL;
+	ret = pkm_lcs_open_preflight(desired_access, flags, &preflight);
+	if (ret)
+		return ret;
+	ret = pkm_lcs_syscall_path_copy_from_user(ops, path, &copy);
+	if (ret)
+		return ret;
+	ret = pkm_lcs_transaction_layer_snapshot_acquire(txn_fd, &layers);
+	if (ret)
+		goto out;
+	pkm_lcs_runtime_limits_snapshot_or_default(&limits);
+	ret = pkm_lcs_private_credentials_acquire_for_token(
+		token, &limits, &layers, &private_view);
+	if (ret)
+		goto out;
+	if (parent_fd == -1)
+		ret = pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
+			token, &copy, desired_access, flags, private_view.scope_guids,
+			private_view.scope_count, layers.layers, layers.layer_count,
+			private_view.private_layers, private_view.private_layer_count,
+			txn_fd);
+	else
+		ret = pkm_lcs_open_copied_relative_path_after_preflight(
+			token, parent_fd, &copy, desired_access, flags,
+			layers.layers, layers.layer_count, private_view.private_layers,
+			private_view.private_layer_count, txn_fd);
+out:
+	pkm_lcs_private_credentials_release(&private_view);
+	pkm_lcs_source_layer_snapshot_release(&layers);
+	pkm_lcs_syscall_path_copy_destroy(&copy);
+	return ret;
+}
+
+SYSCALL_DEFINE5(reg_open_key_transacted, int, parent_fd,
+		const char __user *, path, u32, desired_access,
+		u32, flags, int, txn_fd)
+{
+	return pkm_lcs_reg_open_key_transacted_for_token(
+		pkm_kacs_current_effective_token_ptr(), NULL,
+		parent_fd, path, desired_access, flags, txn_fd);
 }

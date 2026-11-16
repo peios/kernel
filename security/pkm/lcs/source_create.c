@@ -2148,8 +2148,11 @@ SYSCALL_DEFINE1(reg_create_key, const struct reg_create_key_args __user *, args)
 	if (ret)
 		return ret;
 
-	return pkm_lcs_reg_create_key_args_for_token(
+	pkm_lcs_publication_begin();
+	ret = pkm_lcs_reg_create_key_args_for_token(
 		pkm_kacs_current_effective_token_ptr(), NULL, &copied, NULL);
+	pkm_lcs_publication_end();
+	return ret;
 }
 
 #ifdef CONFIG_SECURITY_PKM_KUNIT

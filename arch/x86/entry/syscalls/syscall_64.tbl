@@ -464,3 +464,5 @@
 1100	common	reg_open_key		sys_reg_open_key
 1101	common	reg_create_key		sys_reg_create_key
 1102	common	reg_begin_transaction		sys_reg_begin_transaction
+1103	common	reg_begin_read_transaction	sys_reg_begin_read_transaction
+1104	common	reg_open_key_transacted		sys_reg_open_key_transacted

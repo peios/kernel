@@ -20,9 +20,13 @@ pub const REG_IOC_QUERY_VALUES_BATCH: u8 = crate::peios_uapi::REG_IOC_QUERY_VALU
 pub const REG_IOC_ENUM_VALUES: u8 = crate::peios_uapi::REG_IOC_ENUM_VALUES_NR as u8;
 pub const REG_IOC_ENUM_SUBKEYS: u8 = crate::peios_uapi::REG_IOC_ENUM_SUBKEYS_NR as u8;
 pub const REG_IOC_QUERY_KEY_INFO: u8 = crate::peios_uapi::REG_IOC_QUERY_KEY_INFO_NR as u8;
+pub const REG_IOC_QUERY_KEY_INFO_TRANSACTED: u8 =
+    crate::peios_uapi::REG_IOC_QUERY_KEY_INFO_TRANSACTED_NR as u8;
 pub const REG_IOC_DELETE_KEY: u8 = crate::peios_uapi::REG_IOC_DELETE_KEY_NR as u8;
 pub const REG_IOC_HIDE_KEY: u8 = crate::peios_uapi::REG_IOC_HIDE_KEY_NR as u8;
 pub const REG_IOC_GET_SECURITY: u8 = crate::peios_uapi::REG_IOC_GET_SECURITY_NR as u8;
+pub const REG_IOC_GET_SECURITY_TRANSACTED: u8 =
+    crate::peios_uapi::REG_IOC_GET_SECURITY_TRANSACTED_NR as u8;
 pub const REG_IOC_SET_SECURITY: u8 = crate::peios_uapi::REG_IOC_SET_SECURITY_NR as u8;
 pub const REG_IOC_NOTIFY: u8 = crate::peios_uapi::REG_IOC_NOTIFY_NR as u8;
 pub const REG_IOC_FLUSH: u8 = crate::peios_uapi::REG_IOC_FLUSH_NR as u8;
