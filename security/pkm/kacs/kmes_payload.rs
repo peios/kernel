@@ -733,13 +733,21 @@ fn encode_access_checked_payload(
     event: &OwnedAuditEvent,
     maps: &CheckMaps,
 ) -> Result<Vec<u8>, c_long> {
+    encode_access_payload(event, maps, None)
+}
+
+fn encode_access_payload(
+    event: &OwnedAuditEvent,
+    maps: &CheckMaps,
+    supplied: Option<Option<crate::sid::Sid<'_>>>,
+) -> Result<Vec<u8>, c_long> {
     let mut writer = MsgpackWriter::with_capacity(512)?;
 
     if !event.policy_forced && event.ace_bytes.is_none() {
         return Err(EIO);
     }
 
-    writer.write_map_len(maps.common_len() + 3)?;
+    writer.write_map_len(maps.common_len() + 3 + usize::from(supplied.is_some()))?;
     maps.write_head(&mut writer)?;
     writer.write_key(b"access")?;
     writer.write_map_len(
@@ -777,6 +785,15 @@ fn encode_access_checked_payload(
         }
     }
     maps.write_tail(&mut writer)?;
+
+    if let Some(user) = supplied {
+        writer.write_key(b"supplied")?;
+        writer.write_map_len(usize::from(user.is_some()))?;
+        if let Some(user) = user {
+            writer.write_key(b"sid")?;
+            writer.write_bin(user.as_bytes())?;
+        }
+    }
 
     Ok(writer.into_vec())
 }
@@ -1712,6 +1729,42 @@ pub(crate) fn emit_access_check_events_to_kmes(
         }
     }
 
+    Ok(())
+}
+
+/// This distinct event type keeps the authenticated caller under `subject`
+/// and the hypothetical identity under `supplied`, never a fake token map.
+pub(crate) fn emit_subject_check_events_to_kmes(
+    events: &[OwnedAuditEvent],
+    caller: &AccessCheckToken<'_>,
+    caller_ids: Option<&AuditSubjectIds>,
+    caller_pip: PipContext,
+    supplied_user: Option<crate::sid::Sid<'_>>,
+    context: Option<&[u8]>,
+) -> Result<(), c_long> {
+    use crate::kmes_event_types::KACS_AUDIT_SUBJECT_CHECKED;
+    if events.is_empty() || !enabled(&KACS_AUDIT_SUBJECT_CHECKED) {
+        return Ok(());
+    }
+    let process = load_process_info()?;
+    let maps = CheckMaps {
+        subject: encode_subject_map(caller, caller_ids, caller_pip)?,
+        emitter: encode_emitter_map(&process)?,
+        object: encode_object_map(&AuditObject::from_audit_context(context)?)?,
+        asserted: true,
+        denials: AccessDenials::default(),
+    };
+    // Prepare every payload before submitting any record. The KMES sink has no
+    // delivery acknowledgement; successful submission does not promise durability.
+    let mut payloads = Vec::new();
+    for event in events {
+        payloads
+            .push(encode_access_payload(event, &maps, Some(supplied_user))?)
+            .map_err(|_| ENOMEM)?;
+    }
+    for payload in payloads.iter() {
+        emit(&KACS_AUDIT_SUBJECT_CHECKED, payload);
+    }
     Ok(())
 }
 

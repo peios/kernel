@@ -42,6 +42,126 @@ const KUNIT_USER_CLAIMS: &[crate::claims::ClaimAttribute] = &[];
 const KUNIT_DEVICE_CLAIMS: &[crate::claims::ClaimAttribute] = &[];
 const KUNIT_POLICIES: &[crate::caap::CaapPolicyEntry<'static>] = &[];
 
+extern "C" {
+    fn pkm_kacs_subject_caller_may_audit() -> core::ffi::c_int;
+    fn pkm_kacs_current_effective_token_ptr() -> *const c_void;
+    fn pkm_kacs_current_pip_context(pip_type: *mut u32, pip_trust: *mut u32) -> core::ffi::c_int;
+}
+
+/// Stateless query ingress. All evaluation uses this single owned copy. A
+/// concurrent userspace write may tear that copy; validation treats every
+/// copied byte as untrusted and never rereads a nested userspace address.
+#[no_mangle]
+pub extern "C" fn kacs_rust_access_check_subject(
+    ops: *const PkmKacsUsercopyOps,
+    request_ptr: u64,
+    request_len: usize,
+    result_ptr: u64,
+) -> c_long {
+    let run = || -> Result<c_long, c_long> {
+        use crate::advisory::{audit_subject, check_subject, AdvisoryDecision};
+        use crate::subject_abi::{parse_subject_request, HEADER_BYTES, MAX_BYTES, NO_AUDIT};
+        if !(HEADER_BYTES..=MAX_BYTES).contains(&request_len) {
+            return Err(EINVAL);
+        }
+        let ops = validate_usercopy_ops(ops)?;
+        let bytes = read_bytes_from_ops(ops, request_ptr, request_len).map_err(map_kacs_error)?;
+        let request = parse_subject_request(&bytes).map_err(map_kacs_error)?;
+        if let Some(context) = request.audit_context {
+            let label = b"audit-context";
+            if crate::kmes_validate::kacs_rust_kmes_validate_staged_event(
+                label.as_ptr(),
+                label.len(),
+                context.as_ptr(),
+                context.len(),
+                crate::peios_uapi::KMES_CONFIG_MAX_NESTING_DEPTH_DEFAULT - 1,
+            ) != 0
+            {
+                return Err(EINVAL);
+            }
+        }
+        // SAFETY: kernel-owned gate reads the actual caller's effective token.
+        let audit_gate = if request.flags & NO_AUDIT == 0 {
+            unsafe { pkm_kacs_subject_caller_may_audit() }
+        } else {
+            0
+        };
+        if audit_gate < 0 {
+            return Err(audit_gate.into());
+        }
+        let audit = audit_gate != 0;
+        let subject = request.subject();
+        let result = check_subject(
+            &request.sd,
+            &subject,
+            request.desired,
+            &request.mapping,
+            request.tree.as_ref(),
+            request.node,
+            Some(audit),
+        )
+        .map_err(map_kacs_error)?;
+        if audit && result.decision != AdvisoryDecision::MissingContext {
+            let events = audit_subject(
+                &request.sd,
+                &subject,
+                request.desired,
+                &request.mapping,
+                request.tree.as_ref(),
+                request.node,
+                result.granted,
+                request.audit_context,
+            )
+            .map_err(map_kacs_error)?;
+            let owned = crate::access_check_abi::own_audit_events(&events.audit_events)
+                .map_err(map_kacs_error)?;
+            if !owned.is_empty() {
+                // The live caller is used for trusted record provenance only;
+                // its token, claims, privileges and policies never reach check_subject.
+                let caller = unsafe { pkm_kacs_current_effective_token_ptr() };
+                let mut pip = PipContext {
+                    pip_type: 0,
+                    pip_trust: 0,
+                };
+                let ret =
+                    unsafe { pkm_kacs_current_pip_context(&mut pip.pip_type, &mut pip.pip_trust) };
+                if ret != 0 {
+                    return Err(ret.into());
+                }
+                crate::token_runtime::with_access_check_resolved_from_token(
+                    caller,
+                    pip,
+                    &[],
+                    |resolved| {
+                        crate::kmes_payload::emit_subject_check_events_to_kmes(
+                            &owned,
+                            resolved.token,
+                            crate::token_runtime::audit_subject_ids(caller).as_ref(),
+                            pip,
+                            subject.user,
+                            request.audit_context,
+                        )
+                    },
+                )?;
+            }
+        }
+        // Audit preparation/submission precedes caller writeback: a bad output
+        // pointer must not silence the requested SACL records.
+        let decision: u32 = match result.decision {
+            AdvisoryDecision::Denied => 0,
+            AdvisoryDecision::Granted => 1,
+            AdvisoryDecision::MissingContext => 2,
+        };
+        let mut output = [0u8; 12];
+        output[..4].copy_from_slice(&decision.to_le_bytes());
+        output[4..8].copy_from_slice(&result.granted.to_le_bytes());
+        output[8..].copy_from_slice(&result.missing.to_le_bytes());
+        write_bytes_to_ops(ops, result_ptr, &output)?;
+        Ok(0)
+    };
+    run().unwrap_or_else(|error| error)
+}
+
 #[repr(C)]
 /// Resolved AccessCheck context owned by kernel glue.
 pub struct PkmKacsResolvedCtx {

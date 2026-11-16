@@ -43,7 +43,7 @@ pub struct ClaimKnowledge<'a> {
 }
 
 impl ClaimKnowledge<'_> {
-    fn validate(&self) -> KacsResult<()> {
+    pub(crate) fn validate(&self) -> KacsResult<()> {
         for (index, claim) in self.values.iter().enumerate() {
             if claim.name.is_empty()
                 || claim.name.contains('\0')
@@ -124,6 +124,22 @@ pub fn access_check_subject(
     object_tree: Option<&ObjectTypeList>,
     node: usize,
 ) -> KacsResult<AdvisoryResult> {
+    check_subject(sd, subject, desired, mapping, object_tree, node, None)
+}
+
+/// Kernel advisory path. `audit` is already gated by the actual caller's
+/// privilege and the request's NO_AUDIT flag; it grants the supplied identity
+/// no authority. Suppression skips only audit ACE dependencies, never labels.
+#[allow(clippy::too_many_arguments)]
+pub fn check_subject(
+    sd: &SecurityDescriptor<'_>,
+    subject: &SuppliedSubject<'_>,
+    desired: u32,
+    mapping: &GenericMapping,
+    object_tree: Option<&ObjectTypeList>,
+    node: usize,
+    audit: Option<bool>,
+) -> KacsResult<AdvisoryResult> {
     if sd.owner().is_none() {
         return Err(KacsError::MissingSecurityDescriptorOwner);
     }
@@ -170,7 +186,9 @@ pub fn access_check_subject(
                         | crate::ace::SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE
                 )
             {
-                missing |= MISSING_AUDIT_CONTEXT;
+                if audit.is_none() {
+                    missing |= MISSING_AUDIT_CONTEXT;
+                }
             }
         }
     }
@@ -182,10 +200,27 @@ pub fn access_check_subject(
             missing |= MISSING_GROUPS;
         }
     }
-    if let Some(dacl) = sd.dacl() {
-        for ace in dacl.entries() {
+    for acl in [
+        sd.dacl(),
+        if audit == Some(true) { sd.sacl() } else { None },
+    ]
+    .into_iter()
+    .flatten()
+    {
+        for ace in acl.entries() {
             let ace = ace?;
             if ace.ace_flags() & 0x08 != 0 {
+                continue;
+            }
+            // SACL metadata is consumed separately and must not be interpreted
+            // as a trustee-bearing discretionary/audit ACE.
+            if matches!(
+                ace.ace_type(),
+                SYSTEM_MANDATORY_LABEL_ACE_TYPE
+                    | SYSTEM_PROCESS_TRUST_LABEL_ACE_TYPE
+                    | SYSTEM_SCOPED_POLICY_ID_ACE_TYPE
+                    | crate::ace::SYSTEM_RESOURCE_ATTRIBUTE_ACE_TYPE
+            ) {
                 continue;
             }
             let (mask, sid, scoped, condition) = match ace.kind() {
@@ -304,4 +339,73 @@ pub fn access_check_subject(
         granted,
         missing: 0,
     })
+}
+
+/// Collect ordinary SACL records only after `check_subject(..., Some(true))`
+/// resolved every dependency. No token audit policy or caller facts are used.
+#[allow(clippy::too_many_arguments)]
+pub fn audit_subject<'a>(
+    sd: &SecurityDescriptor<'a>,
+    subject: &SuppliedSubject<'_>,
+    desired: u32,
+    mapping: &GenericMapping,
+    object_tree: Option<&ObjectTypeList>,
+    node: usize,
+    granted: u32,
+    audit_context: Option<&[u8]>,
+) -> KacsResult<crate::audit::EvaluateSaclState<'a>> {
+    let Some(sacl) = sd.sacl() else {
+        return Ok(crate::audit::EvaluateSaclState::default());
+    };
+    const UNUSED: &[u8] = &[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let token = TokenView {
+        user: subject.user.unwrap_or(Sid::parse(UNUSED)?),
+        user_deny_only: false,
+        groups: subject.groups.unwrap_or(&[]),
+    };
+    let metadata = extract_sacl_metadata(sd)?;
+    let context = ConditionalContext {
+        self_sid: subject.self_sid,
+        user_claims: subject.user_claims.values,
+        device_claims: subject.device_claims.values,
+        local_claims: subject.local_claims.values,
+        resource_claims: &metadata.resource_attributes,
+        device_groups: subject.device_groups.unwrap_or(&[]),
+        ..ConditionalContext::default()
+    };
+    // An object ACE for an ancestor applies to the selected node; a sibling's
+    // GUID must not produce a record for this node. Reuse the shared SACL walk
+    // with the selected node's ancestor path rather than the entire tree.
+    let selected_tree = if let Some(tree) = object_tree {
+        let mut path = crate::pkm_alloc::Vec::new();
+        let mut index = Some(node);
+        while let Some(i) = index {
+            path.push(tree.nodes()[i])?;
+            index = tree.parent_of(i);
+        }
+        let mut nodes = crate::pkm_alloc::Vec::new();
+        for (level, item) in path.iter().rev().enumerate() {
+            nodes.push(crate::object_tree::ObjectTypeNode {
+                level: level as u16,
+                guid: item.guid,
+            })?;
+        }
+        Some(ObjectTypeList::new(&nodes)?)
+    } else {
+        None
+    };
+    crate::audit::evaluate_sacl(
+        &sacl,
+        &token,
+        sd.owner()
+            .ok_or(KacsError::MissingSecurityDescriptorOwner)?,
+        subject.self_sid,
+        selected_tree.as_ref(),
+        mapping.normalize_desired_access(desired)?.mapped,
+        granted,
+        desired & MAXIMUM_ALLOWED != 0,
+        mapping,
+        &context,
+        audit_context,
+    )
 }

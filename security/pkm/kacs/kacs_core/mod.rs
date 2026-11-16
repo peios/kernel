@@ -16,6 +16,7 @@ pub mod ace;
 pub mod acl;
 /// Advisory identity checks with explicitly incomplete supplied information.
 pub mod advisory;
+pub mod subject_abi;
 /// SACL audit/alarm evaluation helpers.
 pub mod audit;
 /// Central Access Policy parsing, cache, and evaluation.

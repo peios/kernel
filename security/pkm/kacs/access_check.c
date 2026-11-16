@@ -172,6 +172,36 @@ static bool pkm_kacs_access_check_caller_may_audit(void)
 						    KACS_SE_AUDIT_PRIVILEGE);
 }
 
+/* Called only after the supplied request has been copied and validated, and
+ * only when NO_AUDIT is clear. This consults the real caller, never its claims.
+ */
+int pkm_kacs_subject_caller_may_audit(void)
+{
+	const void *caller = pkm_kacs_current_effective_token_ptr();
+
+	if (!caller || !kacs_rust_token_has_enabled_privilege(
+			       caller, KACS_SE_AUDIT_PRIVILEGE))
+		return 0;
+	return kacs_rust_token_mark_privileges_used(caller,
+					    KACS_SE_AUDIT_PRIVILEGE) ? 1 : -EIO;
+}
+
+extern long kacs_rust_access_check_subject(
+	const struct pkm_kacs_usercopy_ops *ops, u64 request_ptr,
+	size_t request_len, u64 result_ptr);
+
+SYSCALL_DEFINE3(kacs_access_check_subject, const void __user *, request,
+		size_t, request_len, void __user *, result)
+{
+	const struct pkm_kacs_usercopy_ops ops = {
+		.read_bytes = pkm_kacs_read_user,
+		.write_bytes = pkm_kacs_write_user,
+	};
+
+	return kacs_rust_access_check_subject(&ops, (u64)(uintptr_t)request,
+					     request_len, (u64)(uintptr_t)result);
+}
+
 static long
 pkm_kacs_begin_token_resolution(const struct pkm_kacs_usercopy_ops *ops,
 				u64 args_ptr,

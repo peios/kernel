@@ -457,6 +457,7 @@
 1025	common	kacs_set_caap		sys_kacs_set_caap
 1026	common	kacs_get_mount_policy		sys_kacs_get_mount_policy
 1027	common	kacs_set_mount_policy		sys_kacs_set_mount_policy
+1028	common	kacs_access_check_subject		sys_kacs_access_check_subject
 1090	common	kmes_emit		sys_kmes_emit
 1091	common	kmes_attach		sys_kmes_attach
 1092	common	kmes_emit_batch		sys_kmes_emit_batch

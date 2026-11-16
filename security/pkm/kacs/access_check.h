@@ -125,6 +125,11 @@ long pkm_kacs_access_check_user_list_with_token_fd(
 
 int pkm_kacs_current_pip_context(u32 *pip_type, u32 *pip_trust);
 
+int pkm_kacs_subject_caller_may_audit(void);
+long kacs_rust_access_check_subject(const struct pkm_kacs_usercopy_ops *ops,
+				  u64 request_ptr, size_t request_len,
+				  u64 result_ptr);
+
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 void pkm_kacs_kunit_set_current_pip_context(u32 pip_type, u32 pip_trust);
 #endif

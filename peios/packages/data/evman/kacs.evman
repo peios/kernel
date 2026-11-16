@@ -417,6 +417,38 @@ field: fields.attestation.userspace  optional
   the descriptor, and with it `trigger.ace`, is always the caller's, as are
   any audit context and PIP state it passes.
 
+--- field supplied.sid
+type: bin.sid
+
+The hypothetical user SID supplied to a stateless subject access query.
+It is a caller assertion, never an authenticated kernel token identity.
+Groups and claim values are intentionally omitted from this record.
+
+--- event kacs.audit.subject.checked
+tier: essential
+gating: a matching supplied SACL audit ACE, the caller's enabled SeAuditPrivilege, and NO_AUDIT clear
+cardinality: once per matching audit ACE
+
+A stateless supplied-subject access query completed. The event type identifies
+the advisory query path. `subject` describes the actual caller authorising
+audit emission; `supplied.sid`, when known, is the caller-asserted identity
+whose hypothetical access was evaluated. This event never attests that authd
+authenticated that identity or that any token or session was created.
+
+No caller-token audit policy is applied to the hypothetical identity.
+Missing context yields no completed-check record. An omitted audit context
+leaves the object unnamed. NO_AUDIT suppresses only this query's records.
+
+include: subject
+field: supplied.sid                 optional
+field: object.kind                  optional
+field: access.requested             required
+field: access.granted               required
+field: outcome.success              required
+field: trigger.kind                 required
+field: trigger.ace                  required
+field: fields.attestation.userspace  required
+
 --- event kacs.audit.handle.used
 tier: essential
 gating: the operation's required access overlaps the alarm mask cached on the handle

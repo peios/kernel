@@ -44,41 +44,42 @@ enum pkm_kmes_event_id {
 	PKM_KMES_EV_KACS_AUDIT_DESCRIPTOR_CHANGED    = 1, /* essential, kacs.evman */
 	PKM_KMES_EV_KACS_AUDIT_HANDLE_USED           = 2, /* essential, kacs.evman */
 	PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED        = 3, /* essential, kacs.evman */
-	PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED         = 4, /* essential, kacs.evman */
-	PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED           = 5, /* standard, kacs.evman */
-	PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED       = 6, /* standard, kacs.evman */
-	PKM_KMES_EV_KACS_CONFIG_VALUE_REJECTED       = 7, /* essential, kacs.evman */
-	PKM_KMES_EV_KACS_DESCRIPTOR_REJECTED         = 8, /* standard, kacs.evman */
-	PKM_KMES_EV_KACS_IMPERSONATION_REVERTED      = 9, /* verbose, kacs.evman */
-	PKM_KMES_EV_KACS_IMPERSONATION_STARTED       = 10, /* standard, kacs.evman */
-	PKM_KMES_EV_KACS_MOUNT_POLICY_CHANGED        = 11, /* essential, kacs.evman */
-	PKM_KMES_EV_KACS_SESSION_DESTROYED           = 12, /* essential, kacs.evman */
-	PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED     = 13, /* essential, kacs.evman */
-	PKM_KMES_EV_KMES_BUFFER_SWAP_FAILED          = 14, /* standard, kmes.evman */
-	PKM_KMES_EV_KMES_CONFIG_APPLIED              = 15, /* standard, kmes.evman */
-	PKM_KMES_EV_KMES_CONFIG_REFRESH_FAILED       = 16, /* essential, kmes.evman */
-	PKM_KMES_EV_KMES_CONFIG_VALUE_REJECTED       = 17, /* essential, kmes.evman */
-	PKM_KMES_EV_LCS_AUDIT_BACKUP_ENDED           = 18, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_BACKUP_STARTED         = 19, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_KEY_CREATED            = 20, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_KEY_DELETED            = 21, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_KEY_DESCRIPTOR_CHANGED = 22, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_KEY_HIDDEN             = 23, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_KEY_OPENED             = 24, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_KEY_TOMBSTONED         = 25, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_RESTORE_ENDED          = 26, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_RESTORE_STARTED        = 27, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_TRANSACTION_COMMITTED  = 28, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_VALUE_DELETED          = 29, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_AUDIT_VALUE_SET              = 30, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_CONFIG_VALUE_REJECTED        = 31, /* essential, lcs.evman */
-	PKM_KMES_EV_LCS_SOURCE_RESPONSE_REJECTED     = 32, /* essential, lcs.evman */
-	PKM_KMES_EV_NTFE_POLICY_PUBLISHED            = 33, /* standard, ntfe.evman */
-	PKM_KMES_EV_NTFE_POLICY_REJECTED             = 34, /* essential, ntfe.evman */
-	PKM_KMES_EV_NTFE_VERDICT_REPORTED            = 35, /* essential, ntfe.evman */
-	PKM_KMES_EV_STRATAFS_FILE_COPIED_UP          = 36, /* standard, stratafs.evman */
-	PKM_KMES_EV_STRATAFS_MUTATION_REFUSED        = 37, /* standard, stratafs.evman */
-	PKM_KMES_EV_COUNT                            = 38,
+	PKM_KMES_EV_KACS_AUDIT_SUBJECT_CHECKED       = 4, /* essential, kacs.evman */
+	PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED         = 5, /* essential, kacs.evman */
+	PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED           = 6, /* standard, kacs.evman */
+	PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED       = 7, /* standard, kacs.evman */
+	PKM_KMES_EV_KACS_CONFIG_VALUE_REJECTED       = 8, /* essential, kacs.evman */
+	PKM_KMES_EV_KACS_DESCRIPTOR_REJECTED         = 9, /* standard, kacs.evman */
+	PKM_KMES_EV_KACS_IMPERSONATION_REVERTED      = 10, /* verbose, kacs.evman */
+	PKM_KMES_EV_KACS_IMPERSONATION_STARTED       = 11, /* standard, kacs.evman */
+	PKM_KMES_EV_KACS_MOUNT_POLICY_CHANGED        = 12, /* essential, kacs.evman */
+	PKM_KMES_EV_KACS_SESSION_DESTROYED           = 13, /* essential, kacs.evman */
+	PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED     = 14, /* essential, kacs.evman */
+	PKM_KMES_EV_KMES_BUFFER_SWAP_FAILED          = 15, /* standard, kmes.evman */
+	PKM_KMES_EV_KMES_CONFIG_APPLIED              = 16, /* standard, kmes.evman */
+	PKM_KMES_EV_KMES_CONFIG_REFRESH_FAILED       = 17, /* essential, kmes.evman */
+	PKM_KMES_EV_KMES_CONFIG_VALUE_REJECTED       = 18, /* essential, kmes.evman */
+	PKM_KMES_EV_LCS_AUDIT_BACKUP_ENDED           = 19, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_BACKUP_STARTED         = 20, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_KEY_CREATED            = 21, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_KEY_DELETED            = 22, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_KEY_DESCRIPTOR_CHANGED = 23, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_KEY_HIDDEN             = 24, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_KEY_OPENED             = 25, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_KEY_TOMBSTONED         = 26, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_RESTORE_ENDED          = 27, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_RESTORE_STARTED        = 28, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_TRANSACTION_COMMITTED  = 29, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_VALUE_DELETED          = 30, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_AUDIT_VALUE_SET              = 31, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_CONFIG_VALUE_REJECTED        = 32, /* essential, lcs.evman */
+	PKM_KMES_EV_LCS_SOURCE_RESPONSE_REJECTED     = 33, /* essential, lcs.evman */
+	PKM_KMES_EV_NTFE_POLICY_PUBLISHED            = 34, /* standard, ntfe.evman */
+	PKM_KMES_EV_NTFE_POLICY_REJECTED             = 35, /* essential, ntfe.evman */
+	PKM_KMES_EV_NTFE_VERDICT_REPORTED            = 36, /* essential, ntfe.evman */
+	PKM_KMES_EV_STRATAFS_FILE_COPIED_UP          = 37, /* standard, stratafs.evman */
+	PKM_KMES_EV_STRATAFS_MUTATION_REFUSED        = 38, /* standard, stratafs.evman */
+	PKM_KMES_EV_COUNT                            = 39,
 };
 
 static_assert(PKM_KMES_EV_COUNT <= 64,
@@ -89,6 +90,7 @@ static_assert(PKM_KMES_EV_COUNT <= 64,
 #define PKM_KMES_EV_KACS_AUDIT_DESCRIPTOR_CHANGED_TYPE "kacs.audit.descriptor.changed"
 #define PKM_KMES_EV_KACS_AUDIT_HANDLE_USED_TYPE "kacs.audit.handle.used"
 #define PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED_TYPE "kacs.audit.privilege.used"
+#define PKM_KMES_EV_KACS_AUDIT_SUBJECT_CHECKED_TYPE "kacs.audit.subject.checked"
 #define PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED_TYPE "kacs.caap.policy.changed"
 #define PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED_TYPE "kacs.caap.sacl.skipped"
 #define PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED_TYPE "kacs.caap.staging.diverged"
@@ -137,6 +139,7 @@ pkm_kmes_event_tier(enum pkm_kmes_event_id id)
 	case PKM_KMES_EV_KACS_AUDIT_DESCRIPTOR_CHANGED:
 	case PKM_KMES_EV_KACS_AUDIT_HANDLE_USED:
 	case PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED:
+	case PKM_KMES_EV_KACS_AUDIT_SUBJECT_CHECKED:
 	case PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED:
 	case PKM_KMES_EV_KACS_CONFIG_VALUE_REJECTED:
 	case PKM_KMES_EV_KACS_MOUNT_POLICY_CHANGED:
@@ -184,9 +187,9 @@ pkm_kmes_event_tier(enum pkm_kmes_event_id id)
  * The mask in force before the policy has ever been read (§6.9: decide
  * by tier alone): essential and standard on, verbose and debug off.
  */
-#define PKM_KMES_EV_DEFAULT_MASK 0x0000003ffffffdffULL
+#define PKM_KMES_EV_DEFAULT_MASK 0x0000007ffffffbffULL
 
-#define PKM_KMES_EV_NODE_COUNT 81
+#define PKM_KMES_EV_NODE_COUNT 83
 #define PKM_KMES_EV_ROOT_COUNT 5
 
 #ifdef PKM_KMES_EVENT_TYPES_WANT_TABLES
@@ -216,77 +219,79 @@ static const struct pkm_kmes_event_node
 	[7] = { "used", 4, 6 },
 	[8] = { "privilege", 9, 1 },
 	[9] = { "used", 4, 8 },
-	[10] = { "caap", 4, 0 },
-	[11] = { "policy", 6, 10 },
-	[12] = { "changed", 7, 11 },
-	[13] = { "sacl", 4, 10 },
-	[14] = { "skipped", 7, 13 },
-	[15] = { "staging", 7, 10 },
-	[16] = { "diverged", 8, 15 },
-	[17] = { "config", 6, 0 },
-	[18] = { "value", 5, 17 },
-	[19] = { "rejected", 8, 18 },
-	[20] = { "descriptor", 10, 0 },
+	[10] = { "subject", 7, 1 },
+	[11] = { "checked", 7, 10 },
+	[12] = { "caap", 4, 0 },
+	[13] = { "policy", 6, 12 },
+	[14] = { "changed", 7, 13 },
+	[15] = { "sacl", 4, 12 },
+	[16] = { "skipped", 7, 15 },
+	[17] = { "staging", 7, 12 },
+	[18] = { "diverged", 8, 17 },
+	[19] = { "config", 6, 0 },
+	[20] = { "value", 5, 19 },
 	[21] = { "rejected", 8, 20 },
-	[22] = { "impersonation", 13, 0 },
-	[23] = { "reverted", 8, 22 },
-	[24] = { "started", 7, 22 },
-	[25] = { "mount", 5, 0 },
-	[26] = { "policy", 6, 25 },
-	[27] = { "changed", 7, 26 },
-	[28] = { "session", 7, 0 },
-	[29] = { "destroyed", 9, 28 },
-	[30] = { "signature", 9, 0 },
-	[31] = { "crypto", 6, 30 },
-	[32] = { "failed", 6, 31 },
-	[33] = { "kmes", 4, -1 },
-	[34] = { "buffer", 6, 33 },
-	[35] = { "swap", 4, 34 },
-	[36] = { "failed", 6, 35 },
-	[37] = { "config", 6, 33 },
-	[38] = { "applied", 7, 37 },
-	[39] = { "refresh", 7, 37 },
-	[40] = { "failed", 6, 39 },
-	[41] = { "value", 5, 37 },
-	[42] = { "rejected", 8, 41 },
-	[43] = { "lcs", 3, -1 },
-	[44] = { "audit", 5, 43 },
-	[45] = { "backup", 6, 44 },
-	[46] = { "ended", 5, 45 },
-	[47] = { "started", 7, 45 },
-	[48] = { "key", 3, 44 },
-	[49] = { "created", 7, 48 },
-	[50] = { "deleted", 7, 48 },
-	[51] = { "descriptor", 10, 48 },
-	[52] = { "changed", 7, 51 },
-	[53] = { "hidden", 6, 48 },
-	[54] = { "opened", 6, 48 },
-	[55] = { "tombstoned", 10, 48 },
-	[56] = { "restore", 7, 44 },
-	[57] = { "ended", 5, 56 },
-	[58] = { "started", 7, 56 },
-	[59] = { "transaction", 11, 44 },
-	[60] = { "committed", 9, 59 },
-	[61] = { "value", 5, 44 },
-	[62] = { "deleted", 7, 61 },
-	[63] = { "set", 3, 61 },
-	[64] = { "config", 6, 43 },
-	[65] = { "value", 5, 64 },
-	[66] = { "rejected", 8, 65 },
-	[67] = { "source", 6, 43 },
-	[68] = { "response", 8, 67 },
-	[69] = { "rejected", 8, 68 },
-	[70] = { "ntfe", 4, -1 },
-	[71] = { "policy", 6, 70 },
-	[72] = { "published", 9, 71 },
-	[73] = { "rejected", 8, 71 },
-	[74] = { "verdict", 7, 70 },
-	[75] = { "reported", 8, 74 },
-	[76] = { "stratafs", 8, -1 },
-	[77] = { "file", 4, 76 },
-	[78] = { "copied-up", 9, 77 },
-	[79] = { "mutation", 8, 76 },
-	[80] = { "refused", 7, 79 },
+	[22] = { "descriptor", 10, 0 },
+	[23] = { "rejected", 8, 22 },
+	[24] = { "impersonation", 13, 0 },
+	[25] = { "reverted", 8, 24 },
+	[26] = { "started", 7, 24 },
+	[27] = { "mount", 5, 0 },
+	[28] = { "policy", 6, 27 },
+	[29] = { "changed", 7, 28 },
+	[30] = { "session", 7, 0 },
+	[31] = { "destroyed", 9, 30 },
+	[32] = { "signature", 9, 0 },
+	[33] = { "crypto", 6, 32 },
+	[34] = { "failed", 6, 33 },
+	[35] = { "kmes", 4, -1 },
+	[36] = { "buffer", 6, 35 },
+	[37] = { "swap", 4, 36 },
+	[38] = { "failed", 6, 37 },
+	[39] = { "config", 6, 35 },
+	[40] = { "applied", 7, 39 },
+	[41] = { "refresh", 7, 39 },
+	[42] = { "failed", 6, 41 },
+	[43] = { "value", 5, 39 },
+	[44] = { "rejected", 8, 43 },
+	[45] = { "lcs", 3, -1 },
+	[46] = { "audit", 5, 45 },
+	[47] = { "backup", 6, 46 },
+	[48] = { "ended", 5, 47 },
+	[49] = { "started", 7, 47 },
+	[50] = { "key", 3, 46 },
+	[51] = { "created", 7, 50 },
+	[52] = { "deleted", 7, 50 },
+	[53] = { "descriptor", 10, 50 },
+	[54] = { "changed", 7, 53 },
+	[55] = { "hidden", 6, 50 },
+	[56] = { "opened", 6, 50 },
+	[57] = { "tombstoned", 10, 50 },
+	[58] = { "restore", 7, 46 },
+	[59] = { "ended", 5, 58 },
+	[60] = { "started", 7, 58 },
+	[61] = { "transaction", 11, 46 },
+	[62] = { "committed", 9, 61 },
+	[63] = { "value", 5, 46 },
+	[64] = { "deleted", 7, 63 },
+	[65] = { "set", 3, 63 },
+	[66] = { "config", 6, 45 },
+	[67] = { "value", 5, 66 },
+	[68] = { "rejected", 8, 67 },
+	[69] = { "source", 6, 45 },
+	[70] = { "response", 8, 69 },
+	[71] = { "rejected", 8, 70 },
+	[72] = { "ntfe", 4, -1 },
+	[73] = { "policy", 6, 72 },
+	[74] = { "published", 9, 73 },
+	[75] = { "rejected", 8, 73 },
+	[76] = { "verdict", 7, 72 },
+	[77] = { "reported", 8, 76 },
+	[78] = { "stratafs", 8, -1 },
+	[79] = { "file", 4, 78 },
+	[80] = { "copied-up", 9, 79 },
+	[81] = { "mutation", 8, 78 },
+	[82] = { "refused", 7, 81 },
 };
 
 static const u16 pkm_kmes_event_leaf[PKM_KMES_EV_COUNT] = {
@@ -294,40 +299,41 @@ static const u16 pkm_kmes_event_leaf[PKM_KMES_EV_COUNT] = {
 	[PKM_KMES_EV_KACS_AUDIT_DESCRIPTOR_CHANGED] = 5,
 	[PKM_KMES_EV_KACS_AUDIT_HANDLE_USED] = 7,
 	[PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED] = 9,
-	[PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED] = 12,
-	[PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED] = 14,
-	[PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED] = 16,
-	[PKM_KMES_EV_KACS_CONFIG_VALUE_REJECTED] = 19,
-	[PKM_KMES_EV_KACS_DESCRIPTOR_REJECTED] = 21,
-	[PKM_KMES_EV_KACS_IMPERSONATION_REVERTED] = 23,
-	[PKM_KMES_EV_KACS_IMPERSONATION_STARTED] = 24,
-	[PKM_KMES_EV_KACS_MOUNT_POLICY_CHANGED] = 27,
-	[PKM_KMES_EV_KACS_SESSION_DESTROYED] = 29,
-	[PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED] = 32,
-	[PKM_KMES_EV_KMES_BUFFER_SWAP_FAILED] = 36,
-	[PKM_KMES_EV_KMES_CONFIG_APPLIED] = 38,
-	[PKM_KMES_EV_KMES_CONFIG_REFRESH_FAILED] = 40,
-	[PKM_KMES_EV_KMES_CONFIG_VALUE_REJECTED] = 42,
-	[PKM_KMES_EV_LCS_AUDIT_BACKUP_ENDED] = 46,
-	[PKM_KMES_EV_LCS_AUDIT_BACKUP_STARTED] = 47,
-	[PKM_KMES_EV_LCS_AUDIT_KEY_CREATED] = 49,
-	[PKM_KMES_EV_LCS_AUDIT_KEY_DELETED] = 50,
-	[PKM_KMES_EV_LCS_AUDIT_KEY_DESCRIPTOR_CHANGED] = 52,
-	[PKM_KMES_EV_LCS_AUDIT_KEY_HIDDEN] = 53,
-	[PKM_KMES_EV_LCS_AUDIT_KEY_OPENED] = 54,
-	[PKM_KMES_EV_LCS_AUDIT_KEY_TOMBSTONED] = 55,
-	[PKM_KMES_EV_LCS_AUDIT_RESTORE_ENDED] = 57,
-	[PKM_KMES_EV_LCS_AUDIT_RESTORE_STARTED] = 58,
-	[PKM_KMES_EV_LCS_AUDIT_TRANSACTION_COMMITTED] = 60,
-	[PKM_KMES_EV_LCS_AUDIT_VALUE_DELETED] = 62,
-	[PKM_KMES_EV_LCS_AUDIT_VALUE_SET] = 63,
-	[PKM_KMES_EV_LCS_CONFIG_VALUE_REJECTED] = 66,
-	[PKM_KMES_EV_LCS_SOURCE_RESPONSE_REJECTED] = 69,
-	[PKM_KMES_EV_NTFE_POLICY_PUBLISHED] = 72,
-	[PKM_KMES_EV_NTFE_POLICY_REJECTED] = 73,
-	[PKM_KMES_EV_NTFE_VERDICT_REPORTED] = 75,
-	[PKM_KMES_EV_STRATAFS_FILE_COPIED_UP] = 78,
-	[PKM_KMES_EV_STRATAFS_MUTATION_REFUSED] = 80,
+	[PKM_KMES_EV_KACS_AUDIT_SUBJECT_CHECKED] = 11,
+	[PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED] = 14,
+	[PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED] = 16,
+	[PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED] = 18,
+	[PKM_KMES_EV_KACS_CONFIG_VALUE_REJECTED] = 21,
+	[PKM_KMES_EV_KACS_DESCRIPTOR_REJECTED] = 23,
+	[PKM_KMES_EV_KACS_IMPERSONATION_REVERTED] = 25,
+	[PKM_KMES_EV_KACS_IMPERSONATION_STARTED] = 26,
+	[PKM_KMES_EV_KACS_MOUNT_POLICY_CHANGED] = 29,
+	[PKM_KMES_EV_KACS_SESSION_DESTROYED] = 31,
+	[PKM_KMES_EV_KACS_SIGNATURE_CRYPTO_FAILED] = 34,
+	[PKM_KMES_EV_KMES_BUFFER_SWAP_FAILED] = 38,
+	[PKM_KMES_EV_KMES_CONFIG_APPLIED] = 40,
+	[PKM_KMES_EV_KMES_CONFIG_REFRESH_FAILED] = 42,
+	[PKM_KMES_EV_KMES_CONFIG_VALUE_REJECTED] = 44,
+	[PKM_KMES_EV_LCS_AUDIT_BACKUP_ENDED] = 48,
+	[PKM_KMES_EV_LCS_AUDIT_BACKUP_STARTED] = 49,
+	[PKM_KMES_EV_LCS_AUDIT_KEY_CREATED] = 51,
+	[PKM_KMES_EV_LCS_AUDIT_KEY_DELETED] = 52,
+	[PKM_KMES_EV_LCS_AUDIT_KEY_DESCRIPTOR_CHANGED] = 54,
+	[PKM_KMES_EV_LCS_AUDIT_KEY_HIDDEN] = 55,
+	[PKM_KMES_EV_LCS_AUDIT_KEY_OPENED] = 56,
+	[PKM_KMES_EV_LCS_AUDIT_KEY_TOMBSTONED] = 57,
+	[PKM_KMES_EV_LCS_AUDIT_RESTORE_ENDED] = 59,
+	[PKM_KMES_EV_LCS_AUDIT_RESTORE_STARTED] = 60,
+	[PKM_KMES_EV_LCS_AUDIT_TRANSACTION_COMMITTED] = 62,
+	[PKM_KMES_EV_LCS_AUDIT_VALUE_DELETED] = 64,
+	[PKM_KMES_EV_LCS_AUDIT_VALUE_SET] = 65,
+	[PKM_KMES_EV_LCS_CONFIG_VALUE_REJECTED] = 68,
+	[PKM_KMES_EV_LCS_SOURCE_RESPONSE_REJECTED] = 71,
+	[PKM_KMES_EV_NTFE_POLICY_PUBLISHED] = 74,
+	[PKM_KMES_EV_NTFE_POLICY_REJECTED] = 75,
+	[PKM_KMES_EV_NTFE_VERDICT_REPORTED] = 77,
+	[PKM_KMES_EV_STRATAFS_FILE_COPIED_UP] = 80,
+	[PKM_KMES_EV_STRATAFS_MUTATION_REFUSED] = 82,
 };
 
 static const char * const pkm_kmes_event_names[PKM_KMES_EV_COUNT] = {
@@ -335,6 +341,7 @@ static const char * const pkm_kmes_event_names[PKM_KMES_EV_COUNT] = {
 	[PKM_KMES_EV_KACS_AUDIT_DESCRIPTOR_CHANGED] = PKM_KMES_EV_KACS_AUDIT_DESCRIPTOR_CHANGED_TYPE,
 	[PKM_KMES_EV_KACS_AUDIT_HANDLE_USED] = PKM_KMES_EV_KACS_AUDIT_HANDLE_USED_TYPE,
 	[PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED] = PKM_KMES_EV_KACS_AUDIT_PRIVILEGE_USED_TYPE,
+	[PKM_KMES_EV_KACS_AUDIT_SUBJECT_CHECKED] = PKM_KMES_EV_KACS_AUDIT_SUBJECT_CHECKED_TYPE,
 	[PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED] = PKM_KMES_EV_KACS_CAAP_POLICY_CHANGED_TYPE,
 	[PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED] = PKM_KMES_EV_KACS_CAAP_SACL_SKIPPED_TYPE,
 	[PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED] = PKM_KMES_EV_KACS_CAAP_STAGING_DIVERGED_TYPE,
