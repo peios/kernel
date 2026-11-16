@@ -31,6 +31,7 @@ pub const MISSING_LOCAL_CLAIMS: u32 = 32;
 pub const MISSING_SELF: u32 = 64;
 pub const MISSING_OBJECT_TYPES: u32 = 128;
 pub const MISSING_EXECUTION_CONTEXT: u32 = 256;
+pub const MISSING_AUDIT_CONTEXT: u32 = 512;
 
 /// Supplied claim values plus the names whose absence is known. A partial set
 /// never turns an omitted name into a known absence.
@@ -123,6 +124,9 @@ pub fn access_check_subject(
     object_tree: Option<&ObjectTypeList>,
     node: usize,
 ) -> KacsResult<AdvisoryResult> {
+    if sd.owner().is_none() {
+        return Err(KacsError::MissingSecurityDescriptorOwner);
+    }
     subject.user_claims.validate()?;
     subject.device_claims.validate()?;
     subject.local_claims.validate()?;
@@ -152,6 +156,21 @@ pub fn access_check_subject(
                 )
             {
                 missing |= MISSING_EXECUTION_CONTEXT;
+            }
+            if ace.ace_flags() & 0x08 == 0
+                && matches!(
+                    ace.ace_type(),
+                    crate::ace::SYSTEM_AUDIT_ACE_TYPE
+                        | crate::ace::SYSTEM_ALARM_ACE_TYPE
+                        | crate::ace::SYSTEM_AUDIT_OBJECT_ACE_TYPE
+                        | crate::ace::SYSTEM_ALARM_OBJECT_ACE_TYPE
+                        | crate::ace::SYSTEM_AUDIT_CALLBACK_ACE_TYPE
+                        | crate::ace::SYSTEM_ALARM_CALLBACK_ACE_TYPE
+                        | crate::ace::SYSTEM_AUDIT_CALLBACK_OBJECT_ACE_TYPE
+                        | crate::ace::SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE
+                )
+            {
+                missing |= MISSING_AUDIT_CONTEXT;
             }
         }
     }

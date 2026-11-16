@@ -238,3 +238,29 @@ fn absent_identity_is_unknown_when_a_relevant_ace_can_match_it() {
         MISSING_USER
     );
 }
+
+#[test]
+fn requested_auditing_is_not_silently_discarded() {
+    let user = sid_bytes([0, 0, 0, 0, 0, 5], &[18]);
+    let mut bytes = descriptor(&user, &[basic_ace(ACCESS_ALLOWED_ACE_TYPE, 0, 1, &user)]);
+    let offset = bytes.len() as u32;
+    bytes[2..4]
+        .copy_from_slice(&(SE_SELF_RELATIVE | SE_DACL_PRESENT | SE_SACL_PRESENT).to_le_bytes());
+    bytes[12..16].copy_from_slice(&offset.to_le_bytes());
+    bytes.extend(acl_bytes(&[basic_ace(
+        SYSTEM_AUDIT_ACE_TYPE,
+        0x40,
+        1,
+        &user,
+    )]));
+    let sd = SecurityDescriptor::parse(&bytes).unwrap();
+    let subject = SuppliedSubject {
+        user: Some(parse_sid(&user)),
+        groups: Some(&[]),
+        ..Default::default()
+    };
+    let result = access_check_subject(&sd, &subject, 1, &connect(), None, 0).unwrap();
+    assert_eq!(result.decision, AdvisoryDecision::MissingContext);
+    assert_eq!(result.missing, MISSING_AUDIT_CONTEXT);
+    assert_eq!(result.granted, 0);
+}
