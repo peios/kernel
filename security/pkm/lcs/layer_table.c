@@ -525,6 +525,12 @@ long pkm_lcs_private_credentials_acquire_for_token(
 		}
 		view->private_layer_count = private_layer_count;
 	}
+	if (snapshot && snapshot->transaction_file) {
+		ret = pkm_lcs_transaction_validate_private_view(
+			snapshot->transaction_file, view);
+		if (ret)
+			goto out_error;
+	}
 
 	return 0;
 

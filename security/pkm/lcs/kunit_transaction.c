@@ -1641,6 +1641,49 @@ static void pkm_lcs_kunit_read_only_layer_view_lifetime(struct kunit *test)
 	pkm_lcs_kunit_reset_layer_table();
 }
 
+static void pkm_lcs_kunit_read_only_private_view_is_fixed(struct kunit *test)
+{
+	u8 scope[1][16] = { { 0x13 } };
+	struct pkm_lcs_rsi_private_layer_view private = {
+		.name = "First",
+		.name_len = 5,
+	};
+	struct pkm_lcs_private_credential_view view = {
+		.scope_guids = scope,
+		.scope_count = 1,
+		.private_layers = &private,
+		.private_layer_count = 1,
+	};
+	struct pkm_lcs_layer_snapshot layers = {};
+	long fd = pkm_lcs_transaction_fd_publish_read_only(30000);
+
+	KUNIT_ASSERT_GE(test, fd, 0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_lcs_transaction_layer_snapshot_acquire(fd, &layers),
+			0L);
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_validate_private_view(
+				layers.transaction_file, &view),
+			0L);
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_validate_private_view(
+				layers.transaction_file, &view),
+			0L);
+	private.name = "Other";
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_validate_private_view(
+				layers.transaction_file, &view),
+			(long)-EACCES);
+	private.name = "First";
+	scope[0][0]++;
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_validate_private_view(
+				layers.transaction_file, &view),
+			(long)-EACCES);
+	KUNIT_EXPECT_EQ(test, close_fd(fd), 0);
+	pkm_lcs_source_layer_snapshot_release(&layers);
+}
+
 static void pkm_lcs_kunit_read_capture_publication_fence(struct kunit *test)
 {
 	static const u8 root[16] = { 0x99 };
@@ -5535,6 +5578,7 @@ static struct kunit_case pkm_lcs_kunit_transaction_cases[] = {
 	KUNIT_CASE(pkm_lcs_kunit_transaction_read_context_active_states),
 	KUNIT_CASE(pkm_lcs_kunit_read_only_rejects_writes),
 	KUNIT_CASE(pkm_lcs_kunit_read_only_layer_view_lifetime),
+	KUNIT_CASE(pkm_lcs_kunit_read_only_private_view_is_fixed),
 	KUNIT_CASE(pkm_lcs_kunit_read_capture_publication_fence),
 	KUNIT_CASE(pkm_lcs_kunit_transaction_read_context_terminal_failures),
 	KUNIT_CASE(pkm_lcs_kunit_transaction_read_context_rejects_bad_inputs),

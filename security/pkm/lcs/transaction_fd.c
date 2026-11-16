@@ -30,6 +30,7 @@
 #include <linux/unaligned.h>
 #include <linux/wait.h>
 #include <linux/workqueue.h>
+#include <crypto/sha2.h>
 
 #include <pkm/lcs.h>
 
@@ -50,6 +51,8 @@ struct pkm_lcs_transaction_fd {
 	bool read_only;
 	struct pkm_lcs_layer_snapshot read_layers;
 	u64 read_generation;
+	u8 read_view_digest[SHA256_DIGEST_SIZE];
+	bool read_view_set;
 	u64 transaction_id;
 	u64 next_operation_index;
 	u32 state;
@@ -3933,6 +3936,52 @@ long pkm_lcs_transaction_fd_read_generation(int fd, u64 *generation)
 	return 0;
 }
 
+static long pkm_lcs_transaction_validate_private_view_under_bind(
+	struct pkm_lcs_transaction_fd *txn,
+	const struct pkm_lcs_private_credential_view *view)
+{
+	struct sha256_ctx hash;
+	u8 digest[SHA256_DIGEST_SIZE], encoded[8];
+	u32 i;
+
+	put_unaligned_le32(view->scope_count, encoded);
+	put_unaligned_le32(view->private_layer_count, encoded + 4);
+	sha256_init(&hash);
+	sha256_update(&hash, encoded, sizeof(encoded));
+	if (view->scope_count)
+		sha256_update(&hash, (const u8 *)view->scope_guids,
+			      view->scope_count * RSI_GUID_SIZE);
+	for (i = 0; i < view->private_layer_count; i++) {
+		put_unaligned_le32(view->private_layers[i].name_len, encoded);
+		sha256_update(&hash, encoded, sizeof(u32));
+		sha256_update(&hash, (const u8 *)view->private_layers[i].name,
+			      view->private_layers[i].name_len);
+	}
+	sha256_final(&hash, digest);
+	if (txn->read_view_set)
+		return memcmp(txn->read_view_digest, digest, sizeof(digest)) ?
+			       -EACCES :
+			       0;
+	memcpy(txn->read_view_digest, digest, sizeof(digest));
+	txn->read_view_set = true;
+	return 0;
+}
+
+long pkm_lcs_transaction_validate_private_view(
+	struct file *file, const struct pkm_lcs_private_credential_view *view)
+{
+	struct pkm_lcs_transaction_fd *txn;
+	long ret;
+
+	if (!file || file->f_op != &pkm_lcs_transaction_fd_fops || !view)
+		return -EINVAL;
+	txn = file->private_data;
+	mutex_lock(&txn->bind_lock);
+	ret = pkm_lcs_transaction_validate_private_view_under_bind(txn, view);
+	mutex_unlock(&txn->bind_lock);
+	return ret;
+}
+
 long pkm_lcs_transaction_layer_snapshot_acquire(
 	int txn_fd, struct pkm_lcs_layer_snapshot *snapshot)
 {
@@ -3980,6 +4029,7 @@ static long pkm_lcs_transaction_fd_bind_read_only(
 	struct pkm_lcs_source_response_result response = {};
 	struct pkm_lcs_rsi_read_key_result root = {};
 	struct pkm_lcs_runtime_limits limits;
+	struct pkm_lcs_private_credential_view private_view = {};
 	u64 capture_epoch;
 	u32 count;
 	long ret;
@@ -3995,6 +4045,16 @@ static long pkm_lcs_transaction_fd_bind_read_only(
 		if (ret)
 			return ret;
 	}
+	ret = pkm_lcs_private_credentials_acquire_for_token(
+		pkm_kacs_current_effective_token_ptr(), &limits,
+		&txn->read_layers, &private_view);
+	if (ret)
+		return ret;
+	ret = pkm_lcs_transaction_validate_private_view_under_bind(
+		txn, &private_view);
+	pkm_lcs_private_credentials_release(&private_view);
+	if (ret)
+		return ret;
 	ret = pkm_lcs_source_read_only_transaction_acquire_with_limits(
 		source_id, &limits, &count);
 	if (ret)

@@ -164,6 +164,11 @@ The lifetime starts at begin and uses `TransactionTimeoutMs`. The source's
 `MaxReadOnlyTransactionsPerSource` quota applies once bound. Closing releases
 the snapshot; a bound snapshot may also be ended with `REG_IOC_COMMIT`.
 
+The caller's ordered private-layer and hive-scope attachments must remain the
+same throughout the read transaction. A changed attachment view fails `EACCES`;
+it cannot silently select different data from the same snapshot. This does not
+freeze the caller's identity or permissions for new opens.
+
 ## `reg_open_key_transacted` (1104)
 
 ```c

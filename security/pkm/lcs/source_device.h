@@ -602,6 +602,8 @@ void pkm_lcs_publication_end(void);
 long pkm_lcs_publication_capture_start(u64 *epoch);
 bool pkm_lcs_publication_capture_valid(u64 epoch);
 bool pkm_lcs_rsi_publishes(u16 op_code);
+long pkm_lcs_transaction_validate_private_view(
+	struct file *file, const struct pkm_lcs_private_credential_view *view);
 
 struct pkm_lcs_path_component_view {
 	const char *name;
