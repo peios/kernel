@@ -11,7 +11,10 @@ use crate::ace::{
 };
 use crate::claims::ClaimAttribute;
 use crate::condition::{claim_names_equal, visit_conditional_dependencies, ConditionalContext};
-use crate::dacl::{evaluate_dacl_result_list_with_context, evaluate_dacl_with_context};
+use crate::dacl::{
+    evaluate_dacl_result_list_with_context, evaluate_dacl_with_context, OWNER_RIGHTS_SID_BYTES,
+    PRINCIPAL_SELF_SID_BYTES,
+};
 use crate::error::{KacsError, KacsResult};
 use crate::object_tree::ObjectTypeList;
 use crate::sacl::extract_sacl_metadata;
@@ -258,14 +261,17 @@ pub fn check_subject(
             if subject.user.is_none() {
                 missing |= MISSING_USER;
             }
-            if subject.user != Some(sid) && subject.groups.is_none() {
+            let principal_self = sid.as_bytes() == PRINCIPAL_SELF_SID_BYTES;
+            let owner_rights = sid.as_bytes() == OWNER_RIGHTS_SID_BYTES;
+            // These trustees are substitutions, not literal user-SID matches.
+            // Even a hypothetical user whose SID equals the marker cannot
+            // resolve their owner/SELF membership with omitted groups.
+            if (subject.user != Some(sid) || principal_self || owner_rights)
+                && subject.groups.is_none()
+            {
                 missing |= MISSING_GROUPS;
             }
-            if sid.identifier_authority() == [0, 0, 0, 0, 0, 5]
-                && sid.sub_authority_count() == 1
-                && sid.sub_authority(0) == Some(10)
-                && subject.self_sid.is_none()
-            {
+            if principal_self && subject.self_sid.is_none() {
                 missing |= MISSING_SELF;
             }
             if let Some(condition) = condition {

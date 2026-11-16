@@ -21,8 +21,8 @@ use crate::token::{
 };
 
 const INHERIT_ONLY_ACE: u8 = crate::peios_uapi::KACS_ACE_FLAG_INHERIT_ONLY as u8;
-const OWNER_RIGHTS_SID_BYTES: &[u8] = &[1, 1, 0, 0, 0, 0, 0, 3, 4, 0, 0, 0];
-const PRINCIPAL_SELF_SID_BYTES: &[u8] = &[1, 1, 0, 0, 0, 0, 0, 5, 10, 0, 0, 0];
+pub(crate) const OWNER_RIGHTS_SID_BYTES: &[u8] = &[1, 1, 0, 0, 0, 0, 0, 3, 4, 0, 0, 0];
+pub(crate) const PRINCIPAL_SELF_SID_BYTES: &[u8] = &[1, 1, 0, 0, 0, 0, 0, 5, 10, 0, 0, 0];
 
 /// Scalar DACL evaluation result after the DACL walk completes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -111,6 +111,54 @@ fn implicit_owner_grant_never_uses_an_unknown_user_placeholder() {
 }
 
 #[test]
+fn special_trustees_do_not_make_omitted_groups_known() {
+    let owner = user();
+    for marker in [
+        sid_bytes([0, 0, 0, 0, 0, 3], &[4]),
+        sid_bytes([0, 0, 0, 0, 0, 5], &[10]),
+    ] {
+        let mut descriptor = sd(&[]);
+        // Replace the DACL trustee, leaving the descriptor owner unchanged.
+        let dacl_offset = u32::from_le_bytes(descriptor[16..20].try_into().unwrap()) as usize;
+        let mut replacement = descriptor[..dacl_offset].to_vec();
+        replacement.extend(acl_bytes(&[basic_ace(
+            ACCESS_ALLOWED_ACE_TYPE,
+            0,
+            1,
+            &marker,
+        )]));
+        let sacl_offset = replacement.len() as u32;
+        put(&mut replacement, 12, sacl_offset);
+        replacement.extend(acl_bytes(&[]));
+        descriptor = replacement;
+        let descriptor = SecurityDescriptor::parse(&descriptor).unwrap();
+        let mut subject = SuppliedSubject {
+            user: Some(parse_sid(&marker)),
+            self_sid: Some(parse_sid(&owner)),
+            ..Default::default()
+        };
+        let mapping = GenericMapping {
+            read: 1,
+            write: 0,
+            execute: 1,
+            all: 1,
+        };
+        let evaluate = |s: &SuppliedSubject<'_>| {
+            check_subject(&descriptor, s, 1, &mapping, None, 0, Some(false)).unwrap()
+        };
+        assert_eq!(evaluate(&subject).missing, MISSING_GROUPS);
+        subject.groups = Some(&[]);
+        assert_eq!(evaluate(&subject).decision, AdvisoryDecision::Denied);
+        let groups = [SidAndAttributes {
+            sid: parse_sid(&owner),
+            attributes: SE_GROUP_ENABLED,
+        }];
+        subject.groups = Some(&groups);
+        assert_eq!(evaluate(&subject).decision, AdvisoryDecision::Granted);
+    }
+}
+
+#[test]
 fn every_truncation_and_noncanonical_section_is_rejected() {
     let b = base(&sd(&[]), &user());
     for len in 0..b.len() {
