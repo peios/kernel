@@ -134,30 +134,34 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 			  pkm_kunit_parse_kmes_event(buffer, written, &view));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
 					test, &view, &root, 7));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &root, "subject", &actor));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &actor, "token", &token));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &root, "subject",
+					PKM_KUNIT_MSGPACK_MAP, &actor));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &actor, "token",
+					PKM_KUNIT_MSGPACK_MAP, &token));
 	KUNIT_EXPECT_TRUE(test,
 			  pkm_kunit_msgpack_expect_bin_key(
 				  test, &token, "sid", pkm_kunit_system_sid,
 				  sizeof(pkm_kunit_system_sid)));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &root, "source", &source));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &root, "source",
+					PKM_KUNIT_MSGPACK_MAP, &source));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
 					test, &source, "supplied-subject",
-					&supplied));
+					PKM_KUNIT_MSGPACK_MAP, &supplied));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bin_key(
 					test, &supplied, "sid",
 					pkm_kunit_anonymous_sid,
 					sizeof(pkm_kunit_anonymous_sid)));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_absent_key(
 					test, &supplied, "token"));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &root, "fields", &fields));
-	KUNIT_ASSERT_TRUE(test,
-			  pkm_kunit_msgpack_require_map_key(
-				  test, &fields, "attestation", &attestation));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &root, "fields",
+					PKM_KUNIT_MSGPACK_MAP, &fields));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &fields, "attestation",
+					PKM_KUNIT_MSGPACK_MAP, &attestation));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_bool_key(
 					test, &attestation, "userspace", true));
 
@@ -182,12 +186,14 @@ pkm_kunit_subject_query_audit_provenance_and_copyout(struct kunit *test)
 			  pkm_kunit_parse_kmes_event(buffer, written, &view));
 	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_parse_payload_root(
 					test, &view, &root, 8));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &root, "object", &object));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &root, "object",
+					PKM_KUNIT_MSGPACK_MAP, &object));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
 					test, &object, "kind", "network"));
-	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_map_key(
-					test, &object, "network", &network));
+	KUNIT_ASSERT_TRUE(test, pkm_kunit_msgpack_require_key(
+					test, &object, "network",
+					PKM_KUNIT_MSGPACK_MAP, &network));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(test, &network,
 								 "id", "home"));
 	KUNIT_EXPECT_TRUE(test, pkm_kunit_msgpack_expect_str_key(
