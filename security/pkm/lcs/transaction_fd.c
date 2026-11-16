@@ -2746,7 +2746,7 @@ static long pkm_lcs_transaction_fd_apply_commit_response_under_bind(
 	if (internal_watch_effects_out)
 		*internal_watch_effects_out = 0;
 
-	if (status == RSI_OK) {
+	if (status == RSI_OK && !txn->read_only) {
 		spin_lock_bh(&txn->lock);
 		if (txn->bound_source_id != source_id) {
 			spin_unlock_bh(&txn->lock);
@@ -2976,6 +2976,7 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 	bool apply_layer_delete_effects = false;
 	bool mark_source_down = false;
 	bool source_down_required = false;
+	bool publishing = false;
 	u32 mark_source_down_id = 0;
 
 	if (!txn || !limits)
@@ -3011,6 +3012,9 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 		ret = -EIO;
 		goto out_unlock;
 	}
+	publishing = !txn->read_only;
+	if (publishing)
+		pkm_lcs_publication_begin();
 
 	spin_lock_bh(&txn->lock);
 	if (txn->state == REG_TXN_ACTIVE_BOUND &&
@@ -3118,6 +3122,8 @@ out_unlock:
 			     final_state ? final_state : state, (s32)ret,
 			     ret == -ETIMEDOUT);
 	pkm_lcs_transaction_commit_audit(txn, transaction_id, ret);
+	if (publishing)
+		pkm_lcs_publication_end();
 	return ret;
 }
 
@@ -3128,10 +3134,8 @@ pkm_lcs_transaction_fd_commit_from_state(struct pkm_lcs_transaction_fd *txn)
 	long ret;
 
 	pkm_lcs_transaction_runtime_limits_snapshot_or_default(&limits);
-	pkm_lcs_publication_begin();
 	ret = pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 		txn, &limits, limits.request_timeout_ms);
-	pkm_lcs_publication_end();
 	return ret;
 }
 

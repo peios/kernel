@@ -6868,12 +6868,18 @@
         },
         {
           "index": 26,
+          "heading": "struct reg_read_transacted_args",
+          "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/700--generated-key-and-security-abi.md",
+          "sha256": "6dc4aae4b3e27b3f1ae07f537d608706bd41f4a775049f6ba6a618a9d313efe5"
+        },
+        {
+          "index": 27,
           "heading": "Constants",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/600--generated-syscall-and-common-abi.md",
           "sha256": "4af96425e970eb8c9e35f99a1fc9dbb32321fd4006198dd18da8c3252dc00613"
         },
         {
-          "index": 27,
+          "index": 28,
           "heading": "Tracepoint diagnostic codes",
           "destination": "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/1000--generated-source-and-diagnostic-abi.md",
           "sha256": "f00328055a32d114c70bc7a540b28f1fe5aaf1f1382bf7e668b8adc04c070664"
@@ -12551,6 +12557,11 @@
       "reference": "kernel/userspace/native/kacs/generated-access-check-and-descriptor-abi",
       "fragment": "trm-3-a-2-12",
       "title": "struct kacs_subject_result"
+    },
+    "5.A.3.23": {
+      "reference": "kernel/userspace/native/lcs/generated-key-and-security-abi",
+      "fragment": "trm-5-a-3-23",
+      "title": "struct reg_read_transacted_args"
     }
   },
   "claims": {
@@ -28463,6 +28474,11 @@
       "source": "6--ntfe/a2--ntfe-abi-notes.md",
       "reference": "kernel/internals/ntfe/overview",
       "fragment": "cite-ntfe-abi-notes.verify-kernel-config-asserts-fragment"
+    },
+    "lcs-abi.struct-reg-read-transacted-args": {
+      "source": "5--lcs/a1--lcs-abi.md",
+      "reference": "kernel/userspace/native/lcs/generated-key-and-security-abi",
+      "fragment": "cite-lcs-abi.struct-reg-read-transacted-args"
     }
   },
   "old_heading_fragments": {
@@ -32764,7 +32780,7 @@
         1,
         2,
         3,
-        26
+        27
       ],
       "reference": "kernel/userspace/native/lcs/generated-syscall-and-common-abi"
     },
@@ -32787,7 +32803,8 @@
         13,
         14,
         15,
-        16
+        16,
+        26
       ],
       "reference": "kernel/userspace/native/lcs/generated-key-and-security-abi"
     },
@@ -32827,7 +32844,7 @@
         23,
         24,
         25,
-        27
+        28
       ],
       "reference": "kernel/userspace/native/lcs/generated-source-and-diagnostic-abi"
     },
@@ -33019,13 +33036,13 @@
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/1000--generated-source-and-diagnostic-abi.md": "7a9ab0ee828a888b4adf24b7e0ce4dc260ed6aca1b77c01cfb56e584cdca833c",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/500--errors.md": "f0cfc5e94b0cbf4aecbc3fe80bd11ddaf46374d8fe812aa81e4f6582f220c44c",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/900--generated-transaction-and-backup-abi.md": "4765b1b1707bb66bec7410b88d09a85d0eebaa608a9c1a2851e3e9a7aa4c1578",
-    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/600--generated-syscall-and-common-abi.md": "19953c394aa840f972f078a3c887bc22148ff18cf17e18d977b344697fb676e5",
+    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/600--generated-syscall-and-common-abi.md": "2ab265f7ae5de92b5f68ffa95532e3a1cf354a1f8b83987b5ae6ea3bf1de4af5",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/800--generated-watch-abi.md": "d53a8c25640524f6a667f6088e88899d41c887b4c1a79ee5c4cd3296bb0d5d2a",
-    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/700--generated-key-and-security-abi.md": "5980f9f154f8855331db461a348b72851158982b6b13a1a6c8ef9831ccd5a662",
+    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/400--lcs.topic/700--generated-key-and-security-abi.md": "8dfddb0b629cbb4ecab86dfa0796b97743cf1b046e69adc9e2467ec9d3683105",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/1200--token-query-semantics.md": "2453f294f58336788806b1c2527bb2791c95ee6a50d54a4bfd2e3b02a5ea6301",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/400--generated-access-check-and-descriptor-abi.md": "bf98b926c484e44ee2929ce4e250222e4d3bdc6c1239240760b91f0fd82e7f21",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/600--generated-socket-and-ipc-abi.md": "65699edfa30abfec8919c2ce5a7ffbb5565977edf9b08e85167a9f79473b81c2",
-    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/200--generated-syscall-index.md": "d674ab8dedfdeb80e71d0fb0dfb9242b74666016a76ec7f7dcb722565981a3d5",
+    "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/200--generated-syscall-index.md": "9a703ad07ab89b6a9ce0ea3a1d479f86166a839de6965b5f6d21c36b227a81c4",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/1300--socket-abi-compatibility.md": "289d6c9719e6fc6b98882695c2de2d6a7392c0bd854ca103ebb8cd87073cf30e",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/800--generated-diagnostic-constants.md": "540aceda70a4f84c3a5886cbcf68e0b06c898c5d4312622afc95253d02402bd5",
     "docs/1--peios.shelf/kernel.product/600--userspace.antho/100--native.antho/300--kacs.topic/10--overview.md": "e0f207b97fe5db9b34fa33f372dd4e7492cbc9c5c36298f841306488447cc64b",

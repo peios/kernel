@@ -174,14 +174,6 @@ struct reg_get_security_args {
 	__u64 sd_ptr;
 };
 
-/* args_ptr points to the ordinary info/security argument structure. */
-struct reg_read_transacted_args {
-	__u64 args_ptr;
-	__s32 txn_fd;
-	__u32 _pad;
-};
-#define REG_READ_TRANSACTED_ARGS_SIZE 16U
-
 struct reg_set_security_args {
 	__u32 security_info;
 	__u32 sd_len;
@@ -268,6 +260,7 @@ struct reg_src_hive_entry {
 #define REG_ENUM_VALUE_ARGS_SIZE 40U
 #define REG_ENUM_SUBKEY_ARGS_SIZE 40U
 #define REG_QUERY_KEY_INFO_ARGS_SIZE 64U
+#define REG_READ_TRANSACTED_ARGS_SIZE 16U
 #define REG_DELETE_KEY_ARGS_SIZE 24U
 #define REG_HIDE_KEY_ARGS_SIZE 24U
 #define REG_GET_SECURITY_ARGS_SIZE 16U
@@ -533,5 +526,12 @@ struct reg_src_hive_entry {
 #define REG_BACKUP_BLANKET_TOMBSTONE 0x06U
 #define REG_BACKUP_TRAILER 0xFFU
 #define REG_BACKUP_MAGIC "PEIOSREG"
+
+/* args_ptr points to the ordinary info/security argument structure. */
+struct reg_read_transacted_args {
+	__u64 args_ptr;
+	__s32 txn_fd;
+	__u32 _pad;
+};
 
 #endif /* _UAPI_PKM_LCS_H */

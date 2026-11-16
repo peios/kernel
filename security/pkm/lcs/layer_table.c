@@ -477,13 +477,14 @@ long pkm_lcs_private_credentials_acquire_for_token(
 	if (ret)
 		return ret;
 	if (snapshot && snapshot->transaction_file) {
-		struct pkm_lcs_layer_snapshot current = {};
+		struct pkm_lcs_layer_snapshot live_layers = {};
 
-		ret = pkm_lcs_source_layer_snapshot_acquire(&current);
+		ret = pkm_lcs_source_layer_snapshot_acquire(&live_layers);
 		if (ret)
 			return ret;
-		ret = pkm_lcs_validate_private_layer_authority(token, &current, limits);
-		pkm_lcs_source_layer_snapshot_release(&current);
+		ret = pkm_lcs_validate_private_layer_authority(
+			token, &live_layers, limits);
+		pkm_lcs_source_layer_snapshot_release(&live_layers);
 		if (ret)
 			return ret;
 	}

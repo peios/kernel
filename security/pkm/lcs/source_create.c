@@ -1731,6 +1731,7 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 	const u8 *creator_sid = NULL;
 	size_t creator_sid_len = 0;
 	u64 sequence = 0;
+	bool publishing = false;
 	long ret;
 
 	prepared.fd = -1;
@@ -1790,6 +1791,9 @@ static long pkm_lcs_create_missing_copied_path_finish_for_token_with_txn(
 							  &created_sd);
 	if (ret)
 		goto out_target;
+	/* Start after create/layer authorization, before any source mutation. */
+	pkm_lcs_publication_begin();
+	publishing = true;
 
 	if (txn_fd >= 0) {
 		ret = pkm_lcs_allocate_sequence(&sequence);
@@ -1894,6 +1898,8 @@ out_target:
 	pkm_lcs_create_layer_target_destroy(&target);
 out_resolution:
 	pkm_lcs_create_missing_parent_resolution_destroy(&resolution);
+	if (publishing)
+		pkm_lcs_publication_end();
 	return ret;
 }
 
@@ -2148,10 +2154,8 @@ SYSCALL_DEFINE1(reg_create_key, const struct reg_create_key_args __user *, args)
 	if (ret)
 		return ret;
 
-	pkm_lcs_publication_begin();
 	ret = pkm_lcs_reg_create_key_args_for_token(
 		pkm_kacs_current_effective_token_ptr(), NULL, &copied, NULL);
-	pkm_lcs_publication_end();
 	return ret;
 }
 

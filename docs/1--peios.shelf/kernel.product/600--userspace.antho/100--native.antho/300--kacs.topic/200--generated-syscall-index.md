@@ -49,7 +49,7 @@ constant.
 | 1028 | `SYS_KACS_ACCESS_CHECK_SUBJECT` | `SYS_kacs_access_check_subject` | `kacs_access_check_subject(const void __user *request, size_t request_len, void __user *result)` |
 
 `uapi/pkm/syscall.h` also registers the KMES and LCS numbers,
-1090–1102, documented in their own chapters. <a id="cite-kacs-abi.sibling-syscall-range"></a>
+1090–1104, documented in their own chapters. <a id="cite-kacs-abi.sibling-syscall-range"></a>
 
 <a id="trm-3-a-2"></a>
 

@@ -23,7 +23,7 @@ range, and LCS runs on the defaults until the registry says otherwise.
 | `MaxTotalPathLength` | 16383 | 1024–65535 | A whole path, in UTF-8 bytes. <a id="cite-param.max-total-path-length"></a> |
 | `MaxLayersPerValue` | 128 | 1–1024 | Layers writing to one `(key, value name)` ([The Layer Model](<~kernel/internals/lcs/layers/the-layer-model#trm-5-3-1>)). <a id="cite-param.max-layers-per-value"></a> |
 | `MaxBoundTransactionsPerSource` | 16 | 1–256 | Concurrently bound transactions per source ([Scope and Lifetime](<~kernel/internals/lcs/transactions/scope-and-lifetime#trm-5-7-1>)). <a id="cite-param.max-bound-transactions-per-source"></a> |
-| `MaxReadOnlyTransactionsPerSource` | 16 | 1–256 | Concurrent backup snapshots per source ([Backup](<~kernel/internals/lcs/backup-and-restore/backup#trm-5-9-2>)). <a id="cite-param.max-read-only-transactions-per-source"></a> |
+| `MaxReadOnlyTransactionsPerSource` | 16 | 1–256 | Concurrent public read transactions and backup snapshots per source ([Backup](<~kernel/internals/lcs/backup-and-restore/backup#trm-5-9-2>)). <a id="cite-param.max-read-only-transactions-per-source"></a> |
 | `MaxTotalLayers` | 1024 | 16–65536 | Distinct layers in the in-memory table ([The Layer Model](<~kernel/internals/lcs/layers/the-layer-model#trm-5-3-1>)). <a id="cite-param.max-total-layers"></a> |
 | `MaxRegisteredSources` | 32 | 1–256 | Concurrently registered sources. <a id="cite-param.max-registered-sources"></a> |
 | `MaxHivesPerSource` | 64 | 1–1024 | Hives one source may register. <a id="cite-param.max-hives-per-source"></a> |

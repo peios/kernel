@@ -31,6 +31,8 @@ constant.
 | 1100 | `SYS_REG_OPEN_KEY` | `SYS_reg_open_key` | `reg_open_key(int parent_fd, const char __user *path, u32 desired_access, u32 flags)` |
 | 1101 | `SYS_REG_CREATE_KEY` | `SYS_reg_create_key` | `reg_create_key(const struct reg_create_key_args __user *args)` |
 | 1102 | `SYS_REG_BEGIN_TRANSACTION` | `SYS_reg_begin_transaction` | `reg_begin_transaction(void)` |
+| 1103 | `SYS_REG_BEGIN_READ_TRANSACTION` | `SYS_reg_begin_read_transaction` | `reg_begin_read_transaction(void)` |
+| 1104 | `SYS_REG_OPEN_KEY_TRANSACTED` | `SYS_reg_open_key_transacted` | `reg_open_key_transacted(int parent_fd, const char __user *path, u32 desired_access, u32 flags, int txn_fd)` |
 
 <a id="trm-5-a-2"></a>
 
@@ -72,6 +74,8 @@ number and argument size.
 | `REG_IOC_FLUSH` | 13 | _IO | none | 0 | `0x0000520D` |
 | `REG_IOC_BACKUP` | 14 | _IOW | `struct reg_backup_args` | 4 | `0x4004520E` |
 | `REG_IOC_RESTORE` | 15 | _IOW | `struct reg_restore_args` | 4 | `0x4004520F` |
+| `REG_IOC_QUERY_KEY_INFO_TRANSACTED` | 18 | _IOWR | `struct reg_read_transacted_args` | 16 | `0xC0105212` |
+| `REG_IOC_GET_SECURITY_TRANSACTED` | 19 | _IOWR | `struct reg_read_transacted_args` | 16 | `0xC0105213` |
 
 *Transaction fd.*
 
@@ -113,6 +117,7 @@ Grouped as the header groups them.
 | `REG_ENUM_VALUE_ARGS_SIZE` | `40` |
 | `REG_ENUM_SUBKEY_ARGS_SIZE` | `40` |
 | `REG_QUERY_KEY_INFO_ARGS_SIZE` | `64` |
+| `REG_READ_TRANSACTED_ARGS_SIZE` | `16` |
 | `REG_DELETE_KEY_ARGS_SIZE` | `24` |
 | `REG_HIDE_KEY_ARGS_SIZE` | `24` |
 | `REG_GET_SECURITY_ARGS_SIZE` | `16` |

@@ -10,7 +10,7 @@ type: reference
 
 ## Read-your-own-writes
 
-Within a bound transaction, reads see the transaction's own uncommitted
+Within a bound write transaction, reads see the transaction's own uncommitted
 writes. <a id="cite-txn.isolation.read-your-own-writes"></a>
 LCS does not implement this; the source does. A read tagged with the
 transaction id is executed by the source inside its open transaction,
@@ -21,6 +21,18 @@ resolving reads. <a id="cite-txn.isolation.no-uncommitted-data-cached-in-the-ker
 
 Externally, only committed state is visible. A transaction's writes are
 invisible to other threads and processes until commit. <a id="cite-txn.isolation.uncommitted-writes-are-invisible-externally"></a>
+
+Read-only transactions preserve their first-read data and layer selection.
+The kernel verifies that capture did not overlap a pending mutation or its
+completion effects; this includes requests whose original caller timed out.
+An overlap fails with `EAGAIN`, rather than mixing a source commit with an
+earlier kernel layer table. The fence covers capture only and never holds a
+writer lock for the lifetime of a read transaction.
+
+Security descriptors read through `REG_IOC_GET_SECURITY_TRANSACTED` are
+historical data, subject to the key fd's granted rights. New transacted opens
+check the current descriptor of the historical target GUID and the actual
+caller. The snapshot does not preserve an earlier permission to open a key.
 
 <a id="trm-5-7-2-2"></a>
 

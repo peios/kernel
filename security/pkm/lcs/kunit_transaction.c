@@ -1643,11 +1643,19 @@ static void pkm_lcs_kunit_read_only_layer_view_lifetime(struct kunit *test)
 
 static void pkm_lcs_kunit_read_capture_publication_fence(struct kunit *test)
 {
+	static const u8 root[16] = { 0x99 };
+	struct pkm_lcs_transaction_read_plan plan = {};
+	long fd = pkm_lcs_transaction_fd_publish_read_only(30000);
 	u64 before, during, after;
 
+	KUNIT_ASSERT_GE(test, fd, 0L);
 	KUNIT_ASSERT_EQ(test, pkm_lcs_publication_capture_start(&before), 0L);
 	KUNIT_EXPECT_TRUE(test, pkm_lcs_publication_capture_valid(before));
 	pkm_lcs_publication_begin();
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_fd_prepare_read_context(
+				fd, 999, root, &plan),
+			(long)-EAGAIN);
 	KUNIT_EXPECT_EQ(test, pkm_lcs_publication_capture_start(&during), (long)-EAGAIN);
 	KUNIT_EXPECT_FALSE(test, pkm_lcs_publication_capture_valid(before));
 	pkm_lcs_publication_begin();
@@ -1658,6 +1666,7 @@ static void pkm_lcs_kunit_read_capture_publication_fence(struct kunit *test)
 	KUNIT_EXPECT_NE(test, before, after);
 	KUNIT_EXPECT_FALSE(test, pkm_lcs_publication_capture_valid(before));
 	KUNIT_EXPECT_TRUE(test, pkm_lcs_publication_capture_valid(after));
+	KUNIT_EXPECT_EQ(test, close_fd(fd), 0);
 }
 
 static void

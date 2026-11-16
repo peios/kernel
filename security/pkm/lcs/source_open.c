@@ -4,6 +4,7 @@
  */
 
 #include <linux/errno.h>
+#include <linux/slab.h>
 #include <linux/syscalls.h>
 #include <linux/string.h>
 
@@ -59,44 +60,70 @@ long pkm_lcs_publish_open_key_for_token(
 static long pkm_lcs_publish_snapshot_open(
 	const void *token, const struct pkm_lcs_resolved_key_path *resolved,
 	u32 desired_access, int txn_fd,
-	const struct pkm_lcs_runtime_limits *limits)
+	const struct pkm_lcs_rsi_layer_view *layers, u32 layer_count,
+	const struct pkm_lcs_rsi_private_layer_view *private_layers,
+	u32 private_layer_count, const struct pkm_lcs_runtime_limits *limits)
 {
-	struct pkm_lcs_source_response_frame current_frame = {};
-	struct pkm_lcs_source_response_result response = {};
-	struct pkm_lcs_rsi_read_key_result current_key = {};
+	struct pkm_lcs_resolved_key_path live_path = {};
+	struct pkm_lcs_transaction_read_plan read_plan = {};
+	struct pkm_lcs_path_component_view *components = NULL;
 	const u8 *sd = resolved->final_frame.data + resolved->final_sd_offset;
 	size_t sd_len = resolved->final_sd_len;
+	u32 i;
 	long ret;
 
 	ret = txn_fd < 0 ? 0 : pkm_lcs_transaction_fd_read_only(txn_fd);
 	if (ret < 0)
 		return ret;
 	if (ret) {
-		/* Resolve historical names, authorize the same GUID as it exists now. */
-		ret = pkm_lcs_source_read_key_round_trip_retaining_frame_timeout_with_limits(
-			resolved->source_id, 0, resolved->key_guid, limits,
-			limits->request_timeout_ms, &current_frame, &response, NULL);
+		/* An orphan can retain a current READ_KEY record for open handles.
+		 * Verify the live path still names this GUID, using the frozen layer
+		 * selection, before using its current descriptor for authorization. */
+		components = kcalloc(resolved->component_count,
+				     sizeof(*components), GFP_KERNEL);
+		if (!components)
+			return -ENOMEM;
+		for (i = 0; i < resolved->component_count; i++) {
+			components[i].name = resolved->resolved_path[i];
+			components[i].name_len =
+				strlen(resolved->resolved_path[i]);
+		}
+		ret = pkm_lcs_walk_absolute_components_for_open_with_limits(
+			resolved->source_id, 0, resolved->ancestor_guids[0],
+			components, resolved->component_count, true, NULL, 0,
+			layers, layer_count, private_layers,
+			private_layer_count, -1, limits, &live_path);
 		if (ret)
 			goto out;
-		ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
-			current_frame.data, current_frame.len, response.request_id,
-			limits, &current_key);
-		if (ret)
+		if (live_path.source_id != resolved->source_id ||
+		    memcmp(live_path.key_guid, resolved->key_guid,
+			   RSI_GUID_SIZE)) {
+			ret = -ENOENT;
 			goto out;
-		if (!current_key.sd_len || current_key.sd_offset > current_frame.len ||
-		    current_key.sd_len > current_frame.len - current_key.sd_offset) {
+		}
+		if (!live_path.final_sd_len ||
+		    live_path.final_sd_offset > live_path.final_frame.len ||
+		    live_path.final_sd_len >
+			    live_path.final_frame.len -
+				    live_path.final_sd_offset) {
 			ret = -EIO;
 			goto out;
 		}
-		sd = current_frame.data + current_key.sd_offset;
-		sd_len = current_key.sd_len;
+		sd = live_path.final_frame.data + live_path.final_sd_offset;
+		sd_len = live_path.final_sd_len;
+		ret = pkm_lcs_transaction_fd_prepare_read_context(
+			txn_fd, resolved->source_id,
+			resolved->ancestor_guids[0], &read_plan);
+		if (ret)
+			goto out;
 	}
 	ret = pkm_lcs_publish_open_key_for_token(
 		token, resolved->source_id, resolved->key_guid, sd, sd_len,
 		desired_access, (const char *const *)resolved->resolved_path,
 		resolved->ancestor_guids, resolved->component_count, limits);
 out:
-	pkm_lcs_source_response_frame_destroy(&current_frame);
+	pkm_lcs_resolved_key_path_destroy(&live_path);
+	kfree(components);
 	return ret;
 }
 
@@ -152,7 +179,9 @@ long pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
 	}
 
 	ret = pkm_lcs_publish_snapshot_open(token, &resolved, desired_access,
-					    txn_fd, &limits);
+					    txn_fd, layers, layer_count,
+					    private_layers, private_layer_count,
+					    &limits);
 
 out_resolved:
 	pkm_lcs_resolved_key_path_destroy(&resolved);
@@ -222,7 +251,9 @@ long pkm_lcs_open_copied_relative_path_after_preflight(
 	}
 
 	ret = pkm_lcs_publish_snapshot_open(token, &resolved, desired_access,
-					    txn_fd, &limits);
+					    txn_fd, layers, layer_count,
+					    private_layers, private_layer_count,
+					    &limits);
 
 out_resolved:
 	pkm_lcs_resolved_key_path_destroy(&resolved);

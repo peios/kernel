@@ -1,6 +1,6 @@
 ---
 title: "Open, create and transaction syscalls"
-description: "The three LCS syscalls — reg_open_key, reg_create_key and reg_begin_transaction — with their arguments and failure conditions."
+description: "Opening keys and beginning read or write transactions, with their arguments and failure conditions."
 type: reference
 ---
 
@@ -146,3 +146,35 @@ Allocates a transaction id, publishes a transaction fd in state
 `REG_TXN_ACTIVE_UNBOUND`, and starts the lifetime timer. It contacts no
 source and chooses none ([Scope and Lifetime](<~kernel/internals/lcs/transactions/scope-and-lifetime#trm-5-7-1>)). It can fail only with `ENOMEM`,
 `EOVERFLOW` on transaction id exhaustion, or `EINVAL`. <a id="cite-reg-syscall.begin-transaction.failure-set"></a>
+
+## `reg_begin_read_transaction` (1103)
+
+```c
+int reg_begin_read_transaction(void);
+```
+
+Creates a read-only transaction with the same fd lifetime and status model.
+The first read binds one source/hive, pins its persistent and volatile stores,
+and freezes layer selection. Later reads, enumeration and transacted opens use
+that view. Mutations fail `EROFS`; another hive fails `EXDEV`.
+
+Capture overlapping Registry publication fails `EAGAIN`. Start a fresh
+transaction and repeat the complete read. It never falls back to live reads.
+The lifetime starts at begin and uses `TransactionTimeoutMs`. The source's
+`MaxReadOnlyTransactionsPerSource` quota applies once bound. Closing releases
+the snapshot; a bound snapshot may also be ended with `REG_IOC_COMMIT`.
+
+## `reg_open_key_transacted` (1104)
+
+```c
+int reg_open_key_transacted(int parent_fd, const char __user *path,
+                           u32 desired_access, u32 flags, int txn_fd);
+```
+
+Uses the same path and access arguments as `reg_open_key`, with a transaction
+fd. In a read-only transaction, names and symlinks resolve through the frozen
+view. AccessCheck uses the current descriptor of the resolved GUID and the
+calling thread's effective token. A deleted GUID fails `ENOENT`, even if its
+old path remains in the snapshot. A replacement at the same path has a distinct
+GUID and cannot substitute its permissions. Existing key fds retain their
+ordinary granted-access semantics.

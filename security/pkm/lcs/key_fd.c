@@ -541,8 +541,10 @@ static u8 pkm_lcs_key_ioctl_cmd_code(unsigned int cmd)
 	case REG_IOC_ENUM_SUBKEYS:
 		return LCS_KCMD_ENUM_SUBKEYS;
 	case REG_IOC_QUERY_KEY_INFO:
+	case REG_IOC_QUERY_KEY_INFO_TRANSACTED:
 		return LCS_KCMD_QUERY_KEY_INFO;
 	case REG_IOC_GET_SECURITY:
+	case REG_IOC_GET_SECURITY_TRANSACTED:
 		return LCS_KCMD_GET_SECURITY;
 	case REG_IOC_SET_SECURITY:
 		return LCS_KCMD_SET_SECURITY;
@@ -11499,9 +11501,19 @@ static long pkm_lcs_key_fd_ioctl(struct file *file, unsigned int cmd,
 	case REG_IOC_BLANKET_TOMBSTONE:
 	case REG_IOC_DELETE_KEY:
 	case REG_IOC_HIDE_KEY:
+		publishing = key_fd &&
+			     !lcs_rust_key_fd_fixed_ioctl_access_gate(
+				     key_fd->granted_access, _IOC_NR(cmd));
+		break;
 	case REG_IOC_SET_SECURITY:
+		publishing = key_fd && (key_fd->granted_access &
+					(WRITE_DAC | WRITE_OWNER |
+					 ACCESS_SYSTEM_SECURITY));
+		break;
 	case REG_IOC_RESTORE:
-		publishing = true;
+		publishing = !pkm_lcs_key_fd_require_privilege(
+			pkm_kacs_current_effective_token_ptr(),
+			KACS_SE_RESTORE_PRIVILEGE);
 		break;
 	default:
 		publishing = false;

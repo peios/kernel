@@ -4,6 +4,13 @@ description: "The sixteen ioctls acting on a key fd — reading, writing, securi
 type: reference
 ---
 
+`REG_IOC_QUERY_KEY_INFO_TRANSACTED` and `REG_IOC_GET_SECURITY_TRANSACTED`
+accept `reg_read_transacted_args`: `args_ptr` points to the corresponding
+ordinary argument structure, `txn_fd` names the transaction, and `_pad` is
+zero. They retain the ordinary access checks and buffer contracts, with data
+read from the transaction. Key-info hive generation is fixed at read snapshot
+capture. Existing non-transacted commands retain their live-read behaviour.
+
 <a id="trm-5-5-3"></a>
 
 Sixteen ioctls act on a key fd. <a id="cite-ioctl.sixteen-act-on-a-key-fd"></a> Each checks the fd's granted mask

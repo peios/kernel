@@ -220,3 +220,15 @@ Total size 24 bytes.
 | 8 | 8 | `__u64` | `sd_ptr` |
 | 16 | 4 | `__s32` | `txn_fd` |
 | 20 | 4 | `__u32` | `_pad` |
+
+<a id="trm-5-a-3-23"></a>
+
+## `struct reg_read_transacted_args` <a id="cite-lcs-abi.struct-reg-read-transacted-args"></a>
+
+Total size 16 bytes.
+
+| Offset | Size | Type | Field |
+|---|---|---|---|
+| 0 | 8 | `__u64` | `args_ptr` |
+| 8 | 4 | `__s32` | `txn_fd` |
+| 12 | 4 | `__u32` | `_pad` |

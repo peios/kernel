@@ -22,17 +22,24 @@ A transaction begins in the state `REG_TXN_ACTIVE_UNBOUND`. <a id="cite-txn.life
 
 ## Binding
 
-A transaction binds to a source on its first **mutating** operation. <a id="cite-txn.lifetime.binds-on-first-mutating-operation"></a>
+A write transaction binds to a source on its first **mutating** operation. <a id="cite-txn.lifetime.binds-on-first-mutating-operation"></a>
 
 There are seven: writing a value, deleting a value entry, setting or
 removing a blanket tombstone, creating a key, deleting a key's path
 entry, hiding a key, and changing a Security Descriptor. <a id="cite-txn.lifetime.the-seven-binding-operations"></a>
 
-Reads never bind. <a id="cite-txn.lifetime.reads-never-bind"></a>
+Reads never bind a write transaction. <a id="cite-txn.lifetime.reads-never-bind"></a>
 
-A read passed an unbound transaction fd is sent to the source with a
+A read passed an unbound write transaction fd is sent to the source with a
 transaction id of zero and behaves as an ordinary non-transactional
 read. <a id="cite-txn.lifetime.unbound-read-is-non-transactional"></a>
+
+`reg_begin_read_transaction` creates a read-only transaction. Its first read
+binds the source/hive and fixes the persistent and volatile data snapshot and
+layer view. It uses the ordinary lifetime timer and read-only source quota.
+The kernel rejects mutations with `EROFS`. Snapshot capture overlapping a
+publication returns `EAGAIN`; the caller retries its whole read using a fresh
+transaction. Writers continue while an established read snapshot exists.
 
 Once bound, every operation on that fd must target the same hive.
 One that does not fails with `EXDEV`, and it fails in the kernel,
