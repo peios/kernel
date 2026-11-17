@@ -20,10 +20,11 @@
 //! the next packet sees it), and a REPORT can carry the verdict.
 
 use crate::pnp_core::action::{Action, CountAmount, TagOp, Verdict, MAX_PROMPT_CHAIN};
+use crate::pnp_core::machinery::{self, Domain, Node};
 use crate::pnp_core::pkm_alloc::{AllocError, String as PkmString, TryClone, Vec as PkmVec};
 use crate::pnp_core::rule::{Forest, MatchTrace, Rule};
 use crate::pnp_core::snapshot::Snapshot;
-use crate::pnp_core::strutil::{join_path, str_to_pkm};
+use crate::pnp_core::strutil::str_to_pkm;
 
 /// Evaluation-time configuration.
 #[derive(Debug, Clone, Copy)]
@@ -83,15 +84,7 @@ pub enum Effect {
 
 /// One yielded verdict, before collation. Exposed so viewers can show every
 /// speaker, not just the winner.
-#[derive(Debug)]
-pub struct VerdictCandidate {
-    /// The verdict.
-    pub verdict: Verdict,
-    /// The yielding rule's effective priority.
-    pub priority: i64,
-    /// The yielding rule's attribution path.
-    pub rule: PkmString,
-}
+pub type VerdictCandidate = machinery::Candidate<Verdict>;
 
 /// The result of judging one traversal against one forest.
 #[derive(Debug)]
@@ -125,181 +118,63 @@ pub fn evaluate(
     snap: &Snapshot<'_>,
     ctx: &EvalContext,
 ) -> Result<Evaluation, AllocError> {
-    let mut effects = PkmVec::new();
-    let mut candidates = PkmVec::new();
-    // Speakers already resolved this evaluation (a speaker executes once
-    // even when several abstaining descendants reach it).
-    let mut spoken: PkmVec<*const Rule> = PkmVec::new();
-    let mut trace = MatchTrace::default();
-
-    for root in forest.roots.iter() {
-        walk(
-            root,
-            snap,
-            ctx,
-            &mut effects,
-            &mut candidates,
-            &mut spoken,
-            &mut trace,
-        )?;
-    }
-
-    let mut winner: Option<usize> = None;
-    for (i, c) in candidates.iter().enumerate() {
-        let better = match winner {
-            None => true,
-            Some(w) => {
-                let cur = &candidates[w];
-                c.priority > cur.priority
-                    || (c.priority == cur.priority
-                        && c.verdict.strictness() > cur.verdict.strictness())
-            }
-        };
-        if better {
-            winner = Some(i);
-        }
-    }
-
-    match winner {
-        Some(w) => {
-            let top = &candidates[w];
-            let conflict = candidates.iter().enumerate().any(|(i, c)| {
-                i != w
-                    && c.priority == top.priority
-                    && c.verdict.strictness() == top.verdict.strictness()
-                    && c.verdict != top.verdict
-            });
-            Ok(Evaluation {
-                verdict: top.verdict,
-                attributed_to: top.rule.try_clone()?,
-                backstop: false,
-                effects,
-                candidates,
-                expires_at: trace.expires_at,
-                conflict,
-            })
-        }
-        None => Ok(Evaluation {
-            verdict: forest.layer.backstop(),
-            attributed_to: str_to_pkm("backstop")?,
-            backstop: true,
-            effects,
-            candidates,
-            expires_at: trace.expires_at,
-            conflict: false,
-        }),
-    }
-}
-
-/// One matched rule on the walk's stack: the rule, its path, the next
-/// child to try, and whether any child has matched (shadowing it).
-struct WalkFrame<'a> {
-    rule: &'a Rule,
-    path: PkmString,
-    next: usize,
-    any_child: bool,
-}
-
-/// Depth-first descent from one root, with an explicit stack rather than
-/// recursion: evaluation runs on the packet path's kernel stack, and depth
-/// must cost heap, not stack (PEI-1299). A rule is pushed when it matches
-/// and popped once its children are done; popped unshadowed, it has
-/// triggered: its actions resolve, and if it abstains the stack beneath it
-/// (exactly its ancestors) is searched for its speaker.
-fn walk<'a>(
-    root: &'a Rule,
-    snap: &Snapshot<'_>,
-    ctx: &EvalContext,
-    effects: &mut PkmVec<Effect>,
-    candidates: &mut PkmVec<VerdictCandidate>,
-    spoken: &mut PkmVec<*const Rule>,
-    trace: &mut MatchTrace,
-) -> Result<(), AllocError> {
-    if !root.matches_traced(snap, trace) {
-        return Ok(());
-    }
-    let mut stack: PkmVec<WalkFrame<'a>> = PkmVec::new();
-    stack.push(WalkFrame {
-        rule: root,
-        path: join_path("", root.name.as_str())?,
-        next: 0,
-        any_child: false,
-    })?;
-
-    while let Some(top) = stack.last_mut() {
-        let rule: &'a Rule = top.rule;
-        if let Some(child) = rule.children.get(top.next) {
-            top.next += 1;
-            if child.matches_traced(snap, trace) {
-                top.any_child = true;
-                let path = join_path(top.path.as_str(), child.name.as_str())?;
-                stack.push(WalkFrame {
-                    rule: child,
-                    path,
-                    next: 0,
-                    any_child: false,
-                })?;
-            }
-            continue;
-        }
-        let Some(done) = stack.pop() else { break };
-        if done.any_child {
-            // Shadowed: a matching descendant speaks for this region.
-            continue;
-        }
-        trigger(done, &stack, snap, ctx, effects, candidates, spoken)?;
-    }
-    Ok(())
-}
-
-/// A triggered rule: side effects always execute; a verdict is a
-/// candidate; an abstention walks up the rule's own parentage to the
-/// first ancestor with a direct verdict, which speaks once for the region.
-/// Intermediate abstaining ancestors execute nothing.
-fn trigger(
-    done: WalkFrame<'_>,
-    ancestors: &[WalkFrame<'_>],
-    snap: &Snapshot<'_>,
-    ctx: &EvalContext,
-    effects: &mut PkmVec<Effect>,
-    candidates: &mut PkmVec<VerdictCandidate>,
-    spoken: &mut PkmVec<*const Rule>,
-) -> Result<(), AllocError> {
-    let rule = done.rule;
-    if let Some(verdict) = resolve_rule(rule, done.path.as_str(), snap, ctx, effects)? {
-        return candidates.push(VerdictCandidate {
-            verdict,
-            priority: rule.priority,
-            rule: done.path,
-        });
-    }
-    let Some(speaker) = ancestors
-        .iter()
-        .rev()
-        .find(|frame| frame.rule.has_direct_verdict())
-    else {
-        // No speaker in the parentage: this branch contributes nothing;
-        // other branches or the backstop answer.
-        return Ok(());
+    let mut domain = PacketDomain {
+        snap,
+        ctx,
+        effects: PkmVec::new(),
+        trace: MatchTrace::default(),
     };
-    let ancestor = speaker.rule;
-    if spoken
-        .iter()
-        .any(|p| core::ptr::eq(*p, ancestor as *const Rule))
-    {
-        return Ok(());
+    let selected = machinery::evaluate(forest.roots.as_slice(), &mut domain)?;
+    let (verdict, attributed_to) = match selected.winner {
+        Some(w) => {
+            let top = &selected.candidates[w];
+            (top.verdict, top.rule.try_clone()?)
+        }
+        None => (forest.layer.backstop(), str_to_pkm("backstop")?),
+    };
+    Ok(Evaluation {
+        verdict,
+        attributed_to,
+        backstop: selected.winner.is_none(),
+        effects: domain.effects,
+        candidates: selected.candidates,
+        expires_at: domain.trace.expires_at,
+        conflict: selected.conflict,
+    })
+}
+
+impl Node for Rule {
+    fn name(&self) -> &str {
+        self.name.as_str()
     }
-    spoken.push(ancestor as *const Rule)?;
-    let verdict = resolve_rule(ancestor, speaker.path.as_str(), snap, ctx, effects)?;
-    // has_direct_verdict guarantees at least one verdict.
-    if let Some(verdict) = verdict {
-        candidates.push(VerdictCandidate {
-            verdict,
-            priority: ancestor.priority,
-            rule: speaker.path.try_clone()?,
-        })?;
+    fn priority(&self) -> i64 {
+        self.priority
     }
-    Ok(())
+    fn children(&self) -> &[Self] {
+        self.children.as_slice()
+    }
+    fn has_direct_verdict(&self) -> bool {
+        Rule::has_direct_verdict(self)
+    }
+}
+
+struct PacketDomain<'s, 'p> {
+    snap: &'s Snapshot<'p>,
+    ctx: &'s EvalContext,
+    effects: PkmVec<Effect>,
+    trace: MatchTrace,
+}
+impl Domain<Rule> for PacketDomain<'_, '_> {
+    type Verdict = Verdict;
+    fn matches(&mut self, rule: &Rule) -> bool {
+        rule.matches_traced(self.snap, &mut self.trace)
+    }
+    fn resolve(&mut self, rule: &Rule, path: &str) -> Result<Option<Verdict>, AllocError> {
+        resolve_rule(rule, path, self.snap, self.ctx, &mut self.effects)
+    }
+    fn strictness(&self, verdict: Verdict) -> u8 {
+        verdict.strictness()
+    }
 }
 
 /// Resolves one rule's action list: pushes its side effects (report dedup

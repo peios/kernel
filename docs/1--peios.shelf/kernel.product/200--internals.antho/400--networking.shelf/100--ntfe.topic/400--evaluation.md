@@ -102,6 +102,14 @@ therefore a visible rule.
 
 ## The evaluation as data
 
+Tree traversal, ancestor fallback, and candidate collation live in
+`pnp_core::machinery`. Its domain adapter supplies matching, action resolution
+and verdict strictness. Packet and interface evaluation retain the
+`pnp_core::eval::evaluate` entry point and their existing fact and action types.
+Userspace domains can share the same traversal without constructing synthetic
+packet snapshots. The machinery computes results and optional explanation
+steps; callers retain responsibility for applying effects and refusing conflicts.
+
 `Evaluation` carries the winning verdict, its attribution, the backstop
 flag, every effect to apply, every candidate (winners and losers alike)
 for observability, and `expires_at`. <a id="cite-ntfe-eval.evaluation-carries-every-candidate-and-effect"></a> Effects reference their stores by

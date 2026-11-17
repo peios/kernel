@@ -11,6 +11,9 @@
 pub mod action;
 /// Match conditions: facts, operators, evaluation.
 pub mod condition;
+/// Claim-name equivalence shared with KACS and authentication clients.
+#[path = "../kacs/kacs_core/claim_name.rs"]
+pub mod claim_name;
 /// Shared error types.
 pub mod error;
 /// The evaluation algorithm.
@@ -19,6 +22,8 @@ pub mod eval;
 pub mod hash;
 /// Registry-shaped input -> validated forest.
 pub mod ingest;
+/// Shared tree traversal, ancestor fallback and candidate collation.
+pub mod machinery;
 /// PKM-owned fallible allocation wrappers.
 pub mod pkm_alloc;
 /// The rule atom and forest.

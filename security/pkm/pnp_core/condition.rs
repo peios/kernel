@@ -535,7 +535,8 @@ pub enum IntPattern {
 }
 
 impl IntPattern {
-    fn matches(self, v: i64) -> bool {
+    /// Tests the shared signed integer pattern without type coercion.
+    pub fn matches(self, v: i64) -> bool {
         match self {
             IntPattern::Exact(x) => v == x,
             IntPattern::Range(a, b) => v >= a && v <= b,
@@ -560,7 +561,8 @@ pub enum AddrPattern {
 }
 
 impl AddrPattern {
-    fn matches(&self, v: IpAddr) -> bool {
+    /// Tests an address while preserving its IP family.
+    pub fn matches(&self, v: IpAddr) -> bool {
         match *self {
             AddrPattern::Exact(a) => a == v,
             AddrPattern::Range(a, b) => match (addr_bits(a), addr_bits(b), addr_bits(v)) {

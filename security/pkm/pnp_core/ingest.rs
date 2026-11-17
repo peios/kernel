@@ -510,6 +510,33 @@ fn parse_condition(
         _ => None,
     };
 
+    let op = comparison(family, op_name, value, fact_for_names, path, key)?;
+
+    Ok(Condition {
+        key: cond_key,
+        op,
+        never: false,
+    })
+}
+
+/// Parses a primitive comparison without imposing packet/interface fact names.
+/// Domain adapters share PNP's operators and pattern grammar through this API.
+pub fn parse_comparison(
+    family: FactFamily,
+    operator: &str,
+    value: &RegValue,
+) -> Result<CondOp, BuildError> {
+    comparison(family, operator, value, None, &PkmString::new(), operator)
+}
+
+fn comparison(
+    family: FactFamily,
+    op_name: &str,
+    value: &RegValue,
+    fact_for_names: Option<FactId>,
+    path: &PkmString,
+    key: &str,
+) -> Result<CondOp, BuildError> {
     let bad_op = || mk_error(path, key, false);
     let bad_pattern = || mk_error(path, key, true);
 
@@ -596,11 +623,7 @@ fn parse_condition(
         _ => return Err(bad_op()),
     };
 
-    Ok(Condition {
-        key: cond_key,
-        op,
-        never: false,
-    })
+    Ok(op)
 }
 
 /// Builds a `BadPattern`/`BadOperator` error; if allocating the message
@@ -751,6 +774,9 @@ fn sid_pattern(s: &str, fact: Option<FactId>) -> Option<Sid> {
     }
     if s.is_empty() {
         return None;
+    }
+    if fact.is_none() {
+        return Sid::well_known(s);
     }
     match fact? {
         FactId::LocalService | FactId::RemoteService => Some(Sid::service(s)),
