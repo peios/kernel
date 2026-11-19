@@ -8,10 +8,11 @@ type: reference
 
 ## Deferred deletion <a id="cite-facs.stratafs-copy-up.deferred-deletion"></a>
 
-Delete-on-close is authorized when armed and recorded on the open file
-description ([KACS-Native Open](<~kernel/internals/kacs/file-security/kacs-native-open#trm-3-9-2>)). At final close there is no re-authorization
-against the closing task. <a id="cite-facs.stratafs-copy-up.close-no-reauth"></a> Instead a synchronous, non-nesting internal
-deletion scope is armed for that exact outer file, and StrataFS binds
+A delete-pending mark is authorized when it is set, and the setting
+open's token is recorded with it ([Sharing and Deletion](<~kernel/internals/kacs/file-security/sharing-and-deletion#trm-3-9-10-3>)). At the
+last close there is no re-authorization against the closing task. <a id="cite-facs.stratafs-copy-up.close-no-reauth"></a> Instead a synchronous, non-nesting internal
+deletion scope is armed for the outer path the marking open named, captured
+when the mark was set, and StrataFS binds
 it once to the exact provider parent, dentry and inode selected from
 the descriptor's settled provider. <a id="cite-facs.stratafs-copy-up.deletion-scope-binding"></a> Only the corresponding outer and
 lower unlink calls match, and the scope is cleared on every return.

@@ -36,6 +36,10 @@
 #include "lsm_internal.h"
 #include "mount_policy.h"
 #include "namespace.h"
+#include "nt_file.h"
+#include "nt_lease.h"
+#include "nt_pin.h"
+#include "sattr.h"
 #include "native_open.h"
 #include "token_runtime.h"
 #include <trace/events/kacs.h>
@@ -721,6 +725,17 @@ long pkm_kacs_authorize_namespace_rename_for_subject(const void *subject_token,
 						     struct inode *new_dir,
 						     struct dentry *new_dentry)
 {
+	return pkm_kacs_authorize_namespace_rename_parts(
+		subject_token, old_dir, old_dentry, new_dir, new_dentry, true);
+}
+
+long pkm_kacs_authorize_namespace_rename_parts(const void *subject_token,
+					       struct inode *old_dir,
+					       struct dentry *old_dentry,
+					       struct inode *new_dir,
+					       struct dentry *new_dentry,
+					       bool check_source)
+{
 	struct inode *source_inode;
 	u32 add_access;
 	long ret;
@@ -732,12 +747,15 @@ long pkm_kacs_authorize_namespace_rename_for_subject(const void *subject_token,
 	if (!source_inode)
 		return -EACCES;
 
-	ret = pkm_kacs_authorize_namespace_delete_for_subject(
-		subject_token, old_dir, old_dentry);
-	trace_kacs_inode_rename(old_dir, source_inode, KACS_ACCESS_DELETE,
-				KACS_NS_SOURCE, ret);
-	if (ret)
-		return ret;
+	if (check_source) {
+		ret = pkm_kacs_authorize_namespace_delete_for_subject(
+			subject_token, old_dir, old_dentry);
+		trace_kacs_inode_rename(old_dir, source_inode,
+					KACS_ACCESS_DELETE, KACS_NS_SOURCE,
+					ret);
+		if (ret)
+			return ret;
+	}
 
 	add_access = S_ISDIR(source_inode->i_mode) ?
 			     KACS_FILE_ADD_SUBDIRECTORY :
@@ -805,6 +823,60 @@ out:
 	return ret;
 }
 
+/*
+ * NT treats deleting a name as an open with DELETE (TRM "Deleting and
+ * renaming by name"): refuse it while the file is delete-pending or held
+ * by an open that does not share delete, and refuse removing or moving a
+ * pinned directory.
+ */
+static int pkm_kacs_nt_check_name_removal(struct dentry *dentry)
+{
+	struct inode *record;
+	int ret = 0;
+
+	if (!dentry || !d_really_is_positive(dentry))
+		return 0;
+	if (pkm_kacs_pin_dentry_pinned(dentry))
+		return -EBUSY;
+	record = pkm_kacs_nt_record_inode_for_dentry(dentry);
+	if (record) {
+		ret = pkm_kacs_nt_check_delete_by_name(record);
+		iput(record);
+	}
+	return ret;
+}
+
+/* A delete-pending directory accepts no new entries. */
+static int pkm_kacs_nt_check_dir_accepts(struct inode *dir)
+{
+	if (!dir || !pkm_kacs_nt_applies(dir))
+		return 0;
+	return pkm_kacs_nt_check_not_pending(dir);
+}
+
+/* A file the deletion would remove, judged as a deletion of its name. */
+static int pkm_kacs_nt_check_readonly_removal(struct dentry *dentry)
+{
+	if (dentry && d_really_is_positive(dentry) && d_is_reg(dentry) &&
+	    pkm_kacs_sattr_dentry_readonly(dentry))
+		return -EPERM;
+	return 0;
+}
+
+static bool pkm_kacs_handle_rename_matches(const struct dentry *dentry)
+{
+	struct pkm_kacs_task_security *task_sec;
+
+	if (!dentry || !current || !current->security)
+		return false;
+	task_sec = pkm_kacs_task(current);
+	/* A StrataFS handle is named by its provider's inode alone. */
+	return task_sec->handle_rename_inode &&
+	       task_sec->handle_rename_inode == d_inode(dentry) &&
+	       (!task_sec->handle_rename_dentry ||
+		task_sec->handle_rename_dentry == dentry);
+}
+
 int pkm_kacs_inode_rename_flags(struct inode *old_dir,
 				struct dentry *old_dentry,
 				struct inode *new_dir,
@@ -844,6 +916,9 @@ int pkm_kacs_inode_create(struct inode *dir, struct dentry *dentry,
 			  umode_t mode)
 {
 	long ret;
+
+	/* What the VFS's delegation breaks that follow are for. */
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
 
@@ -852,6 +927,8 @@ int pkm_kacs_inode_create(struct inode *dir, struct dentry *dentry,
 	(void)mode;
 	ret = pkm_kacs_authorize_namespace_create_for_subject(
 		pkm_kacs_current_effective_token_ptr(), dir, dentry, false);
+	if (!ret)
+		ret = pkm_kacs_nt_check_dir_accepts(dir);
 	trace_kacs_inode_create(dir, dentry ? d_inode(dentry) : NULL,
 				KACS_FILE_ADD_FILE, KACS_NS_PRIMARY, ret);
 	return (int)ret;
@@ -860,6 +937,8 @@ int pkm_kacs_inode_create(struct inode *dir, struct dentry *dentry,
 int pkm_kacs_inode_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	long ret;
+
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
 
@@ -868,6 +947,8 @@ int pkm_kacs_inode_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 	(void)mode;
 	ret = pkm_kacs_authorize_namespace_create_for_subject(
 		pkm_kacs_current_effective_token_ptr(), dir, dentry, true);
+	if (!ret)
+		ret = pkm_kacs_nt_check_dir_accepts(dir);
 	trace_kacs_inode_mkdir(dir, dentry ? d_inode(dentry) : NULL,
 			       KACS_FILE_ADD_SUBDIRECTORY, KACS_NS_PRIMARY,
 			       ret);
@@ -878,6 +959,8 @@ int pkm_kacs_inode_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 			 dev_t dev)
 {
 	long ret;
+
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
 
@@ -890,6 +973,8 @@ int pkm_kacs_inode_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 		ret = pkm_kacs_authorize_namespace_create_for_subject(
 			pkm_kacs_current_effective_token_ptr(), dir, dentry,
 			false);
+	if (!ret)
+		ret = pkm_kacs_nt_check_dir_accepts(dir);
 	trace_kacs_inode_mknod(dir, dentry ? d_inode(dentry) : NULL,
 			       KACS_FILE_ADD_FILE, KACS_NS_PRIMARY, ret);
 	return (int)ret;
@@ -899,6 +984,8 @@ int pkm_kacs_inode_symlink(struct inode *dir, struct dentry *dentry,
 			   const char *old_name)
 {
 	long ret;
+
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
 
@@ -907,6 +994,8 @@ int pkm_kacs_inode_symlink(struct inode *dir, struct dentry *dentry,
 	(void)old_name;
 	ret = pkm_kacs_authorize_namespace_symlink_for_subject(
 		pkm_kacs_current_effective_token_ptr(), dir, dentry);
+	if (!ret)
+		ret = pkm_kacs_nt_check_dir_accepts(dir);
 	trace_kacs_inode_symlink(dir, dentry ? d_inode(dentry) : NULL,
 				 KACS_FILE_ADD_FILE, KACS_NS_PRIMARY, ret);
 	return (int)ret;
@@ -915,18 +1004,34 @@ int pkm_kacs_inode_symlink(struct inode *dir, struct dentry *dentry,
 int pkm_kacs_inode_link(struct dentry *old_dentry, struct inode *dir,
 			struct dentry *new_dentry)
 {
+	long ret;
+
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
+	if (old_dentry)
+		pkm_kacs_lease_note_vfs_break(d_inode(old_dentry),
+					      KACS_LEASE_BREAK_NAMESPACE);
+
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
+
 	if (pkm_kacs_copy_up_allows_link(old_dentry, dir, new_dentry))
 		return 0;
-	return (int)pkm_kacs_authorize_namespace_link_for_subject(
+	ret = pkm_kacs_authorize_namespace_link_for_subject(
 		pkm_kacs_current_effective_token_ptr(), old_dentry, dir,
 		new_dentry);
+	if (!ret)
+		ret = pkm_kacs_nt_check_dir_accepts(dir);
+	return (int)ret;
 }
 
 int pkm_kacs_inode_unlink(struct inode *dir, struct dentry *dentry)
 {
 	long ret;
+
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
+	if (dentry)
+		pkm_kacs_lease_note_vfs_break(d_inode(dentry),
+					      KACS_LEASE_BREAK_DELETE);
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
 	if (pkm_kacs_stratafs_supersede_allows_unlink(dir, dentry))
@@ -936,22 +1041,25 @@ int pkm_kacs_inode_unlink(struct inode *dir, struct dentry *dentry)
 
 	if (pkm_kacs_copy_up_allows_unlink(dir, dentry, false))
 		return 0;
+	/* The last-close removal of a delete-pending file, authorized when
+	 * the mark was set. */
+	if (pkm_kacs_nt_deferred_delete_matches(dir, dentry))
+		return 0;
 	if (current && current->security) {
 		struct pkm_kacs_task_security *task_sec =
 			pkm_kacs_task(current);
-		const struct file *file = task_sec->delete_on_close_file;
 
-		if (file &&
-		    ((file_dentry((struct file *)file) == dentry &&
-		      file_inode((struct file *)file) == d_inode(dentry) &&
-		      dentry->d_parent && d_inode(dentry->d_parent) == dir) ||
-		     (task_sec->delete_on_close_parent_inode == dir &&
-		      task_sec->delete_on_close_dentry == dentry &&
-		      task_sec->delete_on_close_inode == d_inode(dentry))))
+		if (task_sec->delete_on_close_parent_inode == dir &&
+		    task_sec->delete_on_close_dentry == dentry &&
+		    task_sec->delete_on_close_inode == d_inode(dentry))
 			return 0;
 	}
 	ret = pkm_kacs_authorize_namespace_delete_for_subject(
 		pkm_kacs_current_effective_token_ptr(), dir, dentry);
+	if (!ret)
+		ret = pkm_kacs_nt_check_readonly_removal(dentry);
+	if (!ret)
+		ret = pkm_kacs_nt_check_name_removal(dentry);
 	trace_kacs_inode_unlink(dir, dentry ? d_inode(dentry) : NULL,
 				KACS_ACCESS_DELETE, KACS_NS_PRIMARY, ret);
 	return (int)ret;
@@ -960,6 +1068,14 @@ int pkm_kacs_inode_unlink(struct inode *dir, struct dentry *dentry)
 int pkm_kacs_inode_rmdir(struct inode *dir, struct dentry *dentry)
 {
 	long ret;
+
+	pkm_kacs_lease_note_vfs_break(dir, KACS_LEASE_BREAK_CHILD);
+	if (dentry)
+		pkm_kacs_lease_note_vfs_break(d_inode(dentry),
+					      KACS_LEASE_BREAK_DELETE);
+	/* Pins are on the names opens were made through, stacked or not. */
+	if (pkm_kacs_pin_dentry_pinned(dentry))
+		return -EBUSY;
 	if (dir && dir->i_sb && dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
 	if (pkm_kacs_stratafs_created_cleanup_allows(dir, dentry))
@@ -967,8 +1083,12 @@ int pkm_kacs_inode_rmdir(struct inode *dir, struct dentry *dentry)
 
 	if (pkm_kacs_copy_up_allows_unlink(dir, dentry, true))
 		return 0;
+	if (pkm_kacs_nt_deferred_delete_matches(dir, dentry))
+		return 0;
 	ret = pkm_kacs_authorize_namespace_delete_for_subject(
 		pkm_kacs_current_effective_token_ptr(), dir, dentry);
+	if (!ret)
+		ret = pkm_kacs_nt_check_name_removal(dentry);
 	trace_kacs_inode_rmdir(dir, dentry ? d_inode(dentry) : NULL,
 			       KACS_ACCESS_DELETE, KACS_NS_PRIMARY, ret);
 	return (int)ret;
@@ -977,6 +1097,22 @@ int pkm_kacs_inode_rmdir(struct inode *dir, struct dentry *dentry)
 int pkm_kacs_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 			  struct inode *new_dir, struct dentry *new_dentry)
 {
+	long ret;
+	bool handle;
+
+	pkm_kacs_lease_note_vfs_break(old_dir, KACS_LEASE_BREAK_CHILD);
+	pkm_kacs_lease_note_vfs_break(new_dir, KACS_LEASE_BREAK_CHILD);
+	if (old_dentry)
+		pkm_kacs_lease_note_vfs_break(d_inode(old_dentry),
+					      KACS_LEASE_BREAK_NAMESPACE);
+	if (new_dentry && d_really_is_positive(new_dentry))
+		pkm_kacs_lease_note_vfs_break(d_inode(new_dentry),
+					      KACS_LEASE_BREAK_DELETE);
+	/* Pins are on the names opens were made through, stacked or not. */
+	if (pkm_kacs_pin_dentry_pinned(old_dentry) ||
+	    (new_dentry != old_dentry &&
+	     pkm_kacs_pin_dentry_pinned(new_dentry)))
+		return -EBUSY;
 	if (old_dir && old_dir->i_sb &&
 	    old_dir->i_sb->s_magic == STRATAFS_SUPER_MAGIC)
 		return 0;
@@ -986,9 +1122,29 @@ int pkm_kacs_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 	if (pkm_kacs_copy_up_allows_rename(old_dir, old_dentry, new_dir,
 					   new_dentry))
 		return 0;
-	return (int)pkm_kacs_authorize_namespace_rename_for_subject(
+	/*
+	 * A rename through an open handle (kacs_rename) is authorized for its
+	 * source by the handle; its destination is checked here as any.
+	 */
+	handle = pkm_kacs_handle_rename_matches(old_dentry);
+	ret = pkm_kacs_authorize_namespace_rename_parts(
 		pkm_kacs_current_effective_token_ptr(), old_dir, old_dentry,
-		new_dir, new_dentry);
+		new_dir, new_dentry, !handle);
+	if (!ret && !handle)
+		ret = pkm_kacs_nt_check_name_removal(old_dentry);
+	/* A pinned directory cannot be moved, even through a handle. */
+	if (!ret && handle && pkm_kacs_pin_dentry_pinned(old_dentry))
+		ret = -EBUSY;
+	if (!ret && d_is_positive(new_dentry) && new_dentry != old_dentry) {
+		/* kacs_rename judged read-only itself, with its flag. */
+		if (!handle)
+			ret = pkm_kacs_nt_check_readonly_removal(new_dentry);
+		if (!ret)
+			ret = pkm_kacs_nt_check_name_removal(new_dentry);
+	}
+	if (!ret && new_dir != old_dir)
+		ret = pkm_kacs_nt_check_dir_accepts(new_dir);
+	return (int)ret;
 }
 
 int pkm_kacs_inode_readlink(struct dentry *dentry)
@@ -1014,6 +1170,7 @@ int pkm_kacs_authorize_path_metadata_access(const struct path *path,
 					    u32 desired_access)
 {
 	const void *subject_token;
+	long ret;
 
 	if (!path || !path->dentry || desired_access == 0)
 		return -EACCES;
@@ -1024,8 +1181,17 @@ int pkm_kacs_authorize_path_metadata_access(const struct path *path,
 	if (!subject_token)
 		return -EACCES;
 
-	return (int)pkm_kacs_authorize_path_file_access_core(
-		subject_token, path, desired_access);
+	ret = pkm_kacs_authorize_path_file_access_core(subject_token, path,
+						       desired_access);
+	/*
+	 * A caller who may list the directory may read the attributes of its
+	 * entries (TRM "Rights granted through the parent").
+	 */
+	if (ret == -EACCES && desired_access == KACS_FILE_READ_ATTRIBUTES &&
+	    pkm_kacs_parent_grants(subject_token, path,
+				   KACS_FILE_READ_ATTRIBUTES))
+		ret = 0;
+	return (int)ret;
 }
 
 /*
@@ -1076,6 +1242,7 @@ int pkm_kacs_authorize_dentry_metadata_access(struct dentry *dentry,
 	struct file file = {};
 	const void *subject_token;
 	struct inode *inode;
+	long ret;
 
 	if (!dentry || desired_access == 0)
 		return -EACCES;
@@ -1097,8 +1264,24 @@ int pkm_kacs_authorize_dentry_metadata_access(struct dentry *dentry,
 	path.dentry = dentry;
 	pkm_kacs_init_path_anchor_file(&file, &path);
 
-	return (int)pkm_kacs_authorize_live_file_access_core(
-		subject_token, &file, desired_access);
+	ret = pkm_kacs_authorize_live_file_access_core(subject_token, &file,
+						       desired_access);
+	/* Attribute reads through the parent's list right, as by path. */
+	if (ret == -EACCES && desired_access == KACS_FILE_READ_ATTRIBUTES &&
+	    !IS_ROOT(dentry)) {
+		struct dentry *parent = dget_parent(dentry);
+		struct file parent_file = {};
+		struct path parent_path = { .mnt = &mnt, .dentry = parent };
+
+		mnt.mnt_root = parent;
+		pkm_kacs_init_path_anchor_file(&parent_file, &parent_path);
+		if (!pkm_kacs_authorize_live_file_access_core(
+			    subject_token, &parent_file,
+			    KACS_FILE_LIST_DIRECTORY))
+			ret = 0;
+		dput(parent);
+	}
+	return (int)ret;
 }
 
 /*

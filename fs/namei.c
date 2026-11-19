@@ -3060,6 +3060,19 @@ EXPORT_SYMBOL(kern_path);
  * @type: type of the last component
  * @root: pointer to struct path of the base directory
  */
+#ifdef CONFIG_SECURITY_PKM
+/*
+ * The parent and last component of a name relative to @dfd, for KACS's
+ * handle-based rename (kacs_rename), which moves an open file's own link to
+ * a new name rather than looking the source up by name.
+ */
+int pkm_filename_parentat(int dfd, struct filename *name, unsigned int flags,
+			  struct path *parent, struct qstr *last, int *type)
+{
+	return __filename_parentat(dfd, name, flags, parent, last, type, NULL);
+}
+#endif
+
 int vfs_path_parent_lookup(struct filename *filename, unsigned int flags,
 			   struct path *parent, struct qstr *last, int *type,
 			   const struct path *root)

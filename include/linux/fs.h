@@ -2469,6 +2469,10 @@ static inline struct file *file_open_root_mnt(struct vfsmount *mnt,
 }
 struct file *dentry_open(const struct path *path, int flags,
 			 const struct cred *creds);
+#ifdef CONFIG_SECURITY_PKM
+struct file *dentry_open_control(const struct path *path, int flags,
+				 const struct cred *cred);
+#endif
 struct file *dentry_open_nonotify(const struct path *path, int flags,
 				  const struct cred *cred);
 struct file *dentry_create(struct path *path, int flags, umode_t mode,

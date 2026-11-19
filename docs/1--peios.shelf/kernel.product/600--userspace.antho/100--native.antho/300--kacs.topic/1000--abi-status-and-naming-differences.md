@@ -70,6 +70,13 @@ Source labels and line numbers refer to the `learn` snapshot
 The links reach the current references; the line numbers identify the
 comparison snapshot above.
 
+The PEI-1720 change has since replaced the native-open contract that
+groups 1, 5 and 7 compare against. `MAXIMUM_ALLOWED` may be named
+alone, and no data right is required. Delete-on-close follows NT,
+deleting at the last close of any open. `kacs_open_how` carries a share
+mode. The current behaviour is in [KACS-Native Open](<~kernel/internals/kacs/file-security/kacs-native-open#trm-3-9-2>) and [Sharing and Deletion](<~kernel/internals/kacs/file-security/sharing-and-deletion#trm-3-9-10>); those groups
+record the historical differences only.
+
 1. **Maximum allowed.** O:116–127 says `MAXIMUM_ALLOWED` returns the
    maximum mask without checking the other requested bits, which it calls
    hints; N:14–19 says the concrete data/execute bits must be granted.

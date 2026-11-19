@@ -3,8 +3,8 @@ use crate::claims::ClaimAttribute;
 use crate::condition::{ConditionalContext, OwnerMatch};
 use crate::dacl::{
     caller_is_owner_normal, confinement_contains, confinement_contains_capability,
-    evaluate_dacl_states, merge_absolute_results, merge_restricted_results, restricted_contains,
-    sid_matches_token, DaclStateInput,
+    creator_grant_dacl_states, evaluate_dacl_states, merge_absolute_results,
+    merge_restricted_results, restricted_contains, sid_matches_token, DaclStateInput,
 };
 use crate::error::{KacsError, KacsResult};
 use crate::object_tree::ObjectTypeList;
@@ -13,7 +13,7 @@ use crate::pkm_alloc::Vec;
 use crate::pre_sacl::{pre_sacl_walk, PreSaclWalkInput};
 use crate::privilege::{
     apply_take_ownership_fallback, seed_access_check_privileges, AccessDecisionState,
-    PrivilegeProvenance,
+    PrivilegeProvenance, CREATOR_GRANT_INTENT,
 };
 use crate::security_descriptor::SecurityDescriptor;
 use crate::sid::Sid;
@@ -134,21 +134,25 @@ pub fn evaluate_security_descriptor<'a>(
         granted: pre_sacl.granted,
         decided: pre_sacl.decided,
     };
-    let mut evaluation = evaluate_dacl_states(
-        DaclStateInput {
-            sd,
-            token: &token.subject,
-            normalized,
-            valid_rights,
-            mapping,
-            skip_owner_implicit: false,
-            conditional_context: normal_context,
-            object_tree,
-            initial_state,
-            caller_is_owner,
-        },
-        |sid, polarity| sid_matches_token(&token.subject, sid, polarity),
-    )?;
+    let mut evaluation = if (privilege_intent & CREATOR_GRANT_INTENT) != 0 {
+        creator_grant_dacl_states(normalized, valid_rights, object_tree, initial_state)?
+    } else {
+        evaluate_dacl_states(
+            DaclStateInput {
+                sd,
+                token: &token.subject,
+                normalized,
+                valid_rights,
+                mapping,
+                skip_owner_implicit: false,
+                conditional_context: normal_context,
+                object_tree,
+                initial_state,
+                caller_is_owner,
+            },
+            |sid, polarity| sid_matches_token(&token.subject, sid, polarity),
+        )?
+    };
 
     apply_take_ownership_fallback(
         &mut evaluation.root,

@@ -91,7 +91,7 @@ PKM_KUNIT_ASSERT_SIZE(struct kacs_get_linked_token_args, 4);
 
 PKM_KUNIT_ASSERT_OFFSET(struct kacs_get_linked_token_args, result_fd, 0);
 
-PKM_KUNIT_ASSERT_SIZE(struct kacs_open_how, 32);
+PKM_KUNIT_ASSERT_SIZE(struct kacs_open_how, 56);
 
 PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, desired_access, 0);
 
@@ -105,7 +105,39 @@ PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, sd_ptr, 16);
 
 PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, sd_len, 24);
 
-PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, __pad, 28);
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, share_access, 28);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, lease_key, 32);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, lease_fd, 48);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_how, __pad2, 52);
+
+PKM_KUNIT_ASSERT_SIZE(struct kacs_open_info, 16);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_info, granted_access, 0);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_open_info, flags, 8);
+
+PKM_KUNIT_ASSERT_SIZE(struct kacs_lock_args, 32);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_lock_args, op, 16);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_lock_args, cookie, 24);
+
+PKM_KUNIT_ASSERT_SIZE(struct kacs_lease_args, 32);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_lease_args, state, 16);
+
+PKM_KUNIT_ASSERT_SIZE(struct kacs_lease_break, 48);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_lease_break, dev, 16);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_lease_break, epoch, 44);
+
+PKM_KUNIT_ASSERT_SIZE(struct kacs_sattr, 32);
+
+PKM_KUNIT_ASSERT_OFFSET(struct kacs_sattr, created_at_sec, 16);
 
 PKM_KUNIT_ASSERT_SIZE(struct kacs_mount_policy_args, 32);
 

@@ -898,6 +898,11 @@ int kacs_rust_merge_process_sd(const void *subject_token_ptr,
 			       u32 security_info, const u8 *input_sd_ptr,
 			       size_t input_sd_len, const u8 **out_sd_ptr,
 			       size_t *out_sd_len);
+int kacs_rust_merge_ipc_sd(const void *subject_token_ptr,
+			   const u8 *current_sd_ptr, size_t current_sd_len,
+			   u32 security_info, const u8 *input_sd_ptr,
+			   size_t input_sd_len, const u8 **out_sd_ptr,
+			   size_t *out_sd_len);
 int kacs_rust_build_replacement_file_sd(const void *subject_token_ptr,
 					u32 security_info,
 					const u8 *input_sd_ptr,

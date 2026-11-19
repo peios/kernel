@@ -497,9 +497,9 @@ out_relative:
 	return ret;
 }
 
-bool stratafs_kacs_deferred_target_gone(const struct file *file)
+bool stratafs_kacs_deferred_target_gone(const struct dentry *dentry)
 {
-	struct dentry *outer;
+	struct dentry *outer = (struct dentry *)dentry;
 	struct path provider;
 	struct path resolved;
 	unsigned int index;
@@ -507,14 +507,12 @@ bool stratafs_kacs_deferred_target_gone(const struct file *file)
 	bool gone = false;
 	int ret;
 
-	if (!file || !file_inode(file) ||
-	    file_inode(file)->i_sb->s_magic != STRATAFS_MAGIC ||
-	    !S_ISREG(file_inode(file)->i_mode))
+	if (!outer || !d_inode(outer) ||
+	    outer->d_sb->s_magic != STRATAFS_MAGIC ||
+	    (!S_ISREG(d_inode(outer)->i_mode) &&
+	     !S_ISDIR(d_inode(outer)->i_mode)))
 		return false;
-	outer = file_dentry(file);
-	if (!outer)
-		return false;
-	relative = stratafs_inode_relative(file_inode(file));
+	relative = stratafs_inode_relative(d_inode(outer));
 	if (IS_ERR(relative))
 		return false;
 	ret = stratafs_get_provider(outer, &provider, &index);
@@ -538,6 +536,202 @@ out_provider:
 out_relative:
 	kfree(relative);
 	return gone;
+}
+
+/*
+ * The inode below an outer StrataFS file that holds its NT share and
+ * delete state: the provider the open reaches (PEI-1720). Each outer open
+ * registers through its backing file, so the state lives on the provider's
+ * inode rather than on the outer inode, of which each open may have its
+ * own. Returns a referenced inode, or NULL.
+ *
+ * Only a regular file's open carries a stratafs_file_info. A directory's
+ * private data is its listing, and a FIFO's or device's belongs to its
+ * driver, so neither is read here.
+ */
+struct inode *stratafs_kacs_nt_inode_for_file(struct file *file)
+{
+	struct stratafs_file_info *info;
+	struct inode *inode = NULL;
+
+	if (!file || !file_inode(file) ||
+	    file_inode(file)->i_sb->s_magic != STRATAFS_MAGIC ||
+	    !S_ISREG(file_inode(file)->i_mode))
+		return NULL;
+	info = file->private_data;
+	if (!info)
+		return NULL;
+	spin_lock(&info->real_lock);
+	if (info->real) {
+		inode = file_inode(info->real);
+		ihold(inode);
+	}
+	spin_unlock(&info->real_lock);
+	return inode;
+}
+
+/*
+ * The backing file an outer StrataFS open currently reaches. Unreferenced:
+ * valid while the caller holds the outer file, which holds its backing
+ * files until it is released. Byte-range locks belong to it (PEI-1720).
+ * NULL for anything but a regular file's open, as above.
+ */
+struct file *stratafs_kacs_real_file(struct file *file)
+{
+	struct stratafs_file_info *info;
+	struct file *real = NULL;
+
+	if (!file || !file_inode(file) ||
+	    file_inode(file)->i_sb->s_magic != STRATAFS_MAGIC ||
+	    !S_ISREG(file_inode(file)->i_mode))
+		return NULL;
+	info = file->private_data;
+	if (!info)
+		return NULL;
+	spin_lock(&info->real_lock);
+	real = info->real;
+	spin_unlock(&info->real_lock);
+	return real;
+}
+
+/*
+ * The merged name an outer open's link has now, for a rename through the
+ * handle (TRM "Renaming through a handle", PEI-1720). Each lookup gets a
+ * dentry of its own, so the open's keeps the name it was looked up by;
+ * the provider the open reaches is renamed in its own filesystem, whose
+ * dentry stays current, so its path within its stratum is the link's name.
+ *
+ * Sets @parent to the merged parent directory, looked up afresh through
+ * the open's mount, @last to the final component (kmalloc'd) and
+ * @provider to the provider's inode, referenced, for the caller to confirm
+ * that the name still reaches it once the parent is locked. ENOENT if the
+ * link has been removed or has left its stratum or the mount's subtree.
+ */
+int stratafs_kacs_handle_name(struct file *file, struct path *parent,
+			      char **last, struct inode **provider)
+{
+	struct inode *inode = file ? file_inode(file) : NULL;
+	struct dentry *mnt_root;
+	struct stratafs_file_info *info;
+	struct path real = {};
+	struct path root;
+	unsigned int index = 0;
+	char *prefix = NULL;
+	char *relative;
+	char *slash;
+	char *buf;
+	size_t len;
+	int ret;
+
+	if (!inode || inode->i_sb->s_magic != STRATAFS_MAGIC)
+		return -EINVAL;
+	if (S_ISREG(inode->i_mode)) {
+		info = file->private_data;
+		if (!info)
+			return -ENOENT;
+		spin_lock(&info->real_lock);
+		if (info->real) {
+			real = info->real->f_path;
+			path_get(&real);
+			index = info->provider_index;
+		}
+		spin_unlock(&info->real_lock);
+		if (!real.dentry)
+			return -ENOENT;
+	} else if (S_ISDIR(inode->i_mode)) {
+		ret = stratafs_get_provider(file->f_path.dentry, &real, &index);
+		if (ret)
+			return ret;
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	ret = -ENOENT;
+	if (d_unhashed(real.dentry) || !d_really_is_positive(real.dentry))
+		goto out_real;
+	ret = stratafs_resolve_one(inode->i_sb, index, "", true, &root);
+	if (ret)
+		goto out_real;
+	buf = kmalloc(PATH_MAX, GFP_KERNEL);
+	if (!buf) {
+		ret = -ENOMEM;
+		goto out_root;
+	}
+	/* "/a/b/name" beneath the stratum root, or NULL if not beneath it. */
+	relative = __d_path(&real, &root, buf, PATH_MAX);
+	if (IS_ERR(relative)) {
+		ret = PTR_ERR(relative);
+		goto out_buf;
+	}
+	ret = -ENOENT;
+	if (!relative || relative[0] != '/')
+		goto out_buf;
+	relative++;
+	/* The merged root itself has no name to change. */
+	if (!*relative) {
+		ret = -EBUSY;
+		goto out_buf;
+	}
+
+	/* A bind mount of a subtree resolves from its own root. */
+	mnt_root = file->f_path.mnt->mnt_root;
+	if (mnt_root != inode->i_sb->s_root) {
+		prefix = stratafs_inode_relative(d_inode(mnt_root));
+		if (IS_ERR(prefix)) {
+			ret = PTR_ERR(prefix);
+			prefix = NULL;
+			goto out_buf;
+		}
+		len = strlen(prefix);
+		if (strncmp(relative, prefix, len) || relative[len] != '/')
+			goto out_buf;
+		relative += len + 1;
+	}
+
+	slash = strrchr(relative, '/');
+	if (slash)
+		*slash = '\0';
+	*last = kstrdup(slash ? slash + 1 : relative, GFP_KERNEL);
+	if (!*last) {
+		ret = -ENOMEM;
+		goto out_buf;
+	}
+	ret = vfs_path_lookup(mnt_root, file->f_path.mnt,
+			      slash ? relative : ".", LOOKUP_DIRECTORY, parent);
+	if (ret) {
+		kfree(*last);
+		*last = NULL;
+		goto out_buf;
+	}
+	*provider = d_inode(real.dentry);
+	ihold(*provider);
+out_buf:
+	kfree(prefix);
+	kfree(buf);
+out_root:
+	path_put(&root);
+out_real:
+	path_put(&real);
+	return ret;
+}
+
+struct inode *stratafs_kacs_nt_inode_for_dentry(struct dentry *dentry)
+{
+	struct path provider;
+	struct inode *inode = NULL;
+	unsigned int index;
+
+	if (!dentry || dentry->d_sb->s_magic != STRATAFS_MAGIC ||
+	    !d_really_is_positive(dentry))
+		return NULL;
+	if (stratafs_get_provider(dentry, &provider, &index))
+		return NULL;
+	if (d_really_is_positive(provider.dentry)) {
+		inode = d_inode(provider.dentry);
+		ihold(inode);
+	}
+	path_put(&provider);
+	return inode;
 }
 
 int stratafs_kacs_removal_parent(const struct path *outer_target,

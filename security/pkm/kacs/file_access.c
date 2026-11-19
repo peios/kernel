@@ -33,6 +33,9 @@
 #include "lsm_internal.h"
 #include "mount_policy.h"
 #include "native_open.h"
+#include "nt_file.h"
+#include "nt_lease.h"
+#include "sattr.h"
 #include "object_lifecycle.h"
 #include "token_runtime.h"
 
@@ -456,14 +459,13 @@ ssize_t pkm_kacs_stratafs_probe_staging_marker(const struct path *path,
 bool pkm_kacs_stratafs_delete_on_close_active(const struct dentry *outer)
 {
 	struct pkm_kacs_task_security *task_sec;
-	const struct file *file;
 
 	if (!outer || !current || !current->security)
 		return false;
 	task_sec = pkm_kacs_task(current);
-	file = task_sec->delete_on_close_file;
-	if (!file || file_dentry((struct file *)file) != outer ||
-	    file_inode((struct file *)file) != d_inode(outer))
+	if (!task_sec->deferred_delete_dentry ||
+	    task_sec->deferred_delete_dentry != outer ||
+	    task_sec->deferred_delete_dentry_inode != d_inode(outer))
 		return false;
 	/*
 	 * stratafs asks this at the head of its own unlink, so a true answer
@@ -495,25 +497,20 @@ int pkm_kacs_stratafs_delete_on_close_authorize_parent(
 	const struct dentry *outer, const struct path *parent)
 {
 	struct pkm_kacs_task_security *task_sec;
-	struct pkm_kacs_file_security *file_sec;
 	struct file parent_anchor = {};
-	struct file *file;
 
 	if (!pkm_kacs_stratafs_delete_on_close_active(outer) || !parent ||
 	    !parent->mnt || !parent->dentry)
 		return -EPERM;
 
+	/* The token that set the delete-pending mark. */
 	task_sec = pkm_kacs_task(current);
-	file = (struct file *)task_sec->delete_on_close_file;
-	if (!file || !file->f_security)
-		return -EPERM;
-	file_sec = pkm_kacs_file(file);
-	if (!file_sec->delete_on_close_token)
+	if (!task_sec->deferred_delete_token)
 		return -EPERM;
 
 	pkm_kacs_init_path_anchor_file(&parent_anchor, parent);
 	return (int)pkm_kacs_authorize_live_file_access_core(
-		file_sec->delete_on_close_token, &parent_anchor,
+		task_sec->deferred_delete_token, &parent_anchor,
 		KACS_FILE_DELETE_CHILD);
 }
 
@@ -1101,6 +1098,14 @@ long pkm_kacs_authorize_live_file_access_core(const void *subject_token,
 					      struct file *file,
 					      u32 desired_access)
 {
+	return pkm_kacs_live_file_access_granted(subject_token, file,
+						 desired_access, 0, NULL);
+}
+
+long pkm_kacs_live_file_access_granted(const void *subject_token,
+				       struct file *file, u32 desired_access,
+				       u32 privilege_intent, u32 *granted_out)
+{
 	struct pkm_kacs_inode_security *sec;
 	struct pkm_kacs_inode_sd_cache *cache = NULL;
 	struct inode *inode;
@@ -1152,11 +1157,14 @@ long pkm_kacs_authorize_live_file_access_core(const void *subject_token,
 		} else {
 			ret = kacs_rust_check_cached_file_sd_with_intent(
 				subject_token, cache->bytes, cache->len,
-				&cache->layout, desired_access, 0, pip_type,
-				pip_trust, &granted_access);
+				&cache->layout, desired_access,
+				privilege_intent, pip_type, pip_trust,
+				&granted_access);
 		}
 		pkm_kacs_inode_sd_cache_free(cache);
 	}
+	if (!ret && granted_out)
+		*granted_out = granted_access;
 	/*
 	 * Debug instrumentation for the DENY_MISSING boot bring-up. Kept behind
 	 * pr_debug (compiled out / off unless dynamic debug enables it) and the
@@ -1185,14 +1193,58 @@ long pkm_kacs_authorize_path_file_access_core(const void *subject_token,
 					      const struct path *path,
 					      u32 desired_access)
 {
+	return pkm_kacs_live_path_access_granted(subject_token, path,
+						 desired_access, 0, NULL);
+}
+
+long pkm_kacs_live_path_access_granted(const void *subject_token,
+				       const struct path *path,
+				       u32 desired_access, u32 privilege_intent,
+				       u32 *granted_out)
+{
 	struct file file = {};
 
 	if (!path)
 		return -EINVAL;
 
 	pkm_kacs_init_path_anchor_file(&file, path);
-	return pkm_kacs_authorize_live_file_access_core(subject_token, &file,
-							desired_access);
+	return pkm_kacs_live_file_access_granted(subject_token, &file,
+						 desired_access,
+						 privilege_intent, granted_out);
+}
+
+/*
+ * The rights an open's parent directory grants it in place of its own
+ * descriptor (TRM "Rights granted through the parent", MS-FSA
+ * 2.1.5.1.2.1): DELETE through FILE_DELETE_CHILD, FILE_READ_ATTRIBUTES
+ * through FILE_LIST_DIRECTORY. @wanted names which of the two to try. The
+ * parent is the directory the file was reached through.
+ */
+u32 pkm_kacs_parent_grants(const void *subject_token, const struct path *path,
+			   u32 wanted)
+{
+	struct path parent = {};
+	u32 granted = 0;
+	u32 parent_granted = 0;
+
+	wanted &= KACS_ACCESS_DELETE | KACS_FILE_READ_ATTRIBUTES;
+	if (!subject_token || !path || !path->dentry || !path->mnt || !wanted)
+		return 0;
+	if (IS_ROOT(path->dentry))
+		return 0;
+
+	parent.mnt = path->mnt;
+	parent.dentry = dget_parent(path->dentry);
+	if (!pkm_kacs_live_path_access_granted(subject_token, &parent,
+					       KACS_ACCESS_MAXIMUM_ALLOWED, 0,
+					       &parent_granted)) {
+		if (parent_granted & KACS_FILE_DELETE_CHILD)
+			granted |= KACS_ACCESS_DELETE;
+		if (parent_granted & KACS_FILE_LIST_DIRECTORY)
+			granted |= KACS_FILE_READ_ATTRIBUTES;
+	}
+	dput(parent.dentry);
+	return granted & wanted;
 }
 
 static long pkm_kacs_build_legacy_open_access_masks(const struct file *file,
@@ -1263,6 +1315,42 @@ static long pkm_kacs_build_legacy_open_access_masks(const struct file *file,
 	return 0;
 }
 
+/* The rights a read-only regular file withholds from MAXIMUM_ALLOWED. */
+#define PKM_KACS_READONLY_WITHHELD                      \
+	(KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA | \
+	 KACS_FILE_ADD_SUBDIRECTORY | KACS_FILE_DELETE_CHILD)
+
+/*
+ * Drop from a MAXIMUM_ALLOWED grant the data rights the open's mode cannot
+ * exercise, so that kacs_query_open never reports one (TRM "Handle
+ * modes"). A directory's write aliases are never handle rights.
+ */
+static u32 pkm_kacs_trim_maximum_to_mode(const struct file *file, u32 granted)
+{
+	const struct inode *inode = file_inode((struct file *)file);
+
+	if (!(file->f_mode & FMODE_READ))
+		granted &= ~KACS_FILE_READ_DATA;
+	if (!(file->f_mode & FMODE_WRITE) || S_ISDIR(inode->i_mode))
+		granted &= ~(KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA);
+	/* FILE_EXECUTE needs no data mode: the hook adds FMODE_EXEC. */
+	return granted;
+}
+
+static long pkm_kacs_check_native_cached(
+	const void *subject_token, const struct pkm_kacs_inode_sd_cache *cache,
+	u32 desired_access, u32 privilege_intent, u32 pip_type, u32 pip_trust,
+	const void *caap_cache, u32 *granted_out, u32 *audit_out)
+{
+	if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
+	    cache->len == 0)
+		return -EACCES;
+	return kacs_rust_check_cached_file_sd_with_intent_audit_caap(
+		subject_token, cache->bytes, cache->len, &cache->layout,
+		desired_access, privilege_intent, pip_type, pip_trust,
+		caap_cache, granted_out, audit_out);
+}
+
 long pkm_kacs_stamp_native_file_granted_access_for_subject(
 	const void *subject_token, struct file *file, u32 desired_access,
 	u32 privilege_intent)
@@ -1274,13 +1362,14 @@ long pkm_kacs_stamp_native_file_granted_access_for_subject(
 	const void *caap_cache = NULL;
 	u32 granted_access = 0;
 	u32 continuous_audit_mask = 0;
+	u32 parent_granted = 0;
 	u32 pip_type = 0;
 	u32 pip_trust = 0;
+	bool maximum;
+	bool readonly;
 	long ret;
 
 	if (!subject_token || !file || !file->f_security || desired_access == 0)
-		return -EACCES;
-	if (pkm_kacs_file_delete_on_close_pending(file))
 		return -EACCES;
 
 	inode = file_inode(file);
@@ -1308,9 +1397,31 @@ long pkm_kacs_stamp_native_file_granted_access_for_subject(
 		return pkm_kacs_check_sysfs_file_write_for_subject(
 			subject_token, file, (file->f_mode & FMODE_WRITE) != 0);
 
+	/* A read-only regular file refuses an open for writing (MS-FSA). */
+	readonly = S_ISREG(inode->i_mode) && pkm_kacs_sattr_file_readonly(file);
+	if (readonly &&
+	    (desired_access & (KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA)))
+		return -EACCES;
+	maximum = (desired_access & KACS_ACCESS_MAXIMUM_ALLOWED) != 0;
+
 	ret = pkm_kacs_current_pip_context(&pip_type, &pip_trust);
 	if (ret)
 		return ret;
+
+	/*
+	 * DELETE and FILE_READ_ATTRIBUTES may come from the parent directory
+	 * (TRM "Rights granted through the parent"). Its descriptor is read
+	 * before this inode's cache is selected: parent resolution may take
+	 * other inodes' locks, and set-security orders inode lock before CAAP.
+	 */
+	if (desired_access & (KACS_ACCESS_DELETE | KACS_FILE_READ_ATTRIBUTES |
+			      KACS_ACCESS_MAXIMUM_ALLOWED))
+		parent_granted = pkm_kacs_parent_grants(
+			subject_token, &file->f_path,
+			maximum ? (KACS_ACCESS_DELETE |
+				   KACS_FILE_READ_ATTRIBUTES) :
+				  desired_access);
+
 	/* Set-security takes inode_sec->lock before CAAP, never the reverse. */
 	inode_sec = pkm_kacs_inode(inode);
 	ret = pkm_kacs_inode_get_effective_cache(file, inode_sec, &cache);
@@ -1323,33 +1434,37 @@ long pkm_kacs_stamp_native_file_granted_access_for_subject(
 		ret = pkm_kacs_caap_cache_lock(&caap_cache);
 		if (ret)
 			goto out_put_cache;
-		if (cache->state != PKM_KACS_INODE_SD_VALID || !cache->bytes ||
-		    cache->len == 0) {
-			ret = -EACCES;
+		/*
+		 * Rights the parent grants are not asked of the file: the rest
+		 * is checked strictly, and an empty rest needs no check of the
+		 * file at all. MAXIMUM_ALLOWED always asks the file.
+		 */
+		if ((desired_access & ~parent_granted) == 0) {
+			granted_access = 0;
+			ret = 0;
 		} else {
-			ret = kacs_rust_check_cached_file_sd_with_intent_audit_caap(
-				subject_token, cache->bytes, cache->len,
-				&cache->layout, desired_access,
+			ret = pkm_kacs_check_native_cached(
+				subject_token, cache,
+				desired_access & ~parent_granted,
 				privilege_intent, pip_type, pip_trust,
 				caap_cache, &granted_access,
 				&continuous_audit_mask);
-			if (!ret) {
-				file_sec->granted_access = granted_access;
-				file_sec->continuous_audit_mask =
-					continuous_audit_mask;
-				file_sec->managed = 1;
-				if ((desired_access & KACS_FILE_EXECUTE) != 0)
-					file->f_mode |= FMODE_EXEC;
-				if (!S_ISDIR(inode->i_mode)) {
-					if ((desired_access &
-					     KACS_FILE_READ_DATA) == 0)
-						file->f_mode &= ~FMODE_READ;
-					if ((desired_access &
-					     (KACS_FILE_WRITE_DATA |
-					      KACS_FILE_APPEND_DATA)) == 0)
-						file->f_mode &= ~FMODE_WRITE;
-				}
+		}
+		if (!ret) {
+			granted_access |= parent_granted;
+			if (maximum) {
+				if (readonly)
+					granted_access &=
+						~PKM_KACS_READONLY_WITHHELD;
+				granted_access = pkm_kacs_trim_maximum_to_mode(
+					file, granted_access);
 			}
+			/* FILE_EXECUTE (or TRAVERSE) gives FMODE_EXEC. */
+			if (granted_access & KACS_FILE_EXECUTE)
+				file->f_mode |= FMODE_EXEC;
+			file_sec->granted_access = granted_access;
+			file_sec->continuous_audit_mask = continuous_audit_mask;
+			file_sec->managed = 1;
 		}
 		pkm_kacs_caap_cache_unlock();
 	}
@@ -1377,8 +1492,6 @@ long pkm_kacs_stamp_file_granted_access_for_subject(const void *subject_token,
 
 	if (!subject_token || !file || !file->f_security)
 		return -EACCES;
-	if (pkm_kacs_file_delete_on_close_pending(file))
-		return -EACCES;
 
 	inode = file_inode(file);
 	if (!inode || !inode->i_security)
@@ -1399,6 +1512,17 @@ long pkm_kacs_stamp_file_granted_access_for_subject(const void *subject_token,
 						      &requested_access);
 	if (ret)
 		return ret;
+	/*
+	 * A read-only regular file refuses an open for writing, and a
+	 * read-only open of one does not pick up the optional write rights.
+	 */
+	if (S_ISREG(inode->i_mode) && pkm_kacs_sattr_file_readonly(file)) {
+		if (core_access &
+		    (KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA))
+			return -EACCES;
+		requested_access &=
+			~(KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA);
+	}
 
 	ret = pkm_kacs_current_pip_context(&pip_type, &pip_trust);
 	if (ret)
@@ -1424,39 +1548,283 @@ long pkm_kacs_stamp_file_granted_access_for_subject(const void *subject_token,
 				&cache->layout, requested_access, 0, pip_type,
 				pip_trust, caap_cache, &granted_access,
 				&continuous_audit_mask);
-			if (!ret &&
-			    (granted_access & core_access) != core_access)
-				ret = -EACCES;
-			if (!ret) {
-				file_sec->granted_access = granted_access;
-				file_sec->continuous_audit_mask =
-					continuous_audit_mask;
-				file_sec->managed = 1;
-			}
 		}
 		pkm_kacs_caap_cache_unlock();
 	}
 out_put_cache:
 	pkm_kacs_inode_sd_cache_free(cache);
+	if (ret)
+		return ret;
+
+	/*
+	 * FILE_READ_ATTRIBUTES, always core, may come from the parent's
+	 * FILE_LIST_DIRECTORY (TRM "Rights granted through the parent"). It
+	 * is asked only when the file withheld it, and only once the file's
+	 * cache and CAAP are released.
+	 */
+	if ((granted_access & core_access) ==
+		    (core_access & ~KACS_FILE_READ_ATTRIBUTES) &&
+	    (core_access & KACS_FILE_READ_ATTRIBUTES) &&
+	    !(granted_access & KACS_FILE_READ_ATTRIBUTES))
+		granted_access |=
+			pkm_kacs_parent_grants(subject_token, &file->f_path,
+					       KACS_FILE_READ_ATTRIBUTES);
+	if ((granted_access & core_access) != core_access)
+		return -EACCES;
+	file_sec->granted_access = granted_access;
+	file_sec->continuous_audit_mask = continuous_audit_mask;
+	file_sec->managed = 1;
+	return 0;
+}
+
+/*
+ * The share bits an open may actually deny (TRM "Denying only what you
+ * could do yourself"). A share bit the opener is not entitled to omit is
+ * set, as MS-FSA sets FILE_SHARE_READ. Each test is an AccessCheck against
+ * the current descriptors, made only when the corresponding bit is
+ * omitted, so an open that shares everything costs nothing here.
+ */
+static u32 pkm_kacs_nt_effective_share(const void *subject_token,
+				       struct file *file, u32 share)
+{
+	struct inode *inode = file_inode(file);
+	struct pkm_kacs_nt_state *state;
+	struct path parent = {};
+	u32 object_max = 0;
+	u32 parent_max = 0;
+	bool first_open;
+
+	share &= PKM_KACS_NT_ALL;
+	if (share == PKM_KACS_NT_ALL)
+		return share;
+
+	(void)pkm_kacs_live_path_access_granted(subject_token, &file->f_path,
+						KACS_ACCESS_MAXIMUM_ALLOWED, 0,
+						&object_max);
+	if (!IS_ROOT(file->f_path.dentry)) {
+		parent.mnt = file->f_path.mnt;
+		parent.dentry = dget_parent(file->f_path.dentry);
+		(void)pkm_kacs_live_path_access_granted(
+			subject_token, &parent, KACS_ACCESS_MAXIMUM_ALLOWED, 0,
+			&parent_max);
+		dput(parent.dentry);
+	}
+
+	/* MS-FSA 2.1.5.1.2.2: denying read needs write on the parent. */
+	if (!(share & PKM_KACS_NT_READ)) {
+		bool may_deny = (parent_max & KACS_FILE_WRITE_DATA) != 0;
+
+		/* MS-FSA 2.1.5.1.2: a directory's first open also needs
+		 * generic write on the directory itself. */
+		state = pkm_kacs_nt_state(inode, false);
+		first_open = !state || READ_ONCE(state->opens) == 0;
+		if (may_deny && S_ISDIR(inode->i_mode) && first_open &&
+		    (object_max & PKM_KACS_FILE_GENERIC_WRITE) !=
+			    PKM_KACS_FILE_GENERIC_WRITE)
+			may_deny = false;
+		if (!may_deny)
+			share |= PKM_KACS_NT_READ;
+	}
+	if (!(share & PKM_KACS_NT_WRITE) &&
+	    !(object_max & (KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA)))
+		share |= PKM_KACS_NT_WRITE;
+	if (!(share & PKM_KACS_NT_DELETE) &&
+	    !(object_max & KACS_ACCESS_DELETE) &&
+	    !(parent_max & KACS_FILE_DELETE_CHILD))
+		share |= PKM_KACS_NT_DELETE;
+	return share;
+}
+
+/*
+ * Register an open whose share participation is settled. A sharing
+ * conflict first breaks other holders' handle caching and checks again
+ * (MS-FSA 2.1.5.1.2), then lets backup or restore intent with its
+ * privilege set the denial aside, audited as that privilege's use.
+ */
+static int pkm_kacs_nt_register_checked(const void *subject_token,
+					struct file *file, struct inode *inode,
+					u32 classes, u32 share, u32 intent);
+
+/*
+ * Register, then break other holders' leases for the open (MS-FSA
+ * 2.1.5.1.2.2's oplock break on OPEN), which do_dentry_open()'s own
+ * break_lease() then leaves to KACS.
+ */
+static int pkm_kacs_nt_register_settled(const void *subject_token,
+					struct file *file, struct inode *inode,
+					u32 classes, u32 share, u32 intent)
+{
+	int ret;
+
+	ret = pkm_kacs_nt_register_checked(subject_token, file, inode, classes,
+					   share, intent);
+	if (ret)
+		return ret;
+	pkm_kacs_lease_note_vfs_break(inode, KACS_LEASE_BREAK_OPEN);
+	ret = pkm_kacs_lease_break_inode(inode, KACS_LEASE_BREAK_OPEN, file);
+	return ret < 0 ? ret : 0;
+}
+
+static int pkm_kacs_nt_register_checked(const void *subject_token,
+					struct file *file, struct inode *inode,
+					u32 classes, u32 share, u32 intent)
+{
+	u32 overrides = 0;
+	int ret;
+
+	ret = pkm_kacs_nt_register(file, inode, classes, share, 0);
+	if (ret != -EBUSY || !classes ||
+	    pkm_kacs_task(current)->nt_open_status !=
+		    KACS_STATUS_SHARING_VIOLATION)
+		return ret;
+
+	if (pkm_kacs_lease_break_for_sharing(file, inode) > 0) {
+		ret = pkm_kacs_nt_register(file, inode, classes, share, 0);
+		if (ret != -EBUSY || pkm_kacs_task(current)->nt_open_status !=
+					     KACS_STATUS_SHARING_VIOLATION)
+			return ret;
+	}
+
+	if (subject_token && (intent & KACS_BACKUP_INTENT) &&
+	    !pkm_kacs_require_enabled_privilege(subject_token,
+						KACS_SE_BACKUP_PRIVILEGE))
+		overrides |= PKM_KACS_NT_OVERRIDE_READ;
+	if (subject_token && (intent & KACS_RESTORE_INTENT) &&
+	    !pkm_kacs_require_enabled_privilege(subject_token,
+						KACS_SE_RESTORE_PRIVILEGE))
+		overrides |= PKM_KACS_NT_OVERRIDE_WRITE_DELETE;
+	if (!overrides)
+		return ret;
+	ret = pkm_kacs_nt_register(file, inode, classes, share, overrides);
+	trace_kacs_file_open(inode, overrides, ret, KACS_TR_NT_SHARE_OVERRIDE);
+	return ret;
+}
+
+void pkm_kacs_stratafs_begin_internal_scan(void)
+{
+	if (current->security)
+		pkm_kacs_task(current)->stratafs_internal_scan++;
+}
+
+void pkm_kacs_stratafs_end_internal_scan(void)
+{
+	if (current->security &&
+	    !WARN_ON_ONCE(!pkm_kacs_task(current)->stratafs_internal_scan))
+		pkm_kacs_task(current)->stratafs_internal_scan--;
+}
+
+/*
+ * A StrataFS directory's open has no backing file to register it, so it
+ * registers on its provider itself, holding the inode: StrataFS may rebind
+ * the dentry to another provider while the open lasts.
+ */
+static int pkm_kacs_nt_register_stacked_directory(const void *subject_token,
+						  struct file *file,
+						  u32 classes, u32 share,
+						  u32 intent)
+{
+	struct pkm_kacs_file_security *file_sec = pkm_kacs_file(file);
+	struct inode *inode = file_inode(file);
+	struct inode *record;
+	int ret;
+
+	if (!S_ISDIR(inode->i_mode) ||
+	    inode->i_sb->s_magic != STRATAFS_SUPER_MAGIC)
+		return 0;
+	record = pkm_kacs_nt_record_inode_for_dentry(file->f_path.dentry);
+	if (!record)
+		return 0;
+	if (!pkm_kacs_nt_applies(record) || pkm_kacs_nt_stacked(record)) {
+		iput(record);
+		return 0;
+	}
+	ret = pkm_kacs_nt_register_settled(subject_token, file, record,
+					   classes, share, intent);
+	/* Registered even if a lease break then failed the open. */
+	if (file_sec->nt_inode == record)
+		file_sec->nt_inode_held = 1;
+	else
+		iput(record);
+	return ret;
+}
+
+/*
+ * Take part in NT share checking (TRM "Sharing and Deletion"). A stacking
+ * filesystem's open is registered on the provider inode by its backing
+ * file, which carries the settled participation across.
+ */
+static int pkm_kacs_nt_register_open(const void *subject_token,
+				     struct file *file, u32 classes, u32 share,
+				     u32 intent)
+{
+	struct pkm_kacs_file_security *file_sec = pkm_kacs_file(file);
+	struct inode *inode = file_inode(file);
+
+	if (!pkm_kacs_nt_applies(inode))
+		return 0;
+	if (current->security && pkm_kacs_task(current)->stratafs_internal_scan)
+		return 0;
+	if (classes)
+		share = pkm_kacs_nt_effective_share(subject_token, file, share);
+	else
+		share = PKM_KACS_NT_ALL;
+	file_sec->nt_classes = classes;
+	file_sec->nt_share = share;
+	file_sec->nt_intent = intent;
+	if (pkm_kacs_nt_stacked(inode))
+		return pkm_kacs_nt_register_stacked_directory(
+			subject_token, file, classes, share, intent);
+	return pkm_kacs_nt_register_settled(subject_token, file, inode, classes,
+					    share, intent);
+}
+
+static int pkm_kacs_nt_register_backing(struct file *file)
+{
+	struct pkm_kacs_backing_file_security *backing_sec;
+	struct inode *inode = file_inode(file);
+
+	/*
+	 * A directory's backing files are StrataFS's transient listing and
+	 * fsync opens; the outer open registers itself on the provider.
+	 */
+	if (!backing_file_security(file) || !pkm_kacs_nt_applies(inode) ||
+	    pkm_kacs_nt_stacked(inode) || S_ISDIR(inode->i_mode))
+		return 0;
+	backing_sec = pkm_kacs_backing_file(file);
+	pkm_kacs_lease_bind_open(file);
+	return pkm_kacs_nt_register_settled(
+		pkm_kacs_current_effective_token_ptr(), file, inode,
+		backing_sec->nt_classes,
+		backing_sec->nt_classes ? backing_sec->nt_share :
+					  PKM_KACS_NT_ALL,
+		backing_sec->nt_intent);
+}
+
+int pkm_kacs_file_open_path(struct file *file)
+{
+	struct inode *record;
+	int ret = 0;
+
+	if (!file || !file->f_path.dentry)
+		return 0;
+	record = pkm_kacs_nt_record_inode_for_dentry(file->f_path.dentry);
+	if (record) {
+		ret = pkm_kacs_nt_check_not_pending(record);
+		iput(record);
+	}
 	return ret;
 }
 
 int pkm_kacs_file_open(struct file *file)
 {
 	enum pkm_kacs_copy_up_file_access copy_up;
+	const struct pkm_kacs_native_open_request *request;
 	const void *subject_token;
-	u32 desired_access = 0;
-	u32 create_options = 0;
-	u32 privilege_intent = 0;
+	u32 privilege_intent;
 	long ret;
 
 	if (!file)
 		return -EACCES;
-	if (pkm_kacs_file_delete_on_close_pending(file)) {
-		trace_kacs_file_open(file_inode(file), 0, -EACCES,
-				     KACS_TR_DELETE_ON_CLOSE_PENDING);
-		return -EACCES;
-	}
 	if (!IS_ERR(pidfd_pid(file)))
 		return 0;
 	if ((file->f_mode & FMODE_PATH) != 0)
@@ -1468,8 +1836,11 @@ int pkm_kacs_file_open(struct file *file)
 		return -EACCES;
 	if ((file->f_mode & FMODE_BACKING) && !pkm_kacs_copy_up_active()) {
 		ret = pkm_kacs_backing_file_apply(file);
-		if (ret != -ENOENT)
+		if (ret != -ENOENT) {
+			if (!ret)
+				ret = pkm_kacs_nt_register_backing(file);
 			return ret;
+		}
 	}
 
 	subject_token = pkm_kacs_current_effective_token_ptr();
@@ -1479,26 +1850,52 @@ int pkm_kacs_file_open(struct file *file)
 		return -EACCES;
 	}
 
-	if (pkm_kacs_native_open_request_matches(file, &desired_access,
-						 &create_options,
-						 &privilege_intent)) {
+	request = pkm_kacs_native_open_request_for(file);
+	if (request) {
+		privilege_intent = request->privilege_intent;
+		if (request->creating)
+			privilege_intent |= PKM_KACS_INTENT_CREATOR_GRANT;
 		ret = pkm_kacs_stamp_native_file_granted_access_for_subject(
-			subject_token, file, desired_access, privilege_intent);
+			subject_token, file, request->desired_access,
+			privilege_intent);
 		if (ret) {
-			trace_kacs_file_open(file_inode(file), desired_access,
-					     ret, KACS_TR_NATIVE_STAMP);
+			trace_kacs_file_open(file_inode(file),
+					     request->desired_access, ret,
+					     KACS_TR_NATIVE_STAMP);
+			return (int)ret;
+		}
+		pkm_kacs_lease_bind_open(file);
+		ret = pkm_kacs_nt_register_open(
+			subject_token, file,
+			pkm_kacs_nt_classes_from_access(
+				pkm_kacs_file(file)->granted_access),
+			request->share_access, request->privilege_intent);
+		if (ret) {
+			trace_kacs_file_open(file_inode(file),
+					     request->desired_access, ret,
+					     KACS_TR_NT_SHARE);
 			return (int)ret;
 		}
 		ret = pkm_kacs_maybe_arm_delete_on_close_for_subject(
-			subject_token, file, create_options);
-		trace_kacs_file_open(file_inode(file), desired_access, ret,
-				     KACS_TR_NATIVE_ARM);
+			subject_token, file, request->create_options);
+		trace_kacs_file_open(file_inode(file), request->desired_access,
+				     ret, KACS_TR_NATIVE_ARM);
 		return (int)ret;
 	}
 
 	ret = pkm_kacs_stamp_file_granted_access_for_subject(subject_token,
 							     file);
 	trace_kacs_file_open(file_inode(file), 0, ret, KACS_TR_STAMP);
+	if (ret || !pkm_kacs_file(file)->managed)
+		return (int)ret;
+	/* A legacy open shares everything and holds what its mode uses. */
+	ret = pkm_kacs_nt_register_open(
+		subject_token, file,
+		pkm_kacs_nt_classes_from_mode(file->f_mode), PKM_KACS_NT_ALL,
+		0);
+	if (ret)
+		trace_kacs_file_open(file_inode(file), 0, ret,
+				     KACS_TR_NT_SHARE);
 	return (int)ret;
 }
 

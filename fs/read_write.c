@@ -450,6 +450,11 @@ SYSCALL_DEFINE5(llseek, unsigned int, fd, unsigned long, offset_high,
 }
 #endif
 
+#ifdef CONFIG_SECURITY_PKM
+extern int pkm_kacs_nt_lock_check_io(struct file *file, loff_t pos,
+				     size_t count, bool write);
+#endif
+
 int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t count)
 {
 	int mask = read_write == READ ? MAY_READ : MAY_WRITE;
@@ -475,6 +480,18 @@ int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t
 	ret = security_file_permission(file, mask);
 	if (ret)
 		return ret;
+
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * NT byte-range locks are checked as each I/O is issued, on every
+	 * path that reaches here: read, write, AIO, io_uring, splice and
+	 * copy_file_range (TRM "Byte-Range Locks").
+	 */
+	ret = pkm_kacs_nt_lock_check_io(file, ppos ? *ppos : file->f_pos,
+					count, read_write != READ);
+	if (ret)
+		return ret;
+#endif
 
 	return fsnotify_file_area_perm(file, mask, ppos, count);
 }

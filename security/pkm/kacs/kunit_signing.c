@@ -90,11 +90,11 @@ static void pkm_kunit_boot_system_defaults(struct kunit *test)
 				  pkm_kunit_system_default_dacl,
 				  sizeof(pkm_kunit_system_default_dacl));
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_present,
-			0xc000000ffffffffcULL);
+			0xe000000ffffffffcULL);
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled,
-			0xc000000ffffffffcULL);
+			0xe000000ffffffffcULL);
 	KUNIT_EXPECT_EQ(test, snapshot.privileges_enabled_by_default,
-			0xc000000ffffffffcULL);
+			0xe000000ffffffffcULL);
 	/*
 	 * privileges_used is the only runtime-mutable privilege field: the live
 	 * boot system token legitimately accumulates SeChangeNotify (bypass

@@ -24,6 +24,8 @@
 #include <pkm/sd.h>
 #include <pkm/token.h>
 
+#include "nt_file.h"
+#include "nt_lease.h"
 #include "../kmes/event_policy.h"
 #include "access_check.h"
 #include "caap_cache.h"
@@ -1388,6 +1390,23 @@ long pkm_kacs_kunit_get_sd_syscall(int dirfd, const char *path,
 }
 #endif
 
+static long pkm_kacs_set_sd_break_leases(struct file *file)
+{
+	struct inode *record;
+	int ret = 0;
+
+	record = pkm_kacs_nt_record_inode_for_file(file);
+	if (!record && file->f_path.dentry)
+		record = pkm_kacs_nt_record_inode_for_dentry(
+			file->f_path.dentry);
+	if (record) {
+		ret = pkm_kacs_lease_break_inode(
+			record, KACS_LEASE_BREAK_SECURITY, file);
+		iput(record);
+	}
+	return ret < 0 ? ret : 0;
+}
+
 SYSCALL_DEFINE6(kacs_set_sd, int, dirfd, const char __user *, path, u32,
 		security_info, const void __user *, sd_buf, u32, sd_len, u32,
 		flags)
@@ -1452,8 +1471,15 @@ SYSCALL_DEFINE6(kacs_set_sd, int, dirfd, const char __user *, path, u32,
 			goto out;
 		}
 
-		ret = pkm_kacs_set_file_sd_core(
-			subject_token, file, security_info, input_sd, sd_len);
+		/*
+		 * Other holders lose handle caching to a security change
+		 * (TRM "Leases"), before it is made. No lock is held here.
+		 */
+		ret = pkm_kacs_set_sd_break_leases(file);
+		if (!ret)
+			ret = pkm_kacs_set_file_sd_core(subject_token, file,
+							security_info, input_sd,
+							sd_len);
 		goto out;
 	}
 	if (ret != -EOPNOTSUPP)

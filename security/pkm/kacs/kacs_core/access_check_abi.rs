@@ -9,7 +9,7 @@ use crate::error::{KacsError, KacsResult};
 use crate::object_tree::{ObjectTypeList, ObjectTypeNode};
 use crate::pip::PipContext;
 use crate::pkm_alloc::{slice_to_vec, Vec};
-use crate::privilege::TokenPrivileges;
+use crate::privilege::{TokenPrivileges, USER_INTENT_FLAGS};
 use crate::security_descriptor::{SecurityDescriptor, MAX_SECURITY_DESCRIPTOR_BYTES};
 use crate::sid::Sid;
 use crate::token::{AccessCheckToken, SidAndAttributes};
@@ -215,7 +215,9 @@ pub fn parse_access_check_abi_request<M: AccessCheckAbiMemory>(
     };
     let self_sid_ptr = read_u64_fixed(&raw, 40);
     let self_sid_len = read_u32_fixed(&raw, 48);
-    let privilege_intent = read_u32_fixed(&raw, 52);
+    // Only the backup and restore intents are userspace's to assert; the
+    // creator grant belongs to the kernel's own creating open.
+    let privilege_intent = read_u32_fixed(&raw, 52) & USER_INTENT_FLAGS;
     let object_tree_ptr = read_u64_fixed(&raw, 56);
     let object_tree_count = read_u32_fixed(&raw, 64);
     let local_claims_ptr = read_u64_fixed(&raw, 72);
@@ -931,6 +933,20 @@ mod tests {
         assert_eq!(request.continuous_audit_out_ptr, None);
         assert_eq!(request.staging_mismatch_out_ptr, None);
         assert_eq!(request.pip, PipContext::default());
+    }
+
+    #[test]
+    fn parser_drops_kernel_only_intent_flags() {
+        let mut args = base_args(KACS_ACCESS_CHECK_ARGS_SIZE as u32);
+        write_u32(
+            &mut args,
+            52,
+            crate::privilege::CREATOR_GRANT_INTENT | crate::privilege::BACKUP_INTENT,
+        );
+
+        let request = parse_access_check_abi_request(&args, &TestMemory::new()).unwrap();
+
+        assert_eq!(request.privilege_intent, crate::privilege::BACKUP_INTENT);
     }
 
     #[test]

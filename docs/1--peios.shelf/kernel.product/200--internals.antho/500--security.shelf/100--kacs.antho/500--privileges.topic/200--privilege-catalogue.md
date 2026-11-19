@@ -59,6 +59,7 @@ the exec and credential projection paths.
 | `SeRelabelPrivilege` | 32 | 0x1_0000_0000 | AccessCheck + standalone |
 | `SeChangeNotifyPrivilege` | 23 | 0x800000 | Kernel standalone |
 | `SeCreateSymbolicLinkPrivilege` | 35 | 0x8_0000_0000 | Kernel standalone |
+| `SeLockParentagePrivilege` | 61 | 0x2000_0000_0000_0000 | Kernel standalone |
 
 `SeSecurityPrivilege` reads and writes an object's SACL, and also
 gates `CAP_AUDIT_CONTROL`, `CAP_MAC_ADMIN` and `CAP_AUDIT_READ`
@@ -94,6 +95,13 @@ per path walk. <a id="cite-priv.change-notify.checked-per-directory"></a>
 
 `SeCreateSymbolicLinkPrivilege` creates symbolic links, and is
 required in addition to `FILE_ADD_FILE` on the parent directory. <a id="cite-priv.catalogue.se-create-symbolic-link"></a>
+
+`SeLockParentagePrivilege` pins a file's ancestor directories for as
+long as an open of it lasts, so that nobody can rename or remove them
+([Sharing and Deletion](<~kernel/internals/kacs/file-security/sharing-and-deletion#trm-3-9-10-6>)). It is a Peios privilege, allocated
+downward from bit 63. File servers hold it, to give Windows clients the
+folder protection they expect; it blocks other people's work, so
+ordinary programs do not. <a id="cite-priv.catalogue.se-lock-parentage"></a>
 
 <a id="trm-3-4-2-3"></a>
 
@@ -221,14 +229,14 @@ supervised job is not a privilege at all — it is governed by the file
 Security Descriptor on the service manager's jobs socket, checked by
 the kernel when a process connects (the Peinit TRM). The bit is
 nevertheless included in the boot SYSTEM token's privilege set, which
-covers bits 2–35 together with 62 and 63, so the SYSTEM token holds
+covers bits 2–35 together with 61, 62 and 63, so the SYSTEM token holds
 bit 62 present and enabled with no name attached to it and no gate
 that consults it. <a id="cite-priv.create-job.present-in-system-token"></a>
 
 Nothing validates a privilege mask against the allocated set. Token
 creation checks only that the enabled set is a subset of the present
 set, and adjustment accepts any bit index from 0 to 63. Bits 0, 1, and
-36–61 — positions the catalogue does not allocate at all — can
+36–60 — positions the catalogue does not allocate at all — can
 therefore be set at creation and disabled or removed afterwards
 without error, and are simply inert. <a id="cite-priv.bits.unallocated-accepted-and-inert"></a>
 

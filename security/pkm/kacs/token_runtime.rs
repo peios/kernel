@@ -87,8 +87,10 @@ use core::ffi::{c_char, c_long, c_ulong, c_void};
 use core::ptr::{copy_nonoverlapping, null, null_mut};
 use core::sync::atomic::{fence, AtomicBool, AtomicPtr, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 
-const SYSTEM_PRIVILEGES_ALL: u64 = 0xC000_000F_FFFF_FFFC;
+const SYSTEM_PRIVILEGES_ALL: u64 = 0xE000_000F_FFFF_FFFC;
 const SE_TCB_PRIVILEGE: u64 = 1 << 7;
+const SE_LOCK_PARENTAGE_PRIVILEGE: u64 = 1 << 61;
+const _: () = assert!((SYSTEM_PRIVILEGES_ALL & SE_LOCK_PARENTAGE_PRIVILEGE) != 0);
 const LOGON_TYPE_INTERACTIVE: u32 = 2;
 const LOGON_TYPE_NETWORK: u32 = 3;
 const LOGON_TYPE_BATCH: u32 = 4;

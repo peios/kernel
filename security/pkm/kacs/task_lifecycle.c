@@ -33,7 +33,14 @@ int pkm_kacs_task_alloc(struct task_struct *task, u64 clone_flags)
 					 pkm_kacs_task(current)->primary_epoch :
 					 0;
 	new_sec->copy_up_context = NULL;
-	new_sec->delete_on_close_file = NULL;
+	new_sec->deferred_delete_dentry = NULL;
+	new_sec->deferred_delete_dentry_inode = NULL;
+	new_sec->deferred_delete_record_inode = NULL;
+	new_sec->deferred_delete_token = NULL;
+	new_sec->nt_open_status = 0;
+	new_sec->handle_rename_dentry = NULL;
+	new_sec->handle_rename_inode = NULL;
+	new_sec->stratafs_internal_scan = 0;
 	new_sec->delete_on_close_parent_inode = NULL;
 	new_sec->delete_on_close_dentry = NULL;
 	new_sec->delete_on_close_inode = NULL;

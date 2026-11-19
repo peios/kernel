@@ -36,16 +36,21 @@ live AccessCheck. <a id="cite-facs.use.mask-check-per-operation"></a>
 A `fallocate` mode outside the supported set fails closed, and
 `PUNCH_HOLE` additionally requires `KEEP_SIZE`. <a id="cite-facs.use.fallocate-unsupported-mode-fails"></a>
 
+Reads, writes, truncation and content-changing `fallocate` on a
+regular file are also checked against other opens' byte-range locks
+when they are issued, and fail with `EAGAIN` on a conflict ([Byte-Range
+Locks](<~kernel/internals/kacs/file-security/byte-range-locks#trm-3-9-11-2>)). Memory-mapped access is not.
+
 <a id="trm-3-9-4-2"></a>
 
 ## Metadata operations <a id="cite-facs.use.metadata-operations"></a>
 
 | Operation | Required right |
 |---|---|
-| `stat` / `lstat` / path `statx` | `FILE_READ_ATTRIBUTES` |
+| `stat` / `lstat` / path `statx` | `FILE_READ_ATTRIBUTES`, or `FILE_LIST_DIRECTORY` on the parent <a id="cite-facs.use.stat-through-parent"></a> |
 | `fstat` / descriptor `statx` | `FILE_READ_ATTRIBUTES` |
 | `fstatfs` | `FILE_READ_ATTRIBUTES` |
-| path and descriptor `file_getattr` | `FILE_READ_ATTRIBUTES` |
+| path and descriptor `file_getattr` | `FILE_READ_ATTRIBUTES`; by path, also through the parent |
 | path and descriptor `file_setattr` | `FILE_WRITE_ATTRIBUTES` |
 | `truncate` by pathname | `FILE_WRITE_DATA` |
 | `chmod` / `fchmodat` / `fchmod` | `WRITE_DAC` <a id="cite-facs.use.chmod-requires-write-dac"></a> |
@@ -54,7 +59,9 @@ A `fallocate` mode outside the supported set fails closed, and
 | `getxattr` / `lgetxattr` / `fgetxattr` | `FILE_READ_EA` |
 | `setxattr` / `lsetxattr` / `removexattr` / `fsetxattr` / `fremovexattr` | `FILE_WRITE_EA` |
 | `listxattr` / `llistxattr` / `flistxattr` | none <a id="cite-facs.use.listxattr-needs-no-right"></a> |
-| `access` / `faccessat` `F_OK` | `FILE_READ_ATTRIBUTES` |
+| get `security.peios.sattr` | `FILE_READ_ATTRIBUTES` |
+| set or remove `security.peios.sattr` | `FILE_WRITE_ATTRIBUTES` |
+| `access` / `faccessat` `F_OK` | `FILE_READ_ATTRIBUTES`, or `FILE_LIST_DIRECTORY` on the parent |
 | `access` / `faccessat` `R_OK` | `FILE_READ_DATA` |
 | `access` / `faccessat` `W_OK` | `FILE_WRITE_DATA` |
 | `access` / `faccessat` `X_OK` | `FILE_EXECUTE` |
@@ -70,6 +77,16 @@ unconditionally through the xattr hooks — `security.peios.sd`, or
 `kacs_get_sd` and `kacs_set_sd`. POSIX ACL xattr writes are denied
 unconditionally too, with `EOPNOTSUPP` rather than `EACCES` so that
 probe-then-tolerate callers behave sensibly. <a id="cite-facs.use.posix-acl-write-eopnotsupp"></a>
+
+The special-attributes xattr, `security.peios.sattr`, is not raw
+storage either: KACS answers reads and writes of it itself, with the
+attribute rights above and the value format in [Special
+Attributes](<~kernel/internals/kacs/file-security/special-attributes#trm-3-9-13-1>). The signature xattr, `security.peios.sig`, is governed by
+[Binary Signature Verification](<~kernel/internals/kacs/executable-trust/signature-verification#trm-3-6>).
+
+Path-based attribute reads may be granted through the parent:
+a caller who may list a directory may read the attributes of its
+entries, as a native open may ([KACS-Native Open](<~kernel/internals/kacs/file-security/kacs-native-open#trm-3-9-2-8>)).
 
 <a id="trm-3-9-4-3"></a>
 

@@ -21,6 +21,9 @@
 
 struct pkm_kmes_rate_bucket;
 struct pkm_kacs_stratafs_copy_up;
+struct pkm_kacs_nt_state;
+struct pkm_kacs_lease_manager;
+struct pkm_kacs_pin_set;
 
 struct pkm_kacs_native_open_request {
 	const struct dentry *expected_dentry;
@@ -28,6 +31,11 @@ struct pkm_kacs_native_open_request {
 	u32 desired_access;
 	u32 create_options;
 	u32 privilege_intent;
+	/* kacs_open_how.flags and share_access, as the caller gave them. */
+	u32 open_flags;
+	u32 share_access;
+	/* The open creates the object it names: the creator's grant applies. */
+	bool creating;
 	bool active;
 };
 
@@ -45,8 +53,15 @@ struct pkm_kacs_native_open_prepared {
 	u32 status;
 	u32 create_options;
 	u32 privilege_intent;
+	/* kacs_open_how.flags beyond the intents, and the share access. */
+	u32 how_flags;
+	u32 share_access;
 	int open_flags;
 	bool directory_required;
+	/* MAXIMUM_ALLOWED: the mode waits for the maximum to be known. */
+	bool mode_from_maximum;
+	/* The requested bits alone name no data mode. */
+	bool control;
 };
 
 struct pkm_kacs_cred_security {
@@ -140,7 +155,29 @@ struct pkm_kacs_file_security {
 	u32 continuous_audit_mask;
 	struct pkm_kacs_stratafs_copy_up *copy_up_context;
 	u64 copy_up_phase_generation;
+	/*
+	 * NT share participation (nt_file.c). nt_inode is the inode the open
+	 * is registered on, which for a stacking filesystem is the provider's
+	 * and is registered by the backing file instead; it is NULL while the
+	 * open is not registered. The open's path holds the inode while it
+	 * is -- except for a StrataFS directory, which has no backing file and
+	 * registers on its provider itself. StrataFS may rebind the dentry to
+	 * a new provider meanwhile, so that open holds the inode by reference
+	 * and sets nt_inode_held.
+	 */
+	struct inode *nt_inode;
+	u8 nt_inode_held;
+	u32 nt_classes;
+	u32 nt_share;
+	/* Backup and restore intents, which may set share denials aside. */
+	u32 nt_intent;
+	/* The lease manager and key the open was made under (nt_lease.c). */
+	struct pkm_kacs_lease_manager *lease_mgr;
+	u8 lease_key[16];
+	/* The directories the open pinned (nt_pin.c), or NULL. */
+	struct pkm_kacs_pin_set *pins;
 	u8 managed;
+	/* Set the file delete-pending when this open closes. */
 	u8 delete_on_close;
 	/*
 	 * The token that armed delete-on-close, held by reference.
@@ -157,6 +194,12 @@ struct pkm_kacs_file_security {
 struct pkm_kacs_backing_file_security {
 	u32 granted_access;
 	u32 continuous_audit_mask;
+	/* The outer open's share participation, registered by this file. */
+	u32 nt_classes;
+	u32 nt_share;
+	u32 nt_intent;
+	struct pkm_kacs_lease_manager *lease_mgr;
+	u8 lease_key[16];
 	u8 managed;
 	u8 inherited;
 };
@@ -195,7 +238,12 @@ struct pkm_kacs_inode_security {
 	/* StrataFS read-start ordering, protected by ->lock. */
 	u64 sd_cache_read_ticket;
 	u64 sd_cache_published_ticket;
-	atomic_t delete_on_close_lineages;
+	/* NT share, delete and lock state, allocated at first open. */
+	struct pkm_kacs_nt_state *nt;
+	/* Cached read-only special attribute and its generation (sattr.c). */
+	atomic_t sattr_cache;
+	/* Opens pinning this directory's ancestry (nt_pin.c). */
+	atomic_t nt_pins;
 	atomic_t signed_exec_pinned;
 	/* Set under ->lock while a deferred SD persist task_work is in flight. */
 	bool persist_work_queued;
@@ -360,7 +408,47 @@ struct pkm_kacs_task_security {
 	const void *priv_use_token;
 	u64 priv_use_pending;
 	struct pkm_kacs_stratafs_copy_up *copy_up_context;
-	const struct file *delete_on_close_file;
+	/*
+	 * The deferred deletion this task is carrying out at a delete-pending
+	 * file's last close (nt_file.c). dentry is the name being removed, as
+	 * the marking open named it; dentry_inode is that name's inode, which
+	 * for StrataFS is the outer one; record_inode holds the NT state. The
+	 * namespace hooks let exactly this removal through, and StrataFS binds
+	 * its provider entry below.
+	 */
+	const struct dentry *deferred_delete_dentry;
+	const struct inode *deferred_delete_dentry_inode;
+	const struct inode *deferred_delete_record_inode;
+	const void *deferred_delete_token;
+	/* What the last failed native open reports (KACS_STATUS_*). */
+	u32 nt_open_status;
+	/*
+	 * A rename through an open handle (kacs_rename): the handle's granted
+	 * DELETE already authorizes moving this link, and its share mode was
+	 * checked against the file's other opens when it was opened, so the
+	 * rename hook checks only the destination. Below StrataFS the dentry
+	 * is NULL and the provider's inode alone names the source.
+	 */
+	const struct dentry *handle_rename_dentry;
+	const struct inode *handle_rename_inode;
+	/*
+	 * StrataFS is scanning provider directories for itself (emptiness and
+	 * foreign-entry checks). Its opens take no part in NT share checking:
+	 * the directory's own opens are registered on its provider already.
+	 */
+	unsigned int stratafs_internal_scan;
+	/*
+	 * Lease breaks (nt_lease.c). lease_open_* is the key a kacs_open in
+	 * progress was made under; lease_breaker_* the key of the open an
+	 * operation is made through; lease_vfs_* what a VFS operation about
+	 * to break delegations is, as the KACS hook before it saw.
+	 */
+	struct pkm_kacs_lease_manager *lease_open_mgr;
+	u8 lease_open_key[16];
+	struct pkm_kacs_lease_manager *lease_breaker_mgr;
+	u8 lease_breaker_key[16];
+	const struct inode *lease_vfs_inode[4];
+	u32 lease_vfs_reason[4];
 	const struct inode *delete_on_close_parent_inode;
 	const struct dentry *delete_on_close_dentry;
 	const struct inode *delete_on_close_inode;
@@ -436,7 +524,6 @@ bool pkm_kacs_inode_on_sysfs_mount(const struct inode *inode);
 bool pkm_kacs_inode_on_unmanaged_mount(const struct inode *inode);
 long pkm_kacs_require_enabled_privilege(const void *subject_token,
 					u64 privilege);
-long pkm_kacs_unlink_delete_on_close_file(struct file *file);
 struct pkm_kacs_inode_sd_cache *
 pkm_kacs_inode_sd_cache_get_current(const struct inode *inode,
 				    const struct pkm_kacs_inode_security *sec);

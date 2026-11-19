@@ -11,6 +11,8 @@
 #include "lsm_internal.h"
 #include "object_lifecycle.h"
 #include "copy_up.h"
+#include "nt_file.h"
+#include "nt_lease.h"
 
 #include <trace/events/kacs.h>
 
@@ -28,7 +30,9 @@ int pkm_kacs_inode_alloc_security(struct inode *inode)
 	sec->sd_cache_invalidation = 0;
 	sec->sd_cache_read_ticket = 0;
 	sec->sd_cache_published_ticket = 0;
-	atomic_set(&sec->delete_on_close_lineages, 0);
+	sec->nt = NULL;
+	atomic_set(&sec->sattr_cache, 0);
+	atomic_set(&sec->nt_pins, 0);
 	atomic_set(&sec->signed_exec_pinned, 0);
 	sec->persist_work_queued = false;
 #ifdef CONFIG_SECURITY_PKM_KUNIT
@@ -56,8 +60,16 @@ int pkm_kacs_file_alloc_security(struct file *file)
 	sec->continuous_audit_mask = 0;
 	sec->copy_up_context = NULL;
 	sec->copy_up_phase_generation = 0;
+	sec->nt_inode = NULL;
+	sec->nt_inode_held = 0;
+	sec->nt_classes = 0;
+	sec->nt_share = 0;
+	sec->nt_intent = 0;
+	sec->lease_mgr = NULL;
+	sec->pins = NULL;
 	sec->managed = 0;
 	sec->delete_on_close = 0;
+	sec->delete_on_close_token = NULL;
 	return 0;
 }
 
@@ -73,6 +85,10 @@ int pkm_kacs_backing_file_alloc(struct file *backing_file,
 	backing_sec = pkm_kacs_backing_file(backing_file);
 	backing_sec->granted_access = 0;
 	backing_sec->continuous_audit_mask = 0;
+	backing_sec->nt_classes = 0;
+	backing_sec->nt_share = 0;
+	backing_sec->nt_intent = 0;
+	backing_sec->lease_mgr = NULL;
 	backing_sec->managed = 0;
 	backing_sec->inherited = 0;
 
@@ -101,6 +117,13 @@ int pkm_kacs_backing_file_alloc(struct file *backing_file,
 	 */
 	backing_sec->granted_access = user_sec->granted_access;
 	backing_sec->continuous_audit_mask = user_sec->continuous_audit_mask;
+	backing_sec->nt_classes = user_sec->nt_classes;
+	backing_sec->nt_share = user_sec->nt_share;
+	backing_sec->nt_intent = user_sec->nt_intent;
+	/* Borrowed: the outer open holds the manager while this one opens. */
+	backing_sec->lease_mgr = user_sec->lease_mgr;
+	memcpy(backing_sec->lease_key, user_sec->lease_key,
+	       sizeof(backing_sec->lease_key));
 	backing_sec->managed = 1;
 	backing_sec->inherited = 1;
 	return 0;
@@ -162,44 +185,33 @@ int pkm_kacs_mmap_backing_file(struct vm_area_struct *vma,
 
 void pkm_kacs_file_release(struct file *file)
 {
-	struct pkm_kacs_file_security *file_sec;
-	struct pkm_kacs_inode_security *inode_sec;
-	struct inode *inode;
-	long ret;
-
 	if (!file || !file->f_security)
 		return;
 
-	file_sec = pkm_kacs_file(file);
 	pkm_kacs_copy_up_file_release(file);
-	if (!file_sec->delete_on_close) {
-		if (file_sec->delete_on_close_token) {
-			kacs_rust_token_drop(file_sec->delete_on_close_token);
-			file_sec->delete_on_close_token = NULL;
-		}
-		return;
-	}
+	/*
+	 * Release the open's NT share registration, marking the file
+	 * delete-pending first if the open was made delete-on-close, and
+	 * removing it if this was the last open of a delete-pending file.
+	 */
+	pkm_kacs_nt_release(file);
+}
 
-	inode = file_inode(file);
-	if (!inode || !inode->i_security)
-		return;
+/*
+ * A file whose open failed after the open hook ran never reaches
+ * file_release. do_dentry_open() calls pkm_kacs_file_open_failed() for it,
+ * in the opener's context; this is the backstop for anything that frees a
+ * registered file otherwise, and must not sleep (PEI-1723).
+ */
+void pkm_kacs_file_free_security(struct file *file)
+{
+	pkm_kacs_nt_free(file);
+	pkm_kacs_lease_file_free(file);
+}
 
-	inode_sec = pkm_kacs_inode(inode);
-	ret = pkm_kacs_unlink_delete_on_close_file(file);
-	trace_kacs_object(inode, KACS_OBJ_DELETE_ON_CLOSE_UNLINK, ret);
-	if (ret && ret != -ENOENT)
-		pr_warn("pkm: delete-on-close unlink failed (%ld)\n", ret);
-
-	mutex_lock(&inode_sec->lock);
-	if (atomic_read(&inode_sec->delete_on_close_lineages) > 0)
-		atomic_dec(&inode_sec->delete_on_close_lineages);
-	file_sec->delete_on_close = 0;
-	mutex_unlock(&inode_sec->lock);
-
-	if (file_sec->delete_on_close_token) {
-		kacs_rust_token_drop(file_sec->delete_on_close_token);
-		file_sec->delete_on_close_token = NULL;
-	}
+void pkm_kacs_file_open_failed(struct file *file)
+{
+	pkm_kacs_nt_open_failed(file);
 }
 
 int pkm_kacs_file_receive(struct file *file)
@@ -269,7 +281,8 @@ void pkm_kacs_inode_free_security_rcu(void *inode_security)
 						 pkm_blob_sizes.lbs_inode);
 	cache = rcu_dereference_protected(sec->sd_cache, 1);
 	RCU_INIT_POINTER(sec->sd_cache, NULL);
-	atomic_set(&sec->delete_on_close_lineages, 0);
+	pkm_kacs_nt_inode_free(sec->nt);
+	sec->nt = NULL;
 	atomic_set(&sec->signed_exec_pinned, 0);
 	pkm_kacs_inode_sd_cache_free(cache);
 #ifdef CONFIG_SECURITY_PKM_KUNIT

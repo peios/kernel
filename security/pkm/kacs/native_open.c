@@ -28,6 +28,10 @@
 #include "lsm_internal.h"
 #include "mount_policy.h"
 #include "native_open.h"
+#include "nt_file.h"
+#include "nt_lease.h"
+#include "nt_pin.h"
+#include "sattr.h"
 #include "token_runtime.h"
 #include <trace/events/kacs.h>
 
@@ -126,16 +130,59 @@ static long pkm_kacs_map_file_generic_access_mask(u32 desired, u32 *mapped_out)
 	return 0;
 }
 
+/*
+ * The Linux open flags for a native open granted @granted, and whether it
+ * is a control handle: one with no data mode at all (TRM "Handle modes").
+ */
+int pkm_kacs_native_mode_flags(u32 granted, bool directory, bool *control_out)
+{
+	bool has_read = (granted & KACS_FILE_READ_DATA) != 0;
+	bool has_write =
+		(granted & (KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA)) != 0;
+	bool has_execute = (granted & KACS_FILE_EXECUTE) != 0;
+	int open_flags;
+
+	/* A directory's write aliases are never a handle's data mode. */
+	if (directory)
+		has_write = false;
+	if (has_write && has_read)
+		open_flags = O_RDWR;
+	else if (has_write)
+		open_flags = O_WRONLY;
+	else
+		open_flags = O_RDONLY;
+	if (has_write && (granted & KACS_FILE_APPEND_DATA) != 0 &&
+	    (granted & KACS_FILE_WRITE_DATA) == 0)
+		open_flags |= O_APPEND;
+	if (has_execute && !directory)
+		open_flags |= __FMODE_EXEC;
+	if (directory)
+		open_flags |= O_DIRECTORY;
+	/*
+	 * Execute alone reads nothing either: it is opened with no data mode,
+	 * and the open hook adds FMODE_EXEC for execveat(AT_EMPTY_PATH).
+	 */
+	*control_out = !has_read && !has_write;
+	return open_flags;
+}
+
+static bool pkm_kacs_lease_fields_zero(const struct kacs_open_how *how)
+{
+	unsigned int i;
+
+	for (i = 0; i < sizeof(how->lease_key); i++) {
+		if (how->lease_key[i])
+			return false;
+	}
+	return how->lease_fd == 0;
+}
+
 long pkm_kacs_prepare_native_open(const struct kacs_open_how *how,
 				  struct pkm_kacs_native_open_prepared *prepared)
 {
 	u32 desired_access;
-	u32 data_mask;
-	bool has_read;
-	bool has_write;
-	bool has_execute;
-	int open_flags = 0;
 	u8 nox_reason = KACS_NOX_PREPARE_OK;
+	bool control;
 	long ret;
 
 	if (!how || !prepared)
@@ -151,7 +198,18 @@ long pkm_kacs_prepare_native_open(const struct kacs_open_how *how,
 		nox_reason = KACS_NOX_PREPARE_BAD_FLAGS;
 		goto reject;
 	}
-	if (how->__pad != 0) {
+	/*
+	 * share_access was the struct's zero padding before PEI-1720, so a
+	 * caller that does not ask for share modes must still pass zero.
+	 */
+	if ((how->share_access &
+	     ~(KACS_FILE_SHARE_READ | KACS_FILE_SHARE_WRITE |
+	       KACS_FILE_SHARE_DELETE)) != 0 ||
+	    (!(how->flags & KACS_OPEN_SHARE_ACCESS) &&
+	     how->share_access != 0) ||
+	    how->__pad2 != 0 ||
+	    (!(how->flags & KACS_OPEN_LEASE_KEY) &&
+	     !pkm_kacs_lease_fields_zero(how))) {
 		ret = -EINVAL;
 		nox_reason = KACS_NOX_PREPARE_BAD_FLAGS;
 		goto reject;
@@ -195,18 +253,11 @@ long pkm_kacs_prepare_native_open(const struct kacs_open_how *how,
 		nox_reason = KACS_NOX_PREPARE_UNSUPPORTED;
 		goto reject;
 	}
-
-	data_mask = KACS_FILE_READ_DATA | KACS_FILE_WRITE_DATA |
-		    KACS_FILE_APPEND_DATA;
-	has_read = (desired_access & KACS_FILE_READ_DATA) != 0;
-	has_write = (desired_access &
-		     (KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA)) != 0;
-	has_execute = (desired_access & KACS_FILE_EXECUTE) != 0;
-	if ((desired_access & data_mask) == 0 && !has_execute) {
-		ret = -EINVAL;
-		nox_reason = KACS_NOX_PREPARE_BAD_ACCESS;
-		goto reject;
-	}
+	/*
+	 * No data right is required (PEI-1718): an open granted none is a
+	 * control handle. Special nodes, which still need one, are refused
+	 * once the target is known.
+	 */
 	if (how->create_disposition == KACS_DISPOSITION_OVERWRITE &&
 	    (desired_access & KACS_FILE_WRITE_DATA) == 0) {
 		ret = -EINVAL;
@@ -221,27 +272,6 @@ long pkm_kacs_prepare_native_open(const struct kacs_open_how *how,
 		nox_reason = KACS_NOX_PREPARE_UNSUPPORTED;
 		goto reject;
 	}
-	if ((how->create_options &
-	     (KACS_CREATE_OPT_DIRECTORY | KACS_CREATE_OPT_DELETE_ON_CLOSE)) ==
-	    (KACS_CREATE_OPT_DIRECTORY | KACS_CREATE_OPT_DELETE_ON_CLOSE)) {
-		ret = -EOPNOTSUPP;
-		nox_reason = KACS_NOX_PREPARE_UNSUPPORTED;
-		goto reject;
-	}
-
-	if (has_write && has_read)
-		open_flags = O_RDWR;
-	else if (has_write)
-		open_flags = O_WRONLY;
-	else
-		open_flags = O_RDONLY;
-	if ((desired_access & KACS_FILE_APPEND_DATA) != 0 &&
-	    (desired_access & KACS_FILE_WRITE_DATA) == 0)
-		open_flags |= O_APPEND;
-	if (has_execute)
-		open_flags |= __FMODE_EXEC;
-	if ((how->create_options & KACS_CREATE_OPT_DIRECTORY) != 0)
-		open_flags |= O_DIRECTORY;
 
 	prepared->desired_access = desired_access;
 	prepared->create_disposition = how->create_disposition;
@@ -259,9 +289,23 @@ long pkm_kacs_prepare_native_open(const struct kacs_open_how *how,
 	}
 	prepared->create_options = how->create_options;
 	prepared->privilege_intent = how->flags & PKM_KACS_OPEN_INTENT_FLAGS;
-	prepared->open_flags = open_flags;
+	prepared->how_flags = how->flags & PKM_KACS_OPEN_NT_FLAGS;
+	prepared->share_access =
+		(how->flags & KACS_OPEN_SHARE_ACCESS) ?
+			how->share_access :
+			(KACS_FILE_SHARE_READ | KACS_FILE_SHARE_WRITE |
+			 KACS_FILE_SHARE_DELETE);
 	prepared->directory_required =
 		(how->create_options & KACS_CREATE_OPT_DIRECTORY) != 0;
+	/*
+	 * MAXIMUM_ALLOWED takes its mode from the maximum, which is known only
+	 * once the target (or the new object's descriptor) is.
+	 */
+	prepared->mode_from_maximum =
+		(desired_access & KACS_ACCESS_MAXIMUM_ALLOWED) != 0;
+	prepared->open_flags = pkm_kacs_native_mode_flags(
+		desired_access, prepared->directory_required, &control);
+	prepared->control = control;
 	trace_kacs_native_open_ext(how->create_disposition, desired_access,
 				   KACS_NOX_PREPARE_OK, 0);
 	return 0;
@@ -296,10 +340,9 @@ static long pkm_kacs_copy_creator_sd_from_user(const struct kacs_open_how *how,
 	return 0;
 }
 
-void pkm_kacs_set_current_native_open_request(const struct path *path,
-					      u32 desired_access,
-					      u32 create_options,
-					      u32 privilege_intent)
+void pkm_kacs_set_current_native_open_request(
+	const struct path *path,
+	const struct pkm_kacs_native_open_prepared *prepared, bool creating)
 {
 	struct pkm_kacs_task_security *sec;
 
@@ -307,221 +350,53 @@ void pkm_kacs_set_current_native_open_request(const struct path *path,
 		return;
 
 	sec = pkm_kacs_task(current);
-	sec->native_open.expected_dentry = path ? path->dentry : NULL;
-	sec->native_open.expected_mnt = path ? path->mnt : NULL;
-	sec->native_open.desired_access = desired_access;
-	sec->native_open.create_options = create_options;
-	sec->native_open.privilege_intent = privilege_intent;
-	sec->native_open.active = path != NULL;
+	if (!path || !prepared) {
+		memset(&sec->native_open, 0, sizeof(sec->native_open));
+		return;
+	}
+	sec->native_open.expected_dentry = path->dentry;
+	sec->native_open.expected_mnt = path->mnt;
+	sec->native_open.desired_access = prepared->desired_access;
+	sec->native_open.create_options = prepared->create_options;
+	sec->native_open.privilege_intent = prepared->privilege_intent;
+	sec->native_open.open_flags = prepared->how_flags;
+	sec->native_open.share_access = prepared->share_access;
+	sec->native_open.creating = creating;
+	sec->native_open.active = true;
 }
 
 void pkm_kacs_clear_current_native_open_request(void)
 {
-	pkm_kacs_set_current_native_open_request(NULL, 0, 0, 0);
+	pkm_kacs_set_current_native_open_request(NULL, NULL, false);
 }
 
-bool pkm_kacs_native_open_request_matches(struct file *file,
-					  u32 *desired_access_out,
-					  u32 *create_options_out,
-					  u32 *privilege_intent_out)
+const struct pkm_kacs_native_open_request *
+pkm_kacs_native_open_request_for(struct file *file)
 {
 	struct pkm_kacs_task_security *sec;
 
 	if (!file || !current->security)
-		return false;
+		return NULL;
 
 	sec = pkm_kacs_task(current);
 	if (!sec->native_open.active)
-		return false;
+		return NULL;
 	if (file->f_path.dentry != sec->native_open.expected_dentry ||
 	    file->f_path.mnt != sec->native_open.expected_mnt)
-		return false;
-
-	if (desired_access_out)
-		*desired_access_out = sec->native_open.desired_access;
-	if (create_options_out)
-		*create_options_out = sec->native_open.create_options;
-	if (privilege_intent_out)
-		*privilege_intent_out = sec->native_open.privilege_intent;
-	return true;
+		return NULL;
+	return &sec->native_open;
 }
 
-bool pkm_kacs_file_delete_on_close_pending(const struct file *file)
-{
-	struct inode *inode;
-
-	if (!file)
-		return false;
-
-	inode = file_inode(file);
-	if (!inode || !inode->i_security)
-		return false;
-
-	return atomic_read(&pkm_kacs_inode(inode)->delete_on_close_lineages) >
-	       0;
-}
-
-static long
-pkm_kacs_authorize_delete_on_close_for_subject(const void *subject_token,
-					       struct file *file)
-{
-	struct path parent_path = {};
-	struct file parent_file = {};
-	struct inode *inode;
-	long ret;
-
-	if (!subject_token || !file || !file_dentry(file))
-		return -EACCES;
-
-	ret = pkm_kacs_authorize_live_file_access_core(subject_token, file,
-						       KACS_ACCESS_DELETE);
-	if (ret != -EACCES)
-		return ret;
-
-	inode = file_inode(file);
-#ifdef CONFIG_SECURITY_PKM_KUNIT
-	if (inode && pkm_kacs_inode(inode)->kunit_fake_xattr_enabled) {
-		parent_path.mnt = file->f_path.mnt;
-		parent_path.dentry = file_dentry(file)->d_parent;
-		if (!parent_path.mnt || !parent_path.dentry)
-			return -EACCES;
-
-		pkm_kacs_init_path_anchor_file(&parent_file, &parent_path);
-		return pkm_kacs_authorize_live_file_access_core(
-			subject_token, &parent_file, KACS_FILE_DELETE_CHILD);
-	}
-#endif
-
-	parent_path.mnt = mntget(file->f_path.mnt);
-	parent_path.dentry = dget_parent(file_dentry(file));
-	if (!parent_path.mnt || !parent_path.dentry) {
-		if (parent_path.mnt)
-			mntput(parent_path.mnt);
-		return -EACCES;
-	}
-
-	pkm_kacs_init_path_anchor_file(&parent_file, &parent_path);
-	ret = pkm_kacs_authorize_live_file_access_core(
-		subject_token, &parent_file, KACS_FILE_DELETE_CHILD);
-	path_put(&parent_path);
-	return ret;
-}
-
-long pkm_kacs_unlink_delete_on_close_file(struct file *file)
-{
-	struct pkm_kacs_task_security *task_sec;
-	struct inode *inode;
-	struct inode *parent_inode;
-	struct path parent_path = {};
-	struct dentry *dentry;
-	long ret;
-
-	if (!file)
-		return -EACCES;
-	if (!current || !current->security)
-		return -EACCES;
-	task_sec = pkm_kacs_task(current);
-	if (task_sec->delete_on_close_file)
-		return -EBUSY;
-
-	dentry = file_dentry(file);
-	inode = file_inode(file);
-	if (!dentry || !inode || !inode->i_security)
-		return -EACCES;
-
-#ifdef CONFIG_SECURITY_PKM_KUNIT
-	if (pkm_kacs_inode(inode)->kunit_fake_xattr_enabled) {
-		pkm_kacs_inode(inode)->kunit_unlink_calls++;
-		return 0;
-	}
-#endif
-
-	parent_path.mnt = mntget(file->f_path.mnt);
-	parent_path.dentry = dget_parent(dentry);
-	if (!parent_path.mnt || !parent_path.dentry) {
-		if (parent_path.mnt)
-			mntput(parent_path.mnt);
-		return -EACCES;
-	}
-
-	parent_inode = d_inode(parent_path.dentry);
-	if (!parent_inode) {
-		path_put(&parent_path);
-		return -EACCES;
-	}
-
-	ret = mnt_want_write(parent_path.mnt);
-	if (ret) {
-		path_put(&parent_path);
-		return ret;
-	}
-
-	inode_lock_nested(parent_inode, I_MUTEX_PARENT);
-	/*
-	 * The pathname may already be gone.  An unlink by someone else while
-	 * the lineage lived leaves this dentry unhashed (and negative once
-	 * the last reference goes), and a name re-created since names another
-	 * inode.  Either way the deletion this handle promised has happened
-	 * or been overtaken, so the final close is a no-op rather than a
-	 * second unlink of the same entry -- which on tmpfs drops the pin
-	 * shmem_link took a second time and frees the dentry under us
-	 * (PEI-694).
-	 *
-	 * StrataFS is the exception to the unhashed test: it drops a merged
-	 * entry on copy-up by design (section 4.4), so its dentries are
-	 * routinely unhashed while very much alive, and its own unlink
-	 * looks the provider entry up afresh and tolerates ENOENT for a
-	 * deferred deletion.
-	 */
-	if (!d_is_positive(dentry) || d_inode(dentry) != inode ||
-	    (d_unhashed(dentry) &&
-	     inode->i_sb->s_magic != STRATAFS_SUPER_MAGIC)) {
-		ret = 0;
-		goto out_unlock;
-	}
-	task_sec->delete_on_close_file = file;
-	task_sec->delete_on_close_stratafs_entered = false;
-	ret = vfs_unlink(mnt_idmap(parent_path.mnt), parent_inode, dentry,
-			 NULL);
-#if IS_ENABLED(CONFIG_STRATAFS_FS)
-	/*
-	 * §4.6.5: a refused deferred deletion is audited on any non-zero
-	 * result. stratafs audits every refusal its own unlink raises, but
-	 * may_delete() checks the merged parent before ->unlink is entered,
-	 * and a refusal there -- the directory's descriptor tightened between
-	 * arm and close -- would otherwise leave no record at all (PEI-588).
-	 */
-	if (ret && inode->i_sb->s_magic == STRATAFS_SUPER_MAGIC &&
-	    !task_sec->delete_on_close_stratafs_entered) {
-		/* The merged parent can disappear before ->unlink reaches
-		 * StrataFS's already-gone checks. Classify that as a no-op only
-		 * after confirming the descriptor's original backing name is
-		 * gone; a merged ancestor masking a live target remains a failure.
-		 */
-		if ((ret == -ENOENT || ret == -ENOTDIR) &&
-		    stratafs_kacs_deferred_target_gone(file))
-			ret = 0;
-		if (ret)
-			stratafs_kacs_audit_deferred_refusal(dentry, (int)ret);
-	}
-#endif
-	task_sec->delete_on_close_inode = NULL;
-	task_sec->delete_on_close_dentry = NULL;
-	task_sec->delete_on_close_parent_inode = NULL;
-	task_sec->delete_on_close_file = NULL;
-out_unlock:
-	inode_unlock(parent_inode);
-	mnt_drop_write(parent_path.mnt);
-	path_put(&parent_path);
-	return ret;
-}
-
+/*
+ * Delete-on-close is recorded on the open and carried out as it closes
+ * (TRM "Delete-pending files"). The open's granted mask, which already
+ * includes DELETE granted through the parent, is the authority.
+ */
 long pkm_kacs_maybe_arm_delete_on_close_for_subject(const void *subject_token,
 						    struct file *file,
 						    u32 create_options)
 {
 	struct pkm_kacs_file_security *file_sec;
-	struct pkm_kacs_inode_security *inode_sec;
 	struct inode *inode;
 	long ret;
 
@@ -534,7 +409,7 @@ long pkm_kacs_maybe_arm_delete_on_close_for_subject(const void *subject_token,
 	inode = file_inode(file);
 	if (!inode || !inode->i_security)
 		return -EACCES;
-	if (!S_ISREG(inode->i_mode))
+	if (!S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode))
 		return -EOPNOTSUPP;
 	if (pkm_kacs_superblock_mount_policy(inode->i_sb) ==
 	    KACS_MOUNT_POLICY_UNMANAGED)
@@ -543,27 +418,29 @@ long pkm_kacs_maybe_arm_delete_on_close_for_subject(const void *subject_token,
 	file_sec = pkm_kacs_file(file);
 	if (file_sec->delete_on_close)
 		return 0;
-
-	ret = pkm_kacs_authorize_delete_on_close_for_subject(subject_token,
-							     file);
-	if (ret) {
-		trace_kacs_native_open_ext(0, KACS_ACCESS_DELETE,
-					   KACS_NOX_DELETE_ON_CLOSE_ARM, ret);
-		return ret;
+	/*
+	 * An open that did not ask for DELETE is checked for it live, on
+	 * the file and then its parent, as KACS always has.
+	 */
+	if (!(file_sec->granted_access & KACS_ACCESS_DELETE)) {
+		ret = pkm_kacs_authorize_live_file_access_core(
+			subject_token, file, KACS_ACCESS_DELETE);
+		if (ret == -EACCES &&
+		    pkm_kacs_parent_grants(subject_token, &file->f_path,
+					   KACS_ACCESS_DELETE))
+			ret = 0;
+		if (ret)
+			goto out;
 	}
-
-	inode_sec = pkm_kacs_inode(inode);
-	mutex_lock(&inode_sec->lock);
-	if (atomic_read(&inode_sec->delete_on_close_lineages) != 0) {
-		ret = -EACCES;
-	} else {
-		atomic_inc(&inode_sec->delete_on_close_lineages);
-		file_sec->delete_on_close = 1;
-		file_sec->delete_on_close_token =
-			kacs_rust_token_clone(subject_token);
-		ret = 0;
+	if (S_ISREG(inode->i_mode) && pkm_kacs_sattr_file_readonly(file)) {
+		pkm_kacs_nt_note_status(KACS_STATUS_CANNOT_DELETE);
+		ret = -EPERM;
+		goto out;
 	}
-	mutex_unlock(&inode_sec->lock);
+	file_sec->delete_on_close = 1;
+	file_sec->delete_on_close_token = kacs_rust_token_clone(subject_token);
+	ret = 0;
+out:
 	trace_kacs_native_open_ext(0, KACS_ACCESS_DELETE,
 				   KACS_NOX_DELETE_ON_CLOSE_ARM, ret);
 	return ret;
@@ -767,10 +644,18 @@ out_unlock:
 		return ret;
 	}
 
+	/*
+	 * The creator's access (TRM "The creator's access"): the parent's
+	 * create right authorized the creation, and the normal discretionary
+	 * pass grants the creator what it asked. Every other layer -- MIC,
+	 * PIP, restricted and confinement passes, CAAP -- still judges the
+	 * new descriptor.
+	 */
 	if (desired_access != 0) {
 		ret = kacs_rust_check_file_sd_with_intent(
 			subject_token, *out_sd_ptr, *out_sd_len, desired_access,
-			privilege_intent, pip_type, pip_trust, &granted_access);
+			privilege_intent | PKM_KACS_INTENT_CREATOR_GRANT,
+			pip_type, pip_trust, &granted_access);
 		if (ret) {
 			pkm_kacs_free((void *)*out_sd_ptr);
 			*out_sd_ptr = NULL;
@@ -789,28 +674,84 @@ out_unlock:
 	return 0;
 }
 
-static long pkm_kacs_open_native_existing_path(
-	const struct path *resolved_path,
-	const struct pkm_kacs_native_open_prepared *prepared,
-	struct file **file_out)
+/*
+ * Open @path for a native request, choosing the Linux mode before the
+ * file is opened (TRM "Handle modes"). An explicit mask's mode follows its
+ * data rights; MAXIMUM_ALLOWED's follows the maximum: for a creating open,
+ * the creator's grant computed against the new descriptor, otherwise the
+ * maximum the file's current descriptor gives. The open hook then runs the
+ * authoritative check.
+ */
+static long
+pkm_kacs_open_native_path(const struct path *path,
+			  const struct pkm_kacs_native_open_prepared *prepared,
+			  bool creating, u32 creator_granted,
+			  struct file **file_out)
 {
+	struct inode *inode;
 	struct file *file;
+	u32 mode_rights;
+	bool directory;
+	bool control;
+	int open_flags;
+	long ret;
 
-	if (!resolved_path || !prepared || !file_out)
+	if (!path || !path->dentry || !prepared || !file_out)
 		return -EINVAL;
 
 	*file_out = NULL;
-	pkm_kacs_set_current_native_open_request(resolved_path,
-						 prepared->desired_access,
-						 prepared->create_options,
-						 prepared->privilege_intent);
-	file = dentry_open(resolved_path, prepared->open_flags, current_cred());
+	inode = d_inode(path->dentry);
+	if (!inode)
+		return -EACCES;
+	directory = S_ISDIR(inode->i_mode);
+
+	mode_rights = prepared->desired_access;
+	if (prepared->mode_from_maximum) {
+		u32 maximum = 0;
+
+		if (creating) {
+			maximum = creator_granted;
+		} else {
+			ret = pkm_kacs_live_path_access_granted(
+				pkm_kacs_current_effective_token_ptr(), path,
+				KACS_ACCESS_MAXIMUM_ALLOWED,
+				prepared->privilege_intent, &maximum);
+			/* The open hook makes and reports the decision. */
+			if (ret && ret != -EACCES && ret != -EOPNOTSUPP)
+				return ret;
+		}
+		mode_rights |= maximum;
+	}
+	open_flags =
+		pkm_kacs_native_mode_flags(mode_rights, directory, &control);
+	if (control && !S_ISREG(inode->i_mode) && !directory) {
+		/* A special node's driver decides what a data-less open means. */
+		trace_kacs_native_open_ext(prepared->create_disposition,
+					   prepared->desired_access,
+					   KACS_NOX_RESOLVE, -EINVAL);
+		return -EINVAL;
+	}
+
+	pkm_kacs_set_current_native_open_request(path, prepared, creating);
+	if (control)
+		file = dentry_open_control(path, open_flags, current_cred());
+	else
+		file = dentry_open(path, open_flags, current_cred());
 	pkm_kacs_clear_current_native_open_request();
 	if (IS_ERR(file))
 		return PTR_ERR(file);
 
 	*file_out = file;
 	return 0;
+}
+
+static long pkm_kacs_open_native_existing_path(
+	const struct path *resolved_path,
+	const struct pkm_kacs_native_open_prepared *prepared,
+	struct file **file_out)
+{
+	return pkm_kacs_open_native_path(resolved_path, prepared, false, 0,
+					 file_out);
 }
 
 static long pkm_kacs_apply_native_overwrite_truncate(struct file *file)
@@ -874,6 +815,31 @@ long pkm_kacs_do_native_overwrite_open(
 	*file_out = file;
 	*status_out = KACS_STATUS_OVERWRITTEN;
 	return 0;
+}
+
+/*
+ * Superseding deletes the existing file's name: its other opens have to
+ * share delete, and a delete-pending or read-only file cannot be replaced.
+ */
+static long pkm_kacs_nt_check_supersede(struct dentry *dentry)
+{
+	struct inode *record;
+	long ret = 0;
+
+	record = pkm_kacs_nt_record_inode_for_dentry(dentry);
+	if (record) {
+		if (pkm_kacs_nt_delete_pending(record)) {
+			pkm_kacs_nt_note_status(KACS_STATUS_DELETE_PENDING);
+			ret = -EBUSY;
+		} else if (pkm_kacs_nt_check_delete_by_name(record)) {
+			pkm_kacs_nt_note_status(KACS_STATUS_SHARING_VIOLATION);
+			ret = -EBUSY;
+		}
+		iput(record);
+	}
+	if (!ret && pkm_kacs_sattr_dentry_readonly(dentry))
+		ret = -EACCES;
+	return ret;
 }
 
 long pkm_kacs_do_native_supersede_open(
@@ -990,6 +956,9 @@ long pkm_kacs_do_native_supersede_open(
 	}
 	if (ret)
 		goto out_created_sd;
+	ret = pkm_kacs_nt_check_supersede(dentry);
+	if (ret)
+		goto out_created_sd;
 
 	parent_inode = d_inode(parent_path.dentry);
 	if (!parent_inode) {
@@ -1047,8 +1016,8 @@ long pkm_kacs_do_native_supersede_open(
 
 	tmp_path.mnt = mntget(parent_path.mnt);
 	tmp_path.dentry = dget(tmp_dentry);
-	ret = pkm_kacs_open_native_existing_path(&tmp_path, prepared,
-						 &opened_file);
+	ret = pkm_kacs_open_native_path(&tmp_path, prepared, true,
+					granted_access, &opened_file);
 	path_put(&tmp_path);
 	if (ret)
 		goto out_tmp_cleanup;
@@ -1277,16 +1246,10 @@ static long pkm_kacs_do_native_create_open(
 
 	child_path.mnt = mntget(parent_path.mnt);
 	child_path.dentry = dget(open_dentry);
-	pkm_kacs_set_current_native_open_request(&child_path,
-						 prepared->desired_access,
-						 prepared->create_options,
-						 prepared->privilege_intent);
-	opened_file =
-		dentry_open(&child_path, prepared->open_flags, current_cred());
-	pkm_kacs_clear_current_native_open_request();
+	ret = pkm_kacs_open_native_path(&child_path, prepared, true,
+					granted_access, &opened_file);
 	path_put(&child_path);
-	if (IS_ERR(opened_file)) {
-		ret = PTR_ERR(opened_file);
+	if (ret) {
 		opened_file = NULL;
 		if (stratafs_creation)
 			(void)pkm_kacs_stratafs_arm_created_cleanup(
@@ -1410,9 +1373,9 @@ static long pkm_kacs_resolve_native_open_path(
 	return 0;
 }
 
-SYSCALL_DEFINE5(kacs_open, int, dirfd, const char __user *, path,
-		struct kacs_open_how __user *, uhow, size_t, howsize,
-		u32 __user *, status_out)
+static long pkm_kacs_do_open(int dirfd, const char __user *path,
+			     struct kacs_open_how __user *uhow, size_t howsize,
+			     struct file **file_out, u32 *status_out_value)
 {
 	struct pkm_kacs_native_open_prepared prepared = {};
 	struct path resolved_path = {};
@@ -1420,7 +1383,6 @@ SYSCALL_DEFINE5(kacs_open, int, dirfd, const char __user *, path,
 	const void *subject_token;
 	struct kacs_open_how how;
 	u32 status = KACS_STATUS_OPENED;
-	int fd;
 	long ret;
 
 	if (!current->security)
@@ -1440,6 +1402,15 @@ SYSCALL_DEFINE5(kacs_open, int, dirfd, const char __user *, path,
 	if (ret)
 		return ret;
 	status = prepared.status;
+	if (how.flags & KACS_OPEN_PIN_ANCESTORS) {
+		ret = pkm_kacs_require_enabled_privilege(
+			subject_token, KACS_SE_LOCK_PARENTAGE_PRIVILEGE);
+		if (ret)
+			return -EPERM;
+	}
+	ret = pkm_kacs_lease_prepare_open(&how);
+	if (ret)
+		return ret;
 
 	if (prepared.create_disposition == KACS_DISPOSITION_CREATE)
 		goto do_create;
@@ -1452,7 +1423,8 @@ SYSCALL_DEFINE5(kacs_open, int, dirfd, const char __user *, path,
 			     KACS_DISPOSITION_OVERWRITE_IF) &&
 		    (how.sd_ptr != 0 || how.sd_len != 0)) {
 			path_put(&resolved_path);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out_lease;
 		}
 		switch (prepared.create_disposition) {
 		case KACS_DISPOSITION_OVERWRITE:
@@ -1473,22 +1445,60 @@ SYSCALL_DEFINE5(kacs_open, int, dirfd, const char __user *, path,
 		}
 		path_put(&resolved_path);
 		if (ret)
-			return ret;
-		goto install_fd;
+			goto out_lease;
+		goto opened;
 	}
 	if (ret != -ENOENT ||
 	    (prepared.create_disposition != KACS_DISPOSITION_OPEN_IF &&
 	     prepared.create_disposition != KACS_DISPOSITION_OVERWRITE_IF &&
 	     prepared.create_disposition != KACS_DISPOSITION_SUPERSEDE))
-		return ret;
+		goto out_lease;
 
 do_create:
 	ret = pkm_kacs_do_native_create_open(dirfd, path, &how, &prepared,
 					     &file, &status);
 	if (ret)
-		return ret;
+		goto out_lease;
 
-install_fd:
+opened:
+	ret = pkm_kacs_pin_ancestors_for_open(file, how.flags);
+	if (ret) {
+		fput(file);
+		goto out_lease;
+	}
+	*file_out = file;
+	*status_out_value = status;
+	pkm_kacs_lease_finish_open();
+	return 0;
+
+out_lease:
+	pkm_kacs_lease_finish_open();
+	return ret;
+}
+
+SYSCALL_DEFINE5(kacs_open, int, dirfd, const char __user *, path,
+		struct kacs_open_how __user *, uhow, size_t, howsize,
+		u32 __user *, status_out)
+{
+	struct file *file;
+	u32 status = 0;
+	u32 failure;
+	long ret;
+	int fd;
+
+	(void)pkm_kacs_nt_take_status();
+	ret = pkm_kacs_do_open(dirfd, path, uhow, howsize, &file, &status);
+	if (ret) {
+		/*
+		 * Where one errno covers several NT conditions, say which
+		 * (TRM "Modes and status"). Best effort: the errno stands.
+		 */
+		failure = pkm_kacs_nt_take_status();
+		if (failure && status_out)
+			(void)put_user(failure, status_out);
+		return ret;
+	}
+
 	fd = get_unused_fd_flags(0);
 	if (fd < 0) {
 		fput(file);

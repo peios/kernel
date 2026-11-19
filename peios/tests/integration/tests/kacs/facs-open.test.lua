@@ -73,16 +73,20 @@ test("MAXIMUM_ALLOWED caches the computed maximum rather than the requested set"
         sys.close(vm, maxed)
     end)
 
-test("MAXIMUM_ALLOWED alone defines no file mode and is invalid",
-    { spec = "PKM *facs.open.maximum-allowed-alone-einval" }, function(t)
-        local p = facs.file(vm, at("maxalone"), "x")
+test("MAXIMUM_ALLOWED may be named alone, its mode following the maximum",
+    { spec = "PKM *facs.open.maximum-allowed-alone" }, function(t)
+        local p = facs.file(vm, at("maxalone"), "max")
         local fd, errno = facs.open(vm, p, { access = MAXIMUM_ALLOWED })
-        t:assert(not fd, "MAXIMUM_ALLOWED on its own is refused")
-        t:assert_eq(errno, sys.E.INVAL, "with EINVAL: " .. sys.errname(errno or 0))
+        t:assert(fd, "MAXIMUM_ALLOWED on its own opens: " .. sys.errname(errno or 0))
+        if fd then
+            t:assert_eq(sys.read(vm, fd, 3), "max",
+                "the maximum includes reading, so the handle reads")
+            sys.close(vm, fd)
+        end
     end)
 
-test("every native open names a data right or FILE_EXECUTE",
-    { spec = "PKM *facs.open.required-data-right" }, function(t)
+test("a native open needs no data right: without one it is a control handle",
+    { spec = "PKM *facs.open.no-required-data-right" }, function(t)
         local p = facs.file(vm, at("dataright"), "x")
         for _, m in ipairs({ { "READ_CONTROL", R.READ_CONTROL },
                              { "WRITE_DAC", R.WRITE_DAC },
@@ -90,16 +94,14 @@ test("every native open names a data right or FILE_EXECUTE",
                              { "SYNCHRONIZE", R.SYNCHRONIZE },
                              { "DELETE", R.DELETE } }) do
             local fd, errno = facs.open(vm, p, { access = m[2] })
-            t:assert(not fd, m[1] .. " alone defines no file mode and is refused")
-            t:assert_eq(errno, sys.E.INVAL, "with EINVAL: " .. sys.errname(errno or 0))
-        end
-        for _, m in ipairs({ { "FILE_READ_DATA", R.READ_DATA },
-                             { "FILE_WRITE_DATA", R.WRITE_DATA },
-                             { "FILE_APPEND_DATA", R.APPEND_DATA },
-                             { "FILE_EXECUTE", R.EXECUTE } }) do
-            local fd, errno = facs.open(vm, p, { access = m[2] })
-            t:assert(fd, m[1] .. " satisfies the requirement: " .. sys.errname(errno or 0))
-            if fd then sys.close(vm, fd) end
+            t:assert(fd, m[1] .. " alone opens: " .. sys.errname(errno or 0))
+            if fd then
+                local r = vm:syscall(sys.NR.read, { args = { fd, 0, 1 },
+                    bufs = { "\0" }, ptrs = { 1 } })
+                t:assert_eq(r.errno, sys.E.BADF,
+                    m[1] .. " gives no data mode: " .. sys.errname(r.errno))
+                sys.close(vm, fd)
+            end
         end
     end)
 
@@ -126,8 +128,8 @@ test("FILE_EXECUTE alone yields a handle that can neither read nor write",
         sys.close(vm, fd)
     end)
 
-test("FILE_LIST_DIRECTORY satisfies the data-right requirement on a directory",
-    { spec = "PKM *facs.open.dir-list-satisfies-data-right" }, function(t)
+test("FILE_LIST_DIRECTORY opens a directory readable, to list",
+    { spec = "PKM *facs.open.dir-list-mode" }, function(t)
         local d = at("listdir")
         vm:mkdir(d, { parents = true })
         vm:write_file(d .. "/child", "c")
@@ -495,23 +497,30 @@ test("delete-on-close attaches to one file-description lineage, which dup preser
         t:assert(not sys.stat(vm, p), "closing the last one does")
     end)
 
-test("delete-on-close is no-share: later opens of the object fail closed",
-    { spec = "PKM *facs.open.delete-on-close-no-share" }, function(t)
-        local p = facs.file(vm, at("doc-noshare"), "doomed")
+test("delete-on-close makes the file delete-pending as the open closes",
+    { spec = "PKM *facs.open.delete-on-close-nt" }, function(t)
+        local p = facs.file(vm, at("doc-pending"), "doomed")
         local fd = facs.handle(t, vm, p, R.READ_DATA | R.WRITE_DATA | R.DELETE,
             { options = kacs.CREATE_OPT.DELETE_ON_CLOSE })
+        local other, e = facs.open(vm, p, { access = R.READ_DATA })
+        t:assert(other, "another open is admitted while the first is open: " ..
+            sys.errname(e or 0))
 
-        local no, e = facs.open(vm, p, { access = R.READ_DATA })
-        t:assert(not no, "a second native open of the object is refused")
-        t:assert_eq(e, sys.E.ACCES, "EACCES: " .. sys.errname(e or 0))
-        local legacy, e2 = sys.open(vm, p, sys.O.RDONLY)
-        t:assert(not legacy, "and so is a legacy one")
-        t:assert_eq(e2, sys.E.ACCES, "EACCES: " .. sys.errname(e2 or 0))
         sys.close(vm, fd)
+        t:assert(sys.stat(vm, p), "the name stays while another open remains")
+        local no, e2 = facs.open(vm, p, { access = R.READ_DATA })
+        t:assert(not no, "but the file is delete-pending")
+        t:assert_eq(e2, sys.E.BUSY, "EBUSY: " .. sys.errname(e2 or 0))
+        local legacy, e3 = sys.open(vm, p, sys.O.RDONLY)
+        t:assert(not legacy, "and refuses a legacy open too")
+        t:assert_eq(e3, sys.E.BUSY, "EBUSY: " .. sys.errname(e3 or 0))
+
+        if other then sys.close(vm, other) end
+        t:assert(not sys.stat(vm, p), "the last close removes it")
     end)
 
-test("the unlink happens at final close, not at open",
-    { spec = "PKM *facs.open.delete-on-close-final-close" }, function(t)
+test("the unlink happens at the last close, not at open",
+    { spec = "PKM *facs.delete.last-close" }, function(t)
         local p = facs.file(vm, at("doc-final"), "doomed")
         local fd = facs.handle(t, vm, p, R.READ_DATA | R.WRITE_DATA | R.DELETE,
             { options = kacs.CREATE_OPT.DELETE_ON_CLOSE })
@@ -520,12 +529,11 @@ test("the unlink happens at final close, not at open",
         t:assert(not sys.stat(vm, p), "and gone once it closes")
     end)
 
-test("a pathname already gone at final close is a no-op, not a new error",
-    { spec = "PKM *facs.open.delete-on-close-final-close" },
+test("a pathname already gone at the last close is a no-op, not a new error",
+    { spec = "PKM *facs.delete.last-close" },
     function(t)
-        -- §3.9.2: the unlink happens at final close, "and if the
-        -- pathname is already gone by then the close path treats it as
-        -- a no-op rather than a new error".
+        -- "If that name is already gone by the last close, nothing
+        -- more is done" (Sharing and Deletion).
         local q = facs.file(vm, at("doc-gone"), "doomed")
         local fd = facs.handle(t, vm, q, R.READ_DATA | R.WRITE_DATA | R.DELETE,
             { options = kacs.CREATE_OPT.DELETE_ON_CLOSE })
@@ -535,16 +543,17 @@ test("a pathname already gone at final close is a no-op, not a new error",
             sys.errname(closed.errno))
     end)
 
-test("delete-on-close is for regular files only",
-    { spec = "PKM *facs.open.delete-on-close-regular-only" }, function(t)
+test("delete-on-close removes an empty directory at its last close",
+    { spec = "PKM *facs.open.delete-on-close-directories" }, function(t)
         local d = at("doc-dir")
         vm:mkdir(d, { parents = true })
         kacs.set_sd(vm, d, kacs.grant(kacs.ALL_RIGHTS))
         local fd, errno = facs.open(vm, d, { access = R.LIST_DIRECTORY | R.DELETE,
             options = kacs.CREATE_OPT.DELETE_ON_CLOSE })
-        t:assert(not fd, "a directory cannot be armed")
-        t:assert_eq(errno, sys.E.OPNOTSUPP, "it fails closed: " .. sys.errname(errno or 0))
-        t:assert(sys.stat(vm, d), "and the directory is still there")
+        t:assert(fd, "a directory can be opened delete-on-close: " ..
+            sys.errname(errno or 0))
+        if fd then sys.close(vm, fd) end
+        t:assert(not sys.stat(vm, d), "and is removed as it closes")
     end)
 
 test("a new file with no supplied descriptor inherits one from its parent",
@@ -605,36 +614,36 @@ test("FILE_OPEN with a descriptor supplied is unsupported",
         t:assert_eq(errno, sys.E.OPNOTSUPP, "EOPNOTSUPP: " .. sys.errname(errno or 0))
     end)
 
-test("the strict check runs against the newly computed descriptor",
-    { spec = "PKM *facs.open.check-against-new-descriptor" }, function(t)
+test("a creating open is granted what it asked, whatever the new descriptor grants",
+    { spec = "PKM *facs.open.creator-granted-requested" }, function(t)
         local d = at("newsd")
         vm:mkdir(d, { parents = true })
         kacs.set_sd(vm, d, kacs.grant(kacs.ALL_RIGHTS))
-        local child = d .. "/refused"
+        local child = d .. "/creator"
         sys.unlink(vm, child)
 
-        -- Parent create rights are held in full; the *new* object's
-        -- descriptor grants read only, so a write handle is refused.
+        -- The new object's descriptor grants reading only; its creator
+        -- still gets the write handle it asked for, once.
         local readonly = access.sd({
             owner = token.SID.LOCAL_SYSTEM, group = token.SID.LOCAL_SYSTEM,
             dacl = access.acl({ access.ace(access.ACE.ALLOWED,
                 R.READ_DATA | R.READ_ATTRIBUTES, token.SID.EVERYONE) }),
         })
         kacs.as_dacl_bound(t, vm, function(w)
-            local no, e = facs.open(w, child, { access = R.READ_DATA | R.WRITE_DATA,
+            local fd, e = facs.open(w, child, { access = R.READ_DATA | R.WRITE_DATA,
                 disposition = D.CREATE, sd = readonly })
-            t:assert(not no, "parent create rights do not authorize the returned handle")
-            t:assert_eq(e, sys.E.ACCES, "EACCES: " .. sys.errname(e or 0))
-
-            local ok, e2 = facs.open(w, child, { access = R.READ_DATA,
-                disposition = D.CREATE, sd = readonly })
-            t:assert(ok, "a handle the new descriptor grants is created: " ..
-                sys.errname(e2 or 0))
-            if ok then sys.close(w, ok) end
+            t:assert(fd, "the creator gets its write handle: " .. sys.errname(e or 0))
+            if fd then
+                t:assert_eq(sys.write(w, fd, "x").ret, 1, "and writes through it")
+                sys.close(w, fd)
+            end
+            local again, e2 = facs.open(w, child, { access = R.READ_DATA | R.WRITE_DATA })
+            t:assert(not again, "a later open is checked against the descriptor")
+            t:assert_eq(e2, sys.E.ACCES, "EACCES: " .. sys.errname(e2 or 0))
         end)
     end)
 
-test("a failed strict check rolls the creation back",
+test("a creation the other layers refuse is rolled back",
     { spec = "PKM *facs.open.failed-check-rolls-back" }, function(t)
         local d = at("rollback")
         vm:mkdir(d, { parents = true })
@@ -645,22 +654,18 @@ test("a failed strict check rolls the creation back",
             owner = token.SID.LOCAL_SYSTEM, group = token.SID.LOCAL_SYSTEM,
             dacl = access.acl({ access.ace(access.ACE.ALLOWED, R.READ_DATA, token.SID.EVERYONE) }),
         })
-        kacs.as_dacl_bound(t, vm, function(w)
-            local no, e = facs.open(w, child, { access = R.READ_DATA | R.WRITE_DATA,
-                disposition = D.CREATE, sd = readonly })
-            t:assert(not no, "the open fails: " .. sys.errname(e or 0))
-        end)
+        -- The creator's grant replaces only the normal pass: a restricted
+        -- token's restricting SIDs still have to be granted by the new
+        -- descriptor (The creator's access).
+        local ENABLED = token.GROUP.MANDATORY | token.GROUP.ENABLED_BY_DEFAULT | token.GROUP.ENABLED
+        token.as_principal(t, vm,
+            { restricted_sids = { { sid = token.SID.EVERYONE, attributes = ENABLED } } },
+            function(w)
+                local no, e = facs.open(w, child, { access = R.READ_DATA | R.WRITE_DATA,
+                    disposition = D.CREATE, sd = readonly })
+                t:assert(not no, "the open fails: " .. sys.errname(e or 0))
+            end)
         t:assert(not sys.stat(vm, child), "and the file it created is removed again")
-
-        -- A directory creation rolls back the same way.
-        local dir = d .. "/neverdir"
-        sys.unlink(vm, dir, sys.AT_REMOVEDIR)
-        kacs.as_dacl_bound(t, vm, function(w)
-            local no = facs.open(w, dir, { access = R.LIST_DIRECTORY | R.ADD_FILE,
-                disposition = D.CREATE, options = kacs.CREATE_OPT.DIRECTORY, sd = readonly })
-            t:assert(not no, "a directory creation whose check fails is refused")
-        end)
-        t:assert(not sys.stat(vm, dir), "and the directory is removed again")
     end)
 
 test("a supplied owner has to be the caller's own or a group marked SE_GROUP_OWNER",

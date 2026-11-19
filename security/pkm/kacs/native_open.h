@@ -18,8 +18,18 @@
  * §3.2.3). The intents never reach path lookup.
  */
 #define PKM_KACS_OPEN_INTENT_FLAGS (KACS_BACKUP_INTENT | KACS_RESTORE_INTENT)
-#define PKM_KACS_OPEN_ALLOWED_AT_FLAGS \
-	(AT_SYMLINK_NOFOLLOW | PKM_KACS_OPEN_INTENT_FLAGS)
+/* The NT handle extensions (PEI-1720): share access, lease key, pinning. */
+#define PKM_KACS_OPEN_NT_FLAGS \
+	(KACS_OPEN_SHARE_ACCESS | KACS_OPEN_LEASE_KEY | KACS_OPEN_PIN_ANCESTORS)
+#define PKM_KACS_OPEN_ALLOWED_AT_FLAGS                      \
+	(AT_SYMLINK_NOFOLLOW | PKM_KACS_OPEN_INTENT_FLAGS | \
+	 PKM_KACS_OPEN_NT_FLAGS)
+/*
+ * Kernel-private privilege_intent bit: the open creates the object it
+ * names, so the normal discretionary pass grants the creator what it asked
+ * (TRM "The creator's access"). Never accepted from userspace.
+ */
+#define PKM_KACS_INTENT_CREATOR_GRANT 0x100U
 #define PKM_KACS_DIRECTORY_MUTATION_RIGHTS \
 	(KACS_FILE_WRITE_DATA | KACS_FILE_APPEND_DATA | KACS_FILE_DELETE_CHILD)
 
@@ -27,22 +37,21 @@ struct kacs_open_how;
 
 u64 pkm_kacs_next_native_supersede_tmp_id(void);
 
+/* The open flags for a native open's data rights, and if it is a control
+ * handle. */
+int pkm_kacs_native_mode_flags(u32 granted, bool directory, bool *control_out);
 long pkm_kacs_prepare_native_open(
 	const struct kacs_open_how *how,
 	struct pkm_kacs_native_open_prepared *prepared);
-bool pkm_kacs_file_delete_on_close_pending(const struct file *file);
 long pkm_kacs_maybe_arm_delete_on_close_for_subject(const void *subject_token,
 						    struct file *file,
 						    u32 create_options);
-bool pkm_kacs_native_open_request_matches(struct file *file,
-					  u32 *desired_access_out,
-					  u32 *create_options_out,
-					  u32 *privilege_intent_out);
+const struct pkm_kacs_native_open_request *
+pkm_kacs_native_open_request_for(struct file *file);
 
-void pkm_kacs_set_current_native_open_request(const struct path *path,
-					      u32 desired_access,
-					      u32 create_options,
-					      u32 privilege_intent);
+void pkm_kacs_set_current_native_open_request(
+	const struct path *path,
+	const struct pkm_kacs_native_open_prepared *prepared, bool creating);
 void pkm_kacs_clear_current_native_open_request(void);
 void pkm_kacs_set_current_native_create_request(
 	const struct inode *parent_inode, bool directory, const u8 *sd_bytes,

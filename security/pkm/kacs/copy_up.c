@@ -29,6 +29,7 @@
 #include <linux/xattr.h>
 
 #include "copy_up.h"
+#include "nt_file.h"
 #include "cred_lifecycle.h"
 #include "file_access.h"
 #include "file_metadata.h"
@@ -1140,6 +1141,23 @@ int pkm_kacs_stratafs_copy_up_adopt_backing_file(
 			pkm_kacs_copy_up_set_file_snapshot(
 				outer_sec, pkm_kacs_file(children[i]),
 				pkm_kacs_backing_file(children[i]));
+	/*
+	 * The copied-up provider is where the outer open now lives, so its
+	 * NT share participation moves with it (TRM "Sharing and Deletion").
+	 * The object is new and private, so nothing can conflict. The former
+	 * provider keeps its registration until its retired backing file is
+	 * released.
+	 */
+	if (!ret && !backing_sec->nt_inode &&
+	    (backing_file->f_mode & FMODE_OPENED) &&
+	    pkm_kacs_nt_applies(file_inode(backing_file)))
+		ret = pkm_kacs_nt_register(backing_file,
+					   file_inode(backing_file),
+					   outer_sec->nt_classes,
+					   outer_sec->nt_classes ?
+						   outer_sec->nt_share :
+						   PKM_KACS_NT_ALL,
+					   0);
 out:
 	while (count)
 		fput(children[--count]);
@@ -5106,7 +5124,7 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 	struct inode *entry_inode;
 	struct dentry *recreated;
 
-	KUNIT_ASSERT_NULL(test, task_sec->delete_on_close_file);
+	KUNIT_ASSERT_NULL(test, task_sec->deferred_delete_dentry);
 	KUNIT_ASSERT_EQ(test, pkm_kunit_copy_up_tree_init(&tree), 0);
 	idmap = mnt_idmap(tree.mnt);
 	up_inode = d_inode(tree.up.dentry);
@@ -5135,8 +5153,10 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 				victim.dentry, &tree.up, entry.dentry),
 			-EPERM);
 
-	/* Armed for that outer file, as the final-close path arms it. */
-	task_sec->delete_on_close_file = outer;
+	/* Armed for that outer name, as the last-close removal arms it. */
+	task_sec->deferred_delete_dentry = victim.dentry;
+	task_sec->deferred_delete_dentry_inode = d_inode(victim.dentry);
+	task_sec->deferred_delete_record_inode = d_inode(victim.dentry);
 	KUNIT_EXPECT_TRUE(
 		test, pkm_kacs_stratafs_delete_on_close_active(victim.dentry));
 	KUNIT_EXPECT_FALSE(
@@ -5220,7 +5240,9 @@ static void pkm_kunit_copy_up_deferred_deletion_is_bound_to_the_exact_entry(
 	KUNIT_EXPECT_NULL(test, task_sec->delete_on_close_dentry);
 	KUNIT_EXPECT_NULL(test, task_sec->delete_on_close_inode);
 	KUNIT_EXPECT_NULL(test, task_sec->delete_on_close_parent_inode);
-	task_sec->delete_on_close_file = NULL;
+	task_sec->deferred_delete_dentry = NULL;
+	task_sec->deferred_delete_dentry_inode = NULL;
+	task_sec->deferred_delete_record_inode = NULL;
 	KUNIT_EXPECT_EQ(test, pkm_kacs_inode_unlink(up_inode, victim.dentry),
 			-EACCES);
 
@@ -5293,7 +5315,7 @@ static void pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op(
 	struct dentry *recreated;
 	struct file *outer;
 
-	KUNIT_ASSERT_NULL(test, task_sec->delete_on_close_file);
+	KUNIT_ASSERT_NULL(test, task_sec->deferred_delete_dentry);
 	KUNIT_ASSERT_EQ(test, pkm_kunit_copy_up_tree_init(&tree), 0);
 	idmap = mnt_idmap(tree.mnt);
 	up_inode = d_inode(tree.up.dentry);
@@ -5315,9 +5337,12 @@ static void pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op(
 	KUNIT_EXPECT_TRUE(test, d_unhashed(doomed.dentry));
 	KUNIT_EXPECT_EQ(test, doomed_inode->i_nlink, 0U);
 
-	/* The final close: a no-op, not a second unlink and not an error. */
-	KUNIT_EXPECT_EQ(test, pkm_kacs_unlink_delete_on_close_file(outer), 0L);
-	KUNIT_EXPECT_NULL(test, task_sec->delete_on_close_file);
+	/* The last close: a no-op, not a second unlink and not an error. */
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_nt_remove_now(&outer->f_path, doomed_inode,
+					       doomed_inode, NULL),
+			0L);
+	KUNIT_EXPECT_NULL(test, task_sec->deferred_delete_dentry);
 	KUNIT_EXPECT_EQ(test, doomed_inode->i_nlink, 0U);
 
 	/* A name re-created since names another inode, and is left alone. */
@@ -5327,7 +5352,10 @@ static void pkm_kunit_delete_on_close_final_close_after_unlink_is_a_no_op(
 			vfs_create(idmap, recreated, S_IFREG | 0600, NULL), 0);
 	recreated = end_creating_keep(recreated);
 	KUNIT_EXPECT_PTR_NE(test, d_inode(recreated), doomed_inode);
-	KUNIT_EXPECT_EQ(test, pkm_kacs_unlink_delete_on_close_file(outer), 0L);
+	KUNIT_EXPECT_EQ(test,
+			pkm_kacs_nt_remove_now(&outer->f_path, doomed_inode,
+					       doomed_inode, NULL),
+			0L);
 	KUNIT_EXPECT_TRUE(test, d_is_positive(recreated));
 	KUNIT_EXPECT_FALSE(test, d_unhashed(recreated));
 	KUNIT_EXPECT_EQ(test, d_inode(recreated)->i_nlink, 1U);

@@ -825,8 +825,10 @@ static int stratafs_merged_empty(struct dentry *dentry)
 		if (i == sbi->create_index)
 			stratafs_recover_staging_parent(dentry->d_sb,
 							&paths.path[i]);
+		pkm_kacs_stratafs_begin_internal_scan();
 		real = dentry_open(&paths.path[i], O_RDONLY | O_DIRECTORY,
 				   sbi->resolution_cred);
+		pkm_kacs_stratafs_end_internal_scan();
 		if (IS_ERR(real)) {
 			ret = PTR_ERR(real);
 			goto out;
@@ -1080,8 +1082,10 @@ static int stratafs_directory_provider_only(struct dentry *dentry,
 		if (i == provider_index || !(paths.present & BIT_ULL(i)) ||
 		    !d_is_dir(paths.path[i].dentry))
 			continue;
+		pkm_kacs_stratafs_begin_internal_scan();
 		real = dentry_open(&paths.path[i], O_RDONLY | O_DIRECTORY,
 				   sbi->resolution_cred);
+		pkm_kacs_stratafs_end_internal_scan();
 		if (IS_ERR(real)) {
 			ret = PTR_ERR(real);
 			goto out;

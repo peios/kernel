@@ -29,7 +29,18 @@ void stratafs_kacs_audit_deferred_refusal(const struct dentry *outer,
 /* Confirm a deferred target is gone in its original providing stratum.
  * Used only to classify a failed outer VFS check, never to authorize unlink.
  */
-bool stratafs_kacs_deferred_target_gone(const struct file *file);
+bool stratafs_kacs_deferred_target_gone(const struct dentry *outer);
+/* The provider inode holding an outer file's or name's NT state, referenced. */
+struct inode *stratafs_kacs_nt_inode_for_file(struct file *file);
+struct inode *stratafs_kacs_nt_inode_for_dentry(struct dentry *dentry);
+/* The backing file an outer open reaches, unreferenced. */
+struct file *stratafs_kacs_real_file(struct file *file);
+/*
+ * The merged parent and name an outer open's link has now, found from its
+ * provider, and the provider's inode, referenced. For kacs_rename.
+ */
+int stratafs_kacs_handle_name(struct file *file, struct path *parent,
+			      char **last, struct inode **provider);
 #else
 static inline int stratafs_prepare_mmap(struct file *file, unsigned long flags)
 {
@@ -49,6 +60,13 @@ static inline int stratafs_prepare_mmap(struct file *file, unsigned long flags)
  * All calls are sleeping process-context calls unless documented otherwise.
  */
 struct pkm_kacs_stratafs_copy_up;
+
+/*
+ * Bracket StrataFS's own scans of provider directories, whose opens take
+ * no part in NT share checking (PEI-1720).
+ */
+void pkm_kacs_stratafs_begin_internal_scan(void);
+void pkm_kacs_stratafs_end_internal_scan(void);
 
 /* Drop the outer inode's parsed SD after rebinding; preserves file grants.
  * Call without StrataFS rebind locks held: an SD read can resolve a provider.

@@ -91,6 +91,9 @@ The same rule applies to every object type with a set path —
 registry keys, processes, tokens, System V IPC objects and the rest —
 each through its own GenericMapping.
 
+A descriptor change breaks other holders' handle caching on the file
+([Leases](<~kernel/internals/kacs/file-security/leases#trm-3-9-12-3>)).
+
 <a id="trm-3-9-6-2"></a>
 
 ## Ownership <a id="cite-facs.set-sd.ownership"></a>

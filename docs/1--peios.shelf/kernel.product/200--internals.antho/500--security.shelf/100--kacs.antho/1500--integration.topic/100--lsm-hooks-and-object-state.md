@@ -30,19 +30,21 @@ sizes and offsets depend on the build and are not fixed by this manual.
 | LSM size entry | KACS structure | State carried |
 |---|---|---|
 | `lbs_cred` | `pkm_kacs_cred_security` | Token reference, shared `process_state`, projected UID/GID, and the pending descriptor used while overlayfs creates or copies up an inode. |
-| `lbs_task` | `pkm_kacs_task_security` | Shared `process_state`, usermode-helper and impersonation state, the applied primary-installation epoch and thread-enrollment callback, deferred privilege-audit work, native-open/create requests, write/metadata decisions, and narrowly scoped StrataFS creation, supersede, cleanup and delete-on-close context. |
+| `lbs_task` | `pkm_kacs_task_security` | Shared `process_state`, usermode-helper and impersonation state, the applied primary-installation epoch and thread-enrollment callback, deferred privilege-audit work, native-open/create requests, write/metadata decisions, narrowly scoped StrataFS creation, supersede and cleanup context, the deferred deletion in progress at a delete-pending file's last close, the failure status of the last native open, a handle rename in progress, and the lease keys and notes that lease breaks consult. |
 | `lbs_sock` | `pkm_kacs_socket_security` | Socket descriptor, conveyed peer/listener identities, token-conveyance cache and impersonation limits, binder identity/reuse decision, and the committed socket-owner identity used by network policy. |
 | `lbs_ipc` | `pkm_kacs_ipc_security` | Refcounted descriptor and lock for a System V message queue, shared-memory segment or semaphore array. |
-| `lbs_file` | `pkm_kacs_file_security` | Cached `granted_access` and `continuous_audit_mask`, copy-up context and phase generation, `managed`, `delete_on_close`, and the referenced token that armed deferred deletion. |
-| `lbs_backing_file` | `pkm_kacs_backing_file_security` | Cached `granted_access` and `continuous_audit_mask`, plus `managed` and `inherited`, for the explicit outer-to-backing-file snapshot transfer. |
-| `lbs_inode` | `pkm_kacs_inode_security` | Lock and RCU descriptor-cache pointer, delete-on-close lineage and signed-exec pin counters, and the deferred descriptor-persistence state. Test-only members exist under `CONFIG_SECURITY_PKM_KUNIT`. |
+| `lbs_file` | `pkm_kacs_file_security` | Cached `granted_access` and `continuous_audit_mask`, copy-up context and phase generation, the open's NT share registration (`nt_inode`, `nt_classes`, `nt_share`, `nt_intent`), its lease manager and key, its ancestor pin set, `managed`, `delete_on_close`, and the referenced token that will mark the file delete-pending. |
+| `lbs_backing_file` | `pkm_kacs_backing_file_security` | Cached `granted_access` and `continuous_audit_mask`, the outer open's share participation and lease key, plus `managed` and `inherited`, for the explicit outer-to-backing-file snapshot transfer. |
+| `lbs_inode` | `pkm_kacs_inode_security` | Lock and RCU descriptor-cache pointer, the lazily allocated NT state (`nt`: share counters, delete-pending mark, byte-range locks and leases), the cached read-only special attribute, the ancestor-pin and signed-exec pin counters, and the deferred descriptor-persistence state. Test-only members exist under `CONFIG_SECURITY_PKM_KUNIT`. |
 | `lbs_superblock` | `pkm_kacs_superblock_security` | Mount-policy lock, template descriptor bytes/length, policy generation and mount policy. |
 
 The additional `lbs_xattr_count = 1` reserves one xattr-initialization
 slot. It is not a ninth object blob or a byte-size declaration.
 
 The file blob uses separate `u8 managed` and `u8 delete_on_close`
-fields. There is no `flags` member or `KACS_FILE_FACS_MANAGED` constant.
+fields. The NT state lives in `nt_file.c`, `nt_lock.c` and `nt_lease.c`,
+the handle syscalls in `nt_handle.c`, pinning in `nt_pin.c`, and the
+special attributes in `sattr.c`. There is no `flags` member or `KACS_FILE_FACS_MANAGED` constant.
 The backing-file blob is distinct from the ordinary file blob: its
 `inherited` marker records explicit adoption of the outer description's
 cached grants and continuous-audit mask ([The StrataFS Copy-Up Context](<~kernel/internals/stratafs/security/kacs-admission-and-object-phases#trm-3-9-7>)).
@@ -69,7 +71,7 @@ specific kernel work; they are not caller-settable authorization flags.
 
 ## Registered hook matrix
 
-The current `pkm_hooks[]` table contains 99 registrations. Paths in the
+The current `pkm_hooks[]` table contains 100 registrations. Paths in the
 last column are relative to the `pkm` source repository. A callback's
 presence here identifies where KACS is called; the operation's access,
 privilege and lifetime rules remain specified in the relevant chapter.
@@ -118,6 +120,7 @@ privilege and lifetime rules remain specified in the relevant chapter.
 | `file_alloc_security` | `pkm_kacs_file_alloc_security` | `security/pkm/kacs/object_lifecycle.c` |
 | `backing_file_alloc` | `pkm_kacs_backing_file_alloc` | `security/pkm/kacs/object_lifecycle.c` |
 | `file_release` | `pkm_kacs_file_release` | `security/pkm/kacs/object_lifecycle.c` |
+| `file_free_security` | `pkm_kacs_file_free_security` | `security/pkm/kacs/object_lifecycle.c` |
 | `file_open` | `pkm_kacs_file_open` | `security/pkm/kacs/file_access.c` |
 | `file_receive` | `pkm_kacs_file_receive` | `security/pkm/kacs/object_lifecycle.c` |
 | `file_permission` | `pkm_kacs_file_permission` | `security/pkm/kacs/file_access.c` |
@@ -198,7 +201,19 @@ through another LSM's hook table.
 | Set an xattr through a file descriptor | `pkm_kacs_file_sd_xattr_set` | `fs/xattr.c` |
 | Remove an xattr through a file descriptor | `pkm_kacs_file_sd_xattr_remove` | `fs/xattr.c` |
 
-All seven implementations are in `security/pkm/kacs/file_metadata.c`. The xattr
+All seven implementations are in `security/pkm/kacs/file_metadata.c`.
+
+The NT handle semantics add direct entry points at other call sites:
+
+| Operation | Direct KACS entry point | Kernel call site |
+|---|---|---|
+| An open that fails after the open hook | `pkm_kacs_file_open_failed` | `fs/open.c` |
+| An `O_PATH` open, refused while delete-pending | `pkm_kacs_file_open_path` | `fs/open.c` |
+| A control handle, opened with no data mode | `dentry_open_control` (VFS helper) | `fs/open.c` |
+| A read or write, checked against byte-range locks | `pkm_kacs_nt_lock_check_io` | `fs/read_write.c` |
+| A content-changing `fallocate` | `pkm_kacs_nt_lock_check_fallocate` | `fs/open.c` |
+| Writing or removing the special attributes | `pkm_kacs_sattr_vfs_set`, `pkm_kacs_sattr_vfs_remove` | `fs/xattr.c` |
+| Looking up a rename destination | `pkm_filename_parentat` (VFS helper) | `fs/namei.c` | The xattr
 functions enforce the file's metadata grant as well as the separate
 rules for protected SD attributes; their names do not make raw SD-xattr
 access a supported security-descriptor API.

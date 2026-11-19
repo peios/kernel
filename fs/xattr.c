@@ -607,6 +607,12 @@ extern int pkm_kacs_file_sd_xattr_set(struct file *file, const char *name);
 extern int pkm_kacs_file_sd_xattr_remove(struct file *file, const char *name);
 extern int pkm_kacs_file_listxattr(struct file *file);
 extern void pkm_kacs_file_end_metadata(struct file *file);
+extern bool pkm_kacs_is_sattr_xattr(const char *name);
+extern int pkm_kacs_sattr_vfs_set(struct mnt_idmap *idmap,
+				  struct dentry *dentry, const void *value,
+				  size_t size, int flags);
+extern int pkm_kacs_sattr_vfs_remove(struct mnt_idmap *idmap,
+				     struct dentry *dentry);
 #endif
 
 
@@ -641,6 +647,12 @@ static int do_setxattr(struct mnt_idmap *idmap, struct dentry *dentry,
 	if (is_posix_acl_xattr(ctx->kname->name))
 		return do_set_acl(idmap, dentry, ctx->kname->name,
 				  ctx->kvalue, ctx->size);
+#ifdef CONFIG_SECURITY_PKM
+	/* KACS special attributes merge into the stored value. */
+	if (pkm_kacs_is_sattr_xattr(ctx->kname->name))
+		return pkm_kacs_sattr_vfs_set(idmap, dentry, ctx->kvalue,
+					      ctx->size, ctx->flags);
+#endif
 
 	return vfs_setxattr(idmap, dentry, ctx->kname->name,
 			ctx->kvalue, ctx->size, ctx->flags);
@@ -1049,6 +1061,10 @@ removexattr(struct mnt_idmap *idmap, struct dentry *d, const char *name)
 {
 	if (is_posix_acl_xattr(name))
 		return vfs_remove_acl(idmap, d, name);
+#ifdef CONFIG_SECURITY_PKM
+	if (pkm_kacs_is_sattr_xattr(name))
+		return pkm_kacs_sattr_vfs_remove(idmap, d);
+#endif
 	return vfs_removexattr(idmap, d, name);
 }
 

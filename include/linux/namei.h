@@ -69,6 +69,10 @@ static inline void end_removing_path(const struct path *path , struct dentry *de
 {
 	end_creating_path(path, dentry);
 }
+#ifdef CONFIG_SECURITY_PKM
+int pkm_filename_parentat(int dfd, struct filename *name, unsigned int flags,
+			  struct path *parent, struct qstr *last, int *type);
+#endif
 int vfs_path_parent_lookup(struct filename *filename, unsigned int flags,
 			   struct path *parent, struct qstr *last, int *type,
 			   const struct path *root);

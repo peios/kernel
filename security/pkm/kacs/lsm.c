@@ -117,6 +117,7 @@ static struct security_hook_list pkm_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(file_alloc_security, pkm_kacs_file_alloc_security),
 	LSM_HOOK_INIT(backing_file_alloc, pkm_kacs_backing_file_alloc),
 	LSM_HOOK_INIT(file_release, pkm_kacs_file_release),
+	LSM_HOOK_INIT(file_free_security, pkm_kacs_file_free_security),
 	LSM_HOOK_INIT(file_open, pkm_kacs_file_open),
 	LSM_HOOK_INIT(file_receive, pkm_kacs_file_receive),
 	LSM_HOOK_INIT(file_permission, pkm_kacs_file_permission),

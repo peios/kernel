@@ -60,6 +60,12 @@ long pkm_kacs_authorize_namespace_rename_for_subject(const void *subject_token,
 						     struct dentry *old_dentry,
 						     struct inode *new_dir,
 						     struct dentry *new_dentry);
+long pkm_kacs_authorize_namespace_rename_parts(const void *subject_token,
+					       struct inode *old_dir,
+					       struct dentry *old_dentry,
+					       struct inode *new_dir,
+					       struct dentry *new_dentry,
+					       bool check_source);
 int pkm_kacs_dentry_create_files_as(struct dentry *dentry, int mode,
 				    const struct qstr *name,
 				    const struct cred *old, struct cred *new);

@@ -33,6 +33,16 @@ long pkm_kacs_authorize_live_file_access_core(const void *subject_token,
 long pkm_kacs_authorize_path_file_access_core(const void *subject_token,
 					      const struct path *path,
 					      u32 desired_access);
+long pkm_kacs_live_file_access_granted(const void *subject_token,
+				       struct file *file, u32 desired_access,
+				       u32 privilege_intent, u32 *granted_out);
+long pkm_kacs_live_path_access_granted(const void *subject_token,
+				       const struct path *path,
+				       u32 desired_access, u32 privilege_intent,
+				       u32 *granted_out);
+u32 pkm_kacs_parent_grants(const void *subject_token, const struct path *path,
+			   u32 wanted);
+int pkm_kacs_file_open_path(struct file *file);
 long pkm_kacs_stamp_native_file_granted_access_for_subject(
 	const void *subject_token, struct file *file, u32 desired_access,
 	u32 privilege_intent);

@@ -1075,8 +1075,23 @@ long pkm_kacs_kunit_native_open_for_subject(
 		goto out_parent_cleanup;
 	}
 
+	/* As the real open: MAXIMUM_ALLOWED takes its mode from the maximum. */
+	if (prepared.mode_from_maximum) {
+		u32 maximum = 0;
+		bool control;
+
+		(void)pkm_kacs_live_file_access_granted(
+			args->subject_token, &state->file,
+			KACS_ACCESS_MAXIMUM_ALLOWED, prepared.privilege_intent,
+			&maximum);
+		prepared.open_flags = pkm_kacs_native_mode_flags(
+			prepared.desired_access | maximum,
+			S_ISDIR(state->inode.i_mode), &control);
+		prepared.control = control;
+	}
 	state->file.f_flags = prepared.open_flags;
-	state->file.f_mode = OPEN_FMODE(prepared.open_flags);
+	state->file.f_mode = prepared.control ? 0 :
+						OPEN_FMODE(prepared.open_flags);
 	ret = pkm_kacs_stamp_native_file_granted_access_for_subject(
 		args->subject_token, &state->file, prepared.desired_access,
 		prepared.privilege_intent);
@@ -1212,7 +1227,8 @@ long pkm_kacs_kunit_native_prepare_open_with_padding(u32 padding)
 	struct kacs_open_how how = {
 		.desired_access = KACS_FILE_READ_DATA,
 		.create_disposition = KACS_DISPOSITION_OPEN,
-		.__pad = padding,
+		/* The former padding, read only with KACS_OPEN_SHARE_ACCESS. */
+		.share_access = padding,
 	};
 
 	return pkm_kacs_prepare_native_open(&how, &prepared);
@@ -1420,13 +1436,14 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		out->status = prepared.status;
 	}
 
-	if (!S_ISREG(state->inode.i_mode)) {
+	if (!S_ISREG(state->inode.i_mode) && !S_ISDIR(state->inode.i_mode)) {
 		ret = -EOPNOTSUPP;
 		goto out;
 	}
 
 	state->file.f_flags = prepared.open_flags;
-	state->file.f_mode = OPEN_FMODE(prepared.open_flags);
+	state->file.f_mode = prepared.control ? 0 :
+						OPEN_FMODE(prepared.open_flags);
 	ret = pkm_kacs_stamp_native_file_granted_access_for_subject(
 		args->subject_token, &state->file, prepared.desired_access,
 		prepared.privilege_intent);
@@ -1443,8 +1460,8 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		file_sec && file_sec->managed ? file_sec->granted_access : 0;
 
 	inode_sec = pkm_kacs_inode(&state->inode);
-	out->pending_before_release =
-		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
+	/* "Pending": the open carries its delete-on-close obligation. */
+	out->pending_before_release = file_sec ? file_sec->delete_on_close : 0;
 
 	reopen_blob = kzalloc(pkm_blob_sizes.lbs_file +
 				      sizeof(struct pkm_kacs_file_security),
@@ -1470,8 +1487,7 @@ long pkm_kacs_kunit_delete_on_close_for_subject(
 		args->subject_token, &reopened);
 
 	pkm_kacs_file_release(&state->file);
-	out->pending_after_release =
-		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
+	out->pending_after_release = file_sec ? file_sec->delete_on_close : 0;
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 	out->unlink_calls = inode_sec->kunit_unlink_calls;
 #endif
@@ -1601,8 +1617,7 @@ long pkm_kacs_kunit_delete_on_close_dup_lineage_for_subject(
 	out->granted_access =
 		file_sec && file_sec->managed ? file_sec->granted_access : 0;
 	out->status = prepared.status;
-	out->pending_before_release =
-		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
+	out->pending_before_release = file_sec ? file_sec->delete_on_close : 0;
 
 	fd = get_unused_fd_flags(O_CLOEXEC);
 	if (fd < 0) {
@@ -1623,8 +1638,9 @@ long pkm_kacs_kunit_delete_on_close_dup_lineage_for_subject(
 	if (ret)
 		goto out_fd;
 	flush_delayed_fput();
+	/* The descriptor at fd still holds the description. */
 	out->pending_after_duplicate_close =
-		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
+		file_sec ? file_sec->delete_on_close : 0;
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 	out->unlink_calls_after_duplicate_close = inode_sec->kunit_unlink_calls;
 #endif
@@ -1634,8 +1650,8 @@ long pkm_kacs_kunit_delete_on_close_dup_lineage_for_subject(
 	if (ret)
 		goto out_inode;
 	flush_delayed_fput();
-	out->pending_after_release =
-		(u32)atomic_read(&inode_sec->delete_on_close_lineages);
+	/* The description is gone; its obligation was carried out. */
+	out->pending_after_release = 0;
 #ifdef CONFIG_SECURITY_PKM_KUNIT
 	out->unlink_calls = inode_sec->kunit_unlink_calls;
 #endif
@@ -1912,10 +1928,7 @@ static long pkm_kacs_kunit_create_live_file(const void *subject_token,
 
 	child_path.mnt = mntget(parent_path.mnt);
 	child_path.dentry = dget(dentry);
-	pkm_kacs_set_current_native_open_request(&child_path,
-						 prepared.desired_access,
-						 prepared.create_options,
-						 prepared.privilege_intent);
+	pkm_kacs_set_current_native_open_request(&child_path, &prepared, true);
 	file = dentry_open(&child_path, prepared.open_flags, current_cred());
 	pkm_kacs_clear_current_native_open_request();
 	path_put(&child_path);
@@ -6284,7 +6297,7 @@ int pkm_kacs_kunit_check_blob_lifecycle_defaults(void)
 	inode_allocated = true;
 	inode_sec = pkm_kacs_inode(&state->inode);
 	if (rcu_dereference_protected(inode_sec->sd_cache, 1) ||
-	    atomic_read(&inode_sec->delete_on_close_lineages) ||
+	    inode_sec->nt || atomic_read(&inode_sec->nt_pins) ||
 	    atomic_read(&inode_sec->signed_exec_pinned)) {
 		ret = -EBADE;
 		goto out;
@@ -6302,7 +6315,7 @@ int pkm_kacs_kunit_check_blob_lifecycle_defaults(void)
 	pkm_kacs_inode_free_security_rcu(state->inode.i_security);
 	inode_allocated = false;
 	if (rcu_dereference_protected(inode_sec->sd_cache, 1) ||
-	    atomic_read(&inode_sec->delete_on_close_lineages) ||
+	    inode_sec->nt || atomic_read(&inode_sec->nt_pins) ||
 	    atomic_read(&inode_sec->signed_exec_pinned)) {
 		ret = -EBADE;
 		goto out;

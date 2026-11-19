@@ -47,7 +47,9 @@ u32 pkm_kacs_superblock_mount_policy(const struct super_block *sb);
 	{ KACS_TR_LAZY_DENTRY_RELOOKUP,		"lazy-dentry-relookup" }, \
 	{ KACS_TR_NEGATIVE_AFTER_CREATE,	"negative-after-create" }, \
 	{ KACS_TR_CHANGE_NOTIFY_PRIV,		"change-notify-priv" },	\
-	{ KACS_TR_CHANGE_NOTIFY_PRIV_EXHAUSTED,	"change-notify-priv-exhausted" }
+	{ KACS_TR_CHANGE_NOTIFY_PRIV_EXHAUSTED,	"change-notify-priv-exhausted" }, \
+	{ KACS_TR_NT_SHARE,			"nt-share" },		\
+	{ KACS_TR_NT_SHARE_OVERRIDE,		"nt-share-override" }
 
 /*
  * One access decision. `inode` may be NULL (a bad-args path); the inode/sb

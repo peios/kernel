@@ -872,6 +872,43 @@ where
     }
 }
 
+/// The normal discretionary pass for a creating open (PEI-1720): the walk is
+/// treated as granting the creator every requested right, or every valid
+/// right under `MAXIMUM_ALLOWED`. Bits already decided — by MIC, PIP or
+/// privilege seeding, which always decides `ACCESS_SYSTEM_SECURITY` — keep
+/// their decision, and the later passes still narrow the result.
+pub(crate) fn creator_grant_dacl_states(
+    normalized: NormalizedDesiredAccess,
+    valid_rights: u32,
+    object_tree: Option<&ObjectTypeList>,
+    initial_state: AccessDecisionState,
+) -> KacsResult<InternalDaclEvaluation> {
+    let relevant_mask = if normalized.maximum_allowed {
+        valid_rights
+    } else {
+        normalized.mapped
+    };
+    let mut root = initial_state;
+    let grant = relevant_mask & !root.decided;
+    root.granted |= grant;
+    root.decided |= grant;
+
+    let object_states = if let Some(tree) = object_tree {
+        let mut states = Vec::with_capacity(tree.len())?;
+        for _ in 0..tree.len() {
+            states.push(root)?;
+        }
+        Some(states)
+    } else {
+        None
+    };
+
+    Ok(InternalDaclEvaluation {
+        root,
+        object_states,
+    })
+}
+
 fn finalize_scalar(
     root: AccessDecisionState,
     normalized: &NormalizedDesiredAccess,

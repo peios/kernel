@@ -367,9 +367,10 @@ long pkm_kacs_ipc_sd_set(int kind, int id, const void *subject_token,
 		pkm_kacs_process_sd_put(sd);
 		goto out;
 	}
-	ret = kacs_rust_merge_process_sd(subject_token, sd->bytes, sd->len,
-					 security_info, input_sd_ptr,
-					 input_sd_len, &new_bytes, &new_len);
+	/* The IPC GenericMapping maps the written ACEs' generic rights. */
+	ret = kacs_rust_merge_ipc_sd(subject_token, sd->bytes, sd->len,
+				     security_info, input_sd_ptr, input_sd_len,
+				     &new_bytes, &new_len);
 	if (ret)
 		goto out_audit;
 

@@ -156,9 +156,9 @@ pub use port_reservation::{
 pub use pre_sacl::{pre_sacl_walk, PreSaclWalkInput, PreSaclWalkState};
 pub use privilege::{
     apply_take_ownership_fallback, seed_access_check_privileges, AccessDecisionState,
-    PrivilegeGrantState, PrivilegeProvenance, TokenPrivileges, BACKUP_INTENT, RESTORE_INTENT,
-    SE_BACKUP_PRIVILEGE, SE_RELABEL_PRIVILEGE, SE_RESTORE_PRIVILEGE, SE_SECURITY_PRIVILEGE,
-    SE_TAKE_OWNERSHIP_PRIVILEGE,
+    PrivilegeGrantState, PrivilegeProvenance, TokenPrivileges, BACKUP_INTENT, CREATOR_GRANT_INTENT,
+    RESTORE_INTENT, USER_INTENT_FLAGS, SE_BACKUP_PRIVILEGE, SE_RELABEL_PRIVILEGE,
+    SE_RESTORE_PRIVILEGE, SE_SECURITY_PRIVILEGE, SE_TAKE_OWNERSHIP_PRIVILEGE,
 };
 pub use sacl::{extract_sacl_metadata, SaclMetadata};
 pub use security_descriptor::{

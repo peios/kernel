@@ -37,7 +37,8 @@ The pipeline then runs in this order:
 2. **Generic mapping.** Map generic bits in the desired mask to
    object-specific bits; strip `MAXIMUM_ALLOWED`. <a id="cite-check.algorithm.desired-mask-mapped"></a>
 3. **Effective privileges.** Clear the backup and restore bits when
-   the corresponding intent flag is absent. <a id="cite-check.algorithm.intent-gates-backup-restore"></a>
+   the corresponding intent flag is absent. <a id="cite-check.algorithm.intent-gates-backup-restore"></a> Callers of the
+   userspace AccessCheck can give only these two intents.
 4. **Privilege grants.** Resolve `ACCESS_SYSTEM_SECURITY`, backup and
    restore. Seed `decided`, `granted` and `privilege_granted`. <a id="cite-check.algorithm.privilege-seeding"></a>
 5. **Pre-SACL walk.** Extract the mandatory integrity label, the PIP
@@ -47,6 +48,10 @@ The pipeline then runs in this order:
    matchable where the caller is the owner or the object's principal.
 7. **Tree initialisation.** Seed each node from the scalar state. <a id="cite-check.algorithm.tree-seeded-from-scalar"></a>
 8. **Normal DACL evaluation.** Owner implicit rights, then the walk.
+   Under the kernel-internal creator-grant intent, which only a file
+   open that creates its object carries, the walk instead grants every
+   right not already decided ([KACS-Native Open](<~kernel/internals/kacs/file-security/kacs-native-open#trm-3-9-2-10>)). Every later step
+   still applies. <a id="cite-check.algorithm.creator-grant"></a>
 9. **Post-DACL WRITE_OWNER override.** `SeTakeOwnershipPrivilege`
    grants `WRITE_OWNER` if the DACL did not and no mandatory
    mechanism blocked it. <a id="cite-check.algorithm.take-ownership-override"></a>

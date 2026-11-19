@@ -71,13 +71,33 @@ Both open paths run the same pipeline with different success
 criteria. Native open is **strict**: everything requested has to be
 granted. Legacy open is **subset**: only core has to be fully present.
 
+<a id="trm-3-9-3-5"></a>
+
+## Sharing, deletion and read-only <a id="cite-facs.legacy.share-participation"></a>
+
+A legacy open of a regular file or directory on a managed mount takes
+part in NT share-mode checking. It shares read, write and delete, so
+legacy opens never conflict with each other, but it fails with `EBUSY`
+where a native open has denied its class of access ([Sharing and
+Deletion](<~kernel/internals/kacs/file-security/sharing-and-deletion#trm-3-9-10-1>)). It also fails with `EBUSY` if the file is delete-pending,
+as an `O_PATH` open of a delete-pending file does. <a id="cite-facs.legacy.delete-pending-ebusy"></a>
+
+A legacy open for writing of a read-only regular file fails with
+`EACCES`, and the compat write rights are omitted from a read-only
+open of one ([Special Attributes](<~kernel/internals/kacs/file-security/special-attributes#trm-3-9-13-2>)). <a id="cite-facs.legacy.readonly"></a>
+
+`FILE_READ_ATTRIBUTES`, which every legacy open requires, may be
+granted through the parent's `FILE_LIST_DIRECTORY` ([KACS-Native
+Open](<~kernel/internals/kacs/file-security/kacs-native-open#trm-3-9-2-8>)).
+
 <a id="trm-3-9-3-4"></a>
 
 ## O_PATH
 
-`O_PATH` descriptors are not FACS-managed. The open hook does fire for
-them, but returns immediately without evaluating anything, so they
-carry no granted mask and are left unmanaged. <a id="cite-facs.legacy.o-path-unmanaged"></a> They serve as namespace
+`O_PATH` descriptors are not FACS-managed. The VFS opens them without
+calling the open hook, so they carry no granted mask and are left
+unmanaged. KACS checks one thing as they open: an `O_PATH` open of a
+delete-pending file fails with `EBUSY`. <a id="cite-facs.legacy.o-path-unmanaged"></a> They serve as namespace
 anchors for the `*at()` syscalls.
 
 `fstat()` and `fstatfs()` on them are allowed unconditionally. <a id="cite-facs.legacy.o-path-fstat-unconditional"></a>

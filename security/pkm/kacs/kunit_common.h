@@ -181,7 +181,7 @@
 #define PKM_KUNIT_AUDIT_POLICY_OBJECT_ACCESS_SUCCESS 0x00000001U
 #define PKM_KUNIT_AUDIT_POLICY_PRIVILEGE_USE_SUCCESS 0x00000004U
 
-#define PKM_KUNIT_SYSTEM_PRIVILEGES_ALL 0xC000000FFFFFFFFCULL
+#define PKM_KUNIT_SYSTEM_PRIVILEGES_ALL 0xE000000FFFFFFFFCULL
 
 #define PKM_KUNIT_SE_PRIVILEGE_ENABLED 0x00000002U
 
@@ -788,6 +788,22 @@ static __maybe_unused const u8 pkm_kunit_system_default_dacl[] = {
 static __maybe_unused const u8 pkm_kunit_replacement_default_dacl[] = {
 	2, 0,  28, 0, 1, 0, 0, 0, 0, 0, 20, 0, 0, 0,
 	0, 16, 1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0,
+};
+
+/*
+ * The two default DACLs above as a new file receives them: each ACE's
+ * GENERIC_ALL mapped to FILE_ALL_ACCESS (0x001f01ff) through the file
+ * GenericMapping. The token keeps its default DACL as given.
+ */
+static __maybe_unused const u8 pkm_kunit_system_default_dacl_file[] = {
+	2, 0, 52, 0, 2, 0, 0,  0, 0,  0, 20, 0, 255, 1, 31,  0, 1,  1,
+	0, 0, 0,  0, 0, 5, 18, 0, 0,  0, 0,  0, 24,  0, 255, 1, 31, 0,
+	1, 2, 0,  0, 0, 0, 0,  5, 32, 0, 0,  0, 32,  2, 0,   0,
+};
+
+static __maybe_unused const u8 pkm_kunit_replacement_default_dacl_file[] = {
+	2,  0, 28, 0, 1, 0, 0, 0, 0, 0, 20, 0, 255, 1,
+	31, 0, 1,  1, 0, 0, 0, 0, 0, 5, 18, 0, 0,   0,
 };
 
 static __maybe_unused const u8 pkm_kunit_invalid_default_dacl[] = {

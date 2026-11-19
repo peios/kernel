@@ -114,7 +114,7 @@ stored on individual tokens; [Linked Tokens and Elevation](<~kernel/internals/ka
 |---|---|
 | `owner_sid_index` | Index into `[user_sid, groups...]` selecting the default owner SID for new objects: 0 is the user SID, 1..N are `groups[0..N-1]`. The referenced SID is the user SID or a group carrying `SE_GROUP_OWNER`. <a id="cite-token.owner-index-rule"></a> |
 | `primary_group_index` | Index into `[user_sid, groups...]` selecting the default primary group. The referenced SID is the user SID or any group SID on the token. <a id="cite-token.primary-group-index-rule"></a> |
-| `default_dacl` | The DACL applied to objects this token creates when no explicit descriptor is supplied. |
+| `default_dacl` | The DACL applied to objects this token creates when no explicit descriptor is supplied. It is kept as given; its generic rights are mapped through each new object's GenericMapping when it is copied into that object's descriptor. |
 
 Storing indices rather than SID copies keeps the owner and primary
 group consistent with the group array they name.

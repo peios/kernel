@@ -15,6 +15,9 @@
 
 #include <pkm/sd.h>
 
+#include "nt_lease.h"
+#include "nt_lock.h"
+#include "sattr.h"
 #include "access_check.h"
 #include "copy_up.h"
 #include "file_access.h"
@@ -99,6 +102,11 @@ int pkm_kacs_inode_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
 		pkm_kacs_clear_current_file_metadata_decision();
 		return -EACCES;
 	}
+	/* What the VFS's delegation break that follows is for. */
+	pkm_kacs_lease_note_vfs_break(d_inode(dentry),
+				      (attr->ia_valid & ATTR_SIZE) ?
+					      KACS_LEASE_BREAK_SIZE :
+					      KACS_LEASE_BREAK_ATTRIBUTES);
 
 	if ((attr->ia_valid & ATTR_SIZE) != 0) {
 		ret = pkm_kacs_check_signed_exec_content_mutation_inode(
@@ -110,6 +118,23 @@ int pkm_kacs_inode_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
 					    PKM_KACS_METADATA_OP_SETATTR, 0,
 					    KACS_META_SIGNED_EXEC, ret);
 			return ret;
+		}
+		/* A size change is a write of the range it adds or drops. */
+		ret = pkm_kacs_nt_lock_check_resize(
+			d_inode(dentry),
+			(attr->ia_valid & ATTR_FILE) ? attr->ia_file : NULL,
+			attr->ia_size);
+		if (ret) {
+			pkm_kacs_consume_file_metadata_decision(
+				d_inode(dentry), PKM_KACS_METADATA_OP_SETATTR);
+			return ret;
+		}
+		/* Truncating a read-only file by name is a write. */
+		if (!(attr->ia_valid & ATTR_FILE) && d_is_reg(dentry) &&
+		    pkm_kacs_sattr_dentry_readonly(dentry)) {
+			pkm_kacs_consume_file_metadata_decision(
+				d_inode(dentry), PKM_KACS_METADATA_OP_SETATTR);
+			return -EACCES;
 		}
 	}
 	if (pkm_kacs_copy_up_allows_setattr(dentry))
@@ -211,14 +236,21 @@ int pkm_kacs_inode_getxattr(struct dentry *dentry, const char *name)
 	}
 	if (pkm_kacs_copy_up_allows_getxattr(dentry, name))
 		return 0;
+	/* KACS's own read of the special attributes, through a stack. */
+	if (pkm_kacs_is_sattr_xattr(name) && current && current->security &&
+	    pkm_kacs_task(current)->internal_sd_read_depth > 0)
+		return 0;
 
 	if (pkm_kacs_consume_file_metadata_decision(
 		    dentry ? d_inode(dentry) : NULL,
 		    PKM_KACS_METADATA_OP_GETXATTR))
 		return 0;
 
-	return pkm_kacs_authorize_dentry_metadata_access(dentry,
-							 KACS_FILE_READ_EA);
+	/* Special attributes are attributes, not extended attributes. */
+	return pkm_kacs_authorize_dentry_metadata_access(
+		dentry, pkm_kacs_is_sattr_xattr(name) ?
+				KACS_FILE_READ_ATTRIBUTES :
+				KACS_FILE_READ_EA);
 }
 
 /*
@@ -270,6 +302,10 @@ void pkm_kacs_inode_post_setxattr(struct dentry *dentry, const char *name,
 	inode = d_inode(dentry);
 	if (!inode || !inode->i_security)
 		return;
+	if (pkm_kacs_is_sattr_xattr(name)) {
+		pkm_kacs_sattr_invalidate(inode);
+		return;
+	}
 	if (!pkm_kacs_is_canonical_sd_xattr(inode, name))
 		return;
 
@@ -284,6 +320,10 @@ int pkm_kacs_inode_setxattr(struct mnt_idmap *idmap, struct dentry *dentry,
 			    int flags)
 {
 	int ret;
+
+	if (dentry)
+		pkm_kacs_lease_note_vfs_break(d_inode(dentry),
+					      KACS_LEASE_BREAK_ATTRIBUTES);
 
 	if (dentry && pkm_kacs_is_canonical_sd_xattr(d_inode(dentry), name)) {
 		/*
@@ -344,6 +384,19 @@ int pkm_kacs_inode_setxattr(struct mnt_idmap *idmap, struct dentry *dentry,
 	}
 	if (pkm_kacs_copy_up_allows_setxattr(dentry, name))
 		return 0;
+	if (pkm_kacs_is_sattr_xattr(name)) {
+		/* KACS's own merged write, re-entered through a stack. */
+		if (current && current->security &&
+		    pkm_kacs_task(current)->internal_sd_write_depth > 0)
+			return 0;
+		ret = pkm_kacs_sattr_validate(value, size, flags);
+		if (ret) {
+			pkm_kacs_consume_file_metadata_decision(
+				dentry ? d_inode(dentry) : NULL,
+				PKM_KACS_METADATA_OP_SETXATTR);
+			return ret;
+		}
+	}
 	ret = pkm_kacs_check_signed_exec_xattr_mutation(
 		dentry ? d_inode(dentry) : NULL, name);
 	if (ret) {
@@ -361,14 +414,20 @@ int pkm_kacs_inode_setxattr(struct mnt_idmap *idmap, struct dentry *dentry,
 		    PKM_KACS_METADATA_OP_SETXATTR))
 		return 0;
 
-	return pkm_kacs_authorize_dentry_metadata_access(dentry,
-							 KACS_FILE_WRITE_EA);
+	return pkm_kacs_authorize_dentry_metadata_access(
+		dentry, pkm_kacs_is_sattr_xattr(name) ?
+				KACS_FILE_WRITE_ATTRIBUTES :
+				KACS_FILE_WRITE_EA);
 }
 
 int pkm_kacs_inode_removexattr(struct mnt_idmap *idmap, struct dentry *dentry,
 			       const char *name)
 {
 	int ret;
+
+	if (dentry)
+		pkm_kacs_lease_note_vfs_break(d_inode(dentry),
+					      KACS_LEASE_BREAK_ATTRIBUTES);
 
 	if (dentry && pkm_kacs_is_canonical_sd_xattr(d_inode(dentry), name)) {
 		pkm_kacs_consume_file_metadata_decision(
@@ -403,6 +462,9 @@ int pkm_kacs_inode_removexattr(struct mnt_idmap *idmap, struct dentry *dentry,
 	}
 	if (pkm_kacs_copy_up_allows_setxattr(dentry, name))
 		return 0;
+	if (pkm_kacs_is_sattr_xattr(name) && current && current->security &&
+	    pkm_kacs_task(current)->internal_sd_write_depth > 0)
+		return 0;
 	ret = pkm_kacs_check_signed_exec_xattr_mutation(
 		dentry ? d_inode(dentry) : NULL, name);
 	if (ret) {
@@ -420,8 +482,10 @@ int pkm_kacs_inode_removexattr(struct mnt_idmap *idmap, struct dentry *dentry,
 		    PKM_KACS_METADATA_OP_SETXATTR))
 		return 0;
 
-	return pkm_kacs_authorize_dentry_metadata_access(dentry,
-							 KACS_FILE_WRITE_EA);
+	return pkm_kacs_authorize_dentry_metadata_access(
+		dentry, pkm_kacs_is_sattr_xattr(name) ?
+				KACS_FILE_WRITE_ATTRIBUTES :
+				KACS_FILE_WRITE_EA);
 }
 
 int pkm_kacs_inode_listxattr(struct dentry *dentry)
@@ -1014,24 +1078,33 @@ pkm_kacs_check_file_xattr_snapshot(struct file *file, const char *name,
 	return pkm_kacs_begin_file_metadata_decision(file, op_class);
 }
 
+/* Special attributes take the attribute rights, not the EA rights. */
+static u32 pkm_kacs_xattr_write_right(const char *name)
+{
+	return pkm_kacs_is_sattr_xattr(name) ? KACS_FILE_WRITE_ATTRIBUTES :
+					       KACS_FILE_WRITE_EA;
+}
+
 int pkm_kacs_file_sd_xattr_set(struct file *file, const char *name)
 {
 	return pkm_kacs_check_file_xattr_snapshot(
-		file, name, KACS_FILE_WRITE_EA, true, true,
+		file, name, pkm_kacs_xattr_write_right(name), true, true,
 		PKM_KACS_METADATA_OP_SETXATTR);
 }
 
 int pkm_kacs_file_sd_xattr_get(struct file *file, const char *name)
 {
 	return pkm_kacs_check_file_xattr_snapshot(
-		file, name, KACS_FILE_READ_EA, false, false,
-		PKM_KACS_METADATA_OP_GETXATTR);
+		file, name,
+		pkm_kacs_is_sattr_xattr(name) ? KACS_FILE_READ_ATTRIBUTES :
+						KACS_FILE_READ_EA,
+		false, false, PKM_KACS_METADATA_OP_GETXATTR);
 }
 
 int pkm_kacs_file_sd_xattr_remove(struct file *file, const char *name)
 {
 	return pkm_kacs_check_file_xattr_snapshot(
-		file, name, KACS_FILE_WRITE_EA, true, false,
+		file, name, pkm_kacs_xattr_write_right(name), true, false,
 		PKM_KACS_METADATA_OP_SETXATTR);
 }
 

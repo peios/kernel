@@ -263,6 +263,8 @@ COMPAT_SYSCALL_DEFINE3(ftruncate64, unsigned int, fd,
 
 #ifdef CONFIG_SECURITY_PKM
 extern int pkm_kacs_file_fallocate(struct file *file, int mode);
+extern int pkm_kacs_nt_lock_check_fallocate(struct file *file, int mode,
+					    loff_t offset, loff_t len);
 #endif
 
 
@@ -328,6 +330,8 @@ int vfs_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
 	 */
 #ifdef CONFIG_SECURITY_PKM
 	ret = pkm_kacs_file_fallocate(file, mode);
+	if (!ret)
+		ret = pkm_kacs_nt_lock_check_fallocate(file, mode, offset, len);
 #else
 	ret = security_file_permission(file, MAY_WRITE);
 #endif
@@ -696,6 +700,8 @@ out_mnt_unlock:
 }
 
 #ifdef CONFIG_SECURITY_PKM
+extern void pkm_kacs_file_open_failed(struct file *file);
+extern int pkm_kacs_file_open_path(struct file *file);
 extern int pkm_kacs_file_chmod(struct file *file);
 extern int pkm_kacs_file_chown(struct file *file);
 #endif
@@ -972,6 +978,12 @@ static int do_dentry_open(struct file *f,
 	f->f_sb_err = file_sample_sb_err(f);
 
 	if (unlikely(f->f_flags & O_PATH)) {
+#ifdef CONFIG_SECURITY_PKM
+		/* An O_PATH open of a delete-pending file fails too. */
+		error = pkm_kacs_file_open_path(f);
+		if (unlikely(error))
+			goto cleanup_file;
+#endif
 		f->f_mode = FMODE_PATH | FMODE_OPENED;
 		file_set_fsnotify_mode(f, FMODE_NONOTIFY);
 		f->f_op = &empty_fops;
@@ -1076,6 +1088,13 @@ static int do_dentry_open(struct file *f,
 cleanup_all:
 	if (WARN_ON_ONCE(error > 0))
 		error = -EINVAL;
+#ifdef CONFIG_SECURITY_PKM
+	/*
+	 * The open hook may have registered NT share state that only a close
+	 * would release, and this file will never be closed (PEI-1723).
+	 */
+	pkm_kacs_file_open_failed(f);
+#endif
 	fops_put(f->f_op);
 	put_file_access(f);
 cleanup_file:
@@ -1184,6 +1203,45 @@ struct file *dentry_open(const struct path *path, int flags,
 	return f;
 }
 EXPORT_SYMBOL(dentry_open);
+
+#ifdef CONFIG_SECURITY_PKM
+/**
+ * dentry_open_control - open a file with no data access mode
+ * @path: path to open
+ * @flags: open flags, with O_RDONLY as the access mode
+ * @cred: credentials to use
+ *
+ * A KACS native open granted no data right is a control handle: it can
+ * carry metadata, security and delete rights but neither reads nor writes
+ * the file. The mode is cleared before do_dentry_open() so that no read
+ * accounting is taken (i_readcount, which a later strip would leak) and
+ * break_lease() sees an open that disturbs no lease (PEI-1718, PEI-1719).
+ * Regular files and directories only.
+ */
+struct file *dentry_open_control(const struct path *path, int flags,
+				 const struct cred *cred)
+{
+	struct inode *inode = d_inode(path->dentry);
+	int error;
+	struct file *f;
+
+	BUG_ON(!path->mnt);
+	if (!inode || (!S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode)) ||
+	    (flags & O_ACCMODE) != O_RDONLY)
+		return ERR_PTR(-EINVAL);
+
+	f = alloc_empty_file(flags, cred);
+	if (!IS_ERR(f)) {
+		f->f_mode &= ~(FMODE_READ | FMODE_WRITE);
+		error = vfs_open(path, f);
+		if (error) {
+			fput(f);
+			f = ERR_PTR(error);
+		}
+	}
+	return f;
+}
+#endif
 
 struct file *dentry_open_nonotify(const struct path *path, int flags,
 				  const struct cred *cred)

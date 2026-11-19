@@ -8,6 +8,13 @@ use crate::error::KacsResult;
 pub const BACKUP_INTENT: u32 = crate::peios_uapi::KACS_BACKUP_INTENT;
 /// Privilege-intent flag enabling restore semantics for AccessCheck.
 pub const RESTORE_INTENT: u32 = crate::peios_uapi::KACS_RESTORE_INTENT;
+/// Kernel-internal intent flag for a creating open: the normal DACL pass
+/// grants every requested right, and MIC, PIP, the restricted and
+/// confinement passes, CAAP and privilege-only rights still apply. Never
+/// accepted from userspace.
+pub const CREATOR_GRANT_INTENT: u32 = 0x100;
+/// The intent flags a userspace AccessCheck caller may assert.
+pub const USER_INTENT_FLAGS: u32 = BACKUP_INTENT | RESTORE_INTENT;
 
 /// Bit position for `SeSecurityPrivilege`.
 pub const SE_SECURITY_PRIVILEGE: u64 = crate::peios_uapi::KACS_SE_SECURITY_PRIVILEGE as u64;

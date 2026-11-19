@@ -13,3 +13,7 @@ Use these articles to understand file security in the Peios kernel.
 - [Descriptor storage and caching](<~kernel/internals/kacs/file-security/descriptor-storage-and-caching>)
 - [Mount classes and bootstrap descriptors](<~kernel/internals/kacs/file-security/mount-classes-and-bootstrap-descriptors>)
 - [The Set-Security Interface](<~kernel/internals/kacs/file-security/the-set-security-interface>)
+- [Sharing and Deletion](<~kernel/internals/kacs/file-security/sharing-and-deletion>)
+- [Byte-Range Locks](<~kernel/internals/kacs/file-security/byte-range-locks>)
+- [Leases](<~kernel/internals/kacs/file-security/leases>)
+- [Special Attributes](<~kernel/internals/kacs/file-security/special-attributes>)
