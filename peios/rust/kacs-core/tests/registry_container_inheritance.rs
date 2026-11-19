@@ -325,6 +325,61 @@ fn registry_container_inheritance_falls_back_to_token_default_or_null_dacl() {
 }
 
 #[test]
+fn token_default_dacl_is_split_for_the_new_key() {
+    let parent_owner = sid(5, &[18]);
+    let parent_group = sid(5, &[32, 544]);
+    let owner = sid(5, &[21, 1000]);
+    let group = sid(5, &[21, 513]);
+    let other = sid(5, &[11]);
+    let parent_sd_bytes = sd(&parent_owner, &parent_group, None, None);
+    let parent_sd = SecurityDescriptor::parse(&parent_sd_bytes).unwrap();
+    let inheritable = basic_ace(
+        ACCESS_ALLOWED_ACE_TYPE,
+        CONTAINER_INHERIT_ACE,
+        GENERIC_ALL,
+        &owner,
+    );
+    let inherit_only = basic_ace(
+        ACCESS_ALLOWED_ACE_TYPE,
+        CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+        GENERIC_READ,
+        &other,
+    );
+    let default_dacl = acl(&[inheritable.clone(), inherit_only.clone()]);
+
+    let child = inherit_registry_container_child_sd(RegistryContainerChildInheritance {
+        parent_sd,
+        token_owner: kacs_core::Sid::parse(&owner).unwrap(),
+        token_primary_group: kacs_core::Sid::parse(&group).unwrap(),
+        token_default_dacl: Some(kacs_core::Acl::parse(&default_dacl).unwrap()),
+        generic_mapping: registry_mapping(),
+        valid_mapped_access_mask: REG_VALID_MAPPED_ACCESS_MASK,
+    })
+    .unwrap();
+    let child = SecurityDescriptor::parse(child.as_slice()).unwrap();
+    let entries: Vec<_> = child
+        .dacl()
+        .unwrap()
+        .entries()
+        .map(Result::unwrap)
+        .collect();
+
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entries[0].ace_flags(), 0);
+    match entries[0].kind() {
+        AceKind::SingleSid { mask, sid } => {
+            assert_eq!(mask, KEY_ALL_ACCESS);
+            assert_eq!(sid.as_bytes(), owner.as_slice());
+        }
+        other => panic!("unexpected ACE kind: {other:?}"),
+    }
+    let mut carried = inheritable.clone();
+    carried[1] |= INHERIT_ONLY_ACE;
+    assert_eq!(entries[1].bytes(), carried.as_slice());
+    assert_eq!(entries[2].bytes(), inherit_only.as_slice());
+}
+
+#[test]
 fn registry_container_inheritance_rejects_opaque_inheritable_aces() {
     let owner = sid(5, &[21, 1000]);
     let group = sid(5, &[21, 513]);

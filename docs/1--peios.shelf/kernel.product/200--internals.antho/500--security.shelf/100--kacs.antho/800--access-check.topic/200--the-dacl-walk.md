@@ -48,6 +48,18 @@ mutated. Mapping ACE masks at evaluation time is a deliberate
 departure from MS-DTYP, and it is what makes `GENERIC_ALL` work in
 central access policy recovery ACEs ([Central Access and Auditing Policy](<~kernel/internals/kacs/access-check/central-access-and-auditing-policy#trm-3-8-8>)).
 
+Descriptors that KACS stores on its own objects reach the walk already
+mapped. Every path that writes an object's descriptor — creation,
+inheritance, the token's default DACL, and setting a descriptor on an
+existing object — maps generic rights in the ACEs that apply to the
+object, through that object type's GenericMapping. An ACE that applies
+to the object and is also inherited is split, as at creation, into a
+mapped ACE for the object and an inherit-only copy that keeps its
+generic rights for the children it will reach. Inherit-only ACEs keep
+theirs. <a id="cite-check.dacl.stored-descriptors-mapped"></a> A descriptor therefore reads back the same however it was
+applied. The walk's own mapping remains for descriptors that never pass
+through those paths, such as ones a caller hands to AccessCheck.
+
 <a id="trm-3-8-2-3"></a>
 
 ## Absent and empty DACLs

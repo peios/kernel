@@ -200,17 +200,174 @@ fn build_default_acl(
     let mut builder = AclBuilder::new(acl.revision())?;
     for ace in acl.entries() {
         let ace = ace?;
+        let flags = ace.ace_flags();
+        // The token keeps its default DACL as given; the copy is resolved for
+        // the new key under the same rules as a stored descriptor. An
+        // inherit-only ACE is a rule for the key's children, kept as written,
+        // and an inheritable one is split so its rule reaches them unresolved.
+        if (flags & INHERIT_ONLY_ACE) != 0 {
+            builder.push_ace(ace.ace_type(), ace.bytes())?;
+            continue;
+        }
+        let split =
+            ace_needs_resolution(ace) && flags & (OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE) != 0;
+        let effective_flags = if split {
+            flags & !(OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | NO_PROPAGATE_INHERIT_ACE)
+        } else {
+            flags
+        };
         let rewritten = rewrite_ace(
             ace,
-            ace.ace_flags(),
+            effective_flags,
             owner,
             group,
             mapping,
             valid_mapped_mask,
         )?;
         builder.push_ace(ace.ace_type(), rewritten.as_slice())?;
+        if split {
+            let mut carried = PkmVec::new();
+            carried.extend_from_slice(ace.bytes())?;
+            carried[1] = flags | INHERIT_ONLY_ACE;
+            builder.push_ace(ace.ace_type(), carried.as_slice())?;
+        }
     }
     builder.finish()
+}
+
+const GENERIC_RIGHTS: u32 = GENERIC_ALL | GENERIC_EXECUTE | GENERIC_READ | GENERIC_WRITE;
+
+/// Whether an ACE type's mask holds access rights. A mandatory label's mask
+/// holds its no-read-up/no-write-up policy, and resource attribute and
+/// scoped policy ACEs carry no rights, so none of those is ever mapped.
+fn ace_mask_is_access_rights(ace_type: u8) -> bool {
+    matches!(
+        ace_type,
+        ACCESS_ALLOWED_ACE_TYPE
+            | ACCESS_DENIED_ACE_TYPE
+            | SYSTEM_AUDIT_ACE_TYPE
+            | SYSTEM_ALARM_ACE_TYPE
+            | ACCESS_ALLOWED_OBJECT_ACE_TYPE
+            | ACCESS_DENIED_OBJECT_ACE_TYPE
+            | SYSTEM_AUDIT_OBJECT_ACE_TYPE
+            | SYSTEM_ALARM_OBJECT_ACE_TYPE
+            | ACCESS_ALLOWED_CALLBACK_ACE_TYPE
+            | ACCESS_DENIED_CALLBACK_ACE_TYPE
+            | ACCESS_ALLOWED_CALLBACK_OBJECT_ACE_TYPE
+            | ACCESS_DENIED_CALLBACK_OBJECT_ACE_TYPE
+            | SYSTEM_AUDIT_CALLBACK_ACE_TYPE
+            | SYSTEM_ALARM_CALLBACK_ACE_TYPE
+            | SYSTEM_AUDIT_CALLBACK_OBJECT_ACE_TYPE
+            | SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE
+            | SYSTEM_PROCESS_TRUST_LABEL_ACE_TYPE
+    )
+}
+
+/// Returns the generic rights an ACE carries, if it is an ACE whose generic
+/// rights are mapped when it is stored.
+fn stored_ace_generic_rights(ace: Ace<'_>) -> u32 {
+    if !ace_mask_is_access_rights(ace.ace_type()) {
+        return 0;
+    }
+    match ace.kind() {
+        AceKind::SingleSid { mask, .. }
+        | AceKind::Object { mask, .. }
+        | AceKind::Callback { mask, .. }
+        | AceKind::CallbackObject { mask, .. } => mask & GENERIC_RIGHTS,
+        AceKind::ResourceAttribute { .. } | AceKind::Opaque => 0,
+    }
+}
+
+/// Maps the generic rights in an ACL being stored on an object (PEI-1720).
+///
+/// Every path that writes a descriptor calls this for each ACL it stores, so
+/// a descriptor reads back the same however it was applied. An ACE that
+/// applies to the object has its generic rights replaced through `mapping`.
+/// If it is also inheritable it is split, as inheritance splits it: a mapped
+/// ACE for the object with its inheritance flags cleared, followed by an
+/// inherit-only copy that keeps the generic rights for the children it will
+/// reach. Inherit-only ACEs are stored as given. CREATOR OWNER and CREATOR
+/// GROUP are left alone; only creation resolves them.
+///
+/// Returns `None` when no ACE carries a generic right, so the caller can
+/// store the ACL's bytes unchanged.
+pub fn map_acl_generic_rights(
+    acl: Acl<'_>,
+    mapping: &GenericMapping,
+) -> KacsResult<Option<PkmVec<u8>>> {
+    let mut needs_mapping = false;
+    for ace in acl.entries() {
+        let ace = ace?;
+        if (ace.ace_flags() & INHERIT_ONLY_ACE) == 0 && stored_ace_generic_rights(ace) != 0 {
+            needs_mapping = true;
+            break;
+        }
+    }
+    if !needs_mapping {
+        return Ok(None);
+    }
+
+    let mut bytes = PkmVec::with_capacity(acl.bytes().len())?;
+    bytes.extend_from_slice(&acl.bytes()[..Acl::HEADER_SIZE])?;
+    let mut ace_count = 0u16;
+    for ace in acl.entries() {
+        let ace = ace?;
+        let flags = ace.ace_flags();
+        if (flags & INHERIT_ONLY_ACE) != 0 || stored_ace_generic_rights(ace) == 0 {
+            push_acl_entry(&mut bytes, &mut ace_count, ace.bytes(), flags)?;
+            continue;
+        }
+
+        // Every mask-bearing ACE type keeps its mask at offset 4.
+        let mask = u32::from_le_bytes([
+            ace.bytes()[4],
+            ace.bytes()[5],
+            ace.bytes()[6],
+            ace.bytes()[7],
+        ]);
+        let mapped = mapping.map_mask(mask)?;
+        let inheritable = (flags & (OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE)) != 0;
+        let effective_flags = if inheritable {
+            flags & !(OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | NO_PROPAGATE_INHERIT_ACE)
+        } else {
+            flags
+        };
+        let start = bytes.len();
+        push_acl_entry(&mut bytes, &mut ace_count, ace.bytes(), effective_flags)?;
+        bytes[start + 4..start + 8].copy_from_slice(&mapped.to_le_bytes());
+        if inheritable {
+            push_acl_entry(
+                &mut bytes,
+                &mut ace_count,
+                ace.bytes(),
+                flags | INHERIT_ONLY_ACE,
+            )?;
+        }
+    }
+
+    let acl_len =
+        u16::try_from(bytes.len()).map_err(|_| KacsError::SecurityDescriptorTooLarge {
+            len: bytes.len(),
+            max: u16::MAX as usize,
+        })?;
+    write_u16_at(&mut bytes, 2, acl_len);
+    write_u16_at(&mut bytes, 4, ace_count);
+    Ok(Some(bytes))
+}
+
+fn push_acl_entry(
+    dst: &mut PkmVec<u8>,
+    ace_count: &mut u16,
+    ace: &[u8],
+    flags: u8,
+) -> KacsResult<()> {
+    *ace_count = ace_count
+        .checked_add(1)
+        .ok_or(KacsError::InvariantViolation("acl ace count overflow"))?;
+    let start = dst.len();
+    dst.extend_from_slice(ace)?;
+    dst[start + 1] = flags;
+    Ok(())
 }
 
 fn ace_needs_resolution(ace: Ace<'_>) -> bool {

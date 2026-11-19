@@ -521,3 +521,45 @@ fn security_descriptor_payload_plans_fail_closed_on_invalid_inputs() {
         })
     );
 }
+
+#[test]
+fn set_security_maps_generic_rights_through_the_key_mapping() {
+    let owner = sid(5, &[18]);
+    let user = sid(5, &[21, 1000]);
+    let existing = sd(Some(&owner), None, None, None);
+    let mut inheritable = basic_ace(ACCESS_ALLOWED_ACE_TYPE, kacs_core::GENERIC_ALL, &user);
+    inheritable[1] = kacs_core::CONTAINER_INHERIT_ACE;
+    let mut inherit_only = basic_ace(ACCESS_ALLOWED_ACE_TYPE, kacs_core::GENERIC_READ, &user);
+    inherit_only[1] = kacs_core::CONTAINER_INHERIT_ACE | kacs_core::INHERIT_ONLY_ACE;
+    let dacl = acl(&[inheritable.clone(), inherit_only.clone()]);
+    let audit = basic_ace(
+        kacs_core::SYSTEM_AUDIT_ACE_TYPE,
+        kacs_core::GENERIC_READ,
+        &user,
+    );
+    let sacl = acl(&[audit]);
+    let input = sd(Some(&owner), None, Some(&sacl), Some(&dacl));
+
+    let plan = plan_registry_set_security(
+        &existing,
+        &input,
+        DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION,
+    )
+    .unwrap();
+    let output = SecurityDescriptor::parse(plan.merged_sd.as_slice()).unwrap();
+
+    let mut carried = inheritable;
+    carried[1] |= kacs_core::INHERIT_ONLY_ACE;
+    assert_eq!(
+        output.dacl().unwrap().bytes(),
+        acl(&[
+            basic_ace(ACCESS_ALLOWED_ACE_TYPE, lcs_core::KEY_ALL_ACCESS, &user),
+            carried,
+            inherit_only,
+        ])
+    );
+    assert_eq!(
+        output.sacl().unwrap().bytes(),
+        acl(&[basic_ace(kacs_core::SYSTEM_AUDIT_ACE_TYPE, KEY_READ, &user)])
+    );
+}

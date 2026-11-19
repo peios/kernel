@@ -130,8 +130,9 @@ pub use evaluate_sd::{
     evaluate_security_descriptor, EvaluateSecurityDescriptorInput, EvaluateSecurityDescriptorState,
 };
 pub use inheritance::{
-    inherit_registry_container_child_sd, RegistryContainerChildInheritance, CONTAINER_INHERIT_ACE,
-    INHERITED_ACE, INHERIT_ONLY_ACE, NO_PROPAGATE_INHERIT_ACE, OBJECT_INHERIT_ACE,
+    inherit_registry_container_child_sd, map_acl_generic_rights, RegistryContainerChildInheritance,
+    CONTAINER_INHERIT_ACE, INHERITED_ACE, INHERIT_ONLY_ACE, NO_PROPAGATE_INHERIT_ACE,
+    OBJECT_INHERIT_ACE,
 };
 pub use mic::{
     apply_mic, resolve_mandatory_label, IntegrityLevel, MandatoryLabel, MicEnforcementState,

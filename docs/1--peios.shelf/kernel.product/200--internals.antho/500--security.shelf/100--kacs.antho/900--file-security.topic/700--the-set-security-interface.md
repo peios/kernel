@@ -72,6 +72,25 @@ A missing or invalid cached file security descriptor does **not** take that merg
 
 These details are source-checked against kernel commit [`8e0e22de`](https://github.com/peios/pkm/tree/8e0e22de3a59cad506bbbf8873de456e16ad272d), not a runtime-validated restore procedure.
 
+<a id="trm-3-9-6-7"></a>
+
+## Generic rights <a id="cite-facs.set-sd.generic-rights-mapped"></a>
+
+Generic rights in a written DACL or SACL are mapped to file rights
+before the descriptor is stored, as they are when a file is created.
+An ACE that applies to the file has `GENERIC_READ`, `GENERIC_WRITE`,
+`GENERIC_EXECUTE` and `GENERIC_ALL` replaced by the file rights they
+stand for. An ACE that applies to the file and is also inherited is
+split into a mapped ACE for the file and an inherit-only copy that
+keeps the generic rights for the children it will reach. Inherit-only
+ACEs are stored as given. A descriptor therefore reads back the same
+whether it was supplied at creation, inherited, or set afterwards
+([The DACL Walk](<~kernel/internals/kacs/access-check/the-dacl-walk#trm-3-8-2-2>)).
+
+The same rule applies to every object type with a set path —
+registry keys, processes, tokens, System V IPC objects and the rest —
+each through its own GenericMapping.
+
 <a id="trm-3-9-6-2"></a>
 
 ## Ownership <a id="cite-facs.set-sd.ownership"></a>

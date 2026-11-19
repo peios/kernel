@@ -46,7 +46,9 @@ use crate::claims::{
 use crate::condition::ConditionalContext;
 use crate::error::KacsError;
 use crate::lcs_core::casefold_eq;
-use crate::inheritance::{inherit_registry_container_child_sd, RegistryContainerChildInheritance};
+use crate::inheritance::{
+    inherit_registry_container_child_sd, map_acl_generic_rights, RegistryContainerChildInheritance,
+};
 // The emission policy: each `kacs_rust_emit_*` entry asks it first, before it
 // resolves the subject or builds anything (kmes/event_types.rs).
 use crate::kmes_event_types::{self, enabled as kmes_event_enabled};
@@ -2830,6 +2832,24 @@ fn ace_sid_names_creator(kind: AceKind<'_>) -> bool {
     sid.as_bytes() == CREATOR_OWNER_SID_BYTES || sid.as_bytes() == CREATOR_GROUP_SID_BYTES
 }
 
+/// Whether resolving an ACE for the object it applies to changes it — a
+/// creator SID to substitute or generic rights to map — so that an
+/// inheritable one has to be split to keep its rule for the children.
+fn ace_needs_file_resolution(kind: AceKind<'_>) -> bool {
+    let generic = match kind {
+        AceKind::SingleSid { mask, .. }
+        | AceKind::Object { mask, .. }
+        | AceKind::Callback { mask, .. }
+        | AceKind::CallbackObject { mask, .. }
+        | AceKind::ResourceAttribute { mask, .. } => {
+            mask & (GENERIC_ALL | GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE) != 0
+        }
+        AceKind::Opaque => false,
+    };
+
+    generic || ace_sid_names_creator(kind)
+}
+
 /// `substitute` is false for the copy that keeps propagating down a container
 /// chain: that one must stay CREATOR OWNER so the *next* creator is the one it
 /// resolves to, rather than freezing this object's creator into every
@@ -3068,17 +3088,7 @@ fn build_inherited_ace_bytes(
 
     let inherited_flags = inherited_ace_flags(parent_flags, child_is_container);
 
-    let generic = match ace.kind() {
-        AceKind::SingleSid { mask, .. }
-        | AceKind::Object { mask, .. }
-        | AceKind::Callback { mask, .. }
-        | AceKind::CallbackObject { mask, .. }
-        | AceKind::ResourceAttribute { mask, .. } => {
-            mask & (GENERIC_ALL | GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE) != 0
-        }
-        AceKind::Opaque => false,
-    };
-    if !ace_sid_names_creator(ace.kind()) && !generic {
+    if !ace_needs_file_resolution(ace.kind()) {
         return build_rewritten_file_ace_bytes(ace, inherited_flags, owner_sid, group_sid, true)
             .map(|bytes| (Some(bytes), None));
     }
@@ -3284,15 +3294,32 @@ fn build_explicit_acl_bytes(
         // created beneath, kept as written so each resolves it against its
         // own creator (PCDS §5.6). Resolving it here would hand the creator
         // of this directory everything later made inside it.
-        let applies = (ace.ace_flags() & INHERIT_ONLY_ACE) == 0;
-        let ace_bytes = build_rewritten_file_ace_bytes(
-            ace,
-            ace.ace_flags() & !INHERITED_ACE,
-            owner_sid,
-            group_sid,
-            applies,
-        )?;
+        let flags = ace.ace_flags() & !INHERITED_ACE;
+        let applies = (flags & INHERIT_ONLY_ACE) == 0;
+        // An ACE that both applies and is inheritable is split as inheritance
+        // splits it: the resolved ACE for this object, and the rule carried on
+        // inherit-only, so the descriptor reads back as it would if set later.
+        let split = applies
+            && (flags & (OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE)) != 0
+            && ace_needs_file_resolution(ace.kind());
+        let effective_flags = if split {
+            flags & !(OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | NO_PROPAGATE_INHERIT_ACE)
+        } else {
+            flags
+        };
+        let ace_bytes =
+            build_rewritten_file_ace_bytes(ace, effective_flags, owner_sid, group_sid, applies)?;
         explicit_aces.push(ace_bytes).map_err(|_| -ENOMEM)?;
+        if split {
+            let carried = build_rewritten_file_ace_bytes(
+                ace,
+                flags | INHERIT_ONLY_ACE,
+                owner_sid,
+                group_sid,
+                false,
+            )?;
+            explicit_aces.push(carried).map_err(|_| -ENOMEM)?;
+        }
     }
 
     if explicit_aces.is_empty() {
@@ -3429,9 +3456,11 @@ fn build_created_file_acl_bytes(
     }
 
     if let Some(fallback_acl) = fallback_acl {
-        let mut bytes = Vec::with_capacity(fallback_acl.len()).map_err(|_| -ENOMEM)?;
-        bytes.extend_from_slice(fallback_acl).map_err(|_| -ENOMEM)?;
-        return Ok((Some(bytes), false, true));
+        // The token's default DACL is kept as given; the copy stored on the
+        // file has its generic rights mapped to file rights.
+        let fallback_acl = Acl::parse(fallback_acl).map_err(sd_parse_errno)?;
+        let bytes = clone_mapped_acl_bytes(Some(fallback_acl), &FILE_GENERIC_MAPPING)?;
+        return Ok((bytes, false, true));
     }
 
     Ok((None, false, false))
@@ -3666,6 +3695,22 @@ fn clone_optional_acl_bytes(acl: Option<Acl<'_>>) -> Result<Option<Vec<u8>>, i32
     let mut bytes = Vec::with_capacity(acl.bytes().len()).map_err(|_| -ENOMEM)?;
     bytes.extend_from_slice(acl.bytes()).map_err(|_| -ENOMEM)?;
     Ok(Some(bytes))
+}
+
+/// Copies an ACL that is being stored on an object, with the generic rights
+/// of the ACEs that apply to the object mapped through that object type's
+/// GenericMapping (TRM "Generic rights", trm-3-9-6-7).
+fn clone_mapped_acl_bytes(
+    acl: Option<Acl<'_>>,
+    mapping: &GenericMapping,
+) -> Result<Option<Vec<u8>>, i32> {
+    let Some(acl) = acl else {
+        return Ok(None);
+    };
+    match map_acl_generic_rights(acl, mapping).map_err(container_inheritance_errno)? {
+        Some(bytes) => Ok(Some(bytes)),
+        None => clone_optional_acl_bytes(Some(acl)),
+    }
 }
 
 fn build_acl_bytes_from_aces(revision: u8, aces: &[&[u8]]) -> Result<Option<Vec<u8>>, i32> {
@@ -4341,6 +4386,7 @@ fn merge_process_sd_bytes(
     security_info: u32,
     input_sd_bytes: &[u8],
     allow_restore_owner_assignment: bool,
+    mapping: &GenericMapping,
 ) -> Result<(*mut u8, usize), i32> {
     let current_sd = SecurityDescriptor::parse(current_sd_bytes).map_err(sd_parse_errno)?;
 
@@ -4350,15 +4396,19 @@ fn merge_process_sd_bytes(
         security_info,
         input_sd_bytes,
         allow_restore_owner_assignment,
+        mapping,
     )
 }
 
+/// `mapping` is the object type's GenericMapping: a written DACL or SACL has
+/// its generic rights mapped through it before it is stored.
 fn merge_sd_with_current_descriptor(
     subject: &PkmKacsBootToken,
     current_sd: &SecurityDescriptor<'_>,
     security_info: u32,
     input_sd_bytes: &[u8],
     allow_restore_owner_assignment: bool,
+    mapping: &GenericMapping,
 ) -> Result<(*mut u8, usize), i32> {
     let input_sd = SecurityDescriptor::parse(input_sd_bytes).map_err(sd_parse_errno)?;
     let mut sacl = clone_optional_acl_bytes(current_sd.sacl())?;
@@ -4379,7 +4429,7 @@ fn merge_sd_with_current_descriptor(
     validate_sd_security_info(security_info)?;
 
     if (security_info & DACL_SECURITY_INFORMATION) != 0 {
-        dacl = clone_optional_acl_bytes(input_sd.dacl())?;
+        dacl = clone_mapped_acl_bytes(input_sd.dacl(), mapping)?;
     }
 
     if (security_info & SACL_SECURITY_INFORMATION) != 0 {
@@ -4394,7 +4444,7 @@ fn merge_sd_with_current_descriptor(
         // subject (only ACCESS_SYSTEM_SECURITY) cannot relabel via the SACL.
         let label_ace = find_explicit_label_ace_bytes(input_sd.sacl())?;
         validate_label_assignment(subject, label_ace.as_deref())?;
-        sacl = clone_optional_acl_bytes(input_sd.sacl())?;
+        sacl = clone_mapped_acl_bytes(input_sd.sacl(), mapping)?;
     } else if (security_info & LABEL_SECURITY_INFORMATION) != 0 {
         let label_ace = parse_label_subset_ace_bytes(&input_sd)?;
         validate_label_assignment(subject, label_ace.as_deref())?;
@@ -4463,14 +4513,14 @@ fn build_replacement_file_sd_bytes(
 
     validate_owner_assignment(subject, owner, true)?;
 
-    dacl = clone_optional_acl_bytes(input_sd.dacl())?;
+    dacl = clone_mapped_acl_bytes(input_sd.dacl(), &FILE_GENERIC_MAPPING)?;
 
     if (security_info & SACL_SECURITY_INFORMATION) != 0 {
         // KC-13: gate a smuggled SYSTEM_MANDATORY_LABEL_ACE in a full SACL write
         // on SE_RELABEL_PRIVILEGE (see merge_sd_with_current_descriptor).
         let label_ace = find_explicit_label_ace_bytes(input_sd.sacl())?;
         validate_label_assignment(subject, label_ace.as_deref())?;
-        sacl = clone_optional_acl_bytes(input_sd.sacl())?;
+        sacl = clone_mapped_acl_bytes(input_sd.sacl(), &FILE_GENERIC_MAPPING)?;
     } else if (security_info & LABEL_SECURITY_INFORMATION) != 0 {
         let label_ace = parse_label_subset_ace_bytes(&input_sd)?;
         validate_label_assignment(subject, label_ace.as_deref())?;
@@ -8010,6 +8060,7 @@ impl PkmKacsBootToken {
                 security_info,
                 input_sd_bytes,
                 true,
+                &TOKEN_GENERIC_MAPPING,
             )?;
             let sequence = self.own_sd_seq.load(Ordering::Relaxed);
             let Some(next_sequence) = sequence.checked_add(2) else {
@@ -11825,6 +11876,7 @@ pub extern "C" fn kacs_rust_merge_file_sd(
         security_info,
         input_sd_bytes,
         true,
+        &FILE_GENERIC_MAPPING,
     ) {
         Ok((ptr, len)) => {
             *out_sd_ptr = ptr.cast_const();
@@ -11883,6 +11935,7 @@ pub extern "C" fn kacs_rust_merge_cached_file_sd(
         security_info,
         input_sd_bytes,
         allow_restore_owner_assignment != 0,
+        &FILE_GENERIC_MAPPING,
     ) {
         Ok((ptr, len)) => {
             *out_sd_ptr = ptr.cast_const();
@@ -11905,6 +11958,57 @@ pub extern "C" fn kacs_rust_merge_process_sd(
     input_sd_len: usize,
     out_sd_ptr: *mut *const u8,
     out_sd_len: *mut usize,
+) -> i32 {
+    merge_object_sd_ffi(
+        subject_token_ptr,
+        current_sd_ptr,
+        current_sd_len,
+        security_info,
+        input_sd_ptr,
+        input_sd_len,
+        out_sd_ptr,
+        out_sd_len,
+        &PROCESS_GENERIC_MAPPING,
+    )
+}
+
+#[no_mangle]
+/// Merges one caller-supplied subset descriptor into the current System V
+/// IPC object SD, mapping generic rights through the IPC GenericMapping.
+pub extern "C" fn kacs_rust_merge_ipc_sd(
+    subject_token_ptr: *const c_void,
+    current_sd_ptr: *const u8,
+    current_sd_len: usize,
+    security_info: u32,
+    input_sd_ptr: *const u8,
+    input_sd_len: usize,
+    out_sd_ptr: *mut *const u8,
+    out_sd_len: *mut usize,
+) -> i32 {
+    merge_object_sd_ffi(
+        subject_token_ptr,
+        current_sd_ptr,
+        current_sd_len,
+        security_info,
+        input_sd_ptr,
+        input_sd_len,
+        out_sd_ptr,
+        out_sd_len,
+        &IPC_GENERIC_MAPPING,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn merge_object_sd_ffi(
+    subject_token_ptr: *const c_void,
+    current_sd_ptr: *const u8,
+    current_sd_len: usize,
+    security_info: u32,
+    input_sd_ptr: *const u8,
+    input_sd_len: usize,
+    out_sd_ptr: *mut *const u8,
+    out_sd_len: *mut usize,
+    mapping: &GenericMapping,
 ) -> i32 {
     let Some(subject) = (unsafe { PkmKacsBootToken::from_ptr(subject_token_ptr) }) else {
         return -EACCES;
@@ -11935,6 +12039,7 @@ pub extern "C" fn kacs_rust_merge_process_sd(
         security_info,
         input_sd_bytes,
         true,
+        mapping,
     ) {
         Ok((ptr, len)) => {
             *out_sd_ptr = ptr.cast_const();

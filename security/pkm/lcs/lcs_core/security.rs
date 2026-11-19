@@ -1,5 +1,6 @@
 use crate::lcs_core::access::{
-    parse_registry_source_security_descriptor, validate_registry_acl_access_masks,
+    parse_registry_source_security_descriptor, registry_kacs_generic_mapping,
+    validate_registry_acl_access_masks,
 };
 use crate::lcs_core::constants::{
     DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, LABEL_SECURITY_INFORMATION,
@@ -23,7 +24,7 @@ use crate::kacs_core::{
     SE_DACL_PROTECTED, SE_DACL_TRUSTED, SE_GROUP_DEFAULTED, SE_OWNER_DEFAULTED,
     SE_RM_CONTROL_VALID, SE_SACL_AUTO_INHERIT_REQ, SE_SACL_AUTO_INHERITED, SE_SACL_DEFAULTED,
     SE_SACL_PRESENT, SE_SACL_PROTECTED, SE_SELF_RELATIVE, SE_SERVER_SECURITY,
-    SYSTEM_MANDATORY_LABEL_ACE_TYPE, SecurityDescriptor, Sid,
+    SYSTEM_MANDATORY_LABEL_ACE_TYPE, SecurityDescriptor, Sid, map_acl_generic_rights,
 };
 
 const OWNER_CONTROL_MASK: u16 = SE_OWNER_DEFAULTED;
@@ -224,6 +225,20 @@ pub fn plan_registry_set_security(
     } else {
         None
     };
+    // A written DACL or SACL has its generic rights mapped to key rights
+    // before it is stored (TRM "Generic rights", trm-3-9-6-7).
+    let mapped_sacl = if security_info & LABEL_SECURITY_INFORMATION == 0
+        && (security_info & SACL_SECURITY_INFORMATION) != 0
+    {
+        map_written_acl(input.sacl())?
+    } else {
+        None
+    };
+    let mapped_dacl = if (security_info & DACL_SECURITY_INFORMATION) != 0 {
+        map_written_acl(input.dacl())?
+    } else {
+        None
+    };
     let sacl = if security_info & LABEL_SECURITY_INFORMATION != 0 {
         label_sacl
             .as_ref()
@@ -232,12 +247,22 @@ pub fn plan_registry_set_security(
                 control: existing.control() & SACL_CONTROL_MASK,
             })
     } else if (security_info & SACL_SECURITY_INFORMATION) != 0 {
-        acl_component(input.sacl(), input.control(), SACL_CONTROL_MASK)
+        written_acl_component(
+            input.sacl(),
+            mapped_sacl.as_ref(),
+            input.control(),
+            SACL_CONTROL_MASK,
+        )
     } else {
         acl_component(existing.sacl(), existing.control(), SACL_CONTROL_MASK)
     };
     let dacl = if (security_info & DACL_SECURITY_INFORMATION) != 0 {
-        acl_component(input.dacl(), input.control(), DACL_CONTROL_MASK)
+        written_acl_component(
+            input.dacl(),
+            mapped_dacl.as_ref(),
+            input.control(),
+            DACL_CONTROL_MASK,
+        )
     } else {
         acl_component(existing.dacl(), existing.control(), DACL_CONTROL_MASK)
     };
@@ -560,6 +585,32 @@ fn acl_component<'a>(
         bytes: acl.bytes(),
         control: control & control_mask,
     })
+}
+
+fn map_written_acl(acl: Option<Acl<'_>>) -> LcsResult<Option<PkmVec<u8>>> {
+    let Some(acl) = acl else {
+        return Ok(None);
+    };
+    map_acl_generic_rights(acl, &registry_kacs_generic_mapping()).map_err(|_| {
+        LcsError::SecurityDescriptorConstructionFailed {
+            field: "reg_set_security.merged_sd",
+        }
+    })
+}
+
+fn written_acl_component<'a>(
+    acl: Option<Acl<'a>>,
+    mapped: Option<&'a PkmVec<u8>>,
+    control: u16,
+    control_mask: u16,
+) -> Option<SecurityDescriptorComponent<'a>> {
+    match mapped {
+        Some(bytes) => Some(SecurityDescriptorComponent {
+            bytes: bytes.as_slice(),
+            control: control & control_mask,
+        }),
+        None => acl_component(acl, control, control_mask),
+    }
 }
 
 fn build_security_descriptor(
