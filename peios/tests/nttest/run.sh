@@ -5,7 +5,8 @@ runtime=/lcl/radius-dev/current
 export PATH=$runtime/bin:$PATH LD_LIBRARY_PATH=$runtime/lib
 nttest=/mnt/dev/nttest/nttest
 sddl='O:SYG:SYD:P(A;OICI;GA;;;SY)(A;OICI;GA;;;BA)'
-echo "--- identity"; id 2>&1 | head -1
+echo "--- identity"
+id 2>&1 | head -1
 
 # A StrataFS stack over ext4, with two files only in the lower stratum.
 s=/var/state/ntsfs
@@ -14,10 +15,10 @@ mkdir -p "$s/up" "$s/lo" "$s/m/nt"
 sd set "$s/up" "$sddl" >/dev/null
 sd set "$s/lo" "$sddl" >/dev/null
 mkdir -p "$s/lo/nt" "$s/up/nt"
-echo x > "$s/lo/nt/cu"
-echo x > "$s/lo/nt/cu2"
-echo x > "$s/lo/nt/cu3"
-echo x > "$s/lo/nt/cu4"
+echo x >"$s/lo/nt/cu"
+echo x >"$s/lo/nt/cu2"
+echo x >"$s/lo/nt/cu3"
+echo x >"$s/lo/nt/cu4"
 $nttest --mount "$s/m" "$s/up+create:$s/lo" && echo "--- mounted $s/m"
 
 for d in /srv/nt /tmp/nt /var/state/nt "$s/m/nt"; do

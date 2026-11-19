@@ -1738,8 +1738,8 @@ static int pkm_kacs_nt_register_stacked_directory(const void *subject_token,
 		iput(record);
 		return 0;
 	}
-	ret = pkm_kacs_nt_register_settled(subject_token, file, record,
-					   classes, share, intent);
+	ret = pkm_kacs_nt_register_settled(subject_token, file, record, classes,
+					   share, intent);
 	/* Registered even if a lease break then failed the open. */
 	if (file_sec->nt_inode == record)
 		file_sec->nt_inode_held = 1;

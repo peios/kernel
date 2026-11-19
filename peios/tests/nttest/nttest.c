@@ -29,18 +29,18 @@
 static int failures, checks;
 static const char *dir;
 
-#define CHECK(cond, ...)                                                      \
-	do {                                                                  \
-		checks++;                                                     \
-		if (cond) {                                                   \
-			printf("PASS ");                                      \
-		} else {                                                      \
-			printf("FAIL ");                                      \
-			failures++;                                           \
-		}                                                             \
-		printf(__VA_ARGS__);                                          \
-		printf(" (errno %d %s)\n", errno, strerror(errno));          \
-		fflush(stdout);                                               \
+#define CHECK(cond, ...)                                            \
+	do {                                                        \
+		checks++;                                           \
+		if (cond) {                                         \
+			printf("PASS ");                            \
+		} else {                                            \
+			printf("FAIL ");                            \
+			failures++;                                 \
+		}                                                   \
+		printf(__VA_ARGS__);                                \
+		printf(" (errno %d %s)\n", errno, strerror(errno)); \
+		fflush(stdout);                                     \
 	} while (0)
 
 static char *at(const char *name)
@@ -65,7 +65,8 @@ static int kopen(const char *path, uint32_t access, uint32_t disp,
 		.share_access = share,
 	};
 	uint32_t st = 0;
-	long fd = syscall(SYS_KACS_OPEN, AT_FDCWD, path, &how, sizeof(how), &st);
+	long fd =
+		syscall(SYS_KACS_OPEN, AT_FDCWD, path, &how, sizeof(how), &st);
 
 	if (status)
 		*status = st;
@@ -123,7 +124,10 @@ static int klock(int fd, uint32_t op, uint64_t off, uint64_t len,
 		 uint32_t flags, uint64_t cookie)
 {
 	struct kacs_lock_args a = {
-		.offset = off, .length = len, .op = op, .flags = flags,
+		.offset = off,
+		.length = len,
+		.op = op,
+		.flags = flags,
 		.cookie = cookie,
 	};
 
@@ -172,7 +176,8 @@ static void test_control_handle(void)
 	CHECK(query(fd, &info) == 0 &&
 		      info.granted_access == KACS_ACCESS_READ_CONTROL &&
 		      (info.flags & KACS_OPEN_INFO_MANAGED),
-	      "kacs_query_open reports the granted mask 0x%x", info.granted_access);
+	      "kacs_query_open reports the granted mask 0x%x",
+	      info.granted_access);
 	close(fd);
 
 	fd = kopen(at("control"), KACS_ACCESS_MAXIMUM_ALLOWED,
@@ -210,8 +215,8 @@ static void test_share_modes(void)
 	if (b >= 0)
 		close(b);
 	errno = 0;
-	b = kopen(at("share"), KACS_FILE_WRITE_DATA, KACS_DISPOSITION_OPEN, 0, 0,
-		  0, &status);
+	b = kopen(at("share"), KACS_FILE_WRITE_DATA, KACS_DISPOSITION_OPEN, 0,
+		  0, 0, &status);
 	CHECK(b < 0 && errno == EBUSY &&
 		      status == KACS_STATUS_SHARING_VIOLATION,
 	      "share: a native writer gets EBUSY and SHARING_VIOLATION (0x%x)",
@@ -258,8 +263,8 @@ static void test_delete_pending(void)
 	      "pending: kacs_set_disposition marks the file");
 	CHECK(exists(at("pending")), "pending: the name stays");
 	errno = 0;
-	CHECK(kopen(at("pending"), KACS_FILE_READ_DATA, KACS_DISPOSITION_OPEN, 0,
-		    0, 0, &status) < 0 &&
+	CHECK(kopen(at("pending"), KACS_FILE_READ_DATA, KACS_DISPOSITION_OPEN,
+		    0, 0, 0, &status) < 0 &&
 		      errno == EBUSY && status == KACS_STATUS_DELETE_PENDING,
 	      "pending: a new native open gets EBUSY and DELETE_PENDING (0x%x)",
 	      status);
@@ -278,7 +283,8 @@ static void test_delete_pending(void)
 	CHECK(set_disposition(a, KACS_DISPOSITION_DELETE) == 0,
 	      "pending: marked again");
 	close(a);
-	CHECK(exists(at("pending")), "pending: the name stays while one open remains");
+	CHECK(exists(at("pending")),
+	      "pending: the name stays while one open remains");
 	CHECK(read(b, &c, 1) == 1, "pending: the remaining open still reads");
 	close(b);
 	CHECK(!exists(at("pending")), "pending: the last close removes it");
@@ -306,8 +312,9 @@ static void test_delete_pending(void)
 	a = kopen(at("posix"), KACS_FILE_READ_DATA | KACS_ACCESS_DELETE,
 		  KACS_DISPOSITION_OPEN, 0, 0, 0, NULL);
 	CHECK(a >= 0 &&
-		      set_disposition(a, KACS_DISPOSITION_DELETE |
-						 KACS_DISPOSITION_POSIX_SEMANTICS) ==
+		      set_disposition(
+			      a, KACS_DISPOSITION_DELETE |
+					 KACS_DISPOSITION_POSIX_SEMANTICS) ==
 			      0 &&
 		      !exists(at("posix")) && read(a, &c, 1) == 1,
 	      "posix delete: the name goes at once, the handle reads on");
@@ -467,7 +474,8 @@ static void test_locks(void)
 	errno = 0;
 	CHECK(klock(a, KACS_LOCK_UNLOCK, 0, 10, 0, 0) < 0 && errno == ENOLCK,
 	      "locks: unlocking an unheld range fails with ENOLCK");
-	CHECK(klock(a, KACS_LOCK_SHARED, 0, 10, 0, 0) == 0, "locks: a shared lock");
+	CHECK(klock(a, KACS_LOCK_SHARED, 0, 10, 0, 0) == 0,
+	      "locks: a shared lock");
 	errno = 0;
 	CHECK(pwrite(a, "Z", 1, 1) < 0 && errno == EAGAIN,
 	      "locks: a shared lock blocks its holder's write");
@@ -476,7 +484,8 @@ static void test_locks(void)
 	CHECK(ftruncate(b, 4) < 0 && errno == EAGAIN,
 	      "locks: truncating into the range is a write, refused");
 	close(a);
-	CHECK(pwrite(b, "Z", 1, 1) == 1, "locks: closing the holder releases them");
+	CHECK(pwrite(b, "Z", 1, 1) == 1,
+	      "locks: closing the holder releases them");
 	close(b);
 }
 
@@ -518,8 +527,7 @@ static void test_leases(void)
 	CHECK(poll(&p, 1, 3000) == 1 &&
 		      read(mgr, &notice, sizeof(notice)) == sizeof(notice) &&
 		      notice.reason == KACS_LEASE_BREAK_OPEN &&
-		      notice.new_state ==
-			      (KACS_LEASE_READ | KACS_LEASE_HANDLE),
+		      notice.new_state == (KACS_LEASE_READ | KACS_LEASE_HANDLE),
 	      "leases: another open raises a break notice to RH (reason %u)",
 	      notice.reason);
 	CHECK(waitpid(child, &status, WNOHANG) == 0,
@@ -567,7 +575,8 @@ static void test_readonly(void)
 	v.valid = KACS_SATTR_VALID_CREATED_AT;
 	v.attributes = 0;
 	v.created_at_sec = 1000000000;
-	CHECK(setxattr(at("ro"), KACS_SATTR_XATTR_NAME, &v, sizeof(v), 0) == 0 &&
+	CHECK(setxattr(at("ro"), KACS_SATTR_XATTR_NAME, &v, sizeof(v), 0) ==
+			      0 &&
 		      getxattr(at("ro"), KACS_SATTR_XATTR_NAME, &got,
 			       sizeof(got)) == sizeof(got) &&
 		      (got.attributes & KACS_SATTR_READONLY) &&
@@ -576,7 +585,8 @@ static void test_readonly(void)
 	      "sattr: writing Created At merges, keeping read-only");
 	v.valid = KACS_SATTR_VALID_ATTRIBUTES;
 	v.attributes = 0;
-	CHECK(setxattr(at("ro"), KACS_SATTR_XATTR_NAME, &v, sizeof(v), 0) == 0 &&
+	CHECK(setxattr(at("ro"), KACS_SATTR_XATTR_NAME, &v, sizeof(v), 0) ==
+			      0 &&
 		      unlink(at("ro")) == 0,
 	      "read-only: cleared, the file can be deleted");
 }
@@ -653,7 +663,8 @@ static void test_copy_up(void)
 		return;
 	CHECK(exists(at("cu2")), "copy-up: its name stays while open");
 	close(a);
-	CHECK(!exists(at("cu2")), "copy-up: closing removes the lower-only name");
+	CHECK(!exists(at("cu2")),
+	      "copy-up: closing removes the lower-only name");
 
 	/* A handle renames the copy its file was copied up to. */
 	a = kopen(at("cu3"), KACS_FILE_READ_DATA | KACS_ACCESS_DELETE,
@@ -675,7 +686,8 @@ static void test_copy_up(void)
 
 		a = kopen(at("cu4"), KACS_FILE_READ_DATA | KACS_ACCESS_DELETE,
 			  KACS_DISPOSITION_OPEN, 0, 0, 0, NULL);
-		snprintf(upper, sizeof(upper), "%s/cu4", getenv("NTTEST_UPPER"));
+		snprintf(upper, sizeof(upper), "%s/cu4",
+			 getenv("NTTEST_UPPER"));
 		mkfile(upper, "mask");
 		errno = 0;
 		CHECK(a >= 0 && krename(a, at("cu4-moved"), 0) < 0 &&
@@ -690,9 +702,9 @@ static void test_creator_access(void)
 {
 	/* Owner SYSTEM, group SYSTEM, a present but empty DACL. */
 	static const uint8_t empty_dacl_sd[] = {
-		1, 0, 4, 0x80, 20, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 44,
-		0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 5, 18, 0, 0, 0, 1, 1, 0,
-		0, 0, 0, 0, 5, 18, 0, 0, 0, 2, 0, 8, 0, 0, 0, 0, 0,
+		1, 0, 4, 0x80, 20, 0, 0, 0, 32, 0, 0,  0, 0, 0, 0, 0, 44, 0,
+		0, 0, 1, 1,    0,  0, 0, 0, 0,	5, 18, 0, 0, 0, 1, 1, 0,  0,
+		0, 0, 0, 5,    18, 0, 0, 0, 2,	0, 8,  0, 0, 0, 0, 0,
 	};
 	int fd;
 

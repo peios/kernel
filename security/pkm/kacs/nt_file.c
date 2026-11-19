@@ -341,8 +341,7 @@ static void pkm_kacs_nt_finish_removal(struct pkm_kacs_nt_removal *removal)
 }
 
 /* Carry out what unregistering left: the removal, then the held provider. */
-static void pkm_kacs_nt_settle(struct pkm_kacs_nt_removal *removal,
-			       bool remove)
+static void pkm_kacs_nt_settle(struct pkm_kacs_nt_removal *removal, bool remove)
 {
 	if (remove)
 		pkm_kacs_nt_finish_removal(removal);
