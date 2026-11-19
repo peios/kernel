@@ -215,11 +215,13 @@ static const char *const pkm_lcs_transaction_layer_metadata_prefix[] = {
 };
 
 static const struct file_operations pkm_lcs_transaction_fd_fops;
-static long pkm_lcs_transaction_counter_release(
-	const struct pkm_lcs_transaction_fd *txn, u32 source_id, u32 *count)
+static long
+pkm_lcs_transaction_counter_release(const struct pkm_lcs_transaction_fd *txn,
+				    u32 source_id, u32 *count)
 {
 	if (txn->read_only)
-		return pkm_lcs_source_read_only_transaction_release(source_id, count);
+		return pkm_lcs_source_read_only_transaction_release(source_id,
+								    count);
 	return pkm_lcs_source_bound_transaction_release(source_id, count);
 }
 static long pkm_lcs_transaction_fd_complete_first_bind_from_state(
@@ -1539,7 +1541,7 @@ static void pkm_lcs_transaction_fd_timeout_work(struct work_struct *work)
 		(void)pkm_lcs_source_dispatch_abort_transaction_request(
 			source_id, transaction_id, NULL);
 		(void)pkm_lcs_transaction_counter_release(txn, source_id,
-							       &count);
+							  &count);
 		pkm_lcs_transaction_log_clear(txn);
 		audit = txn->audit_pending;
 		txn->audit_pending = false;
@@ -1636,7 +1638,7 @@ static int pkm_lcs_transaction_fd_release(struct inode *inode,
 			source_id, transaction_id, NULL);
 	if (release_counter)
 		(void)pkm_lcs_transaction_counter_release(txn, source_id,
-							       &count);
+							  &count);
 	if (wake)
 		wake_up_all(&txn->wait);
 	pkm_lcs_transaction_fd_destroy(txn);
@@ -3097,7 +3099,7 @@ static long pkm_lcs_transaction_fd_commit_from_state_timeout_with_limits(
 
 	if (release_counter)
 		(void)pkm_lcs_transaction_counter_release(txn, source_id,
-							       &count);
+							  &count);
 	if (final_state == REG_TXN_COMMITTED)
 		ret = 0;
 	else
@@ -3827,7 +3829,7 @@ long pkm_lcs_transaction_fd_handle_late_commit_response(
 
 	if (!ret && release_counter)
 		(void)pkm_lcs_transaction_counter_release(txn, source_id,
-							       &count);
+							  &count);
 	if (destroy_txn)
 		pkm_lcs_transaction_fd_destroy(destroy_txn);
 	if (apply_layer_delete_effects &&
@@ -4002,8 +4004,9 @@ long pkm_lcs_transaction_layer_snapshot_acquire(
 	}
 	mutex_lock(&txn->bind_lock);
 	if (!pkm_lcs_transaction_state_active(READ_ONCE(txn->state))) {
-		ret = txn->state == REG_TXN_TIMED_OUT ? -ETIMEDOUT :
-			txn->state == REG_TXN_SOURCE_DOWN ? -EIO : -EINVAL;
+		ret = txn->state == REG_TXN_TIMED_OUT	? -ETIMEDOUT :
+		      txn->state == REG_TXN_SOURCE_DOWN ? -EIO :
+							  -EINVAL;
 		goto out;
 	}
 	if (!txn->read_layers.layers) {
@@ -4069,13 +4072,15 @@ static long pkm_lcs_transaction_fd_bind_read_only(
 		limits.request_timeout_ms, &frame, &response, NULL);
 	if (!ret)
 		ret = pkm_lcs_rsi_materialize_read_key_response_with_limits(
-			frame.data, frame.len, response.request_id, &limits, &root);
+			frame.data, frame.len, response.request_id, &limits,
+			&root);
 	pkm_lcs_source_response_frame_destroy(&frame);
 	if (!ret)
-		ret = pkm_lcs_source_hive_generation_snapshot(source_id, root_guid,
-							   &txn->read_generation);
-	if (!ret && (txn->read_layers.revision != pkm_lcs_layer_table_revision() ||
-		     !pkm_lcs_publication_capture_valid(capture_epoch)))
+		ret = pkm_lcs_source_hive_generation_snapshot(
+			source_id, root_guid, &txn->read_generation);
+	if (!ret &&
+	    (txn->read_layers.revision != pkm_lcs_layer_table_revision() ||
+	     !pkm_lcs_publication_capture_valid(capture_epoch)))
 		ret = -EAGAIN;
 	if (!ret)
 		ret = pkm_lcs_transaction_fd_complete_first_bind_from_state(
@@ -4117,7 +4122,8 @@ long pkm_lcs_transaction_fd_prepare_read_context(
 
 	if (txn->read_only) {
 		mutex_lock(&txn->bind_lock);
-		ret = pkm_lcs_transaction_fd_bind_read_only(txn, source_id, root_guid);
+		ret = pkm_lcs_transaction_fd_bind_read_only(txn, source_id,
+							    root_guid);
 		if (!ret)
 			ret = pkm_lcs_transaction_fd_prepare_read_context_from_state(
 				txn, source_id, root_guid, out);

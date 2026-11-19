@@ -600,8 +600,8 @@ SYSCALL_DEFINE4(reg_open_key, int, parent_fd, const char __user *, path, u32,
 
 long pkm_lcs_reg_open_key_transacted_for_token(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
-	int parent_fd, const char __user *path, u32 desired_access,
-	u32 flags, int txn_fd)
+	int parent_fd, const char __user *path, u32 desired_access, u32 flags,
+	int txn_fd)
 {
 	struct pkm_lcs_private_credential_view private_view = {};
 	struct pkm_lcs_layer_snapshot layers = {};
@@ -630,14 +630,16 @@ long pkm_lcs_reg_open_key_transacted_for_token(
 		goto out;
 	if (parent_fd == -1)
 		ret = pkm_lcs_open_copied_absolute_path_after_preflight_for_token(
-			token, &copy, desired_access, flags, private_view.scope_guids,
-			private_view.scope_count, layers.layers, layers.layer_count,
-			private_view.private_layers, private_view.private_layer_count,
-			txn_fd);
+			token, &copy, desired_access, flags,
+			private_view.scope_guids, private_view.scope_count,
+			layers.layers, layers.layer_count,
+			private_view.private_layers,
+			private_view.private_layer_count, txn_fd);
 	else
 		ret = pkm_lcs_open_copied_relative_path_after_preflight(
 			token, parent_fd, &copy, desired_access, flags,
-			layers.layers, layers.layer_count, private_view.private_layers,
+			layers.layers, layers.layer_count,
+			private_view.private_layers,
 			private_view.private_layer_count, txn_fd);
 out:
 	pkm_lcs_private_credentials_release(&private_view);
@@ -646,11 +648,10 @@ out:
 	return ret;
 }
 
-SYSCALL_DEFINE5(reg_open_key_transacted, int, parent_fd,
-		const char __user *, path, u32, desired_access,
-		u32, flags, int, txn_fd)
+SYSCALL_DEFINE5(reg_open_key_transacted, int, parent_fd, const char __user *,
+		path, u32, desired_access, u32, flags, int, txn_fd)
 {
 	return pkm_lcs_reg_open_key_transacted_for_token(
-		pkm_kacs_current_effective_token_ptr(), NULL,
-		parent_fd, path, desired_access, flags, txn_fd);
+		pkm_kacs_current_effective_token_ptr(), NULL, parent_fd, path,
+		desired_access, flags, txn_fd);
 }

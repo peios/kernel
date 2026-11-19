@@ -714,7 +714,8 @@ static ssize_t pkm_lcs_source_device_write_file_with_ops(
 	}
 
 	publishing = pkm_lcs_rsi_publishes(
-		get_unaligned_le16(frame + RSI_RESPONSE_OP_CODE_OFFSET) & ~RSI_RESPONSE_BIT);
+		get_unaligned_le16(frame + RSI_RESPONSE_OP_CODE_OFFSET) &
+		~RSI_RESPONSE_BIT);
 	if (publishing)
 		pkm_lcs_publication_begin();
 	ret = pkm_lcs_source_accept_response_file(file, frame, count, result);

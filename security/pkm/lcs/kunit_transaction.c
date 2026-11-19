@@ -1604,10 +1604,14 @@ static void pkm_lcs_kunit_read_only_rejects_writes(struct kunit *test)
 
 	KUNIT_ASSERT_GE(test, fd, 0L);
 	KUNIT_EXPECT_EQ(test, pkm_lcs_transaction_fd_read_only(fd), 1L);
-	KUNIT_EXPECT_EQ(test, pkm_lcs_transaction_fd_prepare_mutation_binding(
-		fd, 1, root, &plan), (long)-EROFS);
-	KUNIT_EXPECT_EQ(test, pkm_lcs_transaction_fd_bind_for_mutation(
-		fd, 1, root, &plan), (long)-EROFS);
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_fd_prepare_mutation_binding(
+				fd, 1, root, &plan),
+			(long)-EROFS);
+	KUNIT_EXPECT_EQ(test,
+			pkm_lcs_transaction_fd_bind_for_mutation(fd, 1, root,
+								 &plan),
+			(long)-EROFS);
 	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_fd_status(fd, &status), 0L);
 	KUNIT_EXPECT_EQ(test, status.state, REG_TXN_ACTIVE_UNBOUND);
 	KUNIT_EXPECT_EQ(test, close_fd(fd), 0);
@@ -1622,12 +1626,21 @@ static void pkm_lcs_kunit_read_only_layer_view_lifetime(struct kunit *test)
 	pkm_lcs_kunit_reset_layer_table();
 	fd = pkm_lcs_transaction_fd_publish_read_only(30000);
 	KUNIT_ASSERT_GE(test, fd, 0L);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_layer_snapshot_acquire(fd, &first), 0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_lcs_transaction_layer_snapshot_acquire(fd, &first),
+			0L);
 	KUNIT_EXPECT_EQ(test, first.layer_count, 1U);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_layer_table_publish("Later", 5, 7, 1, guid,
-		pkm_lcs_kunit_owner_only_sd, sizeof(pkm_lcs_kunit_owner_only_sd),
-		pkm_lcs_kunit_system_sid, sizeof(pkm_lcs_kunit_system_sid)), 0L);
-	KUNIT_ASSERT_EQ(test, pkm_lcs_transaction_layer_snapshot_acquire(fd, &second), 0L);
+	KUNIT_ASSERT_EQ(
+		test,
+		pkm_lcs_layer_table_publish("Later", 5, 7, 1, guid,
+					    pkm_lcs_kunit_owner_only_sd,
+					    sizeof(pkm_lcs_kunit_owner_only_sd),
+					    pkm_lcs_kunit_system_sid,
+					    sizeof(pkm_lcs_kunit_system_sid)),
+		0L);
+	KUNIT_ASSERT_EQ(test,
+			pkm_lcs_transaction_layer_snapshot_acquire(fd, &second),
+			0L);
 	KUNIT_ASSERT_EQ(test, pkm_lcs_source_layer_snapshot_acquire(&live), 0L);
 	KUNIT_EXPECT_EQ(test, second.layer_count, 1U);
 	KUNIT_EXPECT_EQ(test, live.layer_count, 2U);
@@ -1699,7 +1712,8 @@ static void pkm_lcs_kunit_read_capture_publication_fence(struct kunit *test)
 			pkm_lcs_transaction_fd_prepare_read_context(
 				fd, 999, root, &plan),
 			(long)-EAGAIN);
-	KUNIT_EXPECT_EQ(test, pkm_lcs_publication_capture_start(&during), (long)-EAGAIN);
+	KUNIT_EXPECT_EQ(test, pkm_lcs_publication_capture_start(&during),
+			(long)-EAGAIN);
 	KUNIT_EXPECT_FALSE(test, pkm_lcs_publication_capture_valid(before));
 	pkm_lcs_publication_begin();
 	pkm_lcs_publication_end();

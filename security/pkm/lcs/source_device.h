@@ -594,8 +594,8 @@ long pkm_lcs_transaction_layer_snapshot_acquire(
 	int txn_fd, struct pkm_lcs_layer_snapshot *snapshot);
 long pkm_lcs_reg_open_key_transacted_for_token(
 	const void *token, const struct pkm_lcs_usercopy_ops *ops,
-	int parent_fd, const char __user *path, u32 desired_access,
-	u32 flags, int txn_fd);
+	int parent_fd, const char __user *path, u32 desired_access, u32 flags,
+	int txn_fd);
 u64 pkm_lcs_layer_table_revision(void);
 void pkm_lcs_publication_begin(void);
 void pkm_lcs_publication_end(void);

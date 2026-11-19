@@ -93,7 +93,8 @@ bool pkm_lcs_publication_capture_valid(u64 epoch)
 	bool valid;
 
 	spin_lock_bh(&pkm_lcs_publication_lock);
-	valid = !pkm_lcs_publication_active && epoch == pkm_lcs_publication_epoch;
+	valid = !pkm_lcs_publication_active &&
+		epoch == pkm_lcs_publication_epoch;
 	spin_unlock_bh(&pkm_lcs_publication_lock);
 	return valid;
 }
