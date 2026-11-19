@@ -33,6 +33,8 @@ is a separate signal, read from the `ret` field (0 == allow).
 | `KACS_TR_NEGATIVE_AFTER_CREATE` | `12` | negative dentry after create |
 | `KACS_TR_CHANGE_NOTIFY_PRIV` | `13` | traverse via CHANGE_NOTIFY priv |
 | `KACS_TR_CHANGE_NOTIFY_PRIV_EXHAUSTED` | `14` | CHANGE_NOTIFY priv use exhausted |
+| `KACS_TR_NT_SHARE` | `15` | NT share registration refused the open |
+| `KACS_TR_NT_SHARE_OVERRIDE` | `16` | backup/restore intent set a share denial aside |
 
 *kacs_sd_cache reason — the inode security-descriptor cache outcome.* <a id="cite-kacs-abi.trace.sd-cache-reasons"></a>
 

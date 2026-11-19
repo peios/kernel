@@ -47,6 +47,12 @@ constant.
 | 1026 | `SYS_KACS_GET_MOUNT_POLICY` | `SYS_kacs_get_mount_policy` | `kacs_get_mount_policy(int fd, struct kacs_mount_policy_args __user *uargs, size_t argsize)` |
 | 1027 | `SYS_KACS_SET_MOUNT_POLICY` | `SYS_kacs_set_mount_policy` | `kacs_set_mount_policy(int fd, struct kacs_mount_policy_args __user *uargs, size_t argsize)` |
 | 1028 | `SYS_KACS_ACCESS_CHECK_SUBJECT` | `SYS_kacs_access_check_subject` | `kacs_access_check_subject(const void __user *request, size_t request_len, void __user *result)` |
+| 1029 | `SYS_KACS_QUERY_OPEN` | `SYS_kacs_query_open` | `kacs_query_open(int fd, struct kacs_open_info __user *uinfo, size_t size)` |
+| 1030 | `SYS_KACS_SET_DISPOSITION` | `SYS_kacs_set_disposition` | `kacs_set_disposition(int fd, u32 flags)` |
+| 1031 | `SYS_KACS_RENAME` | `SYS_kacs_rename` | `kacs_rename(int fd, int newdirfd, const char __user *newpath, u32 flags)` |
+| 1032 | `SYS_KACS_LOCK` | `SYS_kacs_lock` | `kacs_lock(int fd, const struct kacs_lock_args __user *uargs, size_t size)` |
+| 1033 | `SYS_KACS_CREATE_LEASE_MANAGER` | `SYS_kacs_create_lease_manager` | `kacs_create_lease_manager(u32 flags, u32 timeout_ms)` |
+| 1034 | `SYS_KACS_LEASE` | `SYS_kacs_lease` | `kacs_lease(int fd, int manager_fd, struct kacs_lease_args __user *uargs, size_t size)` |
 
 `uapi/pkm/syscall.h` also registers the KMES and LCS numbers,
 1090–1104, documented in their own chapters. <a id="cite-kacs-abi.sibling-syscall-range"></a>

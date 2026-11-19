@@ -96,7 +96,7 @@ Total size 8 bytes.
 | 0 | 4 | `__u32` | `granted` |
 | 4 | 4 | `__s32` | `status` |
 
-<a id="trm-3-a-2-18"></a>
+<a id="trm-3-a-2-23"></a>
 
 ## `struct kacs_generic_mapping` <a id="cite-kacs-abi.struct-kacs-generic-mapping"></a>
 
