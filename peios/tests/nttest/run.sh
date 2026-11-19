@@ -8,7 +8,7 @@ sddl='O:SYG:SYD:P(A;OICI;GA;;;SY)(A;OICI;GA;;;BA)'
 echo "--- identity"
 id 2>&1 | head -1
 
-# A StrataFS stack over ext4, with two files only in the lower stratum.
+# A StrataFS stack over ext4, with four files only in the lower stratum.
 s=/var/state/ntsfs
 rm -rf "$s"
 mkdir -p "$s/up" "$s/lo" "$s/m/nt"
