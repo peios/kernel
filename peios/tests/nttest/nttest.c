@@ -483,6 +483,22 @@ static void test_locks(void)
 	errno = 0;
 	CHECK(ftruncate(b, 4) < 0 && errno == EAGAIN,
 	      "locks: truncating into the range is a write, refused");
+	{
+		/* An open that truncates is not, as on Windows. */
+		int c = open(at("lock"), O_RDWR | O_TRUNC);
+		struct stat st;
+
+		CHECK(c >= 0 && fstat(c, &st) == 0 && st.st_size == 0,
+		      "locks: an O_TRUNC open truncates through the lock");
+		if (c >= 0)
+			close(c);
+		c = kopen(at("lock"), RW, KACS_DISPOSITION_OVERWRITE, 0,
+			  KACS_OPEN_SHARE_ACCESS,
+			  KACS_FILE_SHARE_READ | KACS_FILE_SHARE_WRITE, NULL);
+		CHECK(c >= 0, "locks: an OVERWRITE open truncates through it");
+		if (c >= 0)
+			close(c);
+	}
 	close(a);
 	CHECK(pwrite(b, "Z", 1, 1) == 1,
 	      "locks: closing the holder releases them");
