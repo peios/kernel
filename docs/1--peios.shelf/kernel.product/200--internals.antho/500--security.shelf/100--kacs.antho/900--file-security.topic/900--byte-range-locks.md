@@ -67,7 +67,12 @@ against the locks of **other** opens:
 | Read | A read of its range |
 | Write, including append | A write of its range |
 | `truncate`, `ftruncate` | A write of the range between the old and new size |
+| An open that truncates | Not checked, as on Windows: `O_TRUNC`, and a native open with `OVERWRITE`, `OVERWRITE_IF` or `SUPERSEDE` |
 | `fallocate` that changes contents | A write of the range it changes, to end of file for collapse and insert |
+
+An open that truncates is let through as Windows lets an overwriting
+`CreateFile` through: the locks it drops go with the data, and the
+holders' later I/O is checked against what is left. <a id="cite-facs.lock.open-truncate-unchecked"></a>
 
 An exclusive lock blocks reads and writes; a shared lock blocks writes.
 A shared lock also blocks its own holder's writes. A conflicting

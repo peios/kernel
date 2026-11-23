@@ -119,11 +119,20 @@ int pkm_kacs_inode_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
 					    KACS_META_SIGNED_EXEC, ret);
 			return ret;
 		}
-		/* A size change is a write of the range it adds or drops. */
-		ret = pkm_kacs_nt_lock_check_resize(
-			d_inode(dentry),
-			(attr->ia_valid & ATTR_FILE) ? attr->ia_file : NULL,
-			attr->ia_size);
+		/*
+		 * A size change is a write of the range it adds or drops,
+		 * except the truncation an open makes (O_TRUNC, or an NT
+		 * OVERWRITE, OVERWRITE_IF or SUPERSEDE), which Windows lets
+		 * through other opens' byte-range locks.
+		 */
+		ret = (attr->ia_valid & ATTR_OPEN) ?
+			      0 :
+			      pkm_kacs_nt_lock_check_resize(
+				      d_inode(dentry),
+				      (attr->ia_valid & ATTR_FILE) ?
+					      attr->ia_file :
+					      NULL,
+				      attr->ia_size);
 		if (ret) {
 			pkm_kacs_consume_file_metadata_decision(
 				d_inode(dentry), PKM_KACS_METADATA_OP_SETATTR);
